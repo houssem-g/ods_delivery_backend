@@ -1,36 +1,80 @@
 """In-app notification + push fan-out, the port of sendNotificationIfEnabled's core.
 
-Every domain service notifies through `notify`. The in-app row is always written;
-the user's preferences only govern the push (as on Base44). The caller owns the
-transaction: the row, its realtime event and the push log commit together.
+Every domain service notifies through `notify` (or `notify_detailed` to know what
+happened to the push). The in-app row is always written; the user's preferences only
+govern the push (as on Base44). The caller owns the transaction: the row, its
+realtime event, the push log and a WhatsApp fallback row commit together.
+
+WhatsApp instead of push (sendNotificationIfEnabled.whatsappInsteadOfPush): a customer
+without any active device (web only, notifications refused) who ticked the WhatsApp
+opt-in gets `on_the_way` / `new_offer` of an order by WhatsApp. Template parameters come
+from the database, never from the caller's text; one message per order and step
+(idempotency key); only when WhatsApp is configured (settings.whatsapp_enabled).
 """
 
+import logging
+import re
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
+from app.models import Courier, OrderOffer, OrderStop
 from app.models.identity import User
 from app.models.notifications import NOTIFICATION_TYPE_SYNONYMS, NOTIFICATION_TYPES, Notification
+from app.models.orders import Order
 from app.realtime.events import emit
+from app.services import whatsapp
 from app.services.push import PushMessage, send_to_user
+
+log = logging.getLogger("odsd.notifications")
 
 TITLE_MAX = 200
 BODY_MAX = 1000
 
-# Preference column of `users` that governs the push of each type (None = always pushed).
-PREFERENCE_COLUMN: dict[str, str | None] = {
+# sendNotificationIfEnabled.PREFERENCE_KEY: the legacy preference key governing the push of
+# a type, keyed by the type AS SENT (synonyms included: `incoming_order` has its own key).
+# Types absent from it (emergency_contact, account_verified...) are always pushed.
+LEGACY_PREFERENCE_KEY: dict[str, str] = {
     **{
-        t: "notify_order_status"
+        t: "order_status_changes"
         for t in (
             "order_confirmed", "order_accepted", "at_shop", "purchased", "on_the_way", "delivered",
-            "order_cancelled", "eta_update", "delivery_delayed", "order_preparing", "new_offer",
+            "order_delivered", "order_cancelled", "courier_on_way", "eta_update", "delivery_delayed",
+            "order_preparing", "new_offer",
         )
     },
-    "new_order": "notify_new_orders",
-    "new_message": "notify_chat",
+    "new_order": "new_orders",
+    "incoming_order": "incoming_orders",
+    "message": "chat_messages",
+    "new_message": "chat_messages",
 }  # fmt: skip
+# legacy notification_preferences key -> users column (same as the UserProfile compat entity)
+PREFERENCE_KEY_COLUMN = {
+    "order_status_changes": "notify_order_status",
+    "new_orders": "notify_new_orders",
+    "incoming_orders": "notify_incoming_orders",
+    "chat_messages": "notify_chat",
+}
+# Preference column of each STORED type (kept for callers that import it).
+PREFERENCE_COLUMN: dict[str, str | None] = {
+    t: PREFERENCE_KEY_COLUMN[k] for t, k in LEGACY_PREFERENCE_KEY.items() if t in NOTIFICATION_TYPES
+}
+
+WHATSAPP_FALLBACK_TYPES = {"on_the_way", "new_offer"}  # stored types (courier_on_way → on_the_way)
+TEST_ORDER = re.compile(r"QA TEST|\bPW-", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class NotifyResult:
+    notification: Notification
+    # None when the push was attempted; else 'push_disabled' / '<preference key>_disabled'.
+    push_skipped: str | None
+    push: dict[str, Any] | None = None  # send_to_user's summary
+    whatsapp: dict[str, Any] | None = None  # the WhatsApp fallback's answer, when it ran
 
 
 def canonical_type(type_: str) -> str:
@@ -43,6 +87,16 @@ def canonical_type(type_: str) -> str:
 
 def _cap(value: str | None, limit: int) -> str | None:
     return value[:limit] if value else value
+
+
+def push_skip_reason(user: User | None, type_as_sent: str) -> str | None:
+    """Why the push is not sent (the in-app row is written anyway), None if it is."""
+    if user is None or user.deleted_at is not None or not user.push_enabled:
+        return "push_disabled"
+    key = LEGACY_PREFERENCE_KEY.get(type_as_sent) or LEGACY_PREFERENCE_KEY.get(canonical_type(type_as_sent))
+    if key and not getattr(user, PREFERENCE_KEY_COLUMN[key]):
+        return f"{key}_disabled"
+    return None
 
 
 async def notify(
@@ -60,6 +114,27 @@ async def notify(
 ) -> Notification:
     """Writes the notification, queues its realtime event and pushes it when the
     user's preferences allow. Returns the flushed row."""
+    result = await notify_detailed(
+        session, user_id=user_id, type_=type_, title_ar=title_ar, title_fr=title_fr, body_ar=body_ar,
+        body_fr=body_fr, order_id=order_id, metadata=metadata, push=push,
+    )  # fmt: skip
+    return result.notification
+
+
+async def notify_detailed(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    type_: str,
+    title_ar: str,
+    title_fr: str,
+    body_ar: str = "",
+    body_fr: str = "",
+    order_id: uuid.UUID | None = None,
+    metadata: dict[str, Any] | None = None,
+    push: bool = True,
+) -> NotifyResult:
+    """`notify`, answering what happened to the push (sendNotificationIfEnabled's `push_skipped`)."""
     stored_type = canonical_type(type_)
     row = Notification(
         user_id=user_id,
@@ -74,27 +149,86 @@ async def notify(
     session.add(row)
     await session.flush()
     emit(session, "Notification", "create", row.id)
-    if push and await _push_allowed(session, user_id, stored_type):
-        await send_to_user(
-            session,
-            user_id,
-            PushMessage(
-                type=stored_type,
-                title_ar=row.title_ar or "",
-                title_fr=row.title_fr or "",
-                body_ar=row.body_ar or "",
-                body_fr=row.body_fr or "",
-                order_id=str(order_id) if order_id else None,
-                notification_id=str(row.id),
-                metadata=row.data,
-            ),
-        )
-    return row
-
-
-async def _push_allowed(session: AsyncSession, user_id: uuid.UUID, stored_type: str) -> bool:
+    if not push:
+        return NotifyResult(row, push_skipped=None)
     user = (await session.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
-    if user is None or not user.push_enabled or user.deleted_at is not None:
-        return False
-    column = PREFERENCE_COLUMN.get(stored_type)
-    return column is None or bool(getattr(user, column))
+    skipped = push_skip_reason(user, type_)
+    if skipped or user is None:
+        return NotifyResult(row, push_skipped=skipped)
+    summary = await send_to_user(
+        session,
+        user_id,
+        PushMessage(
+            type=stored_type,
+            title_ar=row.title_ar or "",
+            title_fr=row.title_fr or "",
+            body_ar=row.body_ar or "",
+            body_fr=row.body_fr or "",
+            order_id=str(order_id) if order_id else None,
+            notification_id=str(row.id),
+            metadata=row.data,
+        ),
+    )
+    whatsapp = None
+    if (
+        summary.get("attempted") == 0
+        and order_id is not None
+        and stored_type in WHATSAPP_FALLBACK_TYPES
+        and user.whatsapp_opt_in_at is not None
+        and settings.whatsapp_enabled
+    ):
+        whatsapp = await _whatsapp_instead_of_push(session, stored_type, order_id, user, row.id)
+    return NotifyResult(row, push_skipped=None, push=summary, whatsapp=whatsapp)
+
+
+async def _whatsapp_instead_of_push(
+    session: AsyncSession, stored_type: str, order_id: uuid.UUID, user: User, notification_id: uuid.UUID
+) -> dict[str, Any] | None:
+    try:
+        async with session.begin_nested():
+            order = await session.get(Order, order_id)
+            if order is None or order.customer_id != user.id or TEST_ORDER.search(order.items_text or ""):
+                return None
+            first_stop = (
+                await session.execute(
+                    select(OrderStop.name)
+                    .where(OrderStop.order_id == order_id)
+                    .order_by(OrderStop.seq)
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            label = str(first_stop or order.items_text or "ODS")[:40]
+            if stored_type == "new_offer":
+                fee = (
+                    await session.execute(
+                        select(OrderOffer.proposed_fee)
+                        .where(OrderOffer.order_id == order_id)
+                        .order_by(OrderOffer.created_at.desc())
+                        .limit(1)
+                    )
+                ).scalar_one_or_none()
+                template, params = "new_offer", [label, f"{fee:.3f}" if fee is not None else "-"]
+                key = f"offer:{order_id}"
+            else:
+                courier_name = None
+                if order.courier_id:
+                    courier_name = (
+                        await session.execute(
+                            select(Courier.display_name).where(Courier.id == order.courier_id)
+                        )
+                    ).scalar_one_or_none()
+                template, params = "courier_on_the_way", [courier_name or "ODS", label]
+                key = f"ontheway:{order_id}"
+            _status, body = await whatsapp.send_template(
+                session,
+                template_key=template,
+                params=params,
+                idempotency_key=key,
+                user_id=user.id,
+                order_id=order_id,
+                notification_id=notification_id,
+            )
+            return body
+    except Exception:
+        log.exception("WhatsApp fallback failed for order %s", order_id)
+        return None

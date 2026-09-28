@@ -11,11 +11,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIASGIMiddleware
 from sqlalchemy import text
 
-from app.api import admin, auth, compat_entities, compat_functions, files, health, ws
+from app.api import admin, auth, compat_entities, compat_functions, files, health, webhooks, ws
 from app.compat import entities as _registered_entities  # noqa: F401 - import registers them
 from app.config import settings
 from app.db import engine
 from app.errors import install_error_handlers
+from app.jobs import messaging as _messaging_jobs  # noqa: F401 - import registers them
 from app.jobs import placeholders as _registered_jobs  # noqa: F401 - import registers them
 from app.jobs.scheduler import LeaderScheduler
 from app.rate_limit import limiter, rate_limit_exceeded
@@ -84,6 +85,7 @@ def create_app() -> FastAPI:
         auth.router,
         files.router,
         compat_entities.router,
+        webhooks.router,  # before compat_functions: it owns /api/functions/whatsappWebhook
         compat_functions.router,
         admin.router,
         ws.router,

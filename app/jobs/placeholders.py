@@ -20,15 +20,13 @@ def _placeholder(name: str) -> dict[str, Any]:
 @job(
     "sweep_5min",
     IntervalTrigger(minutes=5),
-    "no-response sweep, WhatsApp/SMS pending checks, stale order expiry, courier presence expiry",
+    "no-response sweep, stale order expiry, courier presence expiry",
 )
 async def sweep_5min() -> dict[str, Any]:
     return _placeholder("sweep_5min")
 
 
-@job(
-    "hourly_cleanup", IntervalTrigger(hours=1), "expired hot deals, offers of closed orders, test data purge"
-)
+@job("hourly_cleanup", IntervalTrigger(hours=1), "expired hot deals, offers of closed orders")
 async def hourly_cleanup() -> dict[str, Any]:
     return _placeholder("hourly_cleanup")
 

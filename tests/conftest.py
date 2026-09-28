@@ -26,6 +26,14 @@ os.environ.update(
         "LOG_LEVEL": "WARNING",
         "BCRYPT_ROUNDS": "4",
         "S3_BUCKET": "ods-delivery-test",
+        # WhatsApp / SMS always OFF unless a test turns them on (HTTP mocked)
+        "WHATSAPP_TOKEN": "",
+        "WHATSAPP_PHONE_NUMBER_ID": "",
+        "WHATSAPP_APP_SECRET": "",
+        "WHATSAPP_VERIFY_TOKEN": "",
+        "WINSMS_API_KEY": "",
+        "WINSMS_SENDER": "",
+        "MESSAGING_DISABLED": "false",
     }
 )
 if "ods_delivery_test" not in os.environ["DATABASE_URL"]:
@@ -43,6 +51,8 @@ from app.services import email as email_service
 from tests.factories import Factory
 
 ROOT = Path(__file__).resolve().parents[1]
+# Messaging fixtures (parties, http, meta_on, sms_on).
+pytest_plugins = ["tests.messaging_factories"]
 
 
 def _alembic(*args: str) -> None:
