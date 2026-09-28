@@ -160,11 +160,12 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     order.cancel_reason, order.cancelled_by = reason, cancelled_by
     back_to_pool = cancelled_by == "courier" and deal is None and not verified_no_response
     if back_to_pool:
+        await ot.transition(session, order, "pending", user, "cancelOrder", reason, cancelled_by="courier")
         order.cancelled_at = now
         order.courier_id = None
         order.delivery_fee = None
         await _reset_stops(session, order)
-        await ot.transition(session, order, "pending", user, "cancelOrder", reason, cancelled_by="courier")
+        await session.flush()
     else:
         # A customer cancellation keeps the courier on the order: he can still open it and see
         # that it was cancelled (Base44 kept courier_user_id for that).

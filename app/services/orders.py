@@ -122,9 +122,9 @@ def reliability_from_count(count: int) -> dict[str, Any]:
 
 
 class OrderRefused(Exception):
-    def __init__(self, status: int, error: str, **extra: Any) -> None:
+    def __init__(self, http_status: int, error: str, **extra: Any) -> None:
         super().__init__(error)
-        self.status = status
+        self.status = http_status
         self.error = error
         self.extra = extra
 

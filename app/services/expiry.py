@@ -74,8 +74,9 @@ async def _abandon(session: AsyncSession, order: Order) -> str:
     courier = await session.get(Courier, order.courier_id) if order.courier_id else None
     was_no_response = order.status == "client_no_response"
     order.cancelled_by, order.cancel_reason = "system", reason
-    order.courier_id = None
     await ot.transition(session, order, "cancelled", None, "expireStaleOrders", reason, cancelled_by="system")
+    order.courier_id = None
+    await session.flush()
     if was_no_response:
         cases = (
             await session.execute(
