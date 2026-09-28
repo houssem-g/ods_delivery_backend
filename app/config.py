@@ -94,6 +94,9 @@ class Settings(BaseSettings):
     S3_BUCKET: str = "ods-delivery"
     # Base URL of anonymously readable objects (public/ prefix); default = path-style on the public endpoint.
     S3_PUBLIC_BASE_URL: str | None = None
+    # Canned ACL of public/ objects. Empty = the bucket policy makes them readable (MinIO locally);
+    # "public-read" on DO Spaces, whose buckets stay private and serve public/ objects per ACL.
+    S3_PUBLIC_OBJECT_ACL: str | None = None
     S3_TIMEOUT_SECONDS: float = 15.0
     UPLOAD_MAX_BYTES: int = 10 * 1024 * 1024
     SIGNED_URL_DEFAULT_SECONDS: int = 300

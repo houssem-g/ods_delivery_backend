@@ -59,8 +59,18 @@ async def _run(func: Any, *args: Any, **kwargs: Any) -> Any:
 
 
 async def put_object(key: str, body: bytes, content_type: str) -> None:
+    extra = (
+        {"ACL": settings.S3_PUBLIC_OBJECT_ACL}
+        if settings.S3_PUBLIC_OBJECT_ACL and key.startswith("public/")
+        else {}
+    )
     await _run(
-        server_client().put_object, Bucket=settings.S3_BUCKET, Key=key, Body=body, ContentType=content_type
+        server_client().put_object,
+        Bucket=settings.S3_BUCKET,
+        Key=key,
+        Body=body,
+        ContentType=content_type,
+        **extra,
     )
 
 
