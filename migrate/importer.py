@@ -14,7 +14,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import Table, literal_column, select, text, tuple_, update
+from sqlalchemy import Table, literal_column, select, text, true, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -138,6 +138,7 @@ async def resolve_identities(conn: AsyncConnection, bundle: Bundle, stats: Impor
             mapping[row["id"]] = found.id
             stats.adopted_users += 1
     remap(bundle, "users", mapping)
+    await keep_existing_default_addresses(conn, bundle, set(mapping.values()))
 
     couriers = table("couriers")
     crow = bundle.rows("couriers")
@@ -162,6 +163,29 @@ async def resolve_identities(conn: AsyncConnection, bundle: Bundle, stats: Impor
             cmap[row["id"]] = found.id
             stats.adopted_couriers += 1
     remap(bundle, "couriers", cmap)
+
+
+async def keep_existing_default_addresses(conn: AsyncConnection, bundle: Bundle, adopted: set[Any]) -> None:
+    """An adopted account may already have a default address (one per user): the migrated
+    ones are then imported as non-default, the app's choice wins."""
+    if not adopted:
+        return
+    addresses = table("user_addresses")
+    imported = {r["id"] for r in bundle.rows("user_addresses")}
+    has_default = set(
+        (
+            await conn.execute(
+                select(addresses.c.user_id).where(
+                    addresses.c.user_id.in_(list(adopted)),
+                    addresses.c.is_default,
+                    addresses.c.id.notin_(list(imported)) if imported else true(),
+                )
+            )
+        ).scalars()
+    )
+    for row in bundle.rows("user_addresses"):
+        if row["user_id"] in has_default:
+            row["is_default"] = False
 
 
 def _clean(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:

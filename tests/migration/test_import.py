@@ -248,3 +248,31 @@ async def test_files_are_uploaded_once(export_dir, bucket):
     result = await verify.verify(export_dir, DB, files=True)
     assert next(c for c in result.checks if c.name == "files present in the bucket").ok
     importer.print_stats(second)
+
+
+async def test_adopted_account_keeps_its_default_address(export_dir):
+    bundle = bundle_of(export_dir)
+    migrated = [a for a in bundle.rows("user_addresses") if a["is_default"]]
+    assert migrated, "the fixtures need a default address"
+    owner = next(u for u in bundle.rows("users") if u["id"] == migrated[0]["user_id"])
+    async with engine.begin() as conn:
+        seeded = (
+            await conn.execute(
+                text("INSERT INTO users (email, full_name) VALUES (:e, 'Seeded') RETURNING id"),
+                {"e": owner["email"]},
+            )
+        ).scalar()
+        await conn.execute(
+            text("INSERT INTO user_addresses (user_id, address, is_default) VALUES (:u, 'Seeded', true)"),
+            {"u": seeded},
+        )
+    await importer.import_bundle(bundle_of(export_dir), DB)
+    assert await count("SELECT count(*) FROM user_addresses WHERE user_id = :u AND is_default", u=seeded) == 1
+    assert (
+        await count(
+            "SELECT count(*) FROM user_addresses WHERE user_id = :u AND is_default AND address = 'Seeded'",
+            u=seeded,
+        )
+        == 1
+    )
+    assert (await importer.import_bundle(bundle_of(export_dir), DB)).changes == 0
