@@ -81,6 +81,7 @@ customer side on its existence). Compat id = `users.id`.
 | phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164; NULL for a deleted (anonymized) account, or a migrated courier whose Base44 phone was a placeholder (4 of 7 in the 2026-09-28 export) |
 | cin_passport | front R/W\*, fn W | `couriers.id_document_number` | owner + admin only; '' after account deletion |
 | photo_url | front R (CourierCard) | dropped | legacy public ID photo URL; the migration moves the file to the private bucket (`id_document_key`) and the field reads `null` |
+| has_id_photo | front R (AdminDashboard) | *derived* `couriers.id_document_key IS NOT NULL` | new: tells the admin screen which couriers to ask getCourierIdPhotos for; the key itself never leaves |
 | id_photo_uri | front W\*, fn R/W | `couriers.id_document_key` | **never serialized**; admins get signed URLs from `getCourierIdPhotos` only |
 | vehicle_type | front R/W\*, fn R/W | `couriers.vehicle` (enum) | |
 | max_package_size | fn W (whitelist) | `couriers.max_package` | never sent by the front nor read; kept (audit DDL, default `petit`) |
