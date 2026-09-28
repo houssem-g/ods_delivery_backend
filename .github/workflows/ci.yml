@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_DB: ods_delivery
+          POSTGRES_USER: ods_delivery
+          POSTGRES_PASSWORD: ods_delivery_local
+        ports: ["5451:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ods_delivery -d ods_delivery"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery_test
+      PGPASSWORD: ods_delivery_local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Start MinIO
+        # Official minio images are no longer published; pgsty/minio is the community build.
+        run: |
+          docker run -d --name minio -p 9110:9000 \
+            -e MINIO_ROOT_USER=odsdlv-local -e MINIO_ROOT_PASSWORD=odsdlv-local-secret \
+            pgsty/minio:latest server /data
+      - name: Test database and extensions
+        run: |
+          psql -h localhost -p 5451 -U ods_delivery -d ods_delivery -c "CREATE DATABASE ods_delivery_test"
+          for db in ods_delivery ods_delivery_test; do
+            psql -h localhost -p 5451 -U ods_delivery -d $db \
+              -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS postgis;
+                  CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          done
+      - run: uv sync --frozen
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Migrations (single head, up, down, up, no drift)
+        env:
+          DATABASE_URL: postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery
+        run: |
+          uv run python scripts/check_single_head.py
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+          uv run alembic check
+      - name: Wait for MinIO
+        run: timeout 60 sh -c 'until curl -fsS http://localhost:9110/minio/health/live; do sleep 2; done'
+      - name: Tests
+        run: uv run pytest --cov=app --cov-report=term-missing:skip-covered --cov-fail-under=80
