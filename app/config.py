@@ -95,6 +95,30 @@ class Settings(BaseSettings):
     FIREBASE_CREDENTIALS_PATH: str | None = None
     PUSH_TIMEOUT_SECONDS: float = 10.0
 
+    # --- WhatsApp (Meta Cloud API) / SMS (WinSMS) ------------------------------
+    # OFF unless the secrets exist (docs of ods-delivery: WHATSAPP_SMS_SETUP_FR.md).
+    WHATSAPP_TOKEN: str | None = None
+    WHATSAPP_PHONE_NUMBER_ID: str | None = None
+    WHATSAPP_APP_SECRET: str | None = None  # webhook X-Hub-Signature-256 (POSTs refused without it)
+    WHATSAPP_VERIFY_TOKEN: str | None = None  # webhook GET challenge (refused without it)
+    WHATSAPP_API_BASE: str = "https://graph.facebook.com"
+    WHATSAPP_API_VERSION: str = "v21.0"
+    WHATSAPP_TEMPLATE_LANG: str = "fr"
+    WHATSAPP_FALLBACK_SECONDS: int = 60
+    WHATSAPP_TPL_NO_RESPONSE: str | None = None
+    WHATSAPP_TPL_ON_THE_WAY: str | None = None
+    WHATSAPP_TPL_NEW_OFFER: str | None = None
+    WHATSAPP_TPL_VERIFICATION: str | None = None
+    WINSMS_API_KEY: str | None = None
+    WINSMS_SENDER: str | None = None
+    WINSMS_API_URL: str = "https://www.winsmspro.com/sms/sms/api"
+    MESSAGING_DISABLED: bool = False  # kill switch: nothing leaves (rows say "disabled")
+    MESSAGING_HTTP_TIMEOUT_SECONDS: float = 8.0
+    MSG_LIMIT_PER_NUMBER_10MIN: int = 4
+    MSG_LIMIT_PER_NUMBER_DAY: int = 12
+    MSG_LIMIT_GLOBAL_MINUTE: int = 30
+    MSG_LIMIT_GLOBAL_HOUR: int = 400
+
     # --- realtime / jobs ------------------------------------------------------
     REALTIME_ENABLED: bool = True
     REALTIME_CHANNEL: str = "delivery_events"
@@ -127,6 +151,14 @@ class Settings(BaseSettings):
     @property
     def google_enabled(self) -> bool:
         return bool(self.GOOGLE_CLIENT_ID and self.GOOGLE_CLIENT_SECRET)
+
+    @property
+    def whatsapp_enabled(self) -> bool:
+        return bool(self.WHATSAPP_TOKEN and self.WHATSAPP_PHONE_NUMBER_ID) and not self.MESSAGING_DISABLED
+
+    @property
+    def sms_enabled(self) -> bool:
+        return bool(self.WINSMS_API_KEY and self.WINSMS_SENDER) and not self.MESSAGING_DISABLED
 
     @property
     def public_files_base_url(self) -> str:
