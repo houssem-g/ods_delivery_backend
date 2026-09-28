@@ -18,6 +18,10 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: Literal["local", "test", "staging", "production"] = "local"
     LOG_LEVEL: str = "INFO"
+    # text = human-readable lines; json = one JSON object per line (Loki / cloud).
+    LOG_FORMAT: Literal["text", "json"] = "text"
+    # Build identifier (image tag / git sha), reported to Sentry.
+    APP_RELEASE: str | None = None
 
     # --- database -----------------------------------------------------------
     DATABASE_URL: str = "postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery"
@@ -34,7 +38,12 @@ class Settings(BaseSettings):
 
     # --- HTTP -----------------------------------------------------------------
     CORS_ORIGINS: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["http://localhost:5190", "http://127.0.0.1:5190"]
+        default_factory=lambda: [
+            "http://localhost:5190",
+            "http://127.0.0.1:5190",
+            "http://localhost:5191",
+            "http://127.0.0.1:5191",
+        ]
     )
     PUBLIC_APP_URL: str = "http://localhost:5190"
     API_PUBLIC_URL: str = "http://localhost:8110"
@@ -126,6 +135,14 @@ class Settings(BaseSettings):
     SCHEDULER_LOCK_KEY: int = 5_318_008_110
     SCHEDULER_LEADER_RETRY_SECONDS: int = 30
     CRON_SECRET: str | None = None
+
+    # --- observability ----------------------------------------------------------
+    # GET /api/metrics (Prometheus) answers 404 while this is empty; callers send it in X-Metrics-Token.
+    METRICS_TOKEN: str | None = None
+    # Sentry: empty DSN = off. No PII is sent (app/observability/sentry.py).
+    SENTRY_DSN: str | None = None
+    SENTRY_ENVIRONMENT: str | None = None
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.0
 
     # --- maps (OpenStreetMap services) ------------------------------------------
     # Identifies us to Nominatim / Overpass (their usage policies require a real contact).

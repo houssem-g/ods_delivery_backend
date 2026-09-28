@@ -17,6 +17,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.config import settings
 from app.db import asyncpg_dsn
 from app.jobs.registry import JOBS, Job
+from app.observability import metrics
 
 log = logging.getLogger("odsd.jobs")
 PING_SECONDS = 30
@@ -29,7 +30,9 @@ async def run_job(job: Job) -> dict[str, Any]:
         result = await job.func()
     except Exception as exc:
         log.exception("job %s failed", job.name)
+        metrics.observe_job(job.name, False, time.monotonic() - started)
         return {"job": job.name, "ok": False, "error": type(exc).__name__}
+    metrics.observe_job(job.name, True, time.monotonic() - started)
     elapsed_ms = round((time.monotonic() - started) * 1000)
     log.info("job %s done in %d ms: %s", job.name, elapsed_ms, result)
     return {"job": job.name, "ok": True, "duration_ms": elapsed_ms, "result": result or {}}
@@ -94,6 +97,7 @@ class LeaderScheduler:
         scheduler.start()
         self._scheduler = scheduler
         self.is_leader = True
+        metrics.SCHEDULER_LEADER.set(1)
         log.info("scheduler leader: %d jobs scheduled", len(scheduler.get_jobs()))
 
     async def _hold(self) -> None:
@@ -108,6 +112,7 @@ class LeaderScheduler:
             self._scheduler.shutdown(wait=False)
             self._scheduler = None
         self.is_leader = False
+        metrics.SCHEDULER_LEADER.set(0)
         if self._conn is not None:
             # Closing the session releases the advisory lock.
             with contextlib.suppress(Exception):

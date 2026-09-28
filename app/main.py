@@ -21,6 +21,10 @@ from app.jobs import messaging as _messaging_jobs  # noqa: F401 - import registe
 from app.jobs import orders as _order_jobs  # noqa: F401 - import registers them
 from app.jobs import periodic as _periodic_jobs  # noqa: F401 - import registers them
 from app.jobs.scheduler import LeaderScheduler
+from app.observability import metrics
+from app.observability.logs import configure_logging
+from app.observability.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
+from app.observability.sentry import init_sentry
 from app.rate_limit import limiter, rate_limit_exceeded
 from app.realtime.hub import hub
 from app.realtime.listener import PgListener
@@ -40,7 +44,7 @@ async def _check_database() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    logging.basicConfig(level=settings.LOG_LEVEL, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    configure_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
     await _check_database()
     init_firebase()
     listener = PgListener(hub) if settings.REALTIME_ENABLED else None
@@ -63,6 +67,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app() -> FastAPI:
+    configure_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
+    init_sentry(settings)
     application = FastAPI(
         title="ODS Delivery API",
         version="0.1.0",
@@ -80,8 +86,11 @@ def create_app() -> FastAPI:
         allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept", "x-cron-token"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "x-cron-token", REQUEST_ID_HEADER],
+        expose_headers=[REQUEST_ID_HEADER],
     )
+    # Outermost: request id, access log and HTTP metrics cover CORS answers and 429s too.
+    application.add_middleware(RequestContextMiddleware)
     for router in (
         health.router,
         auth.router,
@@ -91,10 +100,12 @@ def create_app() -> FastAPI:
         compat_functions.router,
         admin.router,
         ws.router,
+        metrics.router,
     ):
         application.include_router(router)
     limiter.exempt(health.liveness)
     limiter.exempt(health.readiness)
+    limiter.exempt(metrics.metrics)
     return application
 
 

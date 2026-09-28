@@ -23,6 +23,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "aiosmtplib>=3.0",
     "phonenumbers>=8.13",
+    "prometheus-client>=0.20",
+    "sentry-sdk[fastapi]>=2.10",
 ]
 
 [dependency-groups]
@@ -32,6 +34,8 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6",
     "asgi-lifespan>=2.1",
+    "pip-audit>=2.7",
+    "pre-commit>=3.8",
 ]
 
 [tool.uv]
