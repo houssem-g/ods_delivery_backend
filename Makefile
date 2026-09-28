@@ -76,11 +76,10 @@ reset-local: ## drop + recreate + migrate + seed ods_delivery (asks; YES=1 to sk
 import-local: ## Base44 import of the latest ~/ODS-backups/migration/<date>/ [DB=… ARGS="--files"]
 	@scripts/import_local.sh
 
-audit: ## pip-audit of the locked dependencies (OSV / PyPI advisories)
+audit: ## pip-audit of the locked dependencies [AUDIT_ARGS="--ignore-vuln ID"]
 	@req=$$(mktemp) && trap 'rm -f "$$req"' EXIT && \
 	  uv export --frozen --format requirements-txt --no-emit-project --quiet > "$$req" && \
-	  $(RUN) pip-audit --strict --disable-pip --requirement "$$req" --progress-spinner off
+	  $(RUN) pip-audit --strict --disable-pip --requirement "$$req" --progress-spinner off $(AUDIT_ARGS)
 
-precommit: ## install the git pre-commit hooks and run them on every file
-	$(RUN) pre-commit install
+precommit: ## run the pre-commit hooks on every file (install the git hook: uv run pre-commit install)
 	$(RUN) pre-commit run --all-files
