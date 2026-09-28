@@ -106,9 +106,12 @@ The migration adds no Alembic revision of its own.
   `items_text` is empty, or the status needs a courier and none is known (none in the
   2026-09-28 export).
 - `courier_id` from the CourierProfile id. Orders that kept `courier_user_id` without
-  `courier_id` (the courier withdrew; 20 in the export, all `cancelled`): allowed by the
-  CHECK for `cancelled`, so `courier_id` stays NULL — least lossy: the courier is kept as
-  `actor_user_id` of the cancellation event (and on his offer).
+  `courier_id` (20 in the export, all `cancelled`: 12 cancelled by the customer after
+  acceptance, 8 older ones without `cancelled_by`): Base44 cleared `courier_id` but kept
+  the e-mail so the courier could still open the order; the new app keeps `courier_id`
+  on a customer cancellation. So the courier is **restored** from the e-mail unless the
+  order says the courier dropped it (`cancelled_by = courier`: NULL, as the app does; he
+  stays `actor_user_id` of the cancellation event).
 - Money: numeric(10,3), rounded to the millime. Out of the schema's bounds
   (`delivery_fee` [0, 200], `purchase_amount` [0, 2000]) → NULL, original in `audit_log`
   (2 aberrant fees: 510 and 1 087.76 TND).
@@ -185,10 +188,11 @@ The migration adds no Alembic revision of its own.
   its `osm_id`) or a place (`osm_id`), else kept unresolved like the app does. One review
   per user and key / shop / place (the most recent wins).
 - `AppSettings` → `app_settings` (non built-in fields → `value`). Empty today.
-- `courier_ledger_entries`: one `commission_waived_launch` entry of 0.500 TND per
-  delivered order with a courier and a fee > 0, dated `delivered_at` (launch rule of
-  `src/constants/commission.js`: every delivery before 2027-01-01 Tunis is offered).
-  A delivery after the launch end gets no entry (the weekly statements job owns it).
+- `courier_ledger_entries`: one entry of 0.500 TND per delivered order with a courier and
+  a fee > 0, dated `delivered_at`, kind from `app.services.commission` (the rule of
+  `record_delivery`): `commission_waived_launch` before 2027-01-01 Tunis (every migrated
+  delivery today), then the first 20 of the courier's month `commission_waived_quota`,
+  beyond `commission_due` (the weekly statements job groups those).
 - `audit_log`: every value the import changed or row it dropped for a constraint keeps
   its original (`before`) — admins can review them.
 

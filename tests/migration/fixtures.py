@@ -610,6 +610,15 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
             delivery_lat=None,
             delivery_lng=None,
         ),
+        # the customer cancelled an accepted order: Base44 cleared courier_id, kept the e-mail
+        order(
+            "o13",
+            "cancelled",
+            courier_user_id=COUR1,
+            cancelled_by="customer",
+            cancelled_at=ts(10, 12, z=True),
+            status_history=hist(("pending", 9), ("accepted", 10), ("cancelled", 12)),
+        ),
     ]
     offers = [
         offer("f1", "o1", CP1, "accepted"),

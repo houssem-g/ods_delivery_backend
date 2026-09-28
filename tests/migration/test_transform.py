@@ -127,6 +127,8 @@ def test_orders_and_exclusions(bundle):
     o2 = orders[fx.bid("Order", "o2")]
     assert o2["customer_id"] == uid("c2")  # e-mail matched case-insensitively
     assert o2["courier_id"] is None and o2["cancelled_at"] == o2["updated_at"]
+    # the customer cancelled after acceptance: the courier comes back (the app keeps him too)
+    assert orders[fx.bid("Order", "o13")]["courier_id"] == cid("c1")
     o3 = orders[fx.bid("Order", "o3")]
     assert o3["delivery_fee"] is None and o3["delivered_at"].hour == 11
     o4 = orders[fx.bid("Order", "o4")]
@@ -341,17 +343,35 @@ def test_every_exported_row_is_kept_or_excluded(bundle):
         assert kept + bundle.report.excluded_count(entity) == bundle.report.export_counts[entity], entity
 
 
-def test_ledger_after_launch_is_not_generated():
+def test_commission_plan_after_the_launch():
+    """Same rule as app.services.commission: launch waived, then 20 free per courier-month, then due."""
+    from datetime import UTC, datetime, timedelta
+
+    def delivered(n, at, courier="k", fee=Decimal(3)):
+        return {
+            "id": f"o{n}",
+            "status": "delivered",
+            "courier_id": courier,
+            "delivery_fee": fee,
+            "delivered_at": at,
+        }
+
+    feb = datetime(2027, 2, 1, 12, tzinfo=UTC)
+    rows = [delivered(i, feb + timedelta(hours=i)) for i in range(22)]
+    rows += [delivered("dec", datetime(2026, 12, 31, 12, tzinfo=UTC)), delivered("other", feb, courier="z")]
+    rows += [delivered("nofee", feb, fee=Decimal(0)), {**delivered("open", feb), "status": "cancelled"}]
+    kinds = [kind for _, _, kind, _ in tf.plan_commissions(rows)]
+    assert kinds.count("commission_waived_launch") == 1
+    assert kinds.count("commission_waived_quota") == 21  # 20 for k, 1 for z
+    assert kinds.count("commission_due") == 2
     export = fx.build_export()
     for order in export["Order"]:
         order["status_history"] = [h for h in order["status_history"] or [] if h.get("status") != "delivered"]
         order["courier_stats_recorded_at"] = None
         order["updated_date"] = "2027-02-01T10:00:00.000000"
     bundle = tf.Transformer(export).run()
-    assert not bundle.rows("courier_ledger_entries")
-    assert (
-        bundle.report.notes["delivered after the launch end: no ledger entry generated (run statements)"] == 1
-    )
+    assert [e["kind"] for e in bundle.rows("courier_ledger_entries")] == ["commission_waived_quota"]
+    assert bundle.report.notes["delivered after the launch: ledger entry commission_waived_quota"] == 1
 
 
 def test_duplicate_courier_profiles_and_second_accepted_edge_cases():

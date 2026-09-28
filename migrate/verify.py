@@ -28,10 +28,11 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.models.notifications import NOTIFICATION_TYPE_SYNONYMS
+from app.services.commission import COMMISSION_PER_DELIVERY_TND
 from migrate.bundle import Bundle
 from migrate.common import money, normalize_phone, parse_dt
 from migrate.importer import make_engine
-from migrate.transform import load_export, qa_emails_from_constants, transform
+from migrate.transform import load_export, plan_commissions, qa_emails_from_constants, transform
 
 # entity -> (table, legacy column)
 LEGACY_TABLES = {
@@ -251,23 +252,41 @@ async def check_money(conn: AsyncConnection, export: dict, bundle: Bundle, resul
         and o.get("courier_id")
         and _bounded(o.get("delivery_fee"), Decimal(0), Decimal(200)) > 0
     )
-    actual = (
+    ledger = (
         await conn.execute(
             text(
-                "SELECT count(*), coalesce(sum(amount), 0), "
-                "count(*) FILTER (WHERE kind <> 'commission_waived_launch') "
-                "FROM courier_ledger_entries l JOIN orders o ON o.id = l.order_id "
-                "WHERE o.legacy_b44_id IS NOT NULL"
+                "SELECT l.order_id, l.kind, l.amount FROM courier_ledger_entries l "
+                "JOIN orders o ON o.id = l.order_id WHERE o.legacy_b44_id IS NOT NULL"
             )
         )
-    ).one()
+    ).all()
     result.add(
-        "ledger: one waived-launch entry per delivered order with a fee", delivered_with_fee, actual[0]
+        "ledger: one entry per delivered order with a courier and a fee", delivered_with_fee, len(ledger)
     )
     result.add(
-        "ledger: nominal 0.500 each, nothing due",
-        (_num(Decimal("0.5") * delivered_with_fee), 0),
-        (_num(actual[1]), actual[2]),
+        "ledger: nominal 0.500 each",
+        _num(COMMISSION_PER_DELIVERY_TND * len(ledger)),
+        _num(sum((row.amount for row in ledger), Decimal(0))),
+    )
+    migrated = (
+        await conn.execute(
+            text(
+                "SELECT id, status::text AS status, courier_id, delivery_fee, delivered_at FROM orders "
+                "WHERE legacy_b44_id IS NOT NULL"
+            )
+        )
+    ).all()
+    expected_kinds = {
+        order_id: kind for order_id, _, kind, _ in plan_commissions([dict(r._mapping) for r in migrated])
+    }
+    result.add(
+        "ledger: kinds follow the commission rule (launch / monthly quota / due)",
+        dict(sorted(Counter(expected_kinds.values()).items())),
+        dict(
+            sorted(
+                Counter(row.kind for row in ledger if expected_kinds.get(row.order_id) == row.kind).items()
+            )
+        ),
     )
 
 
@@ -352,6 +371,7 @@ async def check_samples(
     kept = sorted(bundle.kept.get("Order", set()))
     picks = random.Random(seed).sample(kept, min(n, len(kept)))
     by_id = {o["id"]: o for o in export["Order"]}
+    cp_by_email = {str(c.get("user_id") or "").lower(): c["id"] for c in export["CourierProfile"]}
     offers_per_order = Counter(r["order_id"] for r in bundle.rows("order_offers"))
     new_id = {r["legacy_b44_id"]: r["id"] for r in bundle.rows("orders")}
     mismatches: list[str] = []
@@ -379,7 +399,7 @@ async def check_samples(
         expected = {
             "status": src["status"],
             "customer": str(src["customer_id"]).lower(),
-            "courier": src.get("courier_id") or None,
+            "courier": _expected_courier(src, cp_by_email),
             "items_text": str(src["items_text"]).strip(),
             "quantity": min(100, max(1, int(src["quantity"] or 1))),
             "delivery_fee": _kept_amount(src.get("delivery_fee"), Decimal(200)),
@@ -407,6 +427,20 @@ async def check_samples(
         Check(f"sample of {len(picks)} random orders equal to the export after mapping", not mismatches,
               0, len(mismatches), "; ".join(mismatches[:10]))
     )  # fmt: skip
+
+
+def _expected_courier(src: dict, cp_by_email: dict[str, str]) -> str | None:
+    """The order's CourierProfile id; a customer cancellation that kept only the courier's
+    e-mail gets that courier back (docs/MIGRATION.md)."""
+    if src.get("courier_id"):
+        return src["courier_id"]
+    if (
+        src.get("status") == "cancelled"
+        and src.get("cancelled_by") != "courier"
+        and src.get("courier_user_id")
+    ):
+        return cp_by_email.get(str(src["courier_user_id"]).lower())
+    return None
 
 
 async def check_courier_stats(

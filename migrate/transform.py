@@ -21,6 +21,15 @@ from typing import Any
 
 from app.models.incidents import NO_RESPONSE_RESOLUTIONS
 from app.models.notifications import NOTIFICATION_TYPE_SYNONYMS, NOTIFICATION_TYPES
+from app.services.commission import (
+    COMMISSION_PER_DELIVERY_TND,
+    FREE_DELIVERIES_PER_MONTH,
+    KIND_DUE,
+    KIND_LAUNCH,
+    KIND_QUOTA,
+    is_launch_offered,
+    month_bounds,
+)
 from app.services.shops import stored_photo
 from app.services.text_norm import normalize_text, search_text
 from app.storage.keys import IMAGE_TYPES, sniff_matches
@@ -62,9 +71,6 @@ STOP_STATUSES = {"pending", "en_route", "at_shop", "purchased", "skipped"}
 OFFER_STATUSES = {"pending", "accepted", "rejected", "expired", "withdrawn"}
 PACKAGES = ("petit", "moyen", "grand")
 VERIFICATIONS = ("pending", "verified", "rejected")
-# ods-delivery src/constants/commission.js: 0.5 TND per delivery, waived until the launch end.
-COMMISSION_PER_DELIVERY = Decimal("0.500")
-LAUNCH_END = datetime(2026, 12, 31, 23, 0, tzinfo=UTC)  # 2027-01-01T00:00:00+01:00
 MIGRATION_SOURCE = "migration"
 AUDIT_ADJUST = "b44_migration.adjust"
 AUDIT_EXCLUDE = "b44_migration.exclude"
@@ -714,9 +720,17 @@ class Transformer:
             if order.get("courier_id") and courier is None:
                 self.report.adjust("orders", "courier_id", "unknown CourierProfile -> NULL")
             if courier is None and order.get("courier_user_id"):
-                self.report.note(
-                    "order keeps a courier e-mail without courier_id (courier left; actor kept on the event)"
-                )
+                # Base44 cleared courier_id but kept the courier's e-mail when the customer
+                # cancelled an accepted order; the app keeps courier_id in that case. A courier
+                # who dropped the order is not restored (the app clears it too).
+                restored = self.courier_by_user_email.get(_lower(order.get("courier_user_id")))
+                if status == "cancelled" and order.get("cancelled_by") != "courier" and restored:
+                    courier = restored
+                    self.report.adjust(
+                        "orders", "courier_id", "restored from courier_user_id (customer cancellation)"
+                    )
+                else:
+                    self.report.note("order keeps a courier e-mail without courier_id (courier dropped it)")
             if courier is None and status in COURIER_REQUIRED:
                 self.report.exclude("Order", f"status {status} without a courier")
                 continue
@@ -1447,22 +1461,17 @@ class Transformer:
             self.kept["AppSettings"].add(setting.get("id") or key)
 
     def ledger(self) -> None:
-        for row in self.tables["orders"]:
-            if row["status"] != "delivered" or row["courier_id"] is None:
-                continue
-            if not (row["delivery_fee"] or 0) > 0:
-                continue
-            if row["delivered_at"] >= LAUNCH_END:
-                self.report.note("delivered after the launch end: no ledger entry generated (run statements)")
-                continue
+        for order_id, courier_id, kind, delivered_at in plan_commissions(self.tables["orders"]):
+            if kind != KIND_LAUNCH:
+                self.report.note(f"delivered after the launch: ledger entry {kind}")
             self.tables["courier_ledger_entries"].append(
                 {
-                    "courier_id": row["courier_id"],
-                    "order_id": row["id"],
-                    "kind": "commission_waived_launch",
-                    "amount": COMMISSION_PER_DELIVERY,
+                    "courier_id": courier_id,
+                    "order_id": order_id,
+                    "kind": kind,
+                    "amount": COMMISSION_PER_DELIVERY_TND,
                     "created_by": None,
-                    "created_at": row["delivered_at"],
+                    "created_at": delivered_at,
                 }
             )
 
@@ -1491,6 +1500,31 @@ class Transformer:
             "notifications to QA accounts",
             sum(r["user_id"] in qa_users for r in self.tables["notifications"]),
         )
+
+
+def plan_commissions(orders: list[dict[str, Any]]) -> list[tuple[Any, Any, str, datetime]]:
+    """(order id, courier id, kind, delivered_at) of every delivered order with a courier and a
+    fee > 0, with the rule of app.services.commission.record_delivery: waived during the launch;
+    after it, the first FREE_DELIVERIES_PER_MONTH of the courier's month (Tunis) waived, then due."""
+    chargeable = sorted(
+        (
+            r
+            for r in orders
+            if r["status"] == "delivered" and r["courier_id"] is not None and (r["delivery_fee"] or 0) > 0
+        ),
+        key=lambda r: (r["delivered_at"], str(r["id"])),
+    )
+    ranks: dict[tuple, int] = defaultdict(int)
+    plan = []
+    for row in chargeable:
+        if is_launch_offered(row["delivered_at"]):
+            kind = KIND_LAUNCH
+        else:
+            month = (row["courier_id"], month_bounds(row["delivered_at"])[0])
+            kind = KIND_QUOTA if ranks[month] < FREE_DELIVERIES_PER_MONTH else KIND_DUE
+            ranks[month] += 1
+        plan.append((row["id"], row["courier_id"], kind, row["delivered_at"]))
+    return plan
 
 
 def _enum(value: Any, allowed: Any, default: Any) -> Any:

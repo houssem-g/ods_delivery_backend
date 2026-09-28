@@ -107,7 +107,7 @@ customer side on its existence). Compat id = `users.id`.
 | customer_name | front R, fn R/W | `orders.contact_name` | snapshot at placement |
 | customer_phone | front R/W\*, fn R/W | `orders.contact_phone_e164` | guard: customer, assigned courier, admin |
 | courier_id | front R, fn R/W | `orders.courier_id` → `couriers` | filter key; kept when the customer cancels (Base44 kept `courier_user_id` so the courier could still open the order), cleared when the courier drops it or the order is abandoned |
-| courier_user_id | front R, fn R/W | join `users.email` via `couriers.user_id` | orders keeping an e-mail without `courier_id` (20 in the 2026-09-28 export, all cancelled: the courier withdrew) read `null`; the import keeps that courier as `actor_user_id` of the cancellation event |
+| courier_user_id | front R, fn R/W | join `users.email` via `couriers.user_id` | orders keeping an e-mail without `courier_id` (20 in the 2026-09-28 export, all cancelled after acceptance): the import restores `courier_id` from the e-mail (the app keeps the courier on a customer cancellation), except when `cancelled_by = courier` |
 | courier_name | front R, fn R/W | join `couriers.display_name` | copy dropped (0 drift measured) |
 | courier_phone | front R, fn R/W | join `couriers.phone_e164` | |
 | courier_photo | front W(null) | dropped | always null since `migrateCourierPhotoCopies` |
@@ -379,8 +379,8 @@ export; aggregates in the report next to the export):
   traffic; a later `is_test` flag would need a schema change.
 - **Status history**: every migrated order has ≥ 1 event and its last event is its status;
   `source = 'migration'` marks synthetic events, `'legacy'` items without a source.
-- **Ledger**: one `commission_waived_launch` entry (0.500) per delivered order with a
-  courier and a fee > 0; nothing due. `courier_stats` recomputes deliveries / ratings /
+- **Ledger**: one entry (0.500) per delivered order with a courier and a fee > 0, kind by
+  `app.services.commission` (all `commission_waived_launch` today; nothing due). `courier_stats` recomputes deliveries / ratings /
   fees from the orders (the stored Base44 counters are not migrated).
 - **Presence**: all migrated couriers are offline until their next heartbeat.
 - **Files**: courier ID photos → `private/courier_id/<user uuid>/<uuid>.<ext>` (`files`

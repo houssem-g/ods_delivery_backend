@@ -33,9 +33,9 @@ async def count(sql: str, **params) -> int:
 
 async def test_import_then_rerun_changes_nothing(export_dir):
     first = await importer.import_bundle(bundle_of(export_dir), DB)
-    assert first.tables["orders"].inserted == 9 and first.changes >= 100
+    assert first.tables["orders"].inserted == 10 and first.changes >= 100
     assert first.tables["orders_resale_links"].updated == 1
-    assert await count("SELECT count(*) FROM orders") == 9
+    assert await count("SELECT count(*) FROM orders") == 10
     assert await count("SELECT count(*) FROM order_status_events") == len(
         bundle_of(export_dir).rows("order_status_events")
     )
@@ -70,7 +70,7 @@ async def test_changed_source_row_is_updated_and_app_rows_untouched(export_dir):
 
 async def test_dry_run_rolls_back(export_dir):
     stats = await importer.import_bundle(bundle_of(export_dir), DB, dry_run=True)
-    assert stats.dry_run and stats.tables["orders"].inserted == 9
+    assert stats.dry_run and stats.tables["orders"].inserted == 10
     assert await count("SELECT count(*) FROM orders") == 0
 
 
@@ -96,7 +96,7 @@ async def test_existing_accounts_are_adopted(export_dir):
     stats = await importer.import_bundle(bundle_of(export_dir), DB)
     assert (stats.adopted_users, stats.adopted_couriers) == (1, 1)
     assert await count("SELECT count(*) FROM users WHERE email = :e", e=fx.COUR1) == 1
-    assert await count("SELECT count(*) FROM orders WHERE courier_id = :c", c=courier) == 5
+    assert await count("SELECT count(*) FROM orders WHERE courier_id = :c", c=courier) == 6
     assert (
         await count("SELECT count(*) FROM couriers WHERE id = :c AND legacy_b44_id = :l", c=courier, l=fx.CP1)
         == 1
