@@ -190,10 +190,14 @@ def _bounded(value: Any, low: Decimal, high: Decimal | None, low_open: bool = Fa
     return amount
 
 
-def _kept_amount(value: Any, high: Decimal) -> Decimal | None:
+def _kept_amount(value: Any, high: Decimal | None) -> Decimal | None:
     """The column value the import keeps: the amount when within [0, high], else NULL."""
     amount = money(value)
-    return amount if amount is not None and 0 <= amount <= high else None
+    return amount if amount is not None and amount >= 0 and (high is None or amount <= high) else None
+
+
+def _first_amount(amount: Decimal | None, fallback: Any) -> Decimal | None:
+    return amount if amount is not None else money(fallback)
 
 
 async def check_money(conn: AsyncConnection, export: dict, bundle: Bundle, result: VerifyResult) -> None:
@@ -225,8 +229,15 @@ async def check_money(conn: AsyncConnection, export: dict, bundle: Bundle, resul
     )
     result.add("sum order_offers.proposed_fee", _num(expected), _num(actual))
     deals = [d for d in export["ResaleOrder"] if d["id"] in bundle.kept.get("ResaleOrder", set())]
-    for column, legacy in (("price", "discounted_price"), ("purchase_amount", "purchase_amount")):
-        expected = sum((money(d.get(legacy)) or Decimal(0) for d in deals), Decimal(0))
+    rules = {
+        # a deal without a usable discounted price is sold at its purchase amount
+        "price": lambda d: _first_amount(
+            _kept_amount(d.get("discounted_price"), None), d.get("purchase_amount")
+        ),
+        "purchase_amount": lambda d: money(d.get("purchase_amount")),
+    }
+    for column, rule in rules.items():
+        expected = sum((rule(d) or Decimal(0) for d in deals), Decimal(0))
         actual = await _scalar(
             conn,
             f"SELECT coalesce(sum({column}), 0) FROM hot_deals WHERE legacy_b44_id = ANY(:ids)",
@@ -370,7 +381,7 @@ async def check_samples(
             "customer": str(src["customer_id"]).lower(),
             "courier": src.get("courier_id") or None,
             "items_text": str(src["items_text"]).strip(),
-            "quantity": int(src["quantity"]),
+            "quantity": min(100, max(1, int(src["quantity"] or 1))),
             "delivery_fee": _kept_amount(src.get("delivery_fee"), Decimal(200)),
             "purchase_amount": _kept_amount(src.get("purchase_amount"), Decimal(2000)),
             "created_at": parse_dt(src["created_date"]),

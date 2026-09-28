@@ -33,7 +33,7 @@ seed: ## local admin + QA accounts + default settings (idempotent)
 	$(RUN) python -m scripts.seed_local
 
 test: ## pytest against the ods_delivery_test database
-	DATABASE_URL=$(TEST_DATABASE_URL) $(RUN) pytest --cov=app --cov-report=term-missing:skip-covered $(ARGS)
+	DATABASE_URL=$(TEST_DATABASE_URL) $(RUN) pytest --cov=app --cov=migrate --cov-report=term-missing:skip-covered $(ARGS)
 
 lint: ## ruff check + format check
 	$(RUN) ruff check .
