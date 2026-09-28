@@ -21,6 +21,8 @@ from typing import Any
 
 from app.models.incidents import NO_RESPONSE_RESOLUTIONS
 from app.models.notifications import NOTIFICATION_TYPE_SYNONYMS, NOTIFICATION_TYPES
+from app.services.shops import stored_photo
+from app.services.text_norm import normalize_text, search_text
 from app.storage.keys import IMAGE_TYPES, sniff_matches
 from migrate.bundle import TABLE_ORDER, Bundle, FileToUpload, Report
 from migrate.common import (
@@ -33,7 +35,6 @@ from migrate.common import (
     mask_email,
     mask_phone,
     money,
-    normalize_name,
     normalize_phone,
     number,
     parse_dt,
@@ -516,28 +517,42 @@ class Transformer:
             if not text_or_none(place.get("name_norm")):
                 self.report.note("PlaceIndex.name_norm was empty (recomputed)")
             stamps = _stamps(place)
-            score = integer(place.get("quality_score"))
+            address, city = text_or_none(place.get("address")), text_or_none(place.get("city"))
             self.tables["places"].append(
                 {
                     "osm_id": osm_id,
                     "legacy_b44_id": place["id"],
                     "name": name,
-                    "name_norm": normalize_name(name),
+                    "name_norm": normalize_text(name),
+                    "search_norm": search_text(name, address, city),
                     "category": category or "restaurant",
-                    "address": text_or_none(place.get("address")),
-                    "city": text_or_none(place.get("city")),
+                    "address": address,
+                    "city": city,
                     "governorate": text_or_none(place.get("governorate")),
                     "phone": text_or_none(place.get("phone")),
                     "opening_hours": text_or_none(place.get("opening_hours")),
                     "location": location,
                     "source": text_or_none(place.get("source")) or "osm",
                     "source_ts": parse_dt(place.get("source_ts")),
-                    "quality_score": max(-32768, min(32767, score)) if score is not None else None,
+                    "quality_score": self.quality_percent(place.get("quality_score")),
                     "refreshed_at": stamps["updated_at"],
                     **stamps,
                 }
             )
             self.kept["PlaceIndex"].add(place["id"])
+
+    def quality_percent(self, value: Any) -> int | None:
+        """Base44 stored 0.5-1.0; our column is a percentage (0-100). A value above 1 is read as
+        a percentage already."""
+        score = number(value, 4)
+        if score is None:
+            return None
+        if score > 1:
+            self.report.adjust("places", "quality_score", "above 1: read as a percentage")
+            percent = integer(score)
+        else:
+            percent = integer(score * 100)
+        return max(0, min(100, percent or 0))
 
     def shops(self) -> None:
         for shop in self.export["Shop"]:
@@ -569,7 +584,7 @@ class Transformer:
                     ),
                     "opening_hours": text_or_none(shop.get("opening_hours")),
                     "description": text_or_none(shop.get("description")),
-                    "photo_key": None,
+                    "photo_key": stored_photo(shop.get("photo_url")),
                     "location": location,
                     "review_status": status,
                     "proposed_by": proposer,
@@ -578,7 +593,7 @@ class Transformer:
                 }
             )
             if shop.get("photo_url"):
-                self.report.adjust("shops", "photo_key", "photo not in the export -> NULL")
+                self.report.adjust("shops", "photo_key", "photo not in the export: legacy URL kept")
             self.ids["Shop"][shop["id"]] = sid
             self.kept["Shop"].add(shop["id"])
             for position, item in enumerate(shop.get("menu_items") or []):
@@ -605,7 +620,10 @@ class Transformer:
                             created,
                         )
                     if photo_key is None:
-                        self.report.adjust("shop_menu_items", "photo_key", "photo not in the export -> NULL")
+                        photo_key = stored_photo(item.get("photo_url"))
+                        self.report.adjust(
+                            "shop_menu_items", "photo_key", "not in the export: legacy https URL kept"
+                        )
                 self.tables["shop_menu_items"].append(
                     {
                         "id": det_uuid("ShopMenuItem", f"{shop['id']}:{position}"),
@@ -619,30 +637,46 @@ class Transformer:
                 )
 
     def shop_reviews(self) -> None:
+        """`target_key` = shop_osm_id as the front sent it (catalog rule); `shop:<Base44 id>` becomes
+        `shop:<new id>` (the key the front builds from the shop's id); resolved to a shop or a
+        place when possible, else kept unresolved like the app does. One review per user and key."""
         shop_by_osm = {r["osm_id"]: r["id"] for r in self.tables["shops"] if r["osm_id"]}
         place_osm = {r["osm_id"] for r in self.tables["places"]}
-        for review in self.export["ShopReview"]:
+        seen: set[tuple] = set()
+        reviews = sorted(self.export["ShopReview"], key=lambda r: r.get("updated_date") or "", reverse=True)
+        for review in reviews:
             user = self.user_by_legacy.get(review.get("user_id")) or self.user_ref(review.get("user_id"))
             rating = integer(review.get("rating"))
-            osm = text_or_none(review.get("shop_osm_id"))
-            if user is None or rating is None or not 1 <= rating <= 5:
-                self.report.exclude("ShopReview", "unknown author or rating outside 1-5")
+            key = text_or_none(review.get("shop_osm_id"))
+            if user is None or rating is None or not 1 <= rating <= 5 or not key:
+                self.report.exclude("ShopReview", "unknown author, no key or rating outside 1-5")
                 continue
-            target: dict[str, Any] = {"shop_id": None, "_place_osm_id": None}
-            if osm in shop_by_osm:
-                target["shop_id"] = shop_by_osm[osm]
-            elif osm in place_osm:
-                target["_place_osm_id"] = osm
-            else:
-                self.report.exclude("ShopReview", "shop_osm_id matches no shop or place")
+            shop_id, place_osm_id = None, None
+            if key.startswith("shop:"):
+                shop_id = self.ids["Shop"].get(key[5:])
+                if shop_id:
+                    key = f"shop:{shop_id}"
+            elif key in shop_by_osm:
+                shop_id = shop_by_osm[key]
+            elif key in place_osm:
+                place_osm_id = key
+            if shop_id is None and place_osm_id is None:
+                self.report.note("ShopReview key not resolved to a shop or place (kept, as the app does)")
+            marks = {("key", key), ("shop", shop_id), ("place", place_osm_id)}
+            marks -= {("shop", None), ("place", None)}
+            if any((user, mark) in seen for mark in marks):
+                self.report.exclude("ShopReview", "second review of the same user and target (latest kept)")
                 continue
+            seen.update((user, mark) for mark in marks)
             if review.get("photo_urls"):
                 self.report.adjust("shop_reviews", "photo_keys", "photos not in the export -> empty")
             self.tables["shop_reviews"].append(
                 {
                     "id": det_uuid("ShopReview", review["id"]),
                     "legacy_b44_id": review["id"],
-                    **target,
+                    "target_key": key,
+                    "shop_id": shop_id,
+                    "_place_osm_id": place_osm_id,
                     "place_id": None,
                     "user_id": user,
                     "rating": rating,

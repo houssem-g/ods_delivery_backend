@@ -17,15 +17,6 @@ from tests.migration import fixtures as fx
 DB = os.environ["DATABASE_URL"]
 
 
-@pytest.fixture(scope="module", autouse=True)
-async def leave_no_rows():
-    """Migrated couriers may have no phone: empty the tables after the module so the next
-    session's `alembic downgrade base` (couriers.phone_e164 NOT NULL again) never meets one."""
-    yield
-    async with engine.begin() as conn:
-        await conn.execute(text("TRUNCATE couriers, users, places, files, audit_log CASCADE"))
-
-
 @pytest.fixture
 def export_dir(tmp_path) -> Path:
     return fx.write_export(tmp_path / "export")

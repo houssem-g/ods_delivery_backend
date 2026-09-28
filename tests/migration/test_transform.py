@@ -278,20 +278,32 @@ def test_hot_deals(bundle):
 def test_places_shops_reviews(bundle):
     places = {r["osm_id"]: r for r in bundle.rows("places")}
     assert set(places) == {"node/1", "way/2", "node/5"}
-    assert places["node/1"]["name_norm"] == "مطعم الامل"
-    assert places["way/2"]["category"] == "pharmacie" and places["way/2"]["quality_score"] == 32767
+    assert places["node/1"]["name_norm"] == "مطعم الامل"  # Arabic kept (app.services.text_norm)
+    assert places["way/2"]["name_norm"] == "pharmacie elise"
+    assert places["way/2"]["search_norm"] == "pharmacie elise"
+    assert places["node/1"]["quality_score"] == 65  # 0.65 -> percent
+    assert places["way/2"]["category"] == "pharmacie" and places["way/2"]["quality_score"] == 100
     assert places["node/5"]["category"] == "supermarché" and places["node/5"]["phone"] == "+216 73 000 000"
     shops = {r["osm_id"]: r for r in bundle.rows("shops")}
     assert set(shops) == {"node/1", "custom_3"}
     assert shops["node/1"]["categories"] == ["restaurant"] and shops["node/1"]["review_status"] == "approved"
     assert shops["node/1"]["_place_osm_id"] == "node/1"
     assert shops["custom_3"]["review_status"] == "pending" and shops["custom_3"]["proposed_by"] == uid("c1")
+    assert shops["custom_3"]["photo_key"] == "https://x/shop.jpg"  # legacy URL kept (catalog rule)
     items = sorted(bundle.rows("shop_menu_items"), key=lambda r: r["position"])
     assert [i["name"] for i in items] == ["Plat", "Boisson"]
     assert items[0]["photo_key"].startswith("public/menu/") and items[1]["price"] is None
+    assert items[1]["photo_key"] == "https://x/missing.jpg"
     reviews = {r["legacy_b44_id"]: r for r in bundle.rows("shop_reviews")}
-    assert reviews[fx.bid("ShopReview", "r1")]["shop_id"] == shops["node/1"]["id"]
+    s1 = shops["node/1"]["id"]
+    assert reviews[fx.bid("ShopReview", "r1")]["shop_id"] == s1
+    assert reviews[fx.bid("ShopReview", "r1")]["target_key"] == "node/1"
     assert reviews[fx.bid("ShopReview", "r2")]["_place_osm_id"] == "way/2"
+    unresolved = reviews[fx.bid("ShopReview", "r3")]
+    assert unresolved["shop_id"] is None and unresolved["_place_osm_id"] is None
+    assert reviews[fx.bid("ShopReview", "r5")]["target_key"] == f"shop:{s1}"
+    assert reviews[fx.bid("ShopReview", "r7")]["target_key"].startswith("place:")
+    assert fx.bid("ShopReview", "r6") not in reviews  # same user and shop as r5, older
     assert bundle.report.excluded_count("ShopReview") == 2
 
 

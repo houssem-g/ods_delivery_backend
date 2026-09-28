@@ -71,12 +71,6 @@ def test_normalize_phone_rules():
     assert common.normalize_phone("abc", ("CH",)) == (None, common.PHONE_REJECTED)
 
 
-def test_normalize_name_keeps_arabic():
-    assert common.normalize_name("Pharmacie Élise!") == "pharmacie elise"
-    assert common.normalize_name("مطعم الأمل") == "مطعم الامل"
-    assert common.normalize_name(None) == ""
-
-
 def test_unify_category():
     assert common.unify_category("pharmacy") == "pharmacie"
     assert common.unify_category("Supermarket") == "supermarché"

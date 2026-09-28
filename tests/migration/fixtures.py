@@ -396,7 +396,7 @@ def place(n: str, osm: str, name: str, category: str, **extra: Any) -> dict[str,
             "lng": 10.6,
             "source": "osm",
             "source_ts": ts(3, z=True),
-            "quality_score": 12.6,
+            "quality_score": 0.65,
         }
     )
     row.update(extra)
@@ -750,6 +750,27 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
             "shop_osm_id": "node/1",
             "user_id": bid("User", "c1"),
             "rating": 9,
+        },
+        # the map keys a shop as `shop:<Shop id>`: rewritten to the new id
+        {
+            **builtins("ShopReview", "r5", 4),
+            "shop_osm_id": f"shop:{bid('Shop', 's1')}",
+            "user_id": bid("User", "c2"),
+            "rating": 3,
+        },
+        # same user, same shop through its OSM id, older: dropped
+        {
+            **builtins("ShopReview", "r6", 3),
+            "shop_osm_id": "node/1",
+            "user_id": bid("User", "c2"),
+            "rating": 2,
+        },
+        # search lists key places by name and position: kept unresolved, like the app
+        {
+            **builtins("ShopReview", "r7", 4),
+            "shop_osm_id": "place:Chez X@35.8,10.6",
+            "user_id": bid("User", "c2"),
+            "rating": 4,
         },
     ]
     places = [

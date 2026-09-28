@@ -4,7 +4,6 @@ Nothing here touches the network or the database.
 """
 
 import re
-import unicodedata
 import uuid
 from datetime import UTC, datetime, time
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
@@ -136,16 +135,6 @@ def normalize_phone(raw: Any, fallback_regions: tuple[str, ...] = ()) -> tuple[s
 
 
 # --- places ---------------------------------------------------------------------------------
-
-
-def normalize_name(value: Any) -> str:
-    """Search key for places.name_norm: lower case, accents stripped, anything that is not a
-    letter or digit (any script) -> one space. Unlike the Deno refreshOsmIndex rule (JS `\\w`
-    is ASCII-only, which emptied every Arabic name: 4 706 rows), Arabic letters are kept."""
-    decomposed = unicodedata.normalize("NFD", str(value or "").lower())
-    stripped = "".join(ch for ch in decomposed if unicodedata.category(ch) != "Mn")
-    cleaned = "".join(ch if ch.isalnum() else " " for ch in stripped)
-    return " ".join(cleaned.split())
 
 
 # The app's category ids (refreshOsmIndex CATEGORY_RULES keys, ShopSearch.jsx); the English
