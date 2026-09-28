@@ -102,7 +102,7 @@ jobs:
           docker logs api
           docker rm -f api
       - name: Vulnerability scan (report only)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         continue-on-error: true
         with:
           image-ref: ods-delivery-api:ci
