@@ -49,6 +49,7 @@ from app.models import (
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc, revoke_all_for_user
+from app.services.offers import demote_if_no_pending_offer
 from app.storage import s3
 
 log = logging.getLogger("odsd.account_deletion")
@@ -100,6 +101,8 @@ async def _anonymize_courier(session: AsyncSession, courier: Courier, counts: di
     counts["offers"] = len(offers)
     for offer_id, _order_id in offers:
         emit(session, "OrderOffer", "delete", offer_id, audience=[courier.user_id])
+    for order_id in sorted({order_id for _offer_id, order_id in offers}):
+        await demote_if_no_pending_offer(session, order_id, courier.user_id, "courier_deleted")
     await session.execute(delete(OrderTracking).where(OrderTracking.courier_id == courier.id))
     expired = (
         await session.execute(

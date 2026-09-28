@@ -166,7 +166,9 @@ async def sweep_5min() -> dict:
     return {"expired_orders": n}  # small JSON summary
 ```
 - Placeholders for the four ARCHITECTURE §8 jobs are in `app/jobs/placeholders.py`:
-  replace their bodies (keep names and triggers).
+  replace their bodies (keep names and triggers). `courier_statements` is done (Monday
+  04:00 Africa/Tunis); the order jobs live in `app/jobs/orders.py`: `expire_stale_orders`
+  (5 min), `expire_orphan_offers` (hourly), `courier_presence_expiry` (5 min).
 - Only the leader process runs them (`pg_try_advisory_lock` on a dedicated
   connection; followers retry every `SCHEDULER_LEADER_RETRY_SECONDS`).
 - By hand: `POST /api/admin/jobs/{name}/run` with an admin token or
@@ -196,3 +198,89 @@ async def sweep_5min() -> dict:
 - Phones: `app.services.phones.to_e164(raw)`.
 - Counters: views `courier_stats`, `customer_stats` (`app.models.views`); the 180-day
   incident window is `INCIDENT_WINDOW_DAYS`.
+
+## 6. Orders: the transition service (every status change goes through it)
+
+`app/services/order_transitions.py` is the **only** place that writes `orders.status`.
+
+```python
+from app.services import order_transitions as ot
+
+order = await ot.lock_order(session, order_id)  # SELECT … FOR UPDATE (None if unknown / not a uuid)
+await ot.transition(
+    session,
+    order,
+    "on_the_way",
+    actor,
+    "triggerEmergencyContact",
+    reason=None,
+    cancelled_by=None,
+    location=(lat, lng),
+)
+await ot.start(session, new_order, actor, "reserveHotDeal", status="accepted")  # a NEW order
+```
+- `actor`: a `CurrentUser`, a `User`, a user uuid, or `None` for the system (jobs).
+- `source`: the flow's name; it is `status_history[].source` in the legacy shape.
+- `reason` / `cancelled_by` ('customer' | 'courier' | 'admin' | 'system'): kept on the event.
+  The cancel flows also set `order.cancel_reason` / `order.cancelled_by` themselves.
+- Raises `ot.InvalidTransition` when the move is not in `ot.ALLOWED`, or when the target
+  needs a courier (`accepted` … `delivered`) and `order.courier_id` is None: set the courier
+  **before** moving into a delivery status and clear it **after** moving out (the
+  `courier_when_assigned` CHECK is evaluated at each flush).
+- It does: the status, `accepted_at` / `delivered_at` / `cancelled_at`, the
+  `order_status_events` row, deleting `order_tracking` when the order leaves
+  `ot.LIVE_STATUSES` (the legacy CLEAR_LIVE_POSITION), the commission ledger entry at
+  `delivered` (`app/services/commission.record_delivery`), the realtime `Order` update.
+- It does **not** notify anybody and does not touch offers, stops, hot deals or
+  no-response cases: the calling flow does (texts differ per flow; see
+  `app/services/order_texts.py`, `order_notices.notify_always_pushed` for notices that must
+  be pushed whatever the preferences).
+- Hold the lock from the read that decides to the transition (`lock_order` first, then
+  your other rows). `expire_stale_orders` locks with SKIP LOCKED and re-checks, so a flow
+  holding the lock always wins over the sweep.
+
+Matrix (`ot.ALLOWED`, union of all flows; restrict it for your actor):
+
+| from | to |
+|---|---|
+| (new) | pending (placeOrder), accepted (hot-deal reservation) |
+| pending | offers_received, accepted, cancelled |
+| offers_received | pending (last offer gone), accepted, cancelled |
+| accepted | at_shop, on_the_way (hot deal: the goods are already bought), pending (courier drops), cancelled |
+| at_shop | price_confirmation_needed, purchased, pending, cancelled |
+| price_confirmation_needed | at_shop, purchased, pending, cancelled |
+| purchased | on_the_way, pending, cancelled |
+| on_the_way | delivered, client_no_response, pending, cancelled |
+| client_no_response | on_the_way (courier resumes / customer answered), delivered, pending, cancelled |
+| delivered, cancelled | — (final) |
+
+The courier's own writes (`Order.update` from CourierOrderActive) are narrower
+(`order_steps.COURIER_STEPS`): accepted → at_shop (→ price_confirmation_needed) → purchased
+→ on_the_way → delivered, accepted → on_the_way only for a hot-deal order
+(`orders.resale_deal_id` set). **Nothing** leaves `client_no_response` through
+`Order.update`: NoResponsePanel's fallback write is refused (403); `courier_resume` must be
+done by `triggerEmergencyContact` with `transition(..., "on_the_way", ...)`.
+
+Hooks and helpers for the no-response / hot-deal features:
+- `app.services.cancellation.no_response_refresh`: set it to
+  `async def refresh(session, order)`; cancelOrder calls it before judging a no-response
+  cancellation (the live code called `triggerEmergencyContact {action:'status'}`), then
+  reads the order's latest `no_response_cases` row (`no_response_gate`).
+- cancelOrder already handles the linked hot deal (`orders.resale_deal_id`, or
+  `hot_deals.original_order_id` / `buyer_order_id`): customer cancel → relisted while not
+  expired, courier cancel → expired; it emits `ResaleOrder` updates.
+- `app.services.dispatch.dispatch_order(session, order)` (order locked): broadcast again.
+- `app.services.offers.demote_if_no_pending_offer(session, order_id, actor, source)`.
+- `app.services.couriers.last_activity_expr()`: the "activity" of an order for the 24 h /
+  48 h expiry (order writes, status events, no-response case `started_at / resolved_at /
+  final_at`; the live position never counts). A no-response step you write keeps the
+  order alive.
+- Commission: `record_delivery` runs inside the transition to `delivered`; nothing to do
+  in the flows (a hot-deal order with a delivery fee is charged like any other).
+
+Notifications of the order steps: the apps keep sending them, as today, through
+`sendNotificationIfEnabled` after the call succeeds (`new_offer`, `order_accepted`,
+`at_shop`, `purchased`, `on_the_way`, `delivered`; AdminDashboard for
+`account_verified` / `account_rejected`). The server sends only what the Deno functions
+sent themselves: `new_order` (dispatch), `order_cancelled` (cancelOrder, expiry; always
+pushed), `issue_reported` (in-app only).

@@ -23,8 +23,8 @@ Conventions:
   `User` id and the `UserProfile` id (`legacy_profile_b44_id`).
 
 Status of the compat entities: `UserProfile`, `AppSettings`, `Message`, `Notification`,
-`DeviceToken`, `MessageLog`, `Shop`, `ShopReview`, `PlaceIndex` and the retired
-`DeliveryTariffs` stub are implemented (`app/compat/entities/`); the others follow this
+`DeviceToken`, `MessageLog`, `Shop`, `ShopReview`, `PlaceIndex`, `Order`, `OrderOffer`,
+`CourierProfile` and the retired `DeliveryTariffs` stub are implemented (`app/compat/entities/`); the others follow this
 mapping (docs/COMPAT_GUIDE.md).
 
 ## User (built-in) → `users`
@@ -88,7 +88,7 @@ customer side on its existence). Compat id = `users.id`.
 | is_online | front R/W\*, fn R/W | `couriers.is_online` | expires with `last_seen_at` (job) |
 | current_lat, current_lng | front R/W\*, fn R/W | `couriers.last_location` (ST_Y / ST_X) | `last_seen_at` set with it |
 | notification_radius_km | front R/W\*, fn R | `couriers.notification_radius_km` | |
-| verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason` |
+| verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason`; the only field an admin writes through the entity (the courier's notice is AdminDashboard's own Notification.create) |
 | total_deliveries | front R, fn R/W | *derived* `courier_stats.total_deliveries` | stored value was wrong for 7/9 couriers |
 | total_earnings | front R, fn W | *derived* `courier_stats.gross_fees` | sum of delivery fees of delivered orders |
 | average_rating | front R, fn R/W | *derived* `coalesce(courier_stats.average_rating, 5)` | 5 without ratings, as the front expects |
@@ -106,7 +106,7 @@ customer side on its existence). Compat id = `users.id`.
 | customer_id | front R, fn R/W | join `users.email` via `orders.customer_id` | filter key |
 | customer_name | front R, fn R/W | `orders.contact_name` | snapshot at placement |
 | customer_phone | front R/W\*, fn R/W | `orders.contact_phone_e164` | guard: customer, assigned courier, admin |
-| courier_id | front R, fn R/W | `orders.courier_id` → `couriers` | filter key |
+| courier_id | front R, fn R/W | `orders.courier_id` → `couriers` | filter key; kept when the customer cancels (Base44 kept `courier_user_id` so the courier could still open the order), cleared when the courier drops it or the order is abandoned |
 | courier_user_id | front R, fn R/W | join `users.email` via `couriers.user_id` | the 17 orders keeping an e-mail without courier lose it (no FK target) |
 | courier_name | front R, fn R/W | join `couriers.display_name` | copy dropped (0 drift measured) |
 | courier_phone | front R, fn R/W | join `couriers.phone_e164` | |
@@ -117,12 +117,12 @@ customer side on its existence). Compat id = `users.id`.
 | estimated_price | front R/W\*, fn W | `orders.estimated_price` | |
 | package_size | front W\*, fn W | `orders.package` (enum) | |
 | shop_name, shop_address, shop_phone, shop_governorate, shop_city, shop_lat, shop_lng | front R/W, fn R/W | *derived* from `order_stops` seq 0 (`name, address, phone, governorate, city, location`) | the first shop was stored twice (418/418 equal) |
-| shops[].name / address / lat / lng / items | front R/W, fn W | `order_stops.name / address / location / items` | one row per stop, `seq` = index |
+| shops[].name / address / lat / lng / items | front R/W, fn W | `order_stops.name / address / location / items` | one row per stop, `seq` = index; always answered (≥ 1 stop: OrderForm sends the main shop as `shops[0]`); the courier can't rename / move a stop |
 | shops[].status | front R/W | `order_stops.status` | pending / en_route / at_shop / purchased (+ skipped) |
 | shops[].purchase_amount | front R/W | `order_stops.purchase_amount` | |
-| shops[].receipt_photo_url | front W | `order_stops.receipt_key` | private upload key |
+| shops[].receipt_photo_url | front W | `order_stops.receipt_key` | key of the courier's own **public** upload (MultiShopStatusButton uses UploadFile); answered as its public URL |
 | shops[].completed_at | front R/W | `order_stops.completed_at` | |
-| current_shop_index | front R/W | `orders.current_stop_seq` | |
+| current_shop_index | front R/W | `orders.current_stop_seq` | computed by the server (first stop not bought); the client's value is ignored |
 | delivery_address, delivery_governorate, delivery_city | front R/W\*, fn R/W | `orders.delivery_address / delivery_governorate / delivery_city` | |
 | delivery_details | front R/W\*, fn W | `orders.delivery_details` | guard: customer, assigned courier, admin |
 | delivery_lat, delivery_lng | front R/W, fn R/W | `orders.delivery_location` | |
@@ -156,7 +156,7 @@ customer side on its existence). Compat id = `users.id`.
 | no_response_channels (in_app, push_devices, whatsapp, sms) | front R, fn R/W | *derived* latest case `channels` (jsonb) | |
 | reported_issues[] (type, description, photo_url, reported_at, reported_by, courier_id) | fn R/W | `order_issues` (`issue_type, description, photo_key, created_at, reporter_id`) | aggregated as a JSON array; guard: parties + admin; lost on Base44 before 2026-09-28 |
 | has_issues | fn W | *derived* exists `order_issues` | |
-| status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored |
+| status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason` (Base44 wrote a `cancelled` then a `pending` entry) |
 | preferred_courier_id | front R, fn R/W | `orders.preferred_courier_id` → `couriers` | |
 | courier_stats_recorded_at | fn R/W | *derived* `orders.delivered_at` | counters are views: nothing to record |
 | last_dispatched_at | fn R/W | `orders.last_dispatched_at` | |
@@ -175,7 +175,7 @@ customer side on its existence). Compat id = `users.id`.
 | courier_rating | front R, fn W | `order_offers.courier_rating_snapshot` | snapshot on purpose |
 | courier_vehicle | front R, fn W | join `couriers.vehicle` | |
 | proposed_fee, eta_minutes, distance_km, message | front R/W\*, fn R/W | same-name columns | |
-| status | front R, fn R/W | `order_offers.status` (enum) | `withdrawn` unused (withdraw deletes) |
+| status | front R, fn R/W | `order_offers.status` (enum) | a withdrawal (`OrderOffer.delete`) keeps the row as `withdrawn`, which is not an entity row any more (reads / events behave like a delete) |
 | created_via | fn R/W | *derived* constant `'createOrderOffer'` | every offer is server-made now |
 
 ## Message → `messages`
@@ -347,3 +347,13 @@ answer `[]` (GET by id 404), create / update / delete answer
 `410 {error:"retired"}` — the tab shows an empty list and its "save failed" toast.
 Fields: name, price_per_km, min_fee, commission_type, commission_percentage,
 commission_amount, is_active, description — all dropped.
+
+## Order write paths (policy summary)
+
+| Caller | Path | What is accepted |
+|---|---|---|
+| customer | `placeOrder` | the whitelisted form (`app/services/orders.build_order`) |
+| customer | `Order.update` | `delivery_lat / delivery_lng` only while the delivery point is empty (OrderTracking geocode); `shop_*` ignored; any other Order field → 403 |
+| assigned courier | `Order.update` | `status` (next step only), `shops[]` progress, `purchase_amount`, `receipt_photo_url`; computed / ignored: `current_shop_index`, `total_amount`, `status_history`, commission fields; any other Order field → 403 (`app/services/order_steps.py`) |
+| anybody else | `Order.create / update / delete` | 403 (the §7 fallbacks of OWN_BACKEND_CLIENT.md) |
+| functions | createOrderOffer, acceptOrderOffer, cancelOrder, expire_stale_orders, … | through `app/services/order_transitions.transition` |

@@ -39,6 +39,7 @@ os.environ.update(
         "OVERPASS_URLS": "http://overpass-a.test/api/interpreter,http://overpass-b.test/api/interpreter",
         "NOMINATIM_MIN_INTERVAL_SECONDS": "0",
         "OVERPASS_DELAY_SCALE": "0",
+        "OSRM_URL": "",
     }
 )
 if "ods_delivery_test" not in os.environ["DATABASE_URL"]:

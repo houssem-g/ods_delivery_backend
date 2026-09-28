@@ -318,6 +318,8 @@ async def test_courier_deletion_keeps_orders_and_erases_documents(client, factor
         assert (await s.execute(select(OrderTracking))).first() is None
         assert (await s.execute(select(HotDeal))).scalar_one().status == "expired"
         assert (await s.get(Order, delivered.id)).courier_id == courier.id
+        # its last pending offer is gone: the open order is waiting again (offers.demote_if_no_pending_offer)
+        assert (await s.get(Order, open_order.id)).status == "pending"
         files = sorted(f.key for f in (await s.execute(select(File))).scalars())
         assert files == ["private/receipt/x/r.jpg"]  # the receipt stays with the order
 

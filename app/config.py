@@ -152,6 +152,16 @@ class Settings(BaseSettings):
     # Daily 03:00 OSM refresh job (one category per weekday); a manual run works either way.
     OSM_REFRESH_ENABLED: bool = False
 
+    # --- orders -----------------------------------------------------------------
+    # Accounts the QA suites run with: they alone see QA orders ("QA TEST" / "PW-" in the
+    # items) in the open-order list (src/lib/orderUtils.js isVisibleOpenOrder).
+    QA_ACCOUNTS: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["lemelec346@sixoplus.com", "vovine2891@sepole.com", "test.admin@ods.tn"]
+    )
+    # Route ETA (getOrderETA); empty = straight-line fallback only.
+    OSRM_URL: str = "https://router.project-osrm.org"
+    OSRM_TIMEOUT_SECONDS: float = 4.0
+
     @model_validator(mode="before")
     @classmethod
     def _split_origins(cls, data: dict) -> dict:
@@ -159,6 +169,9 @@ class Settings(BaseSettings):
             raw = data.get(name) if isinstance(data, dict) else None
             if isinstance(raw, str):
                 data[name] = [o.strip() for o in raw.split(",") if o.strip()]
+        qa = data.get("QA_ACCOUNTS") if isinstance(data, dict) else None
+        if isinstance(qa, str):
+            data["QA_ACCOUNTS"] = [e.strip().lower() for e in qa.split(",") if e.strip()]
         return data
 
     @model_validator(mode="after")
