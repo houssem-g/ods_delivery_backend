@@ -71,7 +71,10 @@ def test_registry_refuses_duplicates():
 
 
 def test_architecture_jobs_are_registered():
-    assert {"sweep_5min", "hourly_cleanup", "osm_refresh", "courier_statements"} <= set(JOBS)
+    assert {
+        "sweep_5min", "hourly_cleanup", "osm_refresh", "courier_statements", "whatsapp_check_pending",
+        "test_data_purge", "expire_stale_orders", "courier_presence_expiry", "expire_orphan_offers",
+    } <= set(JOBS)  # fmt: skip
     assert JOBS["osm_refresh"].enabled is False
 
 
@@ -87,7 +90,8 @@ async def test_manual_run_needs_admin_or_cron_token(client, factory):
         "/api/admin/jobs/sweep_5min/run", headers={"x-cron-token": "test-cron-secret"}
     )
     assert by_cron.status_code == 200
-    assert by_cron.json()["ok"] is True and by_cron.json()["result"] == {"implemented": False}
+    assert by_cron.json()["ok"] is True
+    assert by_cron.json()["result"] == {"success": True, "checked": 0, "advanced": 0, "errors": 0}
     listed = await client.get("/api/admin/jobs", headers=auth(admin))
     assert {j["name"] for j in listed.json()} >= {"sweep_5min", "courier_statements"}
     missing = await client.post("/api/admin/jobs/nope/run", headers=auth(admin))
