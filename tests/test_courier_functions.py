@@ -362,7 +362,10 @@ async def eta(client, user, order):
 
 
 async def test_eta_through_osrm(client, world, osrm_answer):
-    calls = osrm_answer(httpx.Response(200, json={"routes": [{"duration": 610, "distance": 4321}]}))
+    geometry = {"type": "LineString", "coordinates": [[10.6084, 35.8256], [10.61, 35.83], "junk"]}
+    calls = osrm_answer(
+        httpx.Response(200, json={"routes": [{"duration": 610, "distance": 4321, "geometry": geometry}]})
+    )
     order = await world.order(status="accepted", courier=world.courier)
     body = await eta(client, world.customer, order)
     assert body == {
@@ -372,8 +375,10 @@ async def test_eta_through_osrm(client, world, osrm_answer):
         "eta_minutes": 11,
         "distance_km": 4.32,
         "source": "osrm",
+        "route_coords": [[35.8256, 10.6084], [35.83, 10.61]],
     }
     assert calls[0].startswith(f"http://osrm.test/route/v1/driving/{SOUSSE_SHOP[1]},{SOUSSE_SHOP[0]};")
+    assert "geometries=geojson" in calls[0] and "overview=full" in calls[0]
 
 
 @pytest.mark.parametrize(

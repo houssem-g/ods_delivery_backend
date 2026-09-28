@@ -71,7 +71,7 @@ async def courier_card(
         "total_deliveries": int(stats[1]) if stats else 0,
         "service_country": courier.service_country,
         "service_governorate": courier.service_governorate,
-        "phone": courier.phone_e164 if contact else "",
+        "phone": (courier.phone_e164 or "") if contact else "",
         "current_lat": None,
         "current_lng": None,
         "location_updated_at": None,
@@ -118,12 +118,13 @@ async def order_eta(
         return {**base, "eta_minutes": None, "distance_km": None, "reason": "destination_unavailable"}
     route = await osrm.route(lat, lng, destination[0], destination[1])
     if route is not None:
-        duration, distance = route
         return {
             **base,
-            "eta_minutes": max(1, math.ceil(duration / 60)),
-            "distance_km": round(distance / 1000, 2),
+            "eta_minutes": max(1, math.ceil(route.duration_s / 60)),
+            "distance_km": round(route.distance_m / 1000, 2),
             "source": "osrm",
+            # [[lat, lng], ...] of the road (what LiveTracking.jsx draws from its own OSRM call)
+            "route_coords": route.coords,
         }
     straight = haversine_km(lat, lng, destination[0], destination[1])
     return {

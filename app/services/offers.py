@@ -188,17 +188,29 @@ async def withdraw_offer(session: AsyncSession, user: CurrentUser, offer_id: str
         )
     offer.status, offer.decided_at = "withdrawn", ot.now_utc()
     await session.flush()
-    if order.status == "offers_received":
-        left = (
-            await session.execute(
-                select(func.count())
-                .select_from(OrderOffer)
-                .where(OrderOffer.order_id == order.id, OrderOffer.status == "pending")
-            )
-        ).scalar_one()
-        if left == 0:
-            await ot.transition(session, order, "pending", user, "offer_withdrawn")
+    await demote_if_no_pending_offer(session, order.id, user, "offer_withdrawn")
     return [uid for uid in (courier.user_id if courier else None, order.customer_id) if uid is not None]
+
+
+async def demote_if_no_pending_offer(
+    session: AsyncSession, order_id: uuid.UUID, actor: Any, source: str
+) -> bool:
+    """An order 'offers_received' whose last pending offer went away is 'pending' again (the
+    couriers' lists and the customer's home show it as waiting). Locks the order; True if moved."""
+    order = await ot.lock_order(session, order_id)
+    if order is None or order.status != "offers_received":
+        return False
+    left = (
+        await session.execute(
+            select(func.count())
+            .select_from(OrderOffer)
+            .where(OrderOffer.order_id == order.id, OrderOffer.status == "pending")
+        )
+    ).scalar_one()
+    if left:
+        return False
+    await ot.transition(session, order, "pending", actor, source)
+    return True
 
 
 async def close_pending_offers(
