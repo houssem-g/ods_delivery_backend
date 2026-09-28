@@ -14,7 +14,7 @@ credentials (off), e-mail to Mailpit only.
 
 | What | Where | Result |
 |---|---|---|
-| Backend pytest | `make test`, db `ods_delivery_test_e2e` | **538 passed** (519 before this work), coverage 98 %, ruff clean |
+| Backend pytest | `make test`, db `ods_delivery_test_e2e` | **538 passed** (536 on `main` after the rebase), coverage 98 %, ruff clean |
 | Playwright, chromium | 37 spec files + setup (`ODS_BACKEND=local ODS_BACKEND_PUBLISHED=1`) | **643 passed, 7 skipped, 0 failed** (34.8 min) |
 | Playwright, mobile-chrome (Pixel 7) | same | full run: 638 passed, 2 failed, 5 skipped + 5 not run (serial `e2e-order` stopped by the install prompt). After 616520f: `e2e-order` 4 passed / 2 skipped; the `rate-budget-client` case (40.3 vs 40 ops/min in fake time, one extra poll) passes on rerun (38.3). Net: **643 passed, 7 skipped** |
 | `npm run test:ods-client` | own-backend-client + own-backend-welcome (mocked API) | 12 passed |
