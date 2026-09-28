@@ -46,6 +46,9 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
+      - name: Dependency audit (report only)
+        continue-on-error: true
+        run: make audit
       - name: Migrations (single head, up, down, up, no drift)
         env:
           DATABASE_URL: postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery
@@ -59,3 +62,50 @@ jobs:
         run: timeout 60 sh -c 'until curl -fsS http://localhost:9110/minio/health/live; do sleep 2; done'
       - name: Tests
         run: uv run pytest --cov=app --cov-report=term-missing:skip-covered --cov-fail-under=80
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (whole history, .gitleaks.toml)
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.0 \
+            git /repo --no-banner --redact --config /repo/.gitleaks.toml
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the api image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: ods-delivery-api:ci
+          build-args: APP_RELEASE=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test (read-only, no capabilities, non-root)
+        run: |
+          test "$(docker image inspect -f '{{.Config.User}}' ods-delivery-api:ci)" = "app"
+          docker run -d --name api -p 8000:8000 --read-only --tmpfs /tmp --cap-drop ALL \
+            --security-opt no-new-privileges -e SCHEDULER_ENABLED=false -e REALTIME_ENABLED=false \
+            -e LOG_FORMAT=json ods-delivery-api:ci
+          timeout 60 sh -c 'until curl -fsS http://127.0.0.1:8000/api/health; do sleep 2; done'
+          curl -fsS -D - -o /dev/null -H 'X-Request-ID: ci-smoke-0001' http://127.0.0.1:8000/api/health \
+            | grep -i '^x-request-id: ci-smoke-0001'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/metrics)" = "404"
+          docker logs api
+          docker rm -f api
+      - name: Vulnerability scan (report only)
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
+        with:
+          image-ref: ods-delivery-api:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"

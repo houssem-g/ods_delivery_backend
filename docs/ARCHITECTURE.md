@@ -56,10 +56,12 @@ comes after.
 | `minio` | 9110 (S3), 9111 (console) | buckets `ods-delivery` (private) created by `minio-init` |
 | `mailpit` | 8125 (UI), 1125 (SMTP) | every e-mail (OTP, reset) lands here |
 | front (ods-delivery, not in compose) | 5190 | `npm run dev:ods` → `VITE_BACKEND=ods`, `VITE_API_URL=http://localhost:8110` |
+| `api-prod` (profile `full`) | 8111 | the API image as built: no reload, JSON logs, read-only |
+| `front` (profile `full`) | 5191 | `Dockerfile.ods` of the front worktree (nginx), talks to 8111 |
 
 Ports avoid the ODS main stack (8000, 5441, 1337, 3000/3001) and 3033/3034.
 `make up`, `make down`, `make migrate`, `make seed`, `make test`, `make lint`,
-`make import-base44` (see §9).
+`make import-base44` (see §9); `make up-full`, backups, reset and import: `docs/RUNBOOK_LOCAL.md`.
 
 ## 4. Repository layout
 

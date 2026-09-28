@@ -34,6 +34,10 @@ Seeded accounts: `LOCAL_ADMIN_EMAIL` (default `admin@ods.local`; without
 set one via account-setup) and the Playwright QA accounts, whose passwords are read
 at run time from `../ods-delivery/tests/helpers/constants.ts` (or `TEST_*` env vars).
 
+Production-like stack (API image without reload on 8111, front image on 5191):
+`make up-full`. Every command, backups, reset, Base44 import, Playwright against the
+local stack, troubleshooting and what the cloud will need: `docs/RUNBOOK_LOCAL.md`.
+
 ## Everyday commands
 
 ```bash

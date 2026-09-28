@@ -1,5 +1,44 @@
 name: odsdlv
 
+# Local stack. docs/RUNBOOK_LOCAL.md has every command.
+#   make up        db, minio, mailpit + api (reload) on :8110   (dev; front: npm run dev:ods on :5190)
+#   make deps      db, minio, mailpit only (api on the host: make run)
+#   make up-full   db, minio, mailpit + api-prod (no reload, JSON logs) on :8111 + front image on :5191
+# Host ports can be moved with the *_PORT variables (a second copy of the stack runs as
+# `docker compose -p <other name>` with other ports).
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+x-api-env: &api-env
+  ENVIRONMENT: ${ENVIRONMENT:-local}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  JWT_SECRET: ${JWT_SECRET:-local-dev-only-jwt-secret-change-me}
+  CRON_SECRET: ${CRON_SECRET:-}
+  METRICS_TOKEN: ${METRICS_TOKEN:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  PUSH_PROVIDER: ${PUSH_PROVIDER:-auto}
+  FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-odsdlv-local}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-odsdlv-local-secret}
+  DATABASE_URL: postgresql+asyncpg://ods_delivery:${POSTGRES_PASSWORD:-ods_delivery_local}@db:5432/ods_delivery
+  S3_ENDPOINT_URL: http://minio:9000
+  S3_PUBLIC_ENDPOINT_URL: http://localhost:${MINIO_PORT:-9110}
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+
+x-api-depends: &api-depends
+  db:
+    condition: service_healthy
+  minio-init:
+    condition: service_completed_successfully
+  mailpit:
+    condition: service_started
+
 services:
   db:
     image: postgis/postgis:17-3.5
@@ -8,7 +47,7 @@ services:
       POSTGRES_USER: ods_delivery
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ods_delivery_local}
     ports:
-      - "5451:5432"
+      - "${DB_PORT:-5451}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./docker/db/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
@@ -18,7 +57,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    mem_limit: 384m
+    # 384m was reached with the imported Base44 data plus several test databases (2026-09-28).
+    mem_limit: 768m
 
   minio:
     # Official minio/* images are no longer published; pgsty/minio is a maintained
@@ -29,8 +69,8 @@ services:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-odsdlv-local}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-odsdlv-local-secret}
     ports:
-      - "9110:9000"
-      - "9111:9001"
+      - "${MINIO_PORT:-9110}:9000"
+      - "${MINIO_CONSOLE_PORT:-9111}:9001"
     volumes:
       - minio-data:/data
     healthcheck:
@@ -57,49 +97,84 @@ services:
     restart: "no"
 
   mailpit:
+    # The image has its own healthcheck (mailpit readyz).
     image: axllent/mailpit:latest
     ports:
-      - "8125:8025"
-      - "1125:1025"
+      - "${MAILPIT_UI_PORT:-8125}:8025"
+      - "${MAILPIT_SMTP_PORT:-1125}:1025"
     mem_limit: 64m
 
+  # Dev API: code mounted from ./app, reload on change.
   api:
+    <<: *hardening
     build:
       context: .
       target: runtime
     # Values come from .env (compose interpolation); the defaults are local-only.
     environment:
-      ENVIRONMENT: ${ENVIRONMENT:-local}
-      JWT_SECRET: ${JWT_SECRET:-local-dev-only-jwt-secret-change-me}
-      CRON_SECRET: ${CRON_SECRET:-}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      PUSH_PROVIDER: ${PUSH_PROVIDER:-auto}
-      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-odsdlv-local}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-odsdlv-local-secret}
-      DATABASE_URL: postgresql+asyncpg://ods_delivery:${POSTGRES_PASSWORD:-ods_delivery_local}@db:5432/ods_delivery
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_PUBLIC_ENDPOINT_URL: http://localhost:9110
-      SMTP_HOST: mailpit
-      SMTP_PORT: "1025"
+      <<: *api-env
+      LOG_FORMAT: ${LOG_FORMAT:-text}
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log --reload --reload-dir app"
     ports:
-      - "8110:8000"
+      - "${API_PORT:-8110}:8000"
     volumes:
       - ./app:/srv/app/app
       - ./alembic.ini:/srv/app/alembic.ini:ro
       - ./scripts:/srv/app/scripts
-    depends_on:
-      db:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-      mailpit:
-        condition: service_started
+    tmpfs:
+      - /tmp
+    depends_on: *api-depends
     mem_limit: 384m
+
+  # Production-like API (profile full): the image as built, no reload, no mounts, JSON logs.
+  api-prod:
+    <<: *hardening
+    profiles: ["full"]
+    image: odsdlv-api:local
+    build:
+      context: .
+      target: runtime
+    environment:
+      <<: *api-env
+      LOG_FORMAT: ${LOG_FORMAT_FULL:-json}
+      WEB_CONCURRENCY: "1"
+      PUBLIC_APP_URL: http://localhost:${FRONT_PORT:-5191}
+      API_PUBLIC_URL: http://localhost:${API_FULL_PORT:-8111}
+      GOOGLE_REDIRECT_URI: http://localhost:${API_FULL_PORT:-8111}/api/auth/google/callback
+      CORS_ORIGINS: http://localhost:${FRONT_PORT:-5191},http://127.0.0.1:${FRONT_PORT:-5191},http://localhost:5190,http://127.0.0.1:5190
+    command: >
+      sh -c "alembic upgrade head &&
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log
+             --proxy-headers --forwarded-allow-ips '*'"
+    ports:
+      - "${API_FULL_PORT:-8111}:8000"
+    tmpfs:
+      - /tmp
+    depends_on: *api-depends
+    mem_limit: 384m
+
+  # Front image (profile full): ods build of ods-delivery (branch feat/own-backend), Dockerfile.ods.
+  front:
+    <<: *hardening
+    profiles: ["full"]
+    image: odsdlv-front:local
+    build:
+      context: ${FRONT_CONTEXT:-../ods-delivery-own-backend}
+      dockerfile: Dockerfile.ods
+      args:
+        VITE_API_URL: http://localhost:${API_FULL_PORT:-8111}
+        FILES_ORIGIN: http://localhost:${MINIO_PORT:-9110}
+    ports:
+      - "${FRONT_PORT:-5191}:8080"
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+    depends_on:
+      api-prod:
+        condition: service_healthy
+    mem_limit: 64m
 
 volumes:
   db-data:

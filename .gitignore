@@ -22,3 +22,5 @@ migrate/**/*.json
 .claude/
 .mcp.json
 graft/
+# make backup (pg_dump files: real data)
+backups/

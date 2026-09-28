@@ -1,0 +1,10 @@
+# gitleaks: default rules plus the false positives of this repository.
+title = "ods-delivery-backend"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SQLAlchemy table_valued(...) column names are not API keys"
+regexTarget = "line"
+regexes = ['''\.table_valued\(''']
