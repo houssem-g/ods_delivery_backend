@@ -1,0 +1,106 @@
+name: odsdlv
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: ods_delivery
+      POSTGRES_USER: ods_delivery
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ods_delivery_local}
+    ports:
+      - "5451:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    command: ["postgres", "-c", "jit=off", "-c", "shared_buffers=64MB", "-c", "max_connections=60"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ods_delivery -d ods_delivery"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 384m
+
+  minio:
+    # Official minio/* images are no longer published; pgsty/minio is a maintained
+    # community build of the same server (it also ships mc and curl).
+    image: pgsty/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-odsdlv-local}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-odsdlv-local-secret}
+    ports:
+      - "9110:9000"
+      - "9111:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+
+  minio-init:
+    image: pgsty/minio:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-odsdlv-local}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-odsdlv-local-secret}
+    # Private bucket; only the public/ prefix is anonymously readable (shop and hot-deal photos).
+    entrypoint: >
+      sh -c "mc alias set local http://minio:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY &&
+             mc mb --ignore-existing local/ods-delivery &&
+             mc anonymous set none local/ods-delivery &&
+             mc anonymous set download local/ods-delivery/public"
+    restart: "no"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8125:8025"
+      - "1125:1025"
+    mem_limit: 64m
+
+  api:
+    build:
+      context: .
+      target: runtime
+    # Values come from .env (compose interpolation); the defaults are local-only.
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-local}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-only-jwt-secret-change-me}
+      CRON_SECRET: ${CRON_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      PUSH_PROVIDER: ${PUSH_PROVIDER:-auto}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-odsdlv-local}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-odsdlv-local-secret}
+      DATABASE_URL: postgresql+asyncpg://ods_delivery:${POSTGRES_PASSWORD:-ods_delivery_local}@db:5432/ods_delivery
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: http://localhost:9110
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"
+    ports:
+      - "8110:8000"
+    volumes:
+      - ./app:/srv/app/app
+      - ./alembic.ini:/srv/app/alembic.ini:ro
+      - ./scripts:/srv/app/scripts
+    depends_on:
+      db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    mem_limit: 384m
+
+volumes:
+  db-data:
+  minio-data:

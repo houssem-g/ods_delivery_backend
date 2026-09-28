@@ -1,0 +1,24 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+# Base44 exports and anything derived from them never enter git
+exports/
+migrate/data/
+migrate/**/*.json
+*.dump
+*.sql.gz
+# service-account keys
+*fcm*.json
+*firebase*.json
+*service-account*.json
+.claude/
+.mcp.json
+graft/
