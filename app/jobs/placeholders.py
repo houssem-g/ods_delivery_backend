@@ -7,7 +7,10 @@ from typing import Any
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from app.config import settings
+from app.db import transaction
 from app.jobs.registry import job
+from app.services.osm_refresh import run_refresh, targets_for
 
 log = logging.getLogger("odsd.jobs")
 
@@ -32,10 +35,15 @@ async def hourly_cleanup() -> dict[str, Any]:
 
 
 @job(
-    "osm_refresh", CronTrigger(hour=3, minute=0), "OSM places refresh per category (Overpass)", enabled=False
+    "osm_refresh",
+    CronTrigger(hour=3, minute=0),
+    "OSM places refresh, the weekday's category (Overpass); on with OSM_REFRESH_ENABLED",
+    enabled=settings.OSM_REFRESH_ENABLED,
 )
 async def osm_refresh() -> dict[str, Any]:
-    return _placeholder("osm_refresh")
+    async with transaction() as session:
+        result = await run_refresh(session, targets_for(""))
+    return {"results": result["results"], "backfilled": result["backfilled"]}
 
 
 @job("courier_statements", CronTrigger(day_of_week="mon", hour=4, minute=0), "weekly commission statements")

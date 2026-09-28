@@ -127,12 +127,38 @@ class Settings(BaseSettings):
     SCHEDULER_LEADER_RETRY_SECONDS: int = 30
     CRON_SECRET: str | None = None
 
+    # --- maps (OpenStreetMap services) ------------------------------------------
+    # Identifies us to Nominatim / Overpass (their usage policies require a real contact).
+    OSM_USER_AGENT: str = "ODS-Delivery-API/0.1 (local development)"
+    NOMINATIM_ENABLED: bool = True
+    NOMINATIM_URL: str = "https://nominatim.openstreetmap.org"
+    NOMINATIM_TIMEOUT_SECONDS: float = 5.0
+    # Public Nominatim allows 1 request/s per application; a call that would wait longer
+    # than NOMINATIM_MAX_WAIT_SECONDS falls back to the places index instead.
+    NOMINATIM_MIN_INTERVAL_SECONDS: float = 1.0
+    NOMINATIM_MAX_WAIT_SECONDS: float = 2.0
+    GEOCODE_CACHE_DAYS: int = 30
+    GEOCODE_MISS_CACHE_HOURS: int = 24
+    OVERPASS_URLS: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [
+            "https://overpass-api.de/api/interpreter",
+            "https://z.overpass-api.de/api/interpreter",
+            "https://overpass.kumi.systems/api/interpreter",
+        ]
+    )
+    OVERPASS_TIMEOUT_SECONDS: float = 90.0
+    # Multiplies the polite pauses between Overpass calls (0 in tests).
+    OVERPASS_DELAY_SCALE: float = 1.0
+    # Daily 03:00 OSM refresh job (one category per weekday); a manual run works either way.
+    OSM_REFRESH_ENABLED: bool = False
+
     @model_validator(mode="before")
     @classmethod
     def _split_origins(cls, data: dict) -> dict:
-        raw = data.get("CORS_ORIGINS") if isinstance(data, dict) else None
-        if isinstance(raw, str):
-            data["CORS_ORIGINS"] = [o.strip() for o in raw.split(",") if o.strip()]
+        for name in ("CORS_ORIGINS", "OVERPASS_URLS"):
+            raw = data.get(name) if isinstance(data, dict) else None
+            if isinstance(raw, str):
+                data[name] = [o.strip() for o in raw.split(",") if o.strip()]
         return data
 
     @model_validator(mode="after")

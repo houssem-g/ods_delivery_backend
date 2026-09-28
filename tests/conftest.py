@@ -34,6 +34,11 @@ os.environ.update(
         "WINSMS_API_KEY": "",
         "WINSMS_SENDER": "",
         "MESSAGING_DISABLED": "false",
+        # OSM services: never reached (the transport is replaced below), fast pauses.
+        "NOMINATIM_URL": "http://nominatim.test",
+        "OVERPASS_URLS": "http://overpass-a.test/api/interpreter,http://overpass-b.test/api/interpreter",
+        "NOMINATIM_MIN_INTERVAL_SECONDS": "0",
+        "OVERPASS_DELAY_SCALE": "0",
     }
 )
 if "ods_delivery_test" not in os.environ["DATABASE_URL"]:
@@ -44,6 +49,7 @@ import pytest
 from sqlalchemy import text
 
 from app.db import SessionLocal, engine
+from app.integrations import osm
 from app.main import app as fastapi_app
 from app.models import Base
 from app.rate_limit import limiter
@@ -73,6 +79,19 @@ async def clean_state() -> None:
         await conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
     email_service.OUTBOX.clear()
     limiter.reset()
+
+
+def _refuse_network(request: httpx.Request) -> httpx.Response:
+    raise httpx.ConnectError(f"no network in tests: {request.url.host}", request=request)
+
+
+@pytest.fixture(autouse=True)
+def no_osm_network():
+    """Nominatim / Overpass are never called for real: tests install a MockTransport."""
+    osm.set_transport(httpx.MockTransport(_refuse_network))
+    osm.nominatim_throttle.reset()
+    yield
+    osm.set_transport(httpx.MockTransport(_refuse_network))
 
 
 @pytest.fixture

@@ -23,8 +23,9 @@ Conventions:
   `User` id and the `UserProfile` id (`legacy_profile_b44_id`).
 
 Status of the compat entities: `UserProfile`, `AppSettings`, `Message`, `Notification`,
-`DeviceToken` and `MessageLog` are implemented (`app/compat/entities/`); the others
-follow this mapping (docs/COMPAT_GUIDE.md).
+`DeviceToken`, `MessageLog`, `Shop`, `ShopReview`, `PlaceIndex` and the retired
+`DeliveryTariffs` stub are implemented (`app/compat/entities/`); the others follow this
+mapping (docs/COMPAT_GUIDE.md).
 
 ## User (built-in) → `users`
 
@@ -38,6 +39,7 @@ follow this mapping (docs/COMPAT_GUIDE.md).
 | disabled | – | `users.disabled_at IS NOT NULL` | |
 | force_password_reset, is_service, collaborator_role, _app_role, app_id | – | dropped | Base44 internals, unused |
 | (password) | – | `users.password_hash` | not exportable: NULL after import → account-setup flow |
+| (account deletion) | fn W | `users.deleted_at` (+ `disabled_at`) | deleteMyAccount anonymizes instead of deleting: e-mail → `deleted+<id>@deleted.invalid`, name → 'Utilisateur supprimé', phone / password / Google link cleared; orders kept (contact snapshot anonymized), courier row anonymized (`app/services/account_deletion.py`) |
 
 ## UserProfile → `users` (+ default `user_addresses` row, `customer_stats` view)
 
@@ -76,8 +78,8 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | user_id | front R, fn R/W | join `users.email` via `couriers.user_id` (unique) | |
 | full_name | front R/W\*, fn R/W | `couriers.display_name` | |
-| phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164 |
-| cin_passport | front R/W\*, fn W | `couriers.id_document_number` | owner + admin only |
+| phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164; NULL only for a deleted (anonymized) account |
+| cin_passport | front R/W\*, fn W | `couriers.id_document_number` | owner + admin only; '' after account deletion |
 | photo_url | front R (CourierCard) | dropped | legacy public ID photo URL; the migration moves the file to the private bucket (`id_document_key`) and the field reads `null` |
 | id_photo_uri | front W\*, fn R/W | `couriers.id_document_key` | **never serialized**; admins get signed URLs from `getCourierIdPhotos` only |
 | vehicle_type | front R/W\*, fn R/W | `couriers.vehicle` (enum) | |
@@ -274,38 +276,59 @@ column (INSERT … ON CONFLICT DO NOTHING); the Deno `duplicate` rows no longer 
 
 ## Shop → `shops` (+ `shop_menu_items`)
 
+Read: approved shops for every signed-in user, a proposal (pending / rejected) for its
+author only, everything for admins (Base44 let anybody list pending proposals; the map
+already hid them). Update / delete: admins (an update of `review_status` sets
+`reviewed_by` / `reviewed_at`). Create: proposeShop only (403 on the entity).
+
 | Field | Used | Target | Notes |
 |---|---|---|---|
 | name, address, phone, opening_hours, description, review_status, proposed_at | front R/W\*, fn R/W | same-name columns | |
 | latitude, longitude | front R/W\*, fn R/W | `shops.location` | |
 | categories | front R/W\*, fn R/W | `shops.categories` (text[]) | |
-| photo_url | – | `shops.photo_key` | never written; kept (audit DDL) |
-| osm_id | fn W | `shops.osm_id` (unique) | OSM id or `custom_…`; review lookups |
+| photo_url | – | `shops.photo_key` | never written; kept (audit DDL); answered as the public URL |
+| osm_id | fn W | `shops.osm_id` (unique) | OSM id or `custom_…` |
 | governorate | – | `shops.governorate` | never written; kept (audit DDL) |
 | city | fn R | `shops.city` | |
-| menu_items[] (name, price, photo_url, description) | front W\*, fn W | `shop_menu_items` (`name, price, photo_key, description, position`) | write-only today |
+| menu_items[] (name, price, photo_url, description) | front W\*, fn W | `shop_menu_items` (`name, price, photo_key, description, position`) | aggregated in `position` order; `photo_key` = our public upload key, or a legacy https URL kept as is |
 | proposed_by | front R, fn R/W | join `users.email` via `shops.proposed_by` | guard: author + admin |
-| (searchByBbox reads shop_type, rating, review_count) | fn R | not in the schema | always undefined on Base44 |
+| (searchByBbox reads shop_type, rating, review_count) | fn R | not in the schema | always undefined on Base44: answered 0 / `categories[0]` |
+| (new) reviewed_by, reviewed_at | – | columns | set by the admin review |
 
 ## ShopReview → `shop_reviews`
 
+The front keys reviews by strings that are not always a shop or place id
+(`ShopDetails.jsx`: `shop:<Shop id>` from the map, `place:<name>@<lat>,<lng>` from the
+search lists, an OSM id otherwise). The key is stored as sent (`target_key`) and
+resolved when possible (`shop:` → the shop; an OSM / `custom_` id → place or shop;
+`place:` → the place with that name within 25 m). `shop_id` / `place_id` are therefore
+"at most one" (check `num_nonnulls(shop_id, place_id) <= 1`). One review per user and
+key, and per resolved shop / place (409 `already_reviewed`).
+
 | Field | Used | Target | Notes |
 |---|---|---|---|
-| shop_osm_id | front R/W | *derived* `coalesce(shops.osm_id, places.osm_id)`; written by resolving to `shop_id` or `place_id` | |
-| shop_name | front W | join `shops.name` / `places.name` | |
-| user_id | front W | `shop_reviews.user_id` (the User **id**, as in Base44) | forced to the caller |
-| user_name | front R/W | join `users.full_name` | |
-| rating, comment | front R/W | same-name columns | |
-| photo_urls | front R/W | `shop_reviews.photo_keys` (public URLs rebuilt) | |
+| shop_osm_id | front R/W | `shop_reviews.target_key` | filter key of ShopDetails |
+| shop_name | front W | *derived* join `shops.name` / `places.name` | NULL for an unresolved key; the body's value is ignored |
+| user_id | front W | `shop_reviews.user_id` (the User **id**, as in Base44) | must be the caller when sent (403), forced otherwise |
+| user_name | front R/W | *derived* join `users.full_name` | the body's value is ignored ('Utilisateur supprimé' after account deletion) |
+| rating, comment | front R/W | same-name columns | rating 1-5 |
+| photo_urls | front R/W | `shop_reviews.photo_keys` (public URLs rebuilt in order) | only our public uploads are accepted |
 
 ## PlaceIndex → `places`
 
+Admin-only read entity (`id` = the bigint as text); the app reads places through
+searchPlaces / searchByBbox / geocodeAddress, refreshOsmIndex writes them.
+
 | Field | Used | Target | Notes |
 |---|---|---|---|
-| osm_id, name, address, city, governorate, category, phone, opening_hours, source, source_ts | fn R/W | same-name columns | category vocabulary unified (FR) at import |
-| name_norm | fn W | `places.name_norm` (trigram index) | recomputed at import (4 706 rows had none) |
+| osm_id, name, address, city, governorate, category, phone, opening_hours, source, source_ts | fn R/W | same-name columns | category vocabulary unified (FR) at import: restaurant, pharmacie, supermarché, boulangerie, banque, carburant, hôpital; '' → NULL for the optional texts |
+| name_norm | fn W | `places.name_norm` | `app.services.text_norm.normalize_text(name)`: lower, accents and Arabic harakat/tatweel removed, letters/digits runs joined by one space (Arabic kept; the Deno import emptied it) |
+| (new) search_norm | – | `places.search_norm` (trigram index) | `text_norm.search_text(name, address, city)`: haystack of the text scores. **The import must fill it** with that function (or leave `''`: refreshOsmIndex / the osm_refresh job backfill every `''` row with name_norm) |
 | lat, lng | fn R/W | `places.location` | |
-| quality_score | fn R/W (sort key) | `places.quality_score` | |
+| quality_score | fn R/W (sort key) | `places.quality_score` smallint, **percent 0-100** | Base44 stored 0.5-1.0 (description said 0-100): import `round(value * 100)`; answered on the 0-1 scale everywhere (entity, searchPlaces, searchByBbox `rating`) |
+
+`geocode_cache` (new, no legacy entity): Nominatim answers per normalized
+`address|city|governorate` (hits 30 days, misses 24 h), as its usage policy asks.
 
 ## AppSettings → `app_settings`
 
@@ -315,11 +338,12 @@ column (INSERT … ON CONFLICT DO NOTHING); the Deno `duplicate` rows no longer 
 | support_phone, support_whatsapp | front R/W, fn R | `app_settings.value->>'support_phone' / 'support_whatsapp'` | re-validated by getSupportContacts |
 | updated_by | front W | `app_settings.updated_by` → `users` (answers the e-mail) | forced to the saving admin |
 
-## DeliveryTariffs → dropped
+## DeliveryTariffs → dropped (stub entity)
 
 No function reads it (getActiveTariffs is retired) and no price uses it: the fee is the
-courier's offer. The admin tab (`TariffSettings.jsx`) only lists / edits it. Not
-migrated; the compat layer does not register the entity (reads 404 `unknown_entity`),
-so the tab has to be removed from the ods build or given an empty stub by the entity
-agent (decision for the lead). Fields: name, price_per_km, min_fee, commission_type,
-commission_percentage, commission_amount, is_active, description — all dropped.
+courier's offer. Not migrated. The admin tab (`TariffSettings.jsx`) lists / edits it, so
+the entity is registered as a stub (`app/compat/entities/delivery_tariffs.py`): reads
+answer `[]` (GET by id 404), create / update / delete answer
+`410 {error:"retired"}` — the tab shows an empty list and its "save failed" toast.
+Fields: name, price_per_km, min_fee, commission_type, commission_percentage,
+commission_amount, is_active, description — all dropped.
