@@ -657,6 +657,7 @@ async def test_verified_no_response_closes_the_order(client, world):
     async def refresh(session, locked):
         refreshed.append(locked.id)
 
+    installed = cancellation.no_response_refresh
     cancellation.no_response_refresh = refresh
     try:
         r = await call(
@@ -671,7 +672,7 @@ async def test_verified_no_response_closes_the_order(client, world):
             },
         )
     finally:
-        cancellation.no_response_refresh = None
+        cancellation.no_response_refresh = installed
     assert r.status_code == 200 and refreshed == [order.id]
     doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.customer))).json()
     assert doc["status"] == "cancelled" and doc["no_response_resolution"] == "returned_to_shop"

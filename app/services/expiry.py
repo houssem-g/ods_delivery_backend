@@ -21,12 +21,13 @@ from sqlalchemy import and_, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, NoResponseCase, Order, OrderOffer
+from app.realtime.events import emit
 from app.services import order_texts
 from app.services import order_transitions as ot
 from app.services.couriers import last_activity_expr
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
-from app.services.orders import first_stop
+from app.services.orders import first_stop, mirror_incidents
 
 log = logging.getLogger("odsd.expiry")
 OPEN_EXPIRE = timedelta(hours=24)
@@ -91,6 +92,9 @@ async def _abandon(session: AsyncSession, order: Order) -> str:
                 case.status, case.resolution, case.resolved_at = "resolved", "auto_closed", ot.now_utc()
             if legacy_counted:
                 case.incident_counted = False
+            emit(session, "NoResponseCase", "update", case.id)
+            if legacy_counted:
+                await mirror_incidents(session, order.customer_id)
     stop = await first_stop(session, order.id)
     shop = stop.name if stop else None
     hours = int(RUNNING_EXPIRE.total_seconds() // 3600)

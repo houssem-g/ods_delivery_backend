@@ -168,8 +168,13 @@ def _has_case() -> Any:
     return exists().where(cases.c.order_id == orders.c.id)
 
 
-def _case_when_customer_confirmed(column: Any) -> Any:
-    return case((latest_case.c.resolution == "customer_confirmed", column), else_=null())
+# The customer answered, or the courier reached him (triggerEmergencyContact set
+# customer_responded_to_emergency for both).
+ANSWERED = ("customer_confirmed", "courier_reached")
+
+
+def _case_when_answered(column: Any) -> Any:
+    return case((latest_case.c.resolution.in_(ANSWERED), column), else_=null())
 
 
 delivered = orders.c.status == "delivered"
@@ -255,11 +260,9 @@ FIELDS: dict[str, LegacyField] = {
     "emergency_contact_started_at": LegacyField(latest_case.c.started_at, "datetime"),
     "emergency_contact_initiated": LegacyField(_has_case(), "boolean"),
     "customer_responded_to_emergency": LegacyField(
-        func.coalesce(latest_case.c.resolution == "customer_confirmed", False), "boolean"
+        func.coalesce(latest_case.c.resolution.in_(ANSWERED), False), "boolean"
     ),
-    "customer_responded_at": LegacyField(
-        _case_when_customer_confirmed(latest_case.c.resolved_at), "datetime"
-    ),
+    "customer_responded_at": LegacyField(_case_when_answered(latest_case.c.resolved_at), "datetime"),
     "no_response_deadline_at": LegacyField(latest_case.c.deadline_at, "datetime"),
     "no_response_final_at": LegacyField(latest_case.c.final_at, "datetime"),
     "no_response_resolution": LegacyField(latest_case.c.resolution, "string"),
