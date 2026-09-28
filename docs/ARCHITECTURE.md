@@ -183,9 +183,10 @@ front's existing handling keeps working.
 | Every | Job | Port of |
 |---|---|---|
 | 5 min | no-response sweep, WhatsApp/SMS pending checks, stale order expiry (24 h open / 48 h running), courier presence expiry (online without heartbeat 15 min → offline) | sweepNoResponse, triggerEmergencyContact sweep, sendWhatsAppMessage check_pending, expireStaleOrders |
+| (orders) | jobs `expire_stale_orders` (5 min), `courier_presence_expiry` (5 min), `expire_orphan_offers` (1 h) in `app/jobs/orders.py` | expireStaleOrders (+ its hourly `offers` pass) |
 | 1 h | expired hot deals, expired offers of closed orders, test data purge | sweepExpiredTestData |
 | 1 day 03:00 | OSM refresh per category (Overpass), off by default locally | refreshOsmIndex |
-| 1 week Mon 04:00 | courier commission statements (after `LAUNCH_END_DATE`) | new |
+| 1 week Mon 04:00 (Africa/Tunis) | courier commission statements: due ledger entries of finished weeks → `courier_statements` (job `courier_statements`) | new |
 
 Jobs are idempotent; each also has an admin endpoint to run it by hand.
 
