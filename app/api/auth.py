@@ -6,9 +6,10 @@ from datetime import timedelta
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
+import jwt
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
-from jose import JWTError, jwt
+from jwt import PyJWTError as JWTError
 from pydantic import AliasChoices, BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import jwt
 from fastapi import Response
-from jose import JWTError, jwt
+from jwt import PyJWTError as JWTError
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 

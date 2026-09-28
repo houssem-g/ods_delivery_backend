@@ -9,8 +9,8 @@ import functools
 import time
 from datetime import UTC, datetime
 
+import jwt
 import pytest
-from jose import jwt
 from sqlalchemy import text
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
