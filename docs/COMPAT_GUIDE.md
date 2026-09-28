@@ -174,8 +174,22 @@ async def sweep_5min() -> dict:
 
 ## 5. Services available to ports
 
+- Notifications: `app.services.notifications.notify(session, user_id=, type_=, title_ar=,
+  title_fr=, body_ar=, body_fr=, order_id=, metadata=)` → the flushed row (in-app row +
+  realtime event + push per preferences + the WhatsApp fallback for web-only opted-in
+  customers on `on_the_way` / `new_offer`). `notify_detailed(...)` takes the same
+  arguments and also answers `push_skipped` / the push summary / the WhatsApp answer.
+  Legacy type synonyms are accepted (`courier_on_way`, `incoming_order`…).
 - Push: `app.services.push.send_to_user(session, user_id, PushMessage(...))`
-  (checks no preference itself; `sendNotificationIfEnabled` logic decides).
+  (checks no preference itself; `notify` decides).
+- WhatsApp / SMS: `app.services.whatsapp.send_template(session, template_key=, params=,
+  idempotency_key=, to= | user_id=, order_id=, critical=)`, `summary(session, key)`,
+  `check_pending(session, order_id)` — `(status, json)` like the Deno actions; OFF (rows
+  `disabled`) until WHATSAPP_* / WINSMS_* are set. Templates: `customer_no_response`
+  (critical, SMS fallback), `courier_on_the_way`, `new_offer`, `verification_code`.
+- Chat: `app.services.messages` (`chat_role`, `courier_user_id`, `load_order`).
+- Test data purge: register a step with `@app.jobs.messaging.purge_step("name")`
+  (`async def step(session) -> {counter: n}`), run hourly by the `test_data_purge` job.
 - E-mail: `app.services.email.send_email(to, RenderedEmail)`.
 - Files: `app.storage.s3.presign_get(key, seconds)` (e.g. `getCourierIdPhotos` signs
   `couriers.id_document_key` for admins), `app.storage.keys` conventions.

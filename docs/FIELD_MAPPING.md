@@ -22,8 +22,9 @@ Conventions:
 - Every migrated table has `legacy_b44_id` (unique) — `users` has two: the Base44
   `User` id and the `UserProfile` id (`legacy_profile_b44_id`).
 
-Status of the compat entities: `UserProfile` and `AppSettings` are implemented
-(`app/compat/entities/`); the others follow this mapping (docs/COMPAT_GUIDE.md).
+Status of the compat entities: `UserProfile`, `AppSettings`, `Message`, `Notification`,
+`DeviceToken` and `MessageLog` are implemented (`app/compat/entities/`); the others
+follow this mapping (docs/COMPAT_GUIDE.md).
 
 ## User (built-in) → `users`
 
@@ -181,11 +182,15 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | order_id | front R, fn R/W | `messages.order_id` | |
 | sender_id | front R, fn R/W | join `users.email` via `messages.sender_id` | the 28 CourierProfile ids are mapped to the courier's user at import |
-| recipient_id | front R, fn R/W | join `users.email` via `messages.recipient_id` | |
+| recipient_id | front R, fn R/W | join `users.email` via `messages.recipient_id`, `''` when NULL | NULL = a customer's message on an open order (no single recipient), answered `''` like Base44 |
 | sender_role | front R, fn R/W | `messages.sender_role` | |
 | content | front R/W\*, fn R/W | `messages.body` | |
 | is_template | fn W | `messages.is_template` | always false; kept (audit DDL) |
 | is_read | front R, fn R/W | *derived* `messages.read_at IS NOT NULL` | |
+
+Policies: read = sender, recipient, the order's customer / assigned courier, admin; no
+direct write (create is sendOrderMessage's legacy fallback → 403; the sender's update
+right of Base44 let him rewrite `recipient_id`, gone).
 
 ## Notification → `notifications`
 
@@ -196,7 +201,11 @@ customer side on its existence). Compat id = `users.id`.
 | type | front R/W, fn W | `notifications.type` (CHECK list) | synonyms merged: message→new_message, order_delivered→delivered, courier_on_way→on_the_way, incoming_order→new_order (`NOTIFICATION_TYPE_SYNONYMS`) |
 | title_ar, title_fr, body_ar, body_fr | front R/W, fn W | same-name columns | |
 | metadata | front R/W, fn W | `notifications.data` (jsonb) | keys read by the front: recipient_role, sender_role, status, notification_type, offer_id, shop_name, shop_address, delivery_address, delivery_governorate, distance_km, quick_actions, main_item, is_emergency, preferred_courier, ctx |
-| is_read | front R/W | *derived* `notifications.read_at IS NOT NULL` | |
+| is_read | front R/W | *derived* `notifications.read_at IS NOT NULL` | written by the recipient only (true sets `read_at`, false clears it) |
+
+Policies: read = recipient, admin; create = admin (anyone; pushed, e.g. AdminDashboard's
+`account_verified`) or the recipient himself (orderFlow fallback; not pushed); update =
+recipient, `is_read` only; delete = nobody.
 
 ## DeviceToken → `device_tokens`
 
@@ -204,13 +213,16 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | user_id | fn R/W | `device_tokens.user_id` | |
 | token | fn R/W | `device_tokens.token` (unique) | |
-| endpoint_hash | fn R/W | dropped | idempotence now by the unique token |
+| endpoint_hash | fn R/W | *derived* `substr(encode(sha256(token), 'hex'), 1, 32)` | idempotence now by the unique token; still accepted by unregisterDeviceToken |
 | platform | fn W | `device_tokens.platform` | |
-| provider | fn W | dropped | always `fcm` |
+| provider | fn W | dropped (compat constant `'fcm'`) | always `fcm` |
 | role, user_agent | – | dropped | never written |
 | device_model, app_version, locale | fn W / fn R (locale) | same-name columns | |
 | last_seen_at, last_error, failure_count, is_active | fn R/W | same-name columns | deactivated after 5 failures or a dead-token answer |
 | (new) push log | – | `push_deliveries` | one row per device and send |
+
+Policies: read = owner, admin (Base44: admin); no direct write (registerDeviceToken /
+unregisterDeviceToken; a token registered by another account moves to the caller).
 
 ## ResaleOrder → `hot_deals`
 
@@ -254,6 +266,11 @@ customer side on its existence). Compat id = `users.id`.
 | order_id, notification_id | fn R/W | same-name FK columns | |
 | parent_log_id | fn W | `outbound_messages.parent_id` | |
 | fallback_log_id | fn R/W | *derived* the child row (`parent_id` = this id) | |
+
+Policies: admin read only. `status` values: queued, retry_pending, sent, delivered, read,
+failed, disabled, skipped_opt_out, invalid_number, rate_limited; `fallback_status`: none,
+pending, sent, failed, disabled, skipped. The idempotency key is claimed by the unique
+column (INSERT … ON CONFLICT DO NOTHING); the Deno `duplicate` rows no longer exist.
 
 ## Shop → `shops` (+ `shop_menu_items`)
 
