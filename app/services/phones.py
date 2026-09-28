@@ -16,8 +16,10 @@ def to_e164(raw: str | None, region: str = DEFAULT_REGION) -> str | None:
         return None
     text = raw.strip()
     digits = "".join(ch for ch in text if ch.isdigit())
-    if not digits or (text.startswith("+") and len(digits) <= 3):
+    if not text or (text.startswith("+") and 0 < len(digits) <= 3 and text[1:].strip().isdigit()):
         return None
+    if not digits:
+        raise InvalidPhone(raw)
     if text.startswith("00"):
         text = "+" + text[2:]
     try:

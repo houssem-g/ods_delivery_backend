@@ -13,7 +13,7 @@ os.environ.update(
             "DATABASE_URL",
             "postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery_test",
         ),
-        "DB_NULLPOOL": "true",
+        "DB_NULLPOOL": "false",
         "EMAIL_PROVIDER": "log",
         "PUSH_PROVIDER": "log",
         "SCHEDULER_ENABLED": "false",
@@ -24,6 +24,8 @@ os.environ.update(
         "GOOGLE_CLIENT_SECRET": "",
         "FIREBASE_CREDENTIALS_PATH": "",
         "LOG_LEVEL": "WARNING",
+        "BCRYPT_ROUNDS": "4",
+        "S3_BUCKET": "ods-delivery-test",
     }
 )
 if "ods_delivery_test" not in os.environ["DATABASE_URL"]:

@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import uuid
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
@@ -110,6 +111,14 @@ def build_multicast(tokens: list[str], locale: str, msg: PushMessage) -> messagi
     is_ar = locale != "fr"
     collapse = f"order_{msg.order_id}" if msg.order_id else f"notif_{msg.notification_id}"
     link = push_link(msg.type, msg.order_id, msg.metadata)
+    with warnings.catch_warnings():
+        # firebase-admin 7 deprecates `tokens` in favour of `fids` (installation ids), a different
+        # identifier: the app stores FCM registration tokens, which FCM still accepts here.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        return _multicast(tokens, msg, is_ar, collapse, link)
+
+
+def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, link: str) -> Any:
     return messaging.MulticastMessage(
         tokens=tokens,
         notification=messaging.Notification(

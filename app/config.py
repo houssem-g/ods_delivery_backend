@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     EMAIL_CODE_MAX_ATTEMPTS: int = 5
     EMAIL_CODE_RESEND_SECONDS: int = 60
     PASSWORD_MIN_LENGTH: int = 8
+    BCRYPT_ROUNDS: int = 12
 
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None

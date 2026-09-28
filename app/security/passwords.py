@@ -2,7 +2,9 @@
 
 from passlib.context import CryptContext
 
-_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+from app.config import settings
+
+_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=settings.BCRYPT_ROUNDS)
 # bcrypt only reads 72 bytes; longer inputs are refused rather than silently truncated.
 MAX_PASSWORD_BYTES = 72
 _DUMMY_HASH = _context.hash("timing-equaliser")

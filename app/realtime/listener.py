@@ -13,6 +13,7 @@ from app.realtime.hub import Hub
 
 log = logging.getLogger("odsd.realtime")
 MAX_BACKOFF_SECONDS = 30
+APPLICATION_NAME = "ods-delivery-listener"
 
 
 class PgListener:
@@ -49,7 +50,9 @@ class PgListener:
         while True:
             conn: asyncpg.Connection | None = None
             try:
-                conn = await asyncpg.connect(asyncpg_dsn(settings), timeout=10)
+                conn = await asyncpg.connect(
+                    asyncpg_dsn(settings), timeout=10, server_settings={"application_name": APPLICATION_NAME}
+                )
                 lost = asyncio.Event()
                 conn.add_termination_listener(lambda _c, event=lost: event.set())
                 await conn.add_listener(self.channel, self._on_notify)

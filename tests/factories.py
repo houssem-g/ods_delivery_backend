@@ -13,6 +13,7 @@ from app.security.passwords import hash_password
 from app.security.tokens import create_access_token
 
 PASSWORD = "Correct-Horse-9"
+PASSWORD_HASH = hash_password(PASSWORD)
 
 
 class Factory:
@@ -28,7 +29,9 @@ class Factory:
         async with SessionLocal() as s:
             user = User(
                 email=email or f"user-{uuid.uuid4().hex[:8]}@example.test",
-                password_hash=hash_password(password) if password else None,
+                password_hash=(PASSWORD_HASH if password == PASSWORD else hash_password(password))
+                if password
+                else None,
                 email_verified_at=datetime.now(UTC) if verified else None,
                 full_name=fields.pop("full_name", "Test User"),
                 role=role,

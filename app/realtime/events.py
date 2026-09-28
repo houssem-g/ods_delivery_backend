@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, SessionTransaction
 
 from app.config import settings
 
@@ -29,7 +29,8 @@ def emit(
     id_: str | uuid.UUID,
     audience: Iterable[uuid.UUID | str] | None = None,
 ) -> None:
-    """Queue `{entity, type, id}` for delivery after commit.
+    """Queue `{entity, type, id}` for delivery after commit. Call it inside the transaction
+    that makes the change.
 
     `audience` (user ids) restricts who receives a *delete* event, whose row can no
     longer be checked against the read policy; admins always receive it.
@@ -59,6 +60,8 @@ def _publish(session: Session) -> None:
         )
 
 
-@event.listens_for(Session, "after_rollback")
-def _discard(session: Session) -> None:
-    session.info.pop(_PENDING, None)
+@event.listens_for(Session, "after_transaction_end")
+def _discard(session: Session, transaction: SessionTransaction) -> None:
+    # Root transaction over (rolled back, or committed after _publish): nothing may leak into the next one.
+    if transaction.parent is None:
+        session.info.pop(_PENDING, None)
