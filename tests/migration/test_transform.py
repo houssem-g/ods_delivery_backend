@@ -223,7 +223,8 @@ def test_messages(bundle):
     assert messages[fx.bid("Message", "m4")]["recipient_id"] == uid("k1")
     assert messages[fx.bid("Message", "m4")]["read_at"] is None
     assert len(messages[fx.bid("Message", "m5")]["body"]) == 1000
-    assert messages[fx.bid("Message", "m7")]["recipient_id"] == uid("k1")  # from courier_user_id
+    # o2 was never accepted (no event, no accepted offer): an open-order message has no recipient
+    assert messages[fx.bid("Message", "m7")]["recipient_id"] is None
     assert fx.bid("Message", "m2") not in messages and fx.bid("Message", "m6") not in messages
 
 

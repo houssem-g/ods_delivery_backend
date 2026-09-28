@@ -1144,15 +1144,21 @@ class Transformer:
             if sender is None:
                 self.report.adjust("messages", "sender_id", "unknown sender -> NULL")
             recipient = self.user_ref(message.get("recipient_id")) if message.get("recipient_id") else None
+            stamps = _stamps(message)
             if recipient is None:
+                # Old rows have no recipient. A courier writes to the customer; a customer writes
+                # to the courier only once one accepted — before that the order is open and NULL
+                # means "no single recipient" (messaging rule).
                 order_row = self.order_rows[message["order_id"]]
+                accepted = order_row["accepted_at"]
                 if role == "courier":
                     recipient = order_row["customer_id"]
-                else:
+                elif accepted is not None and stamps["created_at"] >= accepted:
                     recipient = self.order_courier_user(message["order_id"])
                 if recipient is not None:
                     self.report.adjust("messages", "recipient_id", "absent -> inferred from the order")
-            stamps = _stamps(message)
+                else:
+                    self.report.note("message without recipient (customer message on an open order)")
             mid = det_uuid("Message", message["id"])
             self.tables["messages"].append(
                 {

@@ -35,7 +35,7 @@ mapping (docs/COMPAT_GUIDE.md).
 | email | front/fn R | `users.email` (citext unique) | |
 | full_name | front R | `users.full_name` | |
 | role | front/fn R | `users.role = 'admin'` → `'admin'`, else `'user'` | `GET /api/auth/me` answers the Base44 shape |
-| is_verified | – | `users.email_verified_at IS NOT NULL` | answered by `/api/auth/me` |
+| is_verified | – | `users.email_verified_at IS NOT NULL` | answered by `/api/auth/me`; import: the account's creation date (Base44 keeps no verification date) |
 | disabled | – | `users.disabled_at IS NOT NULL` | |
 | force_password_reset, is_service, collaborator_role, _app_role, app_id | – | dropped | Base44 internals, unused |
 | (password) | – | `users.password_hash` | not exportable: NULL after import → account-setup flow |
@@ -78,17 +78,17 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | user_id | front R, fn R/W | join `users.email` via `couriers.user_id` (unique) | |
 | full_name | front R/W\*, fn R/W | `couriers.display_name` | |
-| phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164; NULL only for a deleted (anonymized) account |
+| phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164; NULL for a deleted (anonymized) account, or a migrated courier whose Base44 phone was a placeholder (4 of 7 in the 2026-09-28 export) |
 | cin_passport | front R/W\*, fn W | `couriers.id_document_number` | owner + admin only; '' after account deletion |
 | photo_url | front R (CourierCard) | dropped | legacy public ID photo URL; the migration moves the file to the private bucket (`id_document_key`) and the field reads `null` |
 | id_photo_uri | front W\*, fn R/W | `couriers.id_document_key` | **never serialized**; admins get signed URLs from `getCourierIdPhotos` only |
 | vehicle_type | front R/W\*, fn R/W | `couriers.vehicle` (enum) | |
 | max_package_size | fn W (whitelist) | `couriers.max_package` | never sent by the front nor read; kept (audit DDL, default `petit`) |
 | price_per_km, min_fee | front R/W\* | `couriers.price_per_km / min_fee` numeric(10,3) | |
-| is_online | front R/W\*, fn R/W | `couriers.is_online` | expires with `last_seen_at` (job) |
+| is_online | front R/W\*, fn R/W | `couriers.is_online` | expires with `last_seen_at` (job); false for every migrated courier (`last_seen_at` = profile update date) |
 | current_lat, current_lng | front R/W\*, fn R/W | `couriers.last_location` (ST_Y / ST_X) | `last_seen_at` set with it |
 | notification_radius_km | front R/W\*, fn R | `couriers.notification_radius_km` | |
-| verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason`; the only field an admin writes through the entity (the courier's notice is AdminDashboard's own Notification.create) |
+| verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason`; the only field an admin writes through the entity (the courier's notice is AdminDashboard's own Notification.create); migrated couriers: `verified_at` NULL (Base44 kept none) |
 | total_deliveries | front R, fn R/W | *derived* `courier_stats.total_deliveries` | stored value was wrong for 7/9 couriers |
 | total_earnings | front R, fn W | *derived* `courier_stats.gross_fees` | sum of delivery fees of delivered orders |
 | average_rating | front R, fn R/W | *derived* `coalesce(courier_stats.average_rating, 5)` | 5 without ratings, as the front expects |
@@ -107,7 +107,7 @@ customer side on its existence). Compat id = `users.id`.
 | customer_name | front R, fn R/W | `orders.contact_name` | snapshot at placement |
 | customer_phone | front R/W\*, fn R/W | `orders.contact_phone_e164` | guard: customer, assigned courier, admin |
 | courier_id | front R, fn R/W | `orders.courier_id` → `couriers` | filter key; kept when the customer cancels (Base44 kept `courier_user_id` so the courier could still open the order), cleared when the courier drops it or the order is abandoned |
-| courier_user_id | front R, fn R/W | join `users.email` via `couriers.user_id` | the 17 orders keeping an e-mail without courier lose it (no FK target) |
+| courier_user_id | front R, fn R/W | join `users.email` via `couriers.user_id` | orders keeping an e-mail without `courier_id` (20 in the 2026-09-28 export, all cancelled: the courier withdrew) read `null`; the import keeps that courier as `actor_user_id` of the cancellation event |
 | courier_name | front R, fn R/W | join `couriers.display_name` | copy dropped (0 drift measured) |
 | courier_phone | front R, fn R/W | join `couriers.phone_e164` | |
 | courier_photo | front W(null) | dropped | always null since `migrateCourierPhotoCopies` |
@@ -142,7 +142,7 @@ customer side on its existence). Compat id = `users.id`.
 | ods_commission_status | front W | *derived* from `courier_ledger_entries.kind` | waived_launch → offered_launch, waived_quota → free_quota, due → due |
 | cancelled_by | front R, fn W | `orders.cancelled_by` | + admin / system |
 | cancellation_reason | fn W | `orders.cancel_reason` | |
-| cancelled_at | fn R/W | `orders.cancelled_at` | |
+| cancelled_at | fn R/W | `orders.cancelled_at` | required when cancelled; import: the field, else the last `cancelled` history item, else `updated_date` (161 old rows) |
 | resale_order_id | front R, fn R/W | `orders.resale_deal_id` → `hot_deals` | |
 | geocode_status | fn W | dropped | written, never read |
 | distance_km, eta_minutes | front R, fn R/W | `orders.distance_km / eta_minutes` | |
@@ -156,11 +156,11 @@ customer side on its existence). Compat id = `users.id`.
 | no_response_channels (in_app, push_devices, whatsapp, sms) | front R, fn R/W | *derived* latest case `channels` (jsonb) | |
 | reported_issues[] (type, description, photo_url, reported_at, reported_by, courier_id) | fn R/W | `order_issues` (`issue_type, description, photo_key, created_at, reporter_id`) | aggregated as a JSON array; guard: parties + admin; lost on Base44 before 2026-09-28 |
 | has_issues | fn W | *derived* exists `order_issues` | |
-| status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason` (Base44 wrote a `cancelled` then a `pending` entry) |
+| status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason` (Base44 wrote a `cancelled` then a `pending` entry). Import: `source` absent → `legacy`; synthetic events have `source = 'migration'` (no history: `pending` + final; last item ≠ status: final) |
 | preferred_courier_id | front R, fn R/W | `orders.preferred_courier_id` → `couriers` | |
 | courier_stats_recorded_at | fn R/W | *derived* `orders.delivered_at` | counters are views: nothing to record |
 | last_dispatched_at | fn R/W | `orders.last_dispatched_at` | |
-| (new) accepted_at, delivered_at | – | `orders.accepted_at / delivered_at` | missing timestamps (audit §3.3 #17) |
+| (new) accepted_at, delivered_at | – | `orders.accepted_at / delivered_at` | missing timestamps (audit §3.3 #17). Import: last `accepted` / `delivered` history item; else the accepted offer's date / `courier_stats_recorded_at`, else `updated_date` |
 
 ## OrderOffer → `order_offers`
 
@@ -183,8 +183,8 @@ customer side on its existence). Compat id = `users.id`.
 | Field | Used | Target | Notes |
 |---|---|---|---|
 | order_id | front R, fn R/W | `messages.order_id` | |
-| sender_id | front R, fn R/W | join `users.email` via `messages.sender_id` | the 28 CourierProfile ids are mapped to the courier's user at import |
-| recipient_id | front R, fn R/W | join `users.email` via `messages.recipient_id`, `''` when NULL | NULL = a customer's message on an open order (no single recipient), answered `''` like Base44 |
+| sender_id | front R, fn R/W | join `users.email` via `messages.sender_id` | a CourierProfile id is mapped to the courier's user at import (28 at the audit, 0 left on 2026-09-28); unknown sender → NULL |
+| recipient_id | front R, fn R/W | join `users.email` via `messages.recipient_id`, `''` when NULL | NULL = a customer's message on an open order (no single recipient), answered `''` like Base44. Import of old rows without it: courier message → the customer; customer message → the courier's user when sent after `accepted_at`, else NULL |
 | sender_role | front R, fn R/W | `messages.sender_role` | |
 | content | front R/W\*, fn R/W | `messages.body` | |
 | is_template | fn W | `messages.is_template` | always false; kept (audit DDL) |
@@ -198,11 +198,11 @@ right of Base44 let him rewrite `recipient_id`, gone).
 
 | Field | Used | Target | Notes |
 |---|---|---|---|
-| user_id | front R/W, fn W | join `users.email` via `notifications.user_id` | 119 CourierProfile ids fixed at import |
+| user_id | front R/W, fn W | join `users.email` via `notifications.user_id` | CourierProfile ids fixed at import (119 at the audit, 0 left on 2026-09-28); a deleted recipient → not migrated |
 | order_id | front R/W, fn W | `notifications.order_id` (SET NULL) | |
 | type | front R/W, fn W | `notifications.type` (CHECK list) | synonyms merged: message→new_message, order_delivered→delivered, courier_on_way→on_the_way, incoming_order→new_order (`NOTIFICATION_TYPE_SYNONYMS`) |
 | title_ar, title_fr, body_ar, body_fr | front R/W, fn W | same-name columns | |
-| metadata | front R/W, fn W | `notifications.data` (jsonb) | keys read by the front: recipient_role, sender_role, status, notification_type, offer_id, shop_name, shop_address, delivery_address, delivery_governorate, distance_km, quick_actions, main_item, is_emergency, preferred_courier, ctx |
+| metadata | front R/W, fn W | `notifications.data` (jsonb) | keys read by the front: recipient_role, sender_role, status, notification_type, offer_id, shop_name, shop_address, delivery_address, delivery_governorate, distance_km, quick_actions, main_item, is_emergency, preferred_courier, ctx. Import: the legacy ids in `order_id, offer_id, courier_id, case_id, resale_order_id, message_id` become the new uuids when migrated (else kept); `sender_id` / `courier_user_id` kept as exported |
 | is_read | front R/W | *derived* `notifications.read_at IS NOT NULL` | written by the recipient only (true sets `read_at`, false clears it) |
 
 Policies: read = recipient, admin; create = admin (anyone; pushed, e.g. AdminDashboard's
@@ -243,7 +243,7 @@ unregisterDeviceToken; a token registered by another account moves to the caller
 | buyer_id | fn R/W | join `users.email` via `hot_deals.buyer_id` | |
 | buyer_name, buyer_phone, delivery_address | fn W | *derived* from the buyer's order (`orders.contact_name / contact_phone_e164 / delivery_address` via `buyer_order_id`) | write-only today |
 | delivery_lat, delivery_lng | – | dropped | never written (the buyer's order holds the location) |
-| (new) reserved_at, buyer_order_id | – | columns | `buyer_order_id` replaces `Order.resale_order_id` in the other direction |
+| (new) reserved_at, buyer_order_id | – | columns | `buyer_order_id` replaces `Order.resale_order_id` in the other direction. Import: `reserved_at` = update date of sold deals; `buyer_order_id` = the buyer's order pointing at the deal |
 
 ## NoResponseCase → `no_response_cases`
 
@@ -357,3 +357,38 @@ commission_amount, is_active, description — all dropped.
 | assigned courier | `Order.update` | `status` (next step only), `shops[]` progress, `purchase_amount`, `receipt_photo_url`; computed / ignored: `current_shop_index`, `total_amount`, `status_history`, commission fields; any other Order field → 403 (`app/services/order_steps.py`) |
 | anybody else | `Order.create / update / delete` | 403 (the §7 fallbacks of OWN_BACKEND_CLIENT.md) |
 | functions | createOrderOffer, acceptOrderOffer, cancelOrder, expire_stale_orders, … | through `app/services/order_transitions.transition` |
+
+## Migration (`migrate/`, docs/MIGRATION.md) — what the domain code must expect
+
+Decisions of the Base44 import that shape the migrated rows (rehearsed on the 2026-09-28
+export; aggregates in the report next to the export):
+
+- **Ids**: every migrated row has `uuid5(namespace, "<Entity>:<legacy id>")` and its Base44 id
+  in `legacy_b44_id` (users: + `legacy_profile_b44_id`). New rows keep `gen_random_uuid()`.
+- **users.role**: `admin` from `User.role`; else the (most recent) profile's role; else
+  `courier` when a CourierProfile exists; else `customer`. So a courier whose profile says
+  `customer` stays `customer` (8 of 9 at the audit): decide courier-ness on `couriers`, not
+  on `users.role`.
+- **Nullable where Base44 was empty**: `users.phone_e164` (placeholders rejected),
+  `couriers.phone_e164`, `couriers.verified_at`, `orders.contact_phone_e164`,
+  `orders.delivery_fee` / `purchase_amount` (also NULL when outside the CHECK bounds: the
+  original is in `audit_log`, action `b44_migration.adjust`), `messages.sender_id` /
+  `recipient_id`, `notifications.order_id` (deleted / test orders: 208).
+- **QA data is kept** (no test flag column): 2 QA accounts placed 520 of 547 orders and
+  receive 1 726 of 1 925 notifications. Statistics and dashboards must not assume real
+  traffic; a later `is_test` flag would need a schema change.
+- **Status history**: every migrated order has ≥ 1 event and its last event is its status;
+  `source = 'migration'` marks synthetic events, `'legacy'` items without a source.
+- **Ledger**: one `commission_waived_launch` entry (0.500) per delivered order with a
+  courier and a fee > 0; nothing due. `courier_stats` recomputes deliveries / ratings /
+  fees from the orders (the stored Base44 counters are not migrated).
+- **Presence**: all migrated couriers are offline until their next heartbeat.
+- **Files**: courier ID photos → `private/courier_id/<user uuid>/<uuid>.<ext>` (`files`
+  rows, purpose `courier_id`); the exported menu photo → `public/menu/<yyyy>/<mm>/…`;
+  photos not in the export keep their legacy https URL (shops / menu) or are dropped
+  (receipts, issues, reviews, hot deals: none exported).
+- **Not migrated**: `DeliveryTariffs`, `MessageLog` (empty), the Base44 counters
+  (`total_*`, `average_rating`, `no_response_incidents`), `payment_status`,
+  `geocode_status`, `courier_photo`, `CourierProfile.photo_url`, and the excluded rows
+  listed in docs/MIGRATION.md §3 (dangling references, deleted accounts, fees above the
+  offer CHECK, duplicate tokens).
