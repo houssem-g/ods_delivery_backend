@@ -9,6 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import settings
 from app.db import transaction
+from app.jobs.orders import STATEMENTS_TRIGGER, build_commission_statements
 from app.jobs.registry import job
 from app.services.osm_refresh import run_refresh, targets_for
 
@@ -23,13 +24,17 @@ def _placeholder(name: str) -> dict[str, Any]:
 @job(
     "sweep_5min",
     IntervalTrigger(minutes=5),
-    "no-response sweep, stale order expiry, courier presence expiry",
+    "no-response sweep (stale order expiry and courier presence: app/jobs/orders.py)",
 )
 async def sweep_5min() -> dict[str, Any]:
     return _placeholder("sweep_5min")
 
 
-@job("hourly_cleanup", IntervalTrigger(hours=1), "expired hot deals, offers of closed orders")
+@job(
+    "hourly_cleanup",
+    IntervalTrigger(hours=1),
+    "expired hot deals (offers of closed orders: expire_orphan_offers)",
+)
 async def hourly_cleanup() -> dict[str, Any]:
     return _placeholder("hourly_cleanup")
 
@@ -46,6 +51,6 @@ async def osm_refresh() -> dict[str, Any]:
     return {"results": result["results"], "backfilled": result["backfilled"]}
 
 
-@job("courier_statements", CronTrigger(day_of_week="mon", hour=4, minute=0), "weekly commission statements")
+@job("courier_statements", STATEMENTS_TRIGGER, "weekly commission statements (previous weeks' due entries)")
 async def courier_statements() -> dict[str, Any]:
-    return _placeholder("courier_statements")
+    return await build_commission_statements()
