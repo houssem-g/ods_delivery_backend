@@ -111,7 +111,7 @@ def courier(n: str, email: str, phone: str, **extra: Any) -> dict[str, Any]:
             "user_id": email,
             "full_name": f"Courier {n}",
             "phone": phone,
-            "cin_passport": "A123456",
+            "cin_passport": "ZX-000-TEST",
             "photo_url": None,
             "id_photo_uri": None,
             "vehicle_type": "scooter",
@@ -148,7 +148,7 @@ def order(n: str, status: str, customer: str = CUST1, **extra: Any) -> dict[str,
         {
             "customer_id": customer,
             "customer_name": "Client Name",
-            "customer_phone": "+216 22 123 456",
+            "customer_phone": "+216 20 555 777",
             "items_text": f"items of {n}",
             "quantity": 1,
             "notes": "",
@@ -353,7 +353,7 @@ def deal(n: str, original: str, buyer: str, **extra: Any) -> dict[str, Any]:
             "original_order_id": original,
             "courier_id": CP1,
             "courier_name": "Courier",
-            "courier_phone": "0791234567",
+            "courier_phone": "0797654302",
             "items_text": "resold items",
             "shop_name": "Shop A",
             "shop_address": None,
@@ -371,7 +371,7 @@ def deal(n: str, original: str, buyer: str, **extra: Any) -> dict[str, Any]:
             "expires_at": ts(11, z=True),
             "buyer_id": buyer,
             "buyer_name": "Buyer",
-            "buyer_phone": "+216 22 123 456",
+            "buyer_phone": "+216 20 555 777",
             "delivery_address": "Rue C",
         }
     )
@@ -421,7 +421,7 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
             "c1-old",
             CUST1,
             2,
-            phone="+216 22 123 456",
+            phone="+216 20 555 777",
             default_lat=35.8,
             default_lng=10.6,
             country="TN",
@@ -441,15 +441,15 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
             referred_by_code="REF1",
         ),
         profile("k1", COUR1, 2, phone="+216", role="customer"),
-        profile("k2", COUR2, 2, phone="123456789", role="courier", is_active=False),
-        profile("qa", QA, 2, phone="22123456"),
+        profile("k2", COUR2, 2, phone="000111222", role="courier", is_active=False),
+        profile("qa", QA, 2, phone="20555777"),
         profile("orphan", DELETED, 2),
     ]
     couriers = [
         courier(
             "c1",
             COUR1,
-            "0791234567",
+            "0797654302",
             id_photo_uri="private/u/x/id-photo.jpg",
             referral_code="REF1",
             late_cancellations=2,
@@ -459,7 +459,7 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
         courier(
             "c2",
             COUR2,
-            "123456789",
+            "000111222",
             price_per_km=102,
             min_fee=53,
             notification_radius_km=500000000,
@@ -476,7 +476,7 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
         "courier_id": CP1,
         "courier_user_id": COUR1,
         "courier_name": "Courier c1",
-        "courier_phone": "0791234567",
+        "courier_phone": "0797654302",
     }
     orders = [
         # delivered, history misses the last transition, 2 stops, live position, rating
@@ -542,7 +542,7 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
             "o4",
             "cancelled",
             delivery_fee=3.14159,
-            customer_phone="123456789",
+            customer_phone="000111222",
             customer_name=None,
             cancelled_by="robot",
             cancelled_at=ts(10, 12, z=True),
@@ -677,7 +677,7 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
     ]
     deals = [
         deal("d1", bid("Order", "o5"), CUST1),
-        deal("d2", "PW-123456789", CUST1),
+        deal("d2", "PW-000000042", CUST1),
         deal("d3", bid("Order", "o5"), DELETED, discounted_price=None, discount_percentage=150),
     ]
     shops = [
@@ -796,8 +796,8 @@ def build_export() -> dict[str, list[dict[str, Any]]]:
             {
                 **builtins("AppSettings", "main"),
                 "key": "main",
-                "support_phone": "+21622123456",
-                "support_whatsapp": "+21622123456",
+                "support_phone": "+21620555777",
+                "support_whatsapp": "+21620555777",
                 "updated_by": ADMIN,
             }
         ],

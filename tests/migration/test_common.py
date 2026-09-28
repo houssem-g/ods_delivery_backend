@@ -15,7 +15,7 @@ def test_det_uuid_is_stable_and_entity_scoped():
 
 
 def test_b44_id_and_blank():
-    assert common.is_b44_id("6978ba65586e4b3336449219")
+    assert common.is_b44_id("a1b2c3d4e5f6a7b8c9d0e1f2")
     assert not common.is_b44_id("PW-123") and not common.is_b44_id(None)
     assert common.blank("  ") and common.blank(None) and not common.blank(0)
     assert common.text_or_none("  x ") == "x" and common.text_or_none("") is None
@@ -59,15 +59,15 @@ def test_point():
 
 
 def test_normalize_phone_rules():
-    assert common.normalize_phone("22123456") == ("+21622123456", common.PHONE_OK)
-    assert common.normalize_phone("+216 22 123 456") == ("+21622123456", common.PHONE_OK)
+    assert common.normalize_phone("20555777") == ("+21620555777", common.PHONE_OK)
+    assert common.normalize_phone("+216 20 555 777") == ("+21620555777", common.PHONE_OK)
     assert common.normalize_phone("+216") == (None, common.PHONE_BLANK)
     assert common.normalize_phone("  ") == (None, common.PHONE_BLANK)
     assert common.normalize_phone(None) == (None, common.PHONE_BLANK)
-    assert common.normalize_phone("123456789") == (None, common.PHONE_REJECTED)
+    assert common.normalize_phone("000111222") == (None, common.PHONE_REJECTED)
     # a Swiss mobile in national format is not Tunisian: read in the fallback region only
-    assert common.normalize_phone("0791234567") == (None, common.PHONE_REJECTED)
-    assert common.normalize_phone("0791234567", ("CH",)) == ("+41791234567", common.PHONE_FALLBACK)
+    assert common.normalize_phone("0797654302") == (None, common.PHONE_REJECTED)
+    assert common.normalize_phone("0797654302", ("CH",)) == ("+41797654302", common.PHONE_FALLBACK)
     assert common.normalize_phone("abc", ("CH",)) == (None, common.PHONE_REJECTED)
 
 
@@ -83,5 +83,5 @@ def test_masks():
     assert common.mask_email("someone@example.test") == "som…@example.test"
     assert common.mask_email("noatsign") == "no…(8)"
     assert common.mask_text("") == "∅"
-    assert common.mask_phone("+216 22 123 456") == "11 digits, …56"
+    assert common.mask_phone("+216 20 555 777") == "11 digits, …77"
     assert common.mask_phone(None) == "∅"

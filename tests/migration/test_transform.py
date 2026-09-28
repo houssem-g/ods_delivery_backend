@@ -50,7 +50,7 @@ def test_users_merge_profiles_most_recent_wins(bundle):
     cust1 = by(users, "id", uid("c1"))
     assert cust1["legacy_profile_b44_id"] == fx.bid("UserProfile", "c1-new")
     assert cust1["language"] == "fr"  # from the newest profile
-    assert cust1["phone_e164"] == "+21622123456"  # newest is empty: taken from the older one
+    assert cust1["phone_e164"] == "+21620555777"  # newest is empty: taken from the older one
     assert cust1["notify_chat"] is False and cust1["notify_new_orders"] is True
     assert cust1["whatsapp_opt_in_at"] is not None
     assert cust1["profile_created_at"].day == 2  # the first profile's date
@@ -89,7 +89,7 @@ def test_couriers(bundle):
     assert set(couriers) == {fx.CP1, fx.CP2}
     assert bundle.report.excluded[("CourierProfile", "account deleted in Base44 (no User)")] == 1
     c1, c2 = couriers[fx.CP1], couriers[fx.CP2]
-    assert c1["phone_e164"] == "+41791234567"  # fallback region
+    assert c1["phone_e164"] == "+41797654302"  # fallback region
     assert c1["id_document_key"].startswith(f"private/courier_id/{uid('k1')}/")
     assert c1["is_online"] is False and c1["last_location"] is not None
     assert c1["late_cancellations"] == 2 and c1["referral_code"] == "REF1"
@@ -311,7 +311,7 @@ def test_places_shops_reviews(bundle):
 def test_settings_ledger_dropped_and_qa(bundle):
     setting = bundle.rows("app_settings")[0]
     assert setting["key"] == "main" and setting["updated_by"] == uid("admin")
-    assert setting["value"] == {"support_phone": "+21622123456", "support_whatsapp": "+21622123456"}
+    assert setting["value"] == {"support_phone": "+21620555777", "support_whatsapp": "+21620555777"}
     ledger = bundle.rows("courier_ledger_entries")
     assert [e["order_id"] for e in ledger] == [oid("o1")]  # o3 fee NULLed, o8 fee 0
     assert ledger[0]["kind"] == "commission_waived_launch" and ledger[0]["amount"] == Decimal("0.500")
@@ -356,7 +356,7 @@ def test_ledger_after_launch_is_not_generated():
 
 def test_duplicate_courier_profiles_and_second_accepted_edge_cases():
     export = fx.build_export()
-    extra = fx.courier("c1bis", fx.COUR1, "22123456")
+    extra = fx.courier("c1bis", fx.COUR1, "20555777")
     extra["updated_date"] = "2026-01-01T00:00:00.000000"
     export["CourierProfile"].append(extra)
     export["Order"].append(fx.order("o12", "delivered", courier_id=extra["id"], delivery_fee=2))

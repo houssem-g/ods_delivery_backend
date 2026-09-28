@@ -95,8 +95,8 @@ bucket is reachable. Nothing contacts Base44: the export is taken beforehand
 Tunisia first (`app/services/phones.to_e164`: 8 digits → +216, `+216 …`, `00216…`). A number
 that is not Tunisian is retried in the fallback regions (`--fallback-region`, default `CH`:
 the owner's Swiss mobiles in national format `07x…`). A bare country code (`+216`) is blank.
-Anything else is **rejected → NULL** and counted (placeholders such as nine digits
-`123…`). `couriers.phone_e164` is nullable (catalog revision `5c1d7e2a9b40`, for deleted
+Anything else is **rejected → NULL** and counted (nine-digit placeholders that are no
+number in any region). `couriers.phone_e164` is nullable (catalog revision `5c1d7e2a9b40`, for deleted
 accounts); a migrated courier without a usable phone re-enters it at the next profile save.
 The migration adds no Alembic revision of its own.
 

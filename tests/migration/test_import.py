@@ -88,7 +88,7 @@ async def test_existing_accounts_are_adopted(export_dir):
             await conn.execute(
                 text(
                     "INSERT INTO couriers (user_id, display_name, phone_e164, id_document_number, vehicle, "
-                    "price_per_km) VALUES (:u, 'Seeded', '+21655123456', 'X', 'car', 1) RETURNING id"
+                    "price_per_km) VALUES (:u, 'Seeded', '+21655667788', 'X', 'car', 1) RETURNING id"
                 ),
                 {"u": existing},
             )
