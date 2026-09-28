@@ -15,6 +15,7 @@ Rules kept from the live function:
 Notifications are always pushed (no preference gate), as live.
 """
 
+import logging
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
@@ -33,6 +34,7 @@ from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import OrderRefused, courier_of_user, first_stop, is_test_order
 
+log = logging.getLogger("odsd.cancellation")
 CUSTOMER_CANCELLABLE = ("pending", "offers_received", "accepted")
 COURIER_CANCELLABLE = (
     "accepted",
@@ -225,7 +227,11 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     for offer_id in offer_ids:
         emit(session, "OrderOffer", "update", offer_id)
     if back_to_pool and not is_test_order(order.items_text):
-        await dispatch_order(session, order)
+        try:  # the cancellation is done: a failed re-broadcast must not undo it
+            async with session.begin_nested():
+                await dispatch_order(session, order)
+        except Exception:
+            log.exception("cancelOrder: re-dispatch failed for %s", order.id)
 
 
 # --- getCancellationPolicy ---------------------------------------------------------------------------

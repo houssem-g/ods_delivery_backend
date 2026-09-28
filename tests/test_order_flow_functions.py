@@ -149,6 +149,18 @@ async def test_place_order_phone_and_defaults(client, world, factory):
     )
 
 
+async def test_a_failed_broadcast_never_fails_the_order(client, world, monkeypatch):
+    import app.api.functions.placeOrder as place_module
+
+    async def broken(session, order):
+        raise RuntimeError("push provider down")
+
+    monkeypatch.setattr(place_module, "dispatch_order", broken)
+    response = await call(client, world.customer, "placeOrder", {"order": order_form()})
+    assert response.status_code == 200 and response.json()["dispatched"] is None
+    assert len(await rows(select(Order))) == 1
+
+
 async def test_qa_orders_are_not_broadcast(client, world):
     response = await call(
         client, world.customer, "placeOrder", {"order": order_form(items_text="QA TEST pain")}

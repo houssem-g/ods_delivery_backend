@@ -9,6 +9,7 @@ invalid_delivery_address, invalid_delivery_location, phone_required (400), custo
 too_many_open_orders (429, max). QA orders are not broadcast.
 """
 
+import logging
 from typing import Any
 
 from fastapi import Request
@@ -19,6 +20,8 @@ from app.security.deps import CurrentUser
 from app.services.dispatch import dispatch_order
 from app.services.orders import is_test_order, place_order
 
+log = logging.getLogger("odsd.functions")
+
 
 @answers_refusals
 async def handle(
@@ -27,7 +30,11 @@ async def handle(
     order = await place_order(session, user.id, payload.get("order"))
     dispatched = None
     if not is_test_order(order.items_text):
-        dispatched = (await dispatch_order(session, order)).get("dispatched")
+        try:  # the order exists: a failed broadcast never fails it (couriers also list open orders)
+            async with session.begin_nested():
+                dispatched = (await dispatch_order(session, order)).get("dispatched")
+        except Exception:
+            log.exception("placeOrder: dispatch failed for %s", order.id)
     return 200, {
         "success": True,
         "order": await document(session, "Order", user, order.id),
