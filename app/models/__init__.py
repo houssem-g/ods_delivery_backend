@@ -1,7 +1,7 @@
 """SQLAlchemy models. They mirror the Alembic migrations (checked by `alembic check` in CI)."""
 
 from app.models.base import Base
-from app.models.catalog import Place, Shop, ShopMenuItem, ShopReview
+from app.models.catalog import GeocodeCache, Place, Shop, ShopMenuItem, ShopReview
 from app.models.identity import Courier, EmailCode, RefreshToken, User, UserAddress
 from app.models.incidents import HotDeal, NoResponseCase
 from app.models.misc import AppSetting, AuditLog, CourierLedgerEntry, CourierStatement, File
@@ -28,6 +28,7 @@ __all__ = [
     "DeviceToken",
     "EmailCode",
     "File",
+    "GeocodeCache",
     "HotDeal",
     "Message",
     "NoResponseCase",

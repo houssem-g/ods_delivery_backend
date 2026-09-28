@@ -161,7 +161,8 @@ class Courier(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, unique=True
     )
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
-    phone_e164: Mapped[str] = mapped_column(Text, nullable=False)
+    # NULL only once the account is deleted (anonymized, the row stays for the orders).
+    phone_e164: Mapped[str | None] = mapped_column(Text)
     id_document_number: Mapped[str] = mapped_column(Text, nullable=False)
     # Object key in the PRIVATE bucket; never serialized to non-admins.
     id_document_key: Mapped[str | None] = mapped_column(Text)
