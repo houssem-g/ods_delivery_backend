@@ -91,6 +91,9 @@ class RefreshToken(Base):
     family: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set when the token was replaced by rotation: a second tab presenting it within the
+    # grace window gets a fresh token instead of triggering the reuse alarm.
+    rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
 
 
@@ -107,6 +110,8 @@ class EmailCode(Base):
     )
     purpose: Mapped[str] = mapped_column(Text, nullable=False)
     code_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    # sha256 of the long token in the e-mailed reset link (the link works without the e-mail address).
+    link_hash: Mapped[str | None] = mapped_column(Text, unique=True)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
