@@ -1,6 +1,7 @@
 """updateMyCourierProfile, trackCourierLocation, getOrderCourier, getOrderETA, rateCourier,
 reportOrderIssue, getCustomerReliability, getCourierIdPhotos."""
 
+import json
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -575,3 +576,9 @@ async def test_id_photos_for_admins_only(client, world, factory):
         "success": True,
         "photos": {},
     }
+
+    # The admin screen knows which couriers to ask for (the key itself never leaves).
+    listed = (await client.get("/api/entities/CourierProfile", headers=auth(world.admin))).json()
+    flags = {p["id"]: p["has_id_photo"] for p in listed}
+    assert flags == {str(other.id): True, str(world.courier.id): False}
+    assert "private/courier_id/x/doc.jpg" not in json.dumps(listed)

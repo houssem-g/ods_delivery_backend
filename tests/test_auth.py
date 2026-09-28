@@ -365,8 +365,22 @@ async def test_rate_limit_answers_429_with_the_base44_wording(client):
 
 
 async def test_google_disabled_without_client_id(client):
+    # Browser navigations: back to the app's Welcome with the reason, never a JSON page.
     response = await client.get("/api/auth/google/start")
-    assert response.status_code == 503 and error_of(response) == "google_disabled"
+    assert response.status_code == 302
+    assert response.headers["location"] == "http://localhost:5190/Welcome?auth_error=google_disabled"
+    callback = await client.get("/api/auth/google/callback", params={"code": "x", "state": "y"})
+    assert callback.status_code == 302
+    assert callback.headers["location"] == "http://localhost:5190/Welcome?auth_error=google_disabled"
+
+
+async def test_google_disabled_returns_to_the_calling_app_origin(client):
+    response = await client.get(
+        "/api/auth/google/start", params={"next": "http://127.0.0.1:5190/CustomerHome?x=1"}
+    )
+    assert response.headers["location"] == "http://127.0.0.1:5190/Welcome?auth_error=google_disabled"
+    evil = await client.get("/api/auth/google/start", params={"next": "https://evil.example/"})
+    assert evil.headers["location"] == "http://localhost:5190/Welcome?auth_error=google_disabled"
 
 
 @pytest.fixture

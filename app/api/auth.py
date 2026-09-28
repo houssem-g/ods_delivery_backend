@@ -310,14 +310,24 @@ def _with_query(url: str, params: dict[str, str]) -> str:
     return urlunparse(parsed._replace(query=query))
 
 
-def _require_google() -> None:
-    if not settings.google_enabled:
-        raise ApiError(503, "google_disabled", "Google sign-in is not configured")
+def _welcome_url(next_url: str | None = None) -> str:
+    """The Welcome screen of the app the browser came from (an allowed origin), else the main app."""
+    parsed = urlparse(_safe_next(next_url))
+    return urlunparse(parsed._replace(path="/Welcome", params="", query="", fragment=""))
+
+
+def _google_disabled(next_url: str | None = None) -> RedirectResponse | None:
+    """Both routes are browser navigations: without Google configured, send the user back to
+    Welcome with `auth_error=google_disabled` (shown there) instead of a JSON page."""
+    if settings.google_enabled:
+        return None
+    return _redirect(_with_query(_welcome_url(next_url), {"auth_error": "google_disabled"}))
 
 
 @router.get("/google/start")
 async def google_start(next: str | None = None) -> Response:
-    _require_google()
+    if (disabled := _google_disabled(next)) is not None:
+        return disabled
     nonce = secrets.token_urlsafe(24)
     state = jwt.encode(
         {
@@ -352,7 +362,8 @@ async def google_callback(
 ) -> Response:
     """Links the Google account and sends the browser back to `next` with `access_token=`
     (read by the front's app-params, as after Base44's hosted login) + the refresh cookie."""
-    _require_google()
+    if (disabled := _google_disabled()) is not None:
+        return disabled
     failure = f"{settings.PUBLIC_APP_URL.rstrip('/')}/Welcome"
     try:
         claims = jwt.decode(state or "", settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])

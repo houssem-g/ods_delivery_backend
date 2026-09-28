@@ -1,7 +1,8 @@
 """CourierProfile: `couriers` (+ `courier_stats`) in the legacy shape (docs/FIELD_MAPPING.md).
 
 Read (base44/entities/CourierProfile.jsonc): the owner and admins. `id_photo_uri` (the private
-ID document key) is not a field at all: admins get short-lived links from getCourierIdPhotos.
+ID document key) is not a field at all: admins get short-lived links from getCourierIdPhotos;
+`has_id_photo` only says whether there is one.
 Write: admins change `verification_status` (verified_at / verified_by recorded, the courier
 notified: account_verified / account_rejected); every other write goes through the
 updateMyCourierProfile function (create / delete here: 403).
@@ -40,6 +41,10 @@ FIELDS: dict[str, LegacyField] = {
     "phone": LegacyField(couriers.c.phone_e164, "string"),
     "cin_passport": LegacyField(couriers.c.id_document_number, "string"),
     "photo_url": LegacyField(cast(literal(None), Text), "string"),
+    # Whether an ID photo exists (never the key): the admin screen asks getCourierIdPhotos
+    # for the couriers where this is true (it looked for id_photo_uri / photo_url, which
+    # never leave the server, and so never showed a photo).
+    "has_id_photo": LegacyField(couriers.c.id_document_key.is_not(None), "boolean"),
     "vehicle_type": LegacyField(cast(couriers.c.vehicle, Text), "string"),
     "max_package_size": LegacyField(cast(couriers.c.max_package, Text), "string"),
     "price_per_km": LegacyField(couriers.c.price_per_km, "number"),

@@ -6,6 +6,9 @@ QA e-mails / passwords come from the environment (TEST_DUAL_EMAIL, TEST_DUAL_PAS
 TEST_COURIER_EMAIL, TEST_COURIER_PASSWORD, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) or, when
 unset, from the Playwright constants file (QA_CONSTANTS_PATH, default
 ../ods-delivery/tests/helpers/constants.ts), read at run time and never printed.
+Re-seeding also clears what the live Playwright suites leave on the QA accounts and would
+otherwise block the next run: no-response incidents of their orders (5 = customer suspended,
+placeOrder 403 customer_suspended) and the courier's late-cancellation counter.
 The local admin is LOCAL_ADMIN_EMAIL / LOCAL_ADMIN_PASSWORD; without a password it is
 created passwordless and signs in through the account-setup flow (code in Mailpit).
 Refuses to run outside ENVIRONMENT=local/test.
@@ -20,11 +23,11 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.config import settings
 from app.db import SessionLocal, engine
-from app.models import AppSetting, Courier, User, UserAddress
+from app.models import AppSetting, Courier, NoResponseCase, Order, User, UserAddress
 from app.security.passwords import hash_password
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,6 +109,25 @@ async def ensure_courier(session, user: User, verified_by: User | None, **fields
     return courier
 
 
+async def reset_qa_penalties(session, users: list[User]) -> str:
+    """Test runs only: void the QA customers' counted incidents, lift the suspension flag, zero
+    the QA couriers' late cancellations (real accounts are never touched)."""
+    ids = [u.id for u in users]
+    voided = (
+        await session.execute(
+            update(NoResponseCase)
+            .where(
+                NoResponseCase.incident_counted.is_(True),
+                NoResponseCase.order_id.in_(select(Order.id).where(Order.customer_id.in_(ids))),
+            )
+            .values(incident_counted=False)
+        )
+    ).rowcount
+    await session.execute(update(User).where(User.id.in_(ids)).values(is_blacklisted=False))
+    await session.execute(update(Courier).where(Courier.user_id.in_(ids)).values(late_cancellations=0))
+    return f"QA penalties reset ({voided} incident(s) voided)"
+
+
 async def seed() -> list[str]:
     constants = _constants()
     report: list[str] = []
@@ -149,6 +171,19 @@ async def seed() -> list[str]:
                 last_location=_point(SAHLOUL),
             )  # fmt: skip
             report.append(f"QA verified courier {courier_account.email}")
+
+        qa_users = [
+            u
+            for u in (
+                await session.execute(
+                    select(User).where(
+                        User.email.in_([a.email for a in (dual, courier_account) if a is not None])
+                    )
+                )
+            ).scalars()
+        ]
+        if qa_users:
+            report.append(await reset_qa_penalties(session, qa_users))
 
         if await session.get(AppSetting, "main") is None:
             session.add(AppSetting(key="main", value={"support_phone": "", "support_whatsapp": ""}))

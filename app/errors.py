@@ -4,8 +4,9 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import ClientDisconnect
 
 _DEFAULT_CODES = {
     400: "bad_request",
@@ -50,6 +51,12 @@ def install_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             {"error": code, "message": message}, status_code=exc.status_code, headers=exc.headers
         )
+
+    @app.exception_handler(ClientDisconnect)
+    async def _client_gone(_: Request, __: ClientDisconnect) -> Response:
+        # The browser left (navigation, closed tab) while its body was being read: nothing
+        # to answer and nothing wrong server side (it was a 500 with an ERROR traceback).
+        return Response(status_code=499)
 
     @app.exception_handler(RequestValidationError)
     async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:

@@ -35,6 +35,7 @@ os.environ.update(
         "WINSMS_SENDER": "",
         "MESSAGING_DISABLED": "false",
         # OSM services: never reached (the transport is replaced below), fast pauses.
+        "NOMINATIM_ENABLED": "true",
         "NOMINATIM_URL": "http://nominatim.test",
         "OVERPASS_URLS": "http://overpass-a.test/api/interpreter,http://overpass-b.test/api/interpreter",
         "NOMINATIM_MIN_INTERVAL_SECONDS": "0",

@@ -1,8 +1,10 @@
 """Message: order chat (base44/entities/Message.jsonc → `messages`).
 
-Read: the sender, the recipient, the two parties of the order (customer, assigned
-courier) and admins. Base44 only let the sender (and admins) read a row, the app
-reads the chat through getOrderMessages / listMyUnreadMessages anyway.
+Read: the sender and admins, exactly the Base44 rule (`data.sender_id == user.email` or
+admin). The app never reads this entity: the chat goes through getOrderMessages /
+listMyUnreadMessages, which check the order's parties themselves. A wider rule (recipient,
+parties) would hand the other party's rows to any REST or realtime subscriber for nothing
+(security-published / realtime-rules specs).
 
 No direct write: Message create was admin-only on Base44 since 2026-09-27 and the
 front's `Message.create` is the legacy fallback of `sendOrderMessage` (refused, 403);
@@ -12,31 +14,21 @@ Messages are written by app/services/messages.py only.
 
 from typing import Any
 
-from sqlalchemy import exists, func, or_, select, true
+from sqlalchemy import func, true
 
 from app.compat.registry import EntityDef, LegacyField, register
-from app.models import Courier, Message, Order, User
+from app.models import Message, User
 from app.security.deps import CurrentUser
 
 messages = Message.__table__
-orders = Order.__table__
-couriers = Courier.__table__
 sender = User.__table__.alias("message_sender")
 recipient = User.__table__.alias("message_recipient")
-
-
-def _order_party(user: CurrentUser) -> Any:
-    my_couriers = select(couriers.c.id).where(couriers.c.user_id == user.id)
-    return exists().where(
-        orders.c.id == messages.c.order_id,
-        or_(orders.c.customer_id == user.id, orders.c.courier_id.in_(my_couriers)),
-    )
 
 
 def _read_policy(user: CurrentUser) -> Any:
     if user.is_admin:
         return true()
-    return or_(messages.c.sender_id == user.id, messages.c.recipient_id == user.id, _order_party(user))
+    return messages.c.sender_id == user.id
 
 
 FIELDS: dict[str, LegacyField] = {
