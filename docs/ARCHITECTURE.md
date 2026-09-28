@@ -199,7 +199,8 @@ e-mail → user, profile ids found in user fields → user, phones → E.164,
 `shops[]` → stops, history → events, dedupe profiles, categories) →
 `import.py` (idempotent upsert on `legacy_b44_id`, FK order) → `verify.py`
 (counts per table/status, money sums, samples). Files: referenced images
-downloaded and re-uploaded to the private bucket.
+downloaded and re-uploaded to the private bucket. Rules, exclusions, cutover
+and rollback: `docs/MIGRATION.md` (`make import-base44`).
 
 Passwords: Base44 does not export hashes. `users.password_hash` is NULL after
 import; login answers `409 {error:"account_setup_required"}` and the Welcome
