@@ -150,8 +150,8 @@ customer side on its existence). Compat id = `users.id`.
 | no_response_reported | front R, fn R/W | *derived* exists `no_response_cases` for the order | |
 | no_response_reported_at, emergency_contact_started_at | front R, fn R/W | *derived* latest case `started_at` | |
 | emergency_contact_initiated | fn W | *derived* exists case | |
-| customer_responded_to_emergency | front R, fn R/W | *derived* latest case `resolution = 'customer_confirmed'` | |
-| customer_responded_at | fn R/W | *derived* latest case `resolved_at` when customer_confirmed | |
+| customer_responded_to_emergency | front R, fn R/W | *derived* latest case `resolution IN ('customer_confirmed','courier_reached')` | triggerEmergencyContact set it for both answers |
+| customer_responded_at | fn R/W | *derived* latest case `resolved_at` for those resolutions | |
 | no_response_deadline_at, no_response_final_at, no_response_resolution, no_response_case_id | front R / fn R/W | *derived* latest case `deadline_at / final_at / resolution / id` | were copies of NoResponseCase |
 | no_response_channels (in_app, push_devices, whatsapp, sms) | front R, fn R/W | *derived* latest case `channels` (jsonb) | |
 | reported_issues[] (type, description, photo_url, reported_at, reported_by, courier_id) | fn R/W | `order_issues` (`issue_type, description, photo_key, created_at, reporter_id`) | aggregated as a JSON array; guard: parties + admin; lost on Base44 before 2026-09-28 |
@@ -238,12 +238,24 @@ unregisterDeviceToken; a token registered by another account moves to the caller
 | discounted_price | front R\*, fn R/W | `hot_deals.price` | |
 | shop_address | fn R | `hot_deals.shop_address` | never written today |
 | courier_lat, courier_lng | fn R/W | `hot_deals.pickup_location` | admin-only in the entity |
-| photo_url | front R\*/W\* | `hot_deals.photo_key` (public upload) | |
+| photo_url | front R\*/W\* | `hot_deals.photo_key` (public upload) | createHotDeal keeps only the courier's own public upload (Base44 took any https URL); a legacy https URL is answered as is |
 | status, expires_at | front R\*, fn R/W | same-name columns | |
 | buyer_id | fn R/W | join `users.email` via `hot_deals.buyer_id` | |
 | buyer_name, buyer_phone, delivery_address | fn W | *derived* from the buyer's order (`orders.contact_name / contact_phone_e164 / delivery_address` via `buyer_order_id`) | write-only today |
 | delivery_lat, delivery_lng | – | dropped | never written (the buyer's order holds the location) |
 | (new) reserved_at, buyer_order_id | – | columns | `buyer_order_id` replaces `Order.resale_order_id` in the other direction |
+
+Policies: read = deals still listed (`status = 'available'`) for every signed-in user, every
+deal for admins (base44/entities/ResaleOrder.jsonc); `courier_phone`, `courier_lat/lng`,
+`buyer_id`, `buyer_name`, `buyer_phone`, `delivery_address` admin only. No direct write (403):
+createHotDeal, reserveHotDeal, cancelOrder, the hourly jobs. listHotDeals answers only the
+public fields + `distance_km`. A deal leaving the listing is announced as a realtime `delete`.
+
+The buyer's order (reserveHotDeal): `purchase_amount` = the deal's discounted `price` (what
+the buyer reimburses; Base44 stored the original amount and a separate `total_amount` =
+discounted price + fee, which is what the derived `total_amount` answers now), `delivery_fee`
+= the deal's fee, `resale_deal_id` = the deal, one stop (the deal's shop, already
+`purchased`) when the deal has a shop name, status history `accepted` / `reserveHotDeal`.
 
 ## NoResponseCase → `no_response_cases`
 
@@ -256,7 +268,13 @@ unregisterDeviceToken; a token registered by another account moves to the caller
 | purchase_amount, started_at, deadline_at, status, final_at, resolution, resolved_at, incident_counted, customer_answered_late | fn R/W | same-name columns | |
 | push_devices | front R\*, fn R/W | `no_response_cases.channels->'push_devices'` | |
 | whatsapp_log_id | fn R | dropped | never written |
-| messaging_status | fn R/W | `no_response_cases.messaging_status` | |
+| messaging_status | fn R/W | `no_response_cases.messaging_status` | `whatsapp_<status>[/sms_<status>]`, or `legacy` for a case adopted from an order parked before the procedure (never counts an incident) |
+| (whatsapp, sms, in_app of the Order copy) | fn R/W | `no_response_cases.channels` (jsonb) | Order.no_response_channels |
+
+Policies: read = admins and the order's parties (customer, courier; Base44: admin only — the
+parties read the Order copies, which are derived from this table here); no direct write (403):
+triggerEmergencyContact, createHotDeal, cancelOrder, expire_stale_orders and the sweep own it.
+No schema change for the incidents port.
 
 ## MessageLog → `outbound_messages`
 
