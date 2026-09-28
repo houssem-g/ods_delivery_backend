@@ -14,7 +14,12 @@ from typing import Any
 from app.observability.context import request_id_var
 from app.observability.redact import redact
 
-_STANDARD_ATTRS = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message", "asctime"}
+# color_message: uvicorn's ANSI-coloured copy of the message.
+_STANDARD_ATTRS = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {
+    "message",
+    "asctime",
+    "color_message",
+}
 
 
 class RequestIdFilter(logging.Filter):
