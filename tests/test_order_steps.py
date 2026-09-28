@@ -8,7 +8,15 @@ import pytest
 from sqlalchemy import select
 
 from app.db import SessionLocal
-from app.models import CourierLedgerEntry, CourierStatement, File, Order, OrderStatusEvent, OrderTracking
+from app.models import (
+    CourierLedgerEntry,
+    CourierStatement,
+    File,
+    Order,
+    OrderStatusEvent,
+    OrderStop,
+    OrderTracking,
+)
 from app.services import commission
 from app.services import order_transitions as ot
 from tests.factories import auth, error_of
@@ -408,3 +416,32 @@ async def test_statements_job_runs(client, world):
     response = await client.post("/api/admin/jobs/courier_statements/run", headers=auth(world.admin))
     assert response.json()["ok"] is True
     assert response.json()["result"] == {"statements_created": 0, "entries_grouped": 0}
+
+
+async def test_private_receipt_is_stored_and_never_exposed(client, world):
+    order = await world.order(status="at_shop", courier=world.courier, fee="5")
+    mine = "private/receipt/2026/09/mine.jpg"
+    theirs = "private/receipt/2026/09/theirs.jpg"
+    async with SessionLocal() as s:
+        for key, owner in ((mine, world.courier_user.id), (theirs, world.customer.id)):
+            s.add(
+                File(key=key, owner_id=owner, visibility="private", content_type="image/jpeg", size_bytes=3)
+            )
+        await s.commit()
+
+    refused = await step(
+        client, world, order, {"status": "purchased", "purchase_amount": 5, "receipt_photo_url": theirs}
+    )
+    assert refused.status_code == 400
+
+    bought = await step(
+        client, world, order, {"status": "purchased", "purchase_amount": 5, "receipt_photo_url": mine}
+    )
+    assert bought.status_code == 200, bought.text
+    async with SessionLocal() as s:
+        stop = (await s.execute(select(OrderStop).where(OrderStop.order_id == order.id))).scalar_one()
+    assert stop.receipt_key == mine
+    for user in (world.customer, world.courier_user):
+        doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(user))).json()
+        assert doc["receipt_photo_url"] is None and doc["shops"][0].get("receipt_photo_url") is None
+        assert mine not in str(doc)

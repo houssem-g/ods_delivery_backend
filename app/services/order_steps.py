@@ -94,7 +94,12 @@ def public_key_of(url: Any) -> str | None:
 
 
 async def _receipt_key(session: AsyncSession, url: Any, user: CurrentUser) -> str | None:
-    key = public_key_of(url)
+    """The receipt is the courier's own upload: a private file URI (current app, never
+    exposed back) or, from older app builds, one of our public URLs."""
+    if isinstance(url, str) and url.startswith("private/"):
+        key: str | None = url
+    else:
+        key = public_key_of(url)
     if key is None:
         return None
     owner = (await session.execute(select(File.owner_id).where(File.key == key))).first()
