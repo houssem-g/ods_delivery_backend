@@ -271,7 +271,9 @@ async def test_unread_full_mode(client, parties):
 async def test_message_entity_read_policy_and_no_writes(client, parties, factory):
     order = await make_order(parties.customer, parties.courier)
     msg = await make_message(order, parties.customer, "customer", parties.courier_user)
-    for user in (parties.customer, parties.courier_user, parties.admin):
+    reply = await make_message(order, parties.courier_user, "courier", parties.customer)
+
+    async def visible(user):
         rows = (
             await client.get(
                 "/api/entities/Message",
@@ -279,16 +281,22 @@ async def test_message_entity_read_policy_and_no_writes(client, parties, factory
                 headers=auth(user),
             )
         ).json()
-        assert [r["id"] for r in rows] == [str(msg.id)], user.email
+        return sorted(r["id"] for r in rows)
+
+    # Base44 rule: the sender (and admins) only; the other party reads through the functions.
+    assert await visible(parties.customer) == [str(msg.id)]
+    assert await visible(parties.courier_user) == [str(reply.id)]
+    assert await visible(parties.admin) == sorted([str(msg.id), str(reply.id)])
     assert (await client.get("/api/entities/Message", headers=auth(parties.stranger))).json() == []
-    one = await client.get(f"/api/entities/Message/{msg.id}", headers=auth(parties.stranger))
-    assert one.status_code == 404
+    for user in (parties.stranger, parties.courier_user):
+        one = await client.get(f"/api/entities/Message/{msg.id}", headers=auth(user))
+        assert one.status_code == 404
     unread = await client.get(
         "/api/entities/Message",
         params={"q": '{"recipient_id":"livreur@example.test","is_read":false}'},
         headers=auth(parties.courier_user),
     )
-    assert len(unread.json()) == 1 and unread.json()[0]["content"] == "hello"
+    assert unread.json() == []
     create = await client.post(
         "/api/entities/Message",
         json={

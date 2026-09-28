@@ -190,7 +190,8 @@ customer side on its existence). Compat id = `users.id`.
 | is_template | fn W | `messages.is_template` | always false; kept (audit DDL) |
 | is_read | front R, fn R/W | *derived* `messages.read_at IS NOT NULL` | |
 
-Policies: read = sender, recipient, the order's customer / assigned courier, admin; no
+Policies: read = sender or admin (the Base44 rule; the app reads the chat through the
+functions only); no
 direct write (create is sendOrderMessage's legacy fallback → 403; the sender's update
 right of Base44 let him rewrite `recipient_id`, gone).
 
