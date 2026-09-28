@@ -206,10 +206,18 @@ async def sweep_5min() -> dict:
 ```python
 from app.services import order_transitions as ot
 
-order = await ot.lock_order(session, order_id)        # SELECT … FOR UPDATE (None if unknown / not a uuid)
-await ot.transition(session, order, "on_the_way", actor, "triggerEmergencyContact",
-                    reason=None, cancelled_by=None, location=(lat, lng))
-await ot.start(session, new_order, actor, "reserveHotDeal", status="accepted")   # a NEW order
+order = await ot.lock_order(session, order_id)  # SELECT … FOR UPDATE (None if unknown / not a uuid)
+await ot.transition(
+    session,
+    order,
+    "on_the_way",
+    actor,
+    "triggerEmergencyContact",
+    reason=None,
+    cancelled_by=None,
+    location=(lat, lng),
+)
+await ot.start(session, new_order, actor, "reserveHotDeal", status="accepted")  # a NEW order
 ```
 - `actor`: a `CurrentUser`, a `User`, a user uuid, or `None` for the system (jobs).
 - `source`: the flow's name; it is `status_history[].source` in the legacy shape.
