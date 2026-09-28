@@ -165,10 +165,19 @@ async def sweep_5min() -> dict:
         ...  # idempotent work
     return {"expired_orders": n}  # small JSON summary
 ```
-- Placeholders for the four ARCHITECTURE §8 jobs are in `app/jobs/placeholders.py`:
-  replace their bodies (keep names and triggers). `courier_statements` is done (Monday
-  04:00 Africa/Tunis); the order jobs live in `app/jobs/orders.py`: `expire_stale_orders`
-  (5 min), `expire_orphan_offers` (hourly), `courier_presence_expiry` (5 min).
+- Every job of ARCHITECTURE §8 exists (no placeholder left). One module per domain:
+
+| Job | Every | Module | What it does (port of) |
+|---|---|---|---|
+| `sweep_5min` | 5 min | `app/jobs/incidents.py` | "client ne répond pas" sweep: incident + "last chance" alerts once the deadline is past, auto-close 3 h later; orders in `client_no_response` and orders that left it with a case still open; one transaction per order, SKIP LOCKED (triggerEmergencyContact `sweep`, run by sweepNoResponse) |
+| `whatsapp_check_pending` | 5 min | `app/jobs/messaging.py` | SMS for critical WhatsApp not delivered in time, retries (sendWhatsAppMessage `check_pending`) |
+| `expire_stale_orders` | 5 min | `app/jobs/orders.py` | open orders idle 24 h → expired, deliveries idle 48 h → abandoned (expireStaleOrders) |
+| `courier_presence_expiry` | 5 min | `app/jobs/orders.py` | online couriers without heartbeat for 15 min → offline |
+| `expire_orphan_offers` | 1 h | `app/jobs/orders.py` | pending offers of closed orders → expired (expireStaleOrders `offers`) |
+| `hourly_cleanup` | 1 h | `app/jobs/incidents.py` | listed hot deals past their expiry → expired (announced to the listings) |
+| `test_data_purge` | 1 h | `app/jobs/messaging.py` | purge steps; step `hot_deals` (`app/jobs/incidents.py`): expired unsold deals and expired QA deals deleted (sweepExpiredTestData) |
+| `osm_refresh` | daily 03:00 | `app/jobs/periodic.py` | OSM places refresh (refreshOsmIndex), off unless OSM_REFRESH_ENABLED |
+| `courier_statements` | Mon 04:00 Africa/Tunis | `app/jobs/periodic.py` | weekly commission statements |
 - Only the leader process runs them (`pg_try_advisory_lock` on a dedicated
   connection; followers retry every `SCHEDULER_LEADER_RETRY_SECONDS`).
 - By hand: `POST /api/admin/jobs/{name}/run` with an admin token or
@@ -249,7 +258,7 @@ Matrix (`ot.ALLOWED`, union of all flows; restrict it for your actor):
 | accepted | at_shop, on_the_way (hot deal: the goods are already bought), pending (courier drops), cancelled |
 | at_shop | price_confirmation_needed, purchased, pending, cancelled |
 | price_confirmation_needed | at_shop, purchased, pending, cancelled |
-| purchased | on_the_way, pending, cancelled |
+| purchased | on_the_way, client_no_response (reported once the goods are bought), pending, cancelled |
 | on_the_way | delivered, client_no_response, pending, cancelled |
 | client_no_response | on_the_way (courier resumes / customer answered), delivered, pending, cancelled |
 | delivered, cancelled | — (final) |
@@ -262,10 +271,10 @@ The courier's own writes (`Order.update` from CourierOrderActive) are narrower
 done by `triggerEmergencyContact` with `transition(..., "on_the_way", ...)`.
 
 Hooks and helpers for the no-response / hot-deal features:
-- `app.services.cancellation.no_response_refresh`: set it to
-  `async def refresh(session, order)`; cancelOrder calls it before judging a no-response
-  cancellation (the live code called `triggerEmergencyContact {action:'status'}`), then
-  reads the order's latest `no_response_cases` row (`no_response_gate`).
+- `app.services.cancellation.no_response_refresh` is `app.services.no_response.refresh`
+  (installed when `no_response` is imported): cancelOrder calls it before judging a
+  no-response cancellation (the live code called `triggerEmergencyContact {action:'status'}`),
+  then reads the order's latest `no_response_cases` row (`no_response_gate`).
 - cancelOrder already handles the linked hot deal (`orders.resale_deal_id`, or
   `hot_deals.original_order_id` / `buyer_order_id`): customer cancel → relisted while not
   expired, courier cancel → expired; it emits `ResaleOrder` updates.
@@ -284,3 +293,30 @@ Notifications of the order steps: the apps keep sending them, as today, through
 `account_verified` / `account_rejected`). The server sends only what the Deno functions
 sent themselves: `new_order` (dispatch), `order_cancelled` (cancelOrder, expiry; always
 pushed), `issue_reported` (in-app only).
+
+## 7. Incidents: "client ne répond pas" and hot deals
+
+`app/services/no_response.py` (triggerEmergencyContact) and `app/services/hot_deals.py`
+(createHotDeal, reserveHotDeal, listHotDeals, the hot-deal jobs).
+- **Lock order**: `ot.lock_order` first, then the case rows (`FOR UPDATE`), then deals. Every
+  action holds the order lock from the read that decides to the last write, so a customer
+  confirming, a courier reselling / cancelling and the sweep are serialized; the sweep uses
+  SKIP LOCKED and looks again at the next run.
+- **One open case per order** (`status <> 'resolved'`): guaranteed by that lock (report closes a
+  stale open case before opening a new one); the partial unique index `one_open_case_per_order`
+  backs it for `waiting`.
+- **Incidents** are derived (`customer_stats`, 180 days, `incident_counted`). A case records an
+  incident once, at the deadline (`_finalize`), or when the courier resells / cancels after it;
+  a late answer, `courier_reached`, `delivered` void it; a `legacy` case (adopted from an order
+  parked before the procedure, `messaging_status = 'legacy'`) never counts.
+  `orders.mirror_incidents` mirrors `users.is_blacklisted` (≥ 5) and emits `UserProfile`.
+- **Realtime**: every case change emits `NoResponseCase` and `Order` (the order's no_response_*
+  fields derive from its latest case). A deal leaving the listing (sold, expired, purged) is
+  announced as a `ResaleOrder` **delete** (non-admins can no longer read it: HotDealsSection
+  reloads), a listed deal as `create` / `update`.
+- **Refusals that keep writes**: a flow answering ≥ 400 after writing something that must stay
+  (createHotDeal's case refresh, reserveHotDeal marking an expired deal, the resale-race safety
+  net) calls `no_response.keep_writes(session)`; the function module then commits before
+  answering (the router rolls back every other ≥ 400).
+- **Business refusals of triggerEmergencyContact are 409, never 400**: NoResponsePanel falls back
+  to a direct `Order.update` on 400 (refused anyway, 403).

@@ -32,7 +32,7 @@ from app.services import order_transitions as ot
 from app.services.dispatch import dispatch_order
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
-from app.services.orders import OrderRefused, courier_of_user, first_stop, is_test_order
+from app.services.orders import OrderRefused, courier_of_user, first_stop, is_test_order, mirror_incidents
 
 log = logging.getLogger("odsd.cancellation")
 CUSTOMER_CANCELLABLE = ("pending", "offers_received", "accepted")
@@ -149,13 +149,17 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
             case = await latest_case(session, order.id)
 
     if case is not None and case.status != "resolved" and cancelled_by == "courier":
+        was_counted = case.incident_counted
         case.status, case.resolved_at = "resolved", now
         if verified_no_response:
             case.resolution = "returned_to_shop" if reason == "goods_returned_to_shop" else "cancelled_kept"
-            case.incident_counted = True
+            case.incident_counted = case.messaging_status != "legacy"  # a legacy case never counts
             case.final_at = case.final_at or now
         else:
             case.resolution, case.incident_counted = "courier_cancelled_other", False
+        emit(session, "NoResponseCase", "update", case.id)
+        if was_counted != case.incident_counted:
+            await mirror_incidents(session, order.customer_id)
 
     previous_courier_id = order.courier_id
     deal = await linked_hot_deal(session, order)

@@ -43,7 +43,8 @@ ALLOWED: dict[str | None, frozenset[str]] = {
     "accepted": frozenset({"at_shop", "on_the_way"}) | _BACK_TO_POOL_OR_CANCEL,
     "at_shop": frozenset({"price_confirmation_needed", "purchased"}) | _BACK_TO_POOL_OR_CANCEL,
     "price_confirmation_needed": frozenset({"at_shop", "purchased"}) | _BACK_TO_POOL_OR_CANCEL,
-    "purchased": frozenset({"on_the_way"}) | _BACK_TO_POOL_OR_CANCEL,
+    # client_no_response: triggerEmergencyContact reports once the goods are bought (REPORTABLE)
+    "purchased": frozenset({"on_the_way", "client_no_response"}) | _BACK_TO_POOL_OR_CANCEL,
     "on_the_way": frozenset({"delivered", "client_no_response"}) | _BACK_TO_POOL_OR_CANCEL,
     # no-response procedure: courier resumes / reaches the customer / closes
     "client_no_response": frozenset({"on_the_way", "delivered"}) | _BACK_TO_POOL_OR_CANCEL,

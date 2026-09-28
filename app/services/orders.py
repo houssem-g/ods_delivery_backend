@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import Courier, Order, OrderStop, User, UserAddress, customer_stats
+from app.realtime.events import emit
 from app.services import order_transitions as ot
 from app.services.geo import ORDER_BOUNDS, as_float, haversine_km, lat_of, lng_of, point, within
 
@@ -69,6 +70,20 @@ async def active_incidents(session: AsyncSession, customer_id: uuid.UUID) -> int
         )
     ).scalar_one_or_none()
     return int(count or 0)
+
+
+async def mirror_incidents(session: AsyncSession, customer_id: uuid.UUID) -> int:
+    """After a case counted / voided an incident: the count is derived (customer_stats), the
+    suspension flag is mirrored like the Deno functions did on every profile of the customer
+    (`is_blacklisted = incidents >= 5`), and the customer's UserProfile row changes."""
+    await session.flush()
+    count = await active_incidents(session, customer_id)
+    user = await session.get(User, customer_id, with_for_update=True)
+    if user is not None:
+        user.is_blacklisted = count >= SUSPENDED_AT
+        await session.flush()
+        emit(session, "UserProfile", "update", user.id)
+    return count
 
 
 async def first_stop(session: AsyncSession, order_id: uuid.UUID) -> OrderStop | None:

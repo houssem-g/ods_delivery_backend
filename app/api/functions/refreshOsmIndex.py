@@ -5,7 +5,7 @@ never matches). Anyone else: 401 { error: 'Unauthorized' } (the Base44
 `_internal_key` does not exist here: internal callers use the service directly).
 Body / query `category`: one of the 7 keys, 'all', or nothing (the weekday's category,
 UTC); unknown → 400. Answers { success, duration_ms, results[], log[], backfilled }.
-The daily job `osm_refresh` (app/jobs/placeholders.py) runs the same service.
+The daily job `osm_refresh` (app/jobs/periodic.py) runs the same service.
 """
 
 import secrets
