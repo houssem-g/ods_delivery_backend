@@ -3,7 +3,7 @@ COMPOSE := docker compose
 RUN := uv run
 TEST_DATABASE_URL ?= postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery_test
 
-.PHONY: help up deps down logs run migrate revision seed test lint fmt shell-db check-heads
+.PHONY: help up deps down logs run migrate revision seed test lint fmt shell-db check-heads import-base44
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -48,3 +48,8 @@ shell-db: ## psql on the local database
 
 check-heads: ## fail unless alembic has a single head
 	$(RUN) python scripts/check_single_head.py
+
+import-base44: ## Base44 export -> db: make import-base44 EXPORT_DIR=… DATABASE_URL=… [ARGS="--files --dry-run"]
+	@test -n "$(EXPORT_DIR)" || { echo "EXPORT_DIR=… is required"; exit 2; }
+	@test "$(origin DATABASE_URL)" = "command line" || { echo "DATABASE_URL=… is required on the command line"; exit 2; }
+	$(RUN) python -m migrate.pipeline "$(EXPORT_DIR)" --database-url "$(DATABASE_URL)" $(ARGS)
