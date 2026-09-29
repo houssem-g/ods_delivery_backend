@@ -616,6 +616,10 @@ async def test_courier_drops_back_to_the_pool(client, world, factory):
     # broadcast again to the couriers around the shop
     notified = {n.user_id for n in await notifications(type_="new_order")}
     assert other_user.id in notified
+    # ...but never to the courier who gave it up, and he can no longer bid on it (owner, 2026-09-29)
+    assert world.courier_user.id not in notified
+    again = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
+    assert again.status_code == 409 and again.json()["error"] == "order_dropped"
     # the courier who left can no longer read it once it is open again? he is a verified courier: yes, to bid
     assert (
         await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.courier_user))

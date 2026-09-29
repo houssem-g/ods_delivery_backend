@@ -25,7 +25,7 @@ from app.models import Courier, Order, OrderStop, User
 from app.services import order_texts
 from app.services.notifications import notify
 from app.services.order_transitions import now_utc
-from app.services.orders import first_stop, is_test_order, signup_attribution, stop_coordinates
+from app.services.orders import dropped_by, first_stop, is_test_order, signup_attribution, stop_coordinates
 
 BUSY_STATUSES = ("accepted", "at_shop", "purchased", "on_the_way")
 MAX_FAN_OUT = 200
@@ -106,9 +106,12 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     skipped: list[dict[str, Any]] = []
     preferred_id: uuid.UUID | None = None
     preferred_notified = False
+    dropped = await dropped_by(session, order.id)  # couriers who gave it up: never offered again
 
     if order.preferred_courier_id is not None:
         courier, reason, distance = await _preferred(session, order, stop, shop)
+        if courier is not None and courier.user_id in dropped:
+            courier, reason = None, "dropped"
         if courier is None:
             skipped.append({"id": str(order.preferred_courier_id), "reason": f"preferred_{reason}"})
         else:
@@ -172,6 +175,8 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     ]
     if preferred_id is not None:
         conditions.append(Courier.id != preferred_id)
+    if dropped:
+        conditions.append(Courier.user_id.not_in(dropped))
     eligible = (
         await session.execute(
             select(

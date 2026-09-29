@@ -21,7 +21,7 @@ from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
 from app.services.geo import as_float
 from app.services.notifications import notify
-from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user
+from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user, dropped_by
 
 MAX_FEE_TND = Decimal(
     "200"
@@ -267,6 +267,8 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
         raise OrderRefused(403, "own_order")
     if order.status not in ot.OPEN_STATUSES:
         raise OrderRefused(409, "order_not_open", status=order.status)
+    if user.id in await dropped_by(session, order.id):
+        raise OrderRefused(409, "order_dropped")  # he cancelled this delivery himself
     already = (
         await session.execute(
             select(OrderOffer.id).where(

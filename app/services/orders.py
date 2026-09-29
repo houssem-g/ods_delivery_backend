@@ -14,7 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import Courier, Order, OrderStop, User, UserAddress, customer_stats
+from app.models import Courier, Order, OrderStatusEvent, OrderStop, User, UserAddress, customer_stats
 from app.models.orders import UNAVAILABLE_POLICIES
 from app.realtime.events import emit
 from app.services import order_transitions as ot
@@ -91,6 +91,20 @@ async def mirror_incidents(session: AsyncSession, customer_id: uuid.UUID) -> int
         await session.flush()
         emit(session, "UserProfile", "update", user.id)
     return count
+
+
+async def dropped_by(session: AsyncSession, order_id: uuid.UUID) -> set[uuid.UUID]:
+    """Users who, as its courier, gave the order up (cancelOrder put it back to 'pending'). It is
+    not offered to them again: no new_order notice, no new offer (owner, 2026-09-29)."""
+    rows = await session.execute(
+        select(OrderStatusEvent.actor_user_id).where(
+            OrderStatusEvent.order_id == order_id,
+            OrderStatusEvent.to_status == "pending",
+            OrderStatusEvent.cancelled_by == "courier",
+            OrderStatusEvent.actor_user_id.is_not(None),
+        )
+    )
+    return {r for (r,) in rows}
 
 
 async def first_stop(session: AsyncSession, order_id: uuid.UUID) -> OrderStop | None:
