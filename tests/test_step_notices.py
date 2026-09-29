@@ -195,3 +195,17 @@ async def test_a_failing_notice_never_fails_the_step(client, world, monkeypatch)
     assert r.status_code == 200 and r.json()["status"] == "at_shop"
     assert await notifications(world.customer) == []
     assert await rows(select(PushDelivery)) == []
+
+
+async def test_server_side_notices_are_idempotent(world):
+    from app.db import transaction
+    from app.models import Order
+    from app.services import step_notices
+
+    order = await world.order(status="on_the_way", courier=world.courier, fee="5", purchase="10")
+    async with transaction() as session:
+        row = await session.get(Order, order.id)
+        assert await step_notices.courier_step(session, row, "purchased", "on_the_way") is True
+        assert await step_notices.courier_step(session, row, "purchased", "on_the_way") is False
+        assert await step_notices.courier_step(session, row, "on_the_way", "client_no_response") is False
+    assert len(await notifications(world.customer, "on_the_way")) == 1

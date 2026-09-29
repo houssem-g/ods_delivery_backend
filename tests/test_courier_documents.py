@@ -132,6 +132,7 @@ async def test_upload_refusals(client, world, factory):
         ({"kind": "cin", "file_url": mine, "expires_on": "31/12/2030"}, "invalid_expires_on"),
         ({"kind": "cin", "file_url": mine, "expires_on": 2030}, "invalid_expires_on"),
         ({"kind": "cin", "file_url": mine, "expires_on": past}, "document_expired"),
+        ({"kind": "cin", "file_url": mine, "expires_on": "2201-01-01"}, "invalid_expires_on"),
     ]
     for payload, error in cases:
         r = await call(client, world.courier_user, "uploadCourierDocument", payload)

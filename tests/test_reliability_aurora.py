@@ -41,6 +41,9 @@ async def test_a_new_customer_is_fully_reliable(client, world):
     body = await call(client, world.customer)
     assert body["delivered_orders"] == 0 and body["reliability_pct"] == 100
     assert body["avg_reply_seconds"] is None
+    order = await world.order()  # a courier bidding on it sees the same (no incident to hide)
+    seen = await call(client, world.courier_user, {"order_id": str(order.id)})
+    assert seen["incidents"] == 0 and seen["reliability_pct"] == 100 and seen["delivered_orders"] == 0
 
 
 async def test_reliability_pct_and_reply_time(client, world):
