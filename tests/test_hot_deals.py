@@ -506,6 +506,18 @@ async def test_list_without_a_point_and_pagination(client, world):
     assert empty_radius["deals"] == []  # Number(null) = 0 km
 
 
+async def test_list_one_deal_by_id_for_the_detail_page(client, world):
+    far = await a_deal(world, at=TUNIS, items_text="tunis")  # beyond the default radius
+    sold = await a_deal(world, status="sold", buyer_id=world.buyer.id, items_text="sold")
+    where = {"lat": SOUSSE_SHOP[0], "lng": SOUSSE_SHOP[1]}
+    one = (await fn(client, world.buyer, "listHotDeals", {"id": str(far.id), **where})).json()
+    assert [d["id"] for d in one["deals"]] == [str(far.id)] and one["deals"][0]["distance_km"] > 100
+    no_point = (await fn(client, world.buyer, "listHotDeals", {"id": str(far.id)})).json()
+    assert no_point["deals"][0]["distance_km"] is None
+    for gone in (str(sold.id), "not-a-uuid", "00000000-0000-0000-0000-000000000000"):
+        assert (await fn(client, world.buyer, "listHotDeals", {"id": gone})).json()["deals"] == []
+
+
 # --- ResaleOrder entity and realtime -----------------------------------------------------------------
 
 

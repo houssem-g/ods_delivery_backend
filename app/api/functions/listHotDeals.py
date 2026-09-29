@@ -1,7 +1,8 @@
 """listHotDeals — the hot deals a customer may reserve, nearest first
 (base44/functions/listHotDeals; app/services/hot_deals.py).
 
-Body: { lat?, lng?, radius_km = 50 (≤ 200), limit = 30 (1-50), cursor? }.
+Body: { lat?, lng?, radius_km = 50 (≤ 200), limit = 30 (1-50), cursor?, id? } — `id`: that deal only
+(the detail page; [] once it is reserved, expired or unknown).
 Returns { success, deals: [public fields + distance_km (0.1 km, null without a point)], total,
 next_cursor }. The courier's phone and position and the buyer never leave the server here.
 """

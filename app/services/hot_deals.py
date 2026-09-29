@@ -385,6 +385,13 @@ def _number(value: Decimal | None) -> float | None:
     return float(value) if value is not None else None
 
 
+def _uuid_or_none(value: Any) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(str(value)) if value is not None else None
+    except ValueError:
+        return None
+
+
 async def list_deals(session: AsyncSession, payload: dict[str, Any]) -> Result:
     lat, lng = payload.get("lat"), payload.get("lng")
     has_point = is_finite_number(lat) and is_finite_number(lng)
@@ -395,12 +402,19 @@ async def list_deals(session: AsyncSession, payload: dict[str, Any]) -> Result:
     cursor = js_number(payload.get("cursor")) if "cursor" in payload else math.nan
     offset = int(max(0, cursor)) if math.isfinite(cursor) else 0
 
+    deal_id = _uuid_or_none(payload.get("id"))
+    if payload.get("id") is not None and deal_id is None:
+        return 200, {"success": True, "deals": [], "total": 0, "next_cursor": None}
     distance: Any = None
     stmt = (
         select(HotDeal, Courier.display_name)
         .join(Courier, Courier.id == HotDeal.courier_id)
         .where(HotDeal.status == "available", HotDeal.expires_at > func.now())
     )
+    if deal_id is not None:
+        # one deal (the detail page): its distance when a point is given, whatever the radius
+        stmt = stmt.where(HotDeal.id == deal_id)
+        radius_km = LIST_RADIUS_MAX * 1000
     if has_point:
         # 0.1 km: enough to sort, too coarse to pinpoint the courier.
         meters = func.ST_Distance(HotDeal.pickup_location, func.ST_GeogFromText(point(lat, lng)))
