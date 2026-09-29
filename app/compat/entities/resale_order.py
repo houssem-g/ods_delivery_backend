@@ -18,6 +18,7 @@ from app.compat.registry import EntityDef, LegacyField, register
 from app.models import Courier, HotDeal, Order, User
 from app.security.deps import CurrentUser
 from app.services.geo import lat_of, lng_of
+from app.services.hot_deals import current_price_sql
 
 deals = HotDeal.__table__
 deal_courier = Courier.__table__.alias("deal_courier")
@@ -44,7 +45,11 @@ FIELDS: dict[str, LegacyField] = {
     "items_text": LegacyField(deals.c.items_text, "string"),
     "purchase_amount": LegacyField(deals.c.purchase_amount, "number"),
     "discount_percentage": LegacyField(deals.c.discount_percentage, "number"),
-    "discounted_price": LegacyField(deals.c.price, "number"),
+    # the decayed price while listed (app/services/hot_deals.current_price), the start price after
+    "discounted_price": LegacyField(current_price_sql(deals), "number"),
+    "current_price": LegacyField(current_price_sql(deals), "number"),
+    "start_price": LegacyField(deals.c.start_price, "number"),
+    "floor_price": LegacyField(deals.c.floor_price, "number"),
     "include_delivery": LegacyField(deals.c.include_delivery, "boolean"),
     "delivery_fee": LegacyField(deals.c.delivery_fee, "number"),
     "shop_name": LegacyField(deals.c.shop_name, "string"),

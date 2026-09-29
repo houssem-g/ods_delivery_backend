@@ -196,6 +196,9 @@ def _short(text: str | None, limit: int = 80) -> str:
     return f"{value[: limit - 1]}…" if len(value) > limit else value
 
 
+short_text = _short
+
+
 def stock_check_for_customer(
     missing: str, substitute: str | None, price: object, nothing_available: bool, minutes: int
 ) -> Text:

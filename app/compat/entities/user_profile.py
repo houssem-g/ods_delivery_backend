@@ -43,7 +43,15 @@ PREFERENCE_COLUMNS = {
 ADDRESS_FIELDS = ("default_address", "country", "default_lat", "default_lng", "governorate", "city")
 REFERRAL_FIELDS = ("referred_by_courier_id", "referred_by_code", "referred_at")
 SELF_FIELDS = frozenset(
-    {"phone", "role", "language", "notification_preferences", "whatsapp_opt_in", "whatsapp_opt_in_at"}
+    {
+        "phone",
+        "role",
+        "language",
+        "notification_preferences",
+        "whatsapp_opt_in",
+        "whatsapp_opt_in_at",
+        "notify_hot_deals",
+    }
     | set(ADDRESS_FIELDS)
     | set(REFERRAL_FIELDS)
 )
@@ -115,6 +123,8 @@ FIELDS: dict[str, LegacyField] = {
     "referred_at": LegacyField(users.c.referred_at, "datetime"),
     "whatsapp_opt_in": LegacyField(users.c.whatsapp_opt_in_at.is_not(None), "boolean"),
     "whatsapp_opt_in_at": LegacyField(users.c.whatsapp_opt_in_at, "datetime"),
+    # Aurora opt-in: a new hot deal near the default address (hot_deal_new).
+    "notify_hot_deals": LegacyField(users.c.notify_hot_deals, "boolean"),
 }
 
 
@@ -210,6 +220,8 @@ async def _apply(session: AsyncSession, actor: CurrentUser, user: User, values: 
         user.language = values["language"]
     if "notification_preferences" in values:
         _apply_preferences(user, values["notification_preferences"])
+    if "notify_hot_deals" in values:
+        user.notify_hot_deals = bool(values["notify_hot_deals"])
     if "whatsapp_opt_in" in values:
         if values["whatsapp_opt_in"]:
             given = values.get("whatsapp_opt_in_at")

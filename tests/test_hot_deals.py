@@ -471,7 +471,7 @@ async def test_list_nearest_first_public_fields_only(client, world):
     assert (
         first["discounted_price"] == 18
         and first["status"] == "available"
-        and first["courier_name"] == "Karim Trabelsi"
+        and first["courier_name"] == "Karim T."  # first name + initial (Aurora)
     )
     assert body["deals"][1]["id"] == str(far.id) and body["deals"][1]["distance_km"] > 10
     assert body["deals"][2]["id"] == str(nowhere.id) and body["deals"][2]["distance_km"] is None

@@ -17,10 +17,19 @@ reserveHotDeal (any other signed-in user): deal row locked, so two buyers of the
   created 'accepted' with the deal's courier (ot.start), its total = discounted price + the
   deal's delivery fee; the courier is told (hot_deal_reserved, always pushed).
 listHotDeals: listed deals not expired, public fields only, nearest first (PostGIS), 0.1 km.
+Price decay (Aurora, 2026-09-29): a deal starts at start_price (the discounted price) and drops
+by drop_step every drop_every_min minutes down to floor_price (createHotDeal `floor_price`, ≥ 30 %
+of the start price; default max(start − 4 × drop_step, 30 % of start)). The current price is
+computed on read (`current_price`) and charged by reserveHotDeal at that instant. Deals made
+before have start = floor = price (no decay).
+Alerts: customers who opted in (users.notify_hot_deals) and whose default address is within
+ALERT_RADIUS_KM of the pickup hear of a new deal (hot_deal_new), at most ALERT_MAX, never the
+courier nor the original customer, never for a QA deal.
 Jobs: expire_deals (hourly: listed deals past their expiry → expired) and purge_deals (purge
   step "hot_deals" of test_data_purge: expired unsold deals and QA deals are deleted).
 """
 
+import logging
 import math
 import re
 import uuid
@@ -33,16 +42,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.dates import legacy_datetime
 from app.compat.jsnum import clamp, is_finite_number, js_number, number_or
-from app.models import Courier, File, HotDeal, NoResponseCase, Order, OrderStop, User
+from app.models import (
+    Courier,
+    File,
+    HotDeal,
+    NoResponseCase,
+    Order,
+    OrderStatusEvent,
+    OrderStop,
+    User,
+    UserAddress,
+    courier_stats,
+)
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
-from app.services import cancellation, no_response
+from app.services import cancellation, no_response, order_texts
 from app.services import order_transitions as ot
 from app.services.geo import point
+from app.services.notifications import notify
 from app.services.order_notices import notify_always_pushed
-from app.services.orders import TEST_ORDER_SQL, courier_of_user, first_stop, mirror_incidents
+from app.services.orders import TEST_ORDER_RE, TEST_ORDER_SQL, courier_of_user, first_stop, mirror_incidents
 from app.services.phones import InvalidPhone, is_tunisian, to_e164, verification_enforced
 from app.services.shops import key_from_public_url, public_prefix
+
+log = logging.getLogger("odsd.hot_deals")
 
 RESELLABLE = frozenset({"purchased", "on_the_way", "client_no_response"})
 TTL = timedelta(hours=2)
@@ -67,8 +90,16 @@ PUBLIC_FIELDS = (
     "id", "items_text", "shop_name", "purchase_amount", "discount_percentage", "discounted_price",
     "include_delivery", "delivery_fee", "photo_url", "expires_at", "status", "courier_name",
     "created_date",
+    # Aurora (price decay, trust signals)
+    "original_price", "current_price", "start_price", "floor_price", "next_price", "next_drop_at",
+    "discount_pct_now", "courier_rating", "courier_deliveries", "receipt_verified", "sealed",
+    "purchased_at", "no_response_at", "listed_at",
 )  # fmt: skip
 PURGE_BATCH = 500
+FLOOR_MIN_SHARE = Decimal("0.3")  # the floor price is at least 30 % of the start price
+DEFAULT_DROPS = 4  # default floor: 4 drops below the start (never under 30 %)
+ALERT_RADIUS_KM = 5
+ALERT_MAX = 200
 
 Result = tuple[int, dict[str, Any]]
 
@@ -84,8 +115,49 @@ def announce(session: AsyncSession, deal: HotDeal | uuid.UUID, status: str, crea
         emit(session, "ResaleOrder", "delete", deal_id)
 
 
-def _money(value: float) -> Decimal:
+def _money(value: float | Decimal) -> Decimal:
     return Decimal(str(value)).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+
+
+def _drops(deal: HotDeal, now: datetime) -> int:
+    every = timedelta(minutes=max(1, deal.drop_every_min or 1))
+    return max(0, math.floor((now - deal.created_at) / every))
+
+
+def current_price(deal: HotDeal, now: datetime) -> Decimal:
+    """max(floor, start − ⌊minutes listed / drop_every_min⌋ × drop_step)."""
+    start, floor = deal.start_price, deal.floor_price
+    return max(floor, start - _drops(deal, now) * (deal.drop_step or Decimal(0)))
+
+
+def price_schedule(deal: HotDeal, now: datetime) -> tuple[Decimal, Decimal | None, datetime | None]:
+    """(current price, next price, when it drops); the next two are None at the floor."""
+    price = current_price(deal, now)
+    step = deal.drop_step or Decimal(0)
+    if step <= 0 or price <= deal.floor_price:
+        return price, None, None
+    every = timedelta(minutes=max(1, deal.drop_every_min or 1))
+    return price, max(deal.floor_price, price - step), deal.created_at + (_drops(deal, now) + 1) * every
+
+
+def current_price_sql(deals: Any) -> Any:
+    """current_price in SQL (the ResaleOrder entity)."""
+    minutes = func.extract("epoch", func.now() - deals.c.created_at) / 60
+    drops = func.greatest(0, func.floor(minutes / func.greatest(deals.c.drop_every_min, 1)))
+    return func.greatest(deals.c.floor_price, deals.c.start_price - drops * deals.c.drop_step)
+
+
+def _floor_price(payload: dict[str, Any], start: Decimal) -> Decimal | None:
+    """createHotDeal's floor: given (≥ 30 % of the start, ≤ the start) or the default; None = invalid."""
+    lowest = _money(start * FLOOR_MIN_SHARE)
+    if payload.get("floor_price") in (None, ""):
+        step = Decimal("0.500")
+        return _money(max(start - DEFAULT_DROPS * step, lowest))
+    number = js_number(payload.get("floor_price"))
+    if not math.isfinite(number):
+        return None
+    floor = _money(number)
+    return floor if lowest <= floor <= start else None
 
 
 def _bounded(payload: dict[str, Any], key: str, low: float, high: float, fallback: float) -> float:
@@ -160,6 +232,14 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
 
     discount = _bounded(payload, "discount_percentage", 0, MAX_DISCOUNT, 0)
     fee = _bounded(payload, "delivery_fee", *FEE_BOUNDS, DEFAULT_FEE)
+    start = _money(float(purchase) * (1 - discount / 100))
+    floor = _floor_price(payload, start)
+    if floor is None:
+        return 400, {
+            "error": "invalid_floor_price",
+            "min": float(_money(start * FLOOR_MIN_SHARE)),
+            "max": float(start),
+        }
     now = ot.now_utc()
     stop = await first_stop(session, order.id)
     deal = HotDeal(
@@ -170,7 +250,11 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         shop_address=stop.address if stop else None,
         purchase_amount=purchase,
         discount_percentage=_money(discount),
-        price=_money(float(purchase) * (1 - discount / 100)),
+        price=start,
+        start_price=start,
+        floor_price=floor,
+        drop_step=Decimal("0.500"),
+        drop_every_min=5,
         include_delivery=True,
         delivery_fee=_money(fee),
         photo_key=await _photo_key(session, payload.get("photo_url"), user),
@@ -218,7 +302,66 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
             "recipient_role": "customer",
         },
     )
-    return 200, {"success": True, "deal_id": str(deal.id)}
+    alerted = await _alert_nearby(session, deal, courier.user_id, order.customer_id)
+    return 200, {
+        "success": True,
+        "deal_id": str(deal.id),
+        "start_price": float(start),
+        "floor_price": float(floor),
+        "alerted": alerted,
+    }
+
+
+async def _alert_nearby(
+    session: AsyncSession, deal: HotDeal, courier_user_id: uuid.UUID, original_customer_id: uuid.UUID
+) -> int:
+    """hot_deal_new to the opted-in customers living near the pickup (default address)."""
+    if deal.pickup_location is None or TEST_ORDER_RE.search(deal.items_text or ""):
+        return 0
+    pickup = select(HotDeal.pickup_location).where(HotDeal.id == deal.id).scalar_subquery()
+    targets = list(
+        (
+            await session.execute(
+                select(User.id)
+                .join(UserAddress, and_(UserAddress.user_id == User.id, UserAddress.is_default))
+                .where(
+                    User.notify_hot_deals.is_(True),
+                    User.deleted_at.is_(None),
+                    User.disabled_at.is_(None),
+                    User.id.not_in([courier_user_id, original_customer_id]),
+                    UserAddress.location.is_not(None),
+                    func.ST_DWithin(UserAddress.location, pickup, ALERT_RADIUS_KM * 1000),
+                )
+                .order_by(func.ST_Distance(UserAddress.location, pickup), User.id)
+                .limit(ALERT_MAX)
+            )
+        ).scalars()
+    )
+    price = deal.start_price
+    items = order_texts.short_text(deal.items_text, 60)
+    sent = 0
+    for user_id in targets:
+        try:
+            async with session.begin_nested():
+                await notify(
+                    session,
+                    user_id=user_id,
+                    type_="hot_deal_new",
+                    title_ar="🔥 عرض ساخن قريب منك",
+                    title_fr="🔥 Offre chaude près de chez vous",
+                    body_ar=f"{items} — {price:.3f} د.ت بدل {deal.purchase_amount:.3f} د.ت",
+                    body_fr=f"{items} — {price:.3f} TND au lieu de {deal.purchase_amount:.3f} TND",
+                    metadata={
+                        "resale_order_id": str(deal.id),
+                        "recipient_role": "customer",
+                        "price": float(price),
+                        "original_price": float(deal.purchase_amount),
+                    },
+                )
+            sent += 1
+        except Exception:
+            log.exception("hot_deal_new lost for user %s (deal %s)", user_id, deal.id)
+    return sent
 
 
 # ─────────────────────────── reserveHotDeal ───────────────────────────
@@ -306,6 +449,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
     fee = deal.delivery_fee or Decimal(0)
     if fee <= 0:
         return 500, {"error": "Invalid hot deal delivery fee"}
+    charged = current_price(deal, now)  # the decayed price at this instant
     lat = _coord(payload.get("delivery_lat"), BUYER_BOUNDS[0], BUYER_BOUNDS[1])
     lng = _coord(payload.get("delivery_lng"), BUYER_BOUNDS[2], BUYER_BOUNDS[3])
     order = Order(
@@ -316,8 +460,8 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         contact_phone_e164=contact_phone,
         delivery_address=address,
         delivery_location=point(lat, lng) if lat is not None and lng is not None else None,
-        # what the buyer reimburses: the discounted price (the legacy total = price + fee)
-        purchase_amount=deal.price,
+        # what the buyer reimburses: the current (decayed) price (the legacy total = price + fee)
+        purchase_amount=charged,
         delivery_fee=fee,
         payment_method="cash",
         notes=f"Hot deal reservation ({_js_num_text(deal.discount_percentage)}% off)",
@@ -335,7 +479,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
                 location=await _ewkt(session, HotDeal.pickup_location, HotDeal.id == deal.id),
                 items=deal.items_text,
                 status="purchased",  # the goods are already bought
-                purchase_amount=deal.price,
+                purchase_amount=charged,
                 completed_at=now,
             )
         )
@@ -369,6 +513,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         "resale_order_id": str(deal.id),
         # the buyer calls the courier from the confirmation screen; listings don't carry it
         "courier_phone": (courier.phone_e164 if courier is not None else None) or "",
+        "price": float(charged),
     }
 
 
@@ -406,9 +551,38 @@ async def list_deals(session: AsyncSession, payload: dict[str, Any]) -> Result:
     if payload.get("id") is not None and deal_id is None:
         return 200, {"success": True, "deals": [], "total": 0, "next_cursor": None}
     distance: Any = None
+    purchased_at = (
+        select(func.min(OrderStatusEvent.created_at))
+        .where(
+            OrderStatusEvent.order_id == HotDeal.original_order_id, OrderStatusEvent.to_status == "purchased"
+        )
+        .scalar_subquery()
+    )
+    no_response_at = (
+        select(NoResponseCase.started_at)
+        .where(NoResponseCase.order_id == HotDeal.original_order_id)
+        .order_by(NoResponseCase.created_at.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
+    receipt = (
+        select(func.count())
+        .where(OrderStop.order_id == HotDeal.original_order_id, OrderStop.receipt_key.is_not(None))
+        .scalar_subquery()
+        > 0
+    )
     stmt = (
-        select(HotDeal, Courier.display_name)
+        select(
+            HotDeal,
+            Courier.display_name,
+            purchased_at.label("purchased_at"),
+            no_response_at.label("no_response_at"),
+            receipt.label("receipt_verified"),
+            courier_stats.c.average_rating,
+            func.coalesce(courier_stats.c.total_deliveries, 0),
+        )
         .join(Courier, Courier.id == HotDeal.courier_id)
+        .outerjoin(courier_stats, courier_stats.c.courier_id == HotDeal.courier_id)
         .where(HotDeal.status == "available", HotDeal.expires_at > func.now())
     )
     if deal_id is not None:
@@ -426,24 +600,41 @@ async def list_deals(session: AsyncSession, payload: dict[str, Any]) -> Result:
     else:
         stmt = stmt.order_by(HotDeal.created_at.desc(), HotDeal.id)
     rows = (await session.execute(stmt.offset(offset).limit(take + 1))).all()
+    now = ot.now_utc()
     deals = []
     for row in rows[:take]:
-        deal, courier_name = row[0], row[1]
-        km = row[2] if has_point else None
+        deal, courier_name, bought_at, reported_at, has_receipt, rating, deliveries = row[:7]
+        km = row[7] if has_point else None
+        price, next_price, next_drop_at = price_schedule(deal, now)
+        original = deal.purchase_amount
         deals.append(
             {
                 "id": str(deal.id),
                 "items_text": deal.items_text,
                 "shop_name": deal.shop_name,
-                "purchase_amount": _number(deal.purchase_amount),
+                "purchase_amount": _number(original),
+                "original_price": _number(original),
                 "discount_percentage": _number(deal.discount_percentage),
-                "discounted_price": _number(deal.price),
+                "discounted_price": _number(price),
+                "current_price": _number(price),
+                "start_price": _number(deal.start_price),
+                "floor_price": _number(deal.floor_price),
+                "next_price": _number(next_price),
+                "next_drop_at": legacy_datetime(next_drop_at) if next_drop_at else None,
+                "discount_pct_now": round(100 * (1 - price / original)) if original else None,
                 "include_delivery": deal.include_delivery,
                 "delivery_fee": _number(deal.delivery_fee),
                 "photo_url": _photo_url(deal.photo_key),
                 "expires_at": legacy_datetime(deal.expires_at),
                 "status": deal.status,
-                "courier_name": courier_name,
+                "courier_name": order_texts.short_name(courier_name),
+                "courier_rating": _number(rating),
+                "courier_deliveries": int(deliveries),
+                "receipt_verified": bool(has_receipt),
+                "sealed": False,  # the front decides from the items (food or not)
+                "purchased_at": legacy_datetime(bought_at) if bought_at else None,
+                "no_response_at": legacy_datetime(reported_at) if reported_at else None,
+                "listed_at": legacy_datetime(deal.created_at),
                 "created_date": legacy_datetime(deal.created_at),
                 "distance_km": float(km) if km is not None else None,
             }

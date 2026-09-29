@@ -2,7 +2,8 @@
 app/services/hot_deals.py).
 
 Body: { resale_order_id, delivery_address, delivery_lat?, delivery_lng?, phone? }.
-Returns { success, order_id, resale_order_id, courier_phone }. Errors: 'Missing required
+Returns { success, order_id, resale_order_id, courier_phone, price (the decayed price charged at
+this instant: the order's purchase_amount) }. Errors: 'Missing required
 fields' / phone_unverified (400: a foreign number not confirmed by the WhatsApp code),
 'You cannot reserve your own hot deal' (403), 'Hot deal not found' (404),
 'Hot deal is no longer available' / 'Hot deal has expired' (409), too_many_reservations (429).
