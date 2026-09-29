@@ -153,6 +153,16 @@ def _text(value: Any, limit: int) -> str:
     return str(value).strip()[:limit]
 
 
+def foreign_phone(user: User) -> str | None:
+    """The customer's international number (validated E.164 in the profile), accepted while
+    WhatsApp is not configured: the owner's rule is "foreign numbers are verified by a
+    WhatsApp code", impossible until the WhatsApp Business account exists (2026-09-29)."""
+    stored = user.phone_e164 or ""
+    if not stored.startswith("+") or stored.startswith("+216") or settings.whatsapp_enabled:
+        return None
+    return stored
+
+
 def tunisian_phone(raw: Any) -> str | None:
     """'+216XXXXXXXX' from 8 digits with an optional 216 / 00216 prefix (placeOrder rule)."""
     digits = re.sub(r"\D", "", str(raw or ""))
@@ -221,7 +231,7 @@ def build_order(
     delivery_lat, delivery_lng = as_float(d_lat_raw), as_float(d_lng_raw)
     if not within(delivery_lat, delivery_lng, ORDER_BOUNDS):
         raise OrderRefused(400, "invalid_delivery_location")
-    phone = tunisian_phone(user.phone_e164) or tunisian_phone(o.get("customer_phone"))
+    phone = tunisian_phone(user.phone_e164) or tunisian_phone(o.get("customer_phone")) or foreign_phone(user)
     if not phone:
         raise OrderRefused(400, "phone_required")
     assert shop_lat is not None and shop_lng is not None

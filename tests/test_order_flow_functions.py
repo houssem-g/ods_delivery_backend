@@ -843,3 +843,18 @@ async def test_cancellation_policy(client, world, factory):
     ).status_code == 200
     assert (await call(client, world.customer, "getCancellationPolicy", {})).status_code == 400
     assert (await call(client, world.customer, "getCancellationPolicy", {"order_id": "x"})).status_code == 404
+
+
+async def test_place_order_foreign_phone_while_whatsapp_is_off(client, world, factory, monkeypatch):
+    from app.config import settings
+
+    abroad = await factory.user(email="abroad@example.test", phone_e164="+33612345678")
+    accepted = await call(client, abroad, "placeOrder", {"order": order_form()})
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["order"]["customer_phone"] == "+33612345678"
+
+    # Once WhatsApp works, a foreign number must be verified first (the verification flow).
+    monkeypatch.setattr(type(settings), "whatsapp_enabled", property(lambda self: True))
+    other = await factory.user(email="abroad2@example.test", phone_e164="+41791234567")
+    refused = await call(client, other, "placeOrder", {"order": order_form()})
+    assert refused.json() == {"error": "phone_required"}
