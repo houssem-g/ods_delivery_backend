@@ -35,6 +35,8 @@ MAX_TOKENS_PER_USER = 20
 FCM_BATCH = 500
 
 Status = Literal["sent", "failed", "invalid_token"]
+# Outcome.error prefix of a failure that is ours or FCM's, never counted against the token.
+PROVIDER_ERROR = "provider: "
 
 COURIER_TYPES = {"new_order", "customer_responded", "customer_no_response_final", "hot_deal_reserved"}
 CUSTOMER_TYPES = {
@@ -118,6 +120,13 @@ def build_multicast(tokens: list[str], locale: str, msg: PushMessage) -> messagi
         return _multicast(tokens, msg, is_ar, collapse, link)
 
 
+def _web_link(link: str) -> messaging.WebpushFCMOptions | None:
+    base = settings.PUBLIC_APP_URL.rstrip("/")
+    if not base.startswith("https://"):
+        return None  # local http: FCM refuses non-HTTPS links, the page opens the app root
+    return messaging.WebpushFCMOptions(link=f"{base}{link if link.startswith('/') else '/' + link}")
+
+
 def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, link: str) -> Any:
     return messaging.MulticastMessage(
         tokens=tokens,
@@ -158,7 +167,8 @@ def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, 
                 tag=collapse,
                 require_interaction=msg.type == "new_order",
             ),
-            fcm_options=messaging.WebpushFCMOptions(link=link),
+            # FCM requires an absolute HTTPS link (a relative one made every send fail).
+            fcm_options=_web_link(link),
         ),
     )
 
@@ -208,8 +218,11 @@ class FcmProvider:
                 timeout=settings.PUSH_TIMEOUT_SECONDS,
             )
         except Exception as exc:
-            reason = "timeout" if isinstance(exc, TimeoutError) else type(exc).__name__
-            return [Outcome(t.id, "failed", reason) for t in batch]
+            # The whole batch failed before FCM judged any token (timeout, network, a
+            # message we built wrong): not the devices' fault, their failure counts stay.
+            reason = "timeout" if isinstance(exc, TimeoutError) else f"{type(exc).__name__}: {exc}"
+            log.warning("FCM batch not sent: %s", reason[:200])
+            return [Outcome(t.id, "failed", f"{PROVIDER_ERROR}{reason}"[:300]) for t in batch]
         outcomes = []
         for token, item in zip(batch, response.responses, strict=True):
             if item.success:
@@ -273,6 +286,8 @@ async def send_to_user(
             token.failure_count, token.last_error, token.last_seen_at = 0, None, now
         elif outcome.status == "invalid_token":
             token.is_active, token.last_error = False, (outcome.error or "invalid_token")[:200]
+        elif (outcome.error or "").startswith(PROVIDER_ERROR):
+            token.last_error = outcome.error[:200]
         else:
             token.failure_count += 1
             token.last_error = (outcome.error or "unknown")[:200]

@@ -136,7 +136,7 @@ async def test_fcm_timeout_marks_the_batch_failed(factory, monkeypatch):
     async with SessionLocal() as s:
         result = await send_to_user(s, user.id, MESSAGE, FcmProvider())
         delivery = (await s.execute(select(PushDelivery))).scalar_one()
-    assert result["delivered"] == 0 and delivery.error == "timeout"
+    assert result["delivered"] == 0 and delivery.error == push.PROVIDER_ERROR + "timeout"
     await asyncio.sleep(0.5)  # let the worker thread finish
 
 
@@ -154,3 +154,49 @@ def test_provider_choice_and_firebase_init(monkeypatch, tmp_path):
     broken.write_text("{}")
     monkeypatch.setattr(settings, "FIREBASE_CREDENTIALS_PATH", str(broken))
     assert push.init_firebase() is False
+
+
+def test_fcm_message_encodes_with_an_absolute_https_web_link(monkeypatch) -> None:
+    """Every push failed in production (2026-09-29): FCM refuses a relative webpush link."""
+    from firebase_admin import messaging
+
+    from app.config import settings
+    from app.services.push import PushMessage, build_multicast
+
+    monkeypatch.setattr(settings, "PUBLIC_APP_URL", "https://delivery.example.test")
+    msg = PushMessage(
+        type="on_the_way", title_ar="t", title_fr="t", body_ar="b", body_fr="b",
+        order_id="o1", notification_id="n1", metadata={"recipient_role": "customer"},
+    )  # fmt: skip
+    m = build_multicast(["tok"], "fr", msg)
+    assert m.webpush.fcm_options.link.startswith("https://delivery.example.test/")
+    one = messaging.Message(
+        token="tok",
+        data=m.data,
+        notification=m.notification,
+        android=m.android,
+        apns=m.apns,
+        webpush=m.webpush,
+    )
+    messaging._MessagingService.encode_message(one)  # raises on anything FCM would refuse
+
+    monkeypatch.setattr(settings, "PUBLIC_APP_URL", "http://localhost:5190")
+    assert build_multicast(["tok"], "fr", msg).webpush.fcm_options is None
+
+
+async def test_a_batch_error_is_not_counted_against_the_device(factory, monkeypatch):
+    from app.services import push
+
+    user = await factory.user()
+    await _tokens(user, {"token": "ok-device"})
+
+    def boom(_multicast):
+        raise ValueError("bad message")
+
+    monkeypatch.setattr(push.messaging, "send_each_for_multicast", boom)
+    async with SessionLocal() as s:
+        for _ in range(6):
+            await send_to_user(s, user.id, MESSAGE, push.FcmProvider())
+        await s.commit()
+        token = (await s.execute(select(DeviceToken).where(DeviceToken.token == "ok-device"))).scalar_one()
+    assert token.is_active and token.failure_count == 0 and token.last_error.startswith(push.PROVIDER_ERROR)
