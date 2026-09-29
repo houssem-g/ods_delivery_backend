@@ -14,6 +14,9 @@ The server owns the procedure; the screens only display it:
                       the courier has not resold or cancelled (then 409 too_late). A late
                       answer voids the incident.
   courier_resume      courier/admin: "I reached the customer myself" (same effect).
+  realert             courier/admin, once the deadline passed: a second and last urgent alert
+                      (new case, new countdown, reminders again). The first case's incident is
+                      voided, the new case carries it; MAX_REPORTS = 2 cases per order.
   sweep               the 5-minute job (app/jobs/incidents.py), never an HTTP action.
   reminders           while a case waits, the customer's phone rings again every
                       REMINDER_EVERY (push only, Android channel `urgent_alarm`): one alert is
@@ -58,7 +61,7 @@ log = logging.getLogger("odsd.no_response")
 # Same values as src/lib/noResponsePolicy.js (base44/tests/no_response_test.ts compares them).
 WAIT_SECONDS = 180
 AUTO_CLOSE_HOURS = 3
-MAX_REPORTS = 3
+MAX_REPORTS = 2  # the alert, then one re-alert after the deadline; never a third
 SMS_CHECK_AFTER = timedelta(seconds=60)
 LEGACY_WAIT = cancellation.LEGACY_WAIT  # old rule: 2 minutes
 LEGACY = "legacy"
@@ -166,7 +169,9 @@ async def _current_case(session: AsyncSession, order: Order) -> NoResponseCase |
     return await latest_case(session, order.id) or await adopt_legacy(session, order)
 
 
-def build_view(order: Order, case: NoResponseCase | None, now: datetime) -> dict[str, Any]:
+def build_view(
+    order: Order, case: NoResponseCase | None, now: datetime, reports: int | None = None
+) -> dict[str, Any]:
     deadline = case.deadline_at if case is not None else None
     resolved = case is not None and case.status == "resolved"
     expired = (
@@ -198,6 +203,16 @@ def build_view(order: Order, case: NoResponseCase | None, now: datetime) -> dict
         },
         "can_resell": stage == "expired" and still_open and (order.purchase_amount or 0) > 0,
         "can_cancel_without_penalty": stage == "expired" and still_open,
+        "can_realert": (
+            stage == "expired"
+            and still_open
+            and case is not None
+            and case.messaging_status != LEGACY
+            and reports is not None
+            and reports < MAX_REPORTS
+        ),
+        "reports": reports,
+        "max_reports": MAX_REPORTS,
     }
 
 
@@ -457,7 +472,13 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
     if open_case is not None:
         # a case left open while the order moved on: closed before the new one opens
         await _close(session, open_case, "customer_confirmed", now, counted=False)
+    return await _open_case(session, order, actor, now, attempt=len(cases) + 1)
 
+
+async def _open_case(
+    session: AsyncSession, order: Order, actor: CurrentUser, now: datetime, attempt: int
+) -> Result:
+    """A new countdown: the case, the order parked, the customer alerted on every channel."""
     deadline = now + timedelta(seconds=WAIT_SECONDS)
     case = NoResponseCase(
         order_id=order.id,
@@ -472,7 +493,8 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
     session.add(case)
     await session.flush()
     _touch(session, case, created=True)
-    await ot.transition(session, order, "client_no_response", actor, SOURCE)
+    if order.status != "client_no_response":
+        await ot.transition(session, order, "client_no_response", actor, SOURCE)
 
     courier = await session.get(Courier, order.courier_id) if order.courier_id else None
     courier_name = courier.display_name if courier is not None else ""
@@ -484,8 +506,14 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
         user_id=order.customer_id,
         order_id=order.id,
         type_="emergency_contact",
-        title_ar="🚨 عاجل: المندوب أمام منزلك!",
-        title_fr="🚨 Urgent : le livreur est devant chez vous !",
+        title_ar=(
+            "🚨 عاجل: المندوب أمام منزلك!" if attempt == 1 else "🚨 نداء أخير: المندوب لا يزال أمام منزلك!"
+        ),
+        title_fr=(
+            "🚨 Urgent : le livreur est devant chez vous !"
+            if attempt == 1
+            else "🚨 Dernier appel : le livreur est toujours devant chez vous !"
+        ),
         body_ar=(
             f"المندوب {courier_name} اشترى طلبك بماله ولا يستطيع الوصول إليك. "
             f"اتصل به{phone_part} أو أكّد توفّرك خلال {mins} دقائق."
@@ -503,6 +531,7 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
             "action_type": "confirm_availability",
             "recipient_role": "customer",
             "stage": "alert",
+            "attempt": attempt,
             "deadline_at": js_iso(deadline),
             "case_id": str(case.id),
         },
@@ -547,13 +576,33 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
         "success": True,
         "message": "Emergency contact initiated",
         "timeout_seconds": WAIT_SECONDS,
-        **build_view(order, case, ot.now_utc()),
+        **build_view(order, case, ot.now_utc(), attempt),
     }
+
+
+async def realert(session: AsyncSession, order: Order, actor: CurrentUser) -> Result:
+    """The deadline passed without an answer: the courier asks for a second (last) urgent alert."""
+    cases = await _cases(session, order.id)
+    case = await advance(session, order, cases[0] if cases else await adopt_legacy(session, order))
+    if order.status != "client_no_response" or case is None or case.status != "expired":
+        return 409, {"error": "not_expired", "status": order.status}
+    if case.messaging_status == LEGACY or len(cases) >= MAX_REPORTS:
+        return 409, {"error": "too_many_reports", "max": MAX_REPORTS}
+    if await _live_deal(session, order.id) is not None:
+        return 409, {"error": "too_late", "reason": "resold", "status": order.status}
+    now = ot.now_utc()
+    # the incident moves to the new case: counted once, when (if) that one runs out too
+    was_counted = case.incident_counted
+    await _close(session, case, "realerted", now, counted=False)
+    if was_counted:
+        await mirror_incidents(session, order.customer_id)
+    return await _open_case(session, order, actor, now, attempt=len(cases) + 1)
 
 
 async def status(session: AsyncSession, order: Order) -> Result:
     case = await advance(session, order, await _current_case(session, order))
-    return 200, {"success": True, **build_view(order, case, ot.now_utc())}
+    reports = len(await _cases(session, order.id))
+    return 200, {"success": True, **build_view(order, case, ot.now_utc(), reports)}
 
 
 async def _live_deal(session: AsyncSession, order_id: uuid.UUID) -> HotDeal | None:
@@ -664,6 +713,8 @@ async def route(session: AsyncSession, user: CurrentUser, payload: dict[str, Any
         if not is_customer:
             return 403, {"error": "Forbidden"}
         return await answered(session, order, "customer_confirmed", user)
+    if action == "realert_no_response":
+        return await realert(session, order, user) if is_courier else (403, {"error": "Forbidden"})
     if action == "courier_resume":
         if not is_courier:
             return 403, {"error": "Forbidden"}

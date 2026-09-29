@@ -12,7 +12,7 @@ from app.models.base import Base, Point, created_at, legacy_id, updated_at, uuid
 
 NO_RESPONSE_RESOLUTIONS = (
     "customer_confirmed", "courier_reached", "resold", "cancelled_kept", "returned_to_shop",
-    "auto_closed", "courier_cancelled_other", "delivered", "order_cancelled",
+    "auto_closed", "courier_cancelled_other", "delivered", "order_cancelled", "realerted",
 )  # fmt: skip
 
 

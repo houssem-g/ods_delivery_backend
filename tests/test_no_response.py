@@ -113,7 +113,7 @@ def test_policy_values_match_the_front():
     # src/lib/noResponsePolicy.js
     assert no_response.WAIT_SECONDS == 180
     assert no_response.AUTO_CLOSE_HOURS == 3
-    assert no_response.MAX_REPORTS == 3
+    assert no_response.MAX_REPORTS == 2
     assert timedelta(minutes=2) == no_response.LEGACY_WAIT
 
 
@@ -383,13 +383,13 @@ async def test_courier_reached_the_customer_himself(client, world):
     assert await notifications(world.courier_user, "customer_responded") == []
 
 
-async def test_at_most_three_reports_per_order(client, world):
+async def test_at_most_two_reports_per_order(client, world):
     order = await on_the_way(world)
-    for _ in range(3):
+    for _ in range(2):
         assert (await call(client, world.courier_user, "report_no_response", order)).status_code == 200
         await call(client, world.customer, "customer_confirms", order)
-    fourth = await call(client, world.courier_user, "report_no_response", order)
-    assert fourth.status_code == 409 and fourth.json() == {"error": "too_many_reports", "max": 3}
+    third = await call(client, world.courier_user, "report_no_response", order)
+    assert third.status_code == 409 and third.json() == {"error": "too_many_reports", "max": 2}
 
 
 async def test_a_courier_cannot_pile_up_incidents(client, world):
@@ -401,19 +401,68 @@ async def test_a_courier_cannot_pile_up_incidents(client, world):
     assert len(await the_cases(order)) == 1
     assert (await the_cases(order))[0].incident_counted is False
     assert await incidents(world.customer) == 0
-    for i in range(3):  # report → deadline → resume, three times: the resumed cases are voided
-        if i > 0:
-            await call(client, world.courier_user, "report_no_response", order)
-        await rewind(order, 200)
-        await call(client, world.courier_user, "status", order)
-        if i < 2:
-            await call(client, world.courier_user, "courier_resume", order)
+    await rewind(order, 200)  # deadline → resume → report → deadline: the resumed case is voided
+    await call(client, world.courier_user, "status", order)
+    await call(client, world.courier_user, "courier_resume", order)
+    await call(client, world.courier_user, "report_no_response", order)
+    await rewind(order, 200)
+    await call(client, world.courier_user, "status", order)
     cases = await the_cases(order)
-    assert len(cases) == 3 and sum(c.incident_counted for c in cases) == 1
+    assert len(cases) == 2 and sum(c.incident_counted for c in cases) == 1
     assert await incidents(world.customer) == 1
     again = await call(client, world.courier_user, "report_no_response", order)
     assert again.status_code == 200 and again.json()["already_open"] is True
-    assert len(await the_cases(order)) == 3
+    assert (await call(client, world.courier_user, "realert_no_response", order)).json() == {
+        "error": "too_many_reports",
+        "max": 2,
+    }
+    assert len(await the_cases(order)) == 2
+
+
+async def test_second_urgent_alert_after_the_deadline_then_resale(client, world):
+    order = await on_the_way(world)
+    await device(world.customer)
+    await call(client, world.courier_user, "report_no_response", order)
+    early = await call(client, world.courier_user, "realert_no_response", order)
+    assert early.status_code == 409 and early.json()["error"] == "not_expired"
+    assert (await call(client, world.courier_user, "status", order)).json()["can_realert"] is False
+    await rewind(order, 200)
+    st = (await call(client, world.courier_user, "status", order)).json()
+    assert st["stage"] == "expired" and st["can_realert"] is True and st["reports"] == 1
+    assert st["max_reports"] == 2 and await incidents(world.customer) == 1
+    assert (await call(client, world.customer, "realert_no_response", order)).status_code == 403
+    r = await call(client, world.courier_user, "realert_no_response", order)
+    body = r.json()
+    assert r.status_code == 200 and body["stage"] == "waiting" and body["seconds_left"] in (179, 180)
+    assert body["can_resell"] is False and body["can_realert"] is False
+    first, second = await the_cases(order)
+    assert first.resolution == "realerted" and first.incident_counted is False
+    assert second.status == "waiting" and await incidents(world.customer) == 0
+    sent = await notifications(world.customer, "emergency_contact")
+    alerts = [n for n in sent if n.data["stage"] == "alert"]
+    assert [n.data["attempt"] for n in alerts] == [1, 2] and "Dernier appel" in alerts[1].title_fr
+    d = await doc(client, world.customer, order)
+    assert d["status"] == "client_no_response" and d["no_response_case_id"] == str(second.id)
+    await rewind(order, 60)
+    await incident_jobs.no_response_fast()  # reminders run again
+    assert (await the_cases(order))[1].channels["reminders"] == 1
+    await rewind(order, 200)
+    st = (await call(client, world.courier_user, "status", order)).json()
+    assert st["stage"] == "expired" and st["can_resell"] is True and st["can_realert"] is False
+    assert await incidents(world.customer) == 1  # one incident for the order, not two
+    third = await call(client, world.courier_user, "realert_no_response", order)
+    assert third.status_code == 409 and third.json()["error"] == "too_many_reports"
+
+
+async def test_customer_answering_the_second_alert_voids_the_incident(client, world):
+    order = await on_the_way(world)
+    await call(client, world.courier_user, "report_no_response", order)
+    await rewind(order, 200)
+    await call(client, world.courier_user, "realert_no_response", order)
+    r = await call(client, world.customer, "customer_confirms", order)
+    assert r.status_code == 200
+    assert await incidents(world.customer) == 0
+    assert [c.resolution for c in await the_cases(order)] == ["realerted", "customer_confirmed"]
 
 
 async def test_answers_need_an_open_case(client, world):

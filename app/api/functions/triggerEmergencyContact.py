@@ -2,12 +2,13 @@
 the procedure is app/services/no_response.py).
 
 Body: { order_id, action: 'report_no_response' | 'status' | 'check_response' |
-'customer_confirms' | 'courier_resume' }. Answers: the procedure view { success, stage,
-case_id, started_at, deadline_at, server_now, seconds_left, customer_responded, resolution,
-order_status, channels {in_app, push_devices, whatsapp, sms}, can_resell,
-can_cancel_without_penalty } (+ already_open / already / message / timeout_seconds).
+'customer_confirms' | 'courier_resume' | 'realert_no_response' }. Answers: the procedure view
+{ success, stage, case_id, started_at, deadline_at, server_now, seconds_left, customer_responded,
+resolution, order_status, channels {in_app, push_devices, whatsapp, sms}, can_resell,
+can_cancel_without_penalty, can_realert, reports, max_reports } (+ already_open / already /
+message / timeout_seconds).
 Errors: 'order_id is required' / 'Invalid action' (400), 'Forbidden' (403, also for the
-`sweep` action: the 5-minute job does it), 'Order not found' (404), not_reportable /
+`sweep` action: the 5-minute job does it), 'Order not found' (404), not_reportable / not_expired /
 too_many_reports / no_open_case / too_late (409 — never 400, which NoResponsePanel reads as
 "older backend" and falls back to a direct Order.update).
 """
