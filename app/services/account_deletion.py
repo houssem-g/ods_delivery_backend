@@ -32,6 +32,7 @@ from app.errors import ApiError
 from app.models import (
     AuditLog,
     Courier,
+    CourierDocument,
     DeviceToken,
     EmailCode,
     File,
@@ -93,7 +94,7 @@ async def _refuse_if_active(session: AsyncSession, user: User, courier: Courier 
 
 
 async def _anonymize_courier(session: AsyncSession, courier: Courier, counts: dict[str, int]) -> list[str]:
-    """Returns the private keys to delete (ID photo)."""
+    """Returns the private keys to delete (ID photo, documents)."""
     offers = (
         await session.execute(
             delete(OrderOffer)
@@ -125,6 +126,14 @@ async def _anonymize_courier(session: AsyncSession, courier: Courier, counts: di
         emit(session, "Order", "update", order_id)
 
     keys = [courier.id_document_key] if courier.id_document_key else []
+    documents = (
+        await session.execute(
+            delete(CourierDocument)
+            .where(CourierDocument.courier_id == courier.id)
+            .returning(CourierDocument.file_key)
+        )
+    ).scalars()
+    keys.extend(documents)
     courier.display_name = DELETED_COURIER_NAME
     courier.phone_e164 = None
     courier.id_document_number = ""
