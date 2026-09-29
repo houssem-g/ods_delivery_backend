@@ -50,7 +50,7 @@ CUSTOMER_TYPES = {
 # installed app does not have yet falls back to the manifest default ("default"), so a newer
 # channel is safe to target before every phone has the update.
 URGENT_TYPES = {"emergency_contact"}  # alarm sound + long vibration, from app 1.1.1
-VIBRATING_TYPES = {"new_order", "stock_check", "stock_check_answered"}
+VIBRATING_TYPES = {"new_order", "stock_check", "stock_check_answered", "order_accepted"}
 
 
 def android_channel(type_: str) -> str:

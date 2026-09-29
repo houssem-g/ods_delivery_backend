@@ -19,6 +19,7 @@ from app.models import Courier, Notification, Order, OrderOffer, User, courier_s
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
+from app.services import step_notices
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user, dropped_by
@@ -306,6 +307,7 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     emit(session, "OrderOffer", "create", offer.id)
     if order.status == "pending":
         await ot.transition(session, order, "offers_received", user, "createOrderOffer")
+    await step_notices.offer_created(session, order, offer, courier)
     return offer
 
 
@@ -364,6 +366,7 @@ async def accept_offer(
     await ot.clear_live_position(session, order.id)  # a new courier: never a former one's position
     await session.flush()
     await ot.transition(session, order, "accepted", user, "acceptOrderOffer")
+    await step_notices.offer_accepted(session, order, selected, courier_user.id)
     return order, selected, courier_user
 
 

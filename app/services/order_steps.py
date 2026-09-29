@@ -16,9 +16,9 @@ What the courier's app sends and what the server keeps of it:
 Any other Order field in the body → 403, as for every other caller (the legacy fallbacks).
 While a stock check waits for the customer (app/services/stock_checks.py) the order stays in
 price_confirmation_needed: any step out of it → 409 stock_check_pending.
-The customer's notice of each step (at_shop, purchased, on_the_way, delivered) stays with the
-app, as today: CourierOrderActive calls sendNotificationIfEnabled after the write succeeds
-(orderFlow.notifyCustomerOfStatus). The server does not send a second one.
+The customer's notice of each step (at_shop on arrival, purchased, on_the_way, delivered) is sent
+here, after the transition (app/services/step_notices.py): the installed apps still send it through
+sendNotificationIfEnabled after the write, which skips the duplicate.
 """
 
 from decimal import Decimal
@@ -32,7 +32,7 @@ from app.errors import ApiError
 from app.models import File, Order, OrderStop
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
-from app.services import stock_checks
+from app.services import step_notices, stock_checks
 from app.services.geo import ORDER_BOUNDS, as_float, point, within
 
 COURIER_STEPS: dict[str, frozenset[str]] = {
@@ -225,6 +225,7 @@ async def courier_step(
     await ot.transition(
         session, order, to_status, user, "courier_app", location=_location(data.get("status_history"))
     )
+    await step_notices.courier_step(session, order, from_status, to_status)
 
 
 async def customer_geocode(

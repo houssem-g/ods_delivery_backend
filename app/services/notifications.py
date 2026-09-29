@@ -16,6 +16,7 @@ import logging
 import re
 import uuid
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -27,6 +28,7 @@ from app.models.identity import User
 from app.models.notifications import NOTIFICATION_TYPE_SYNONYMS, NOTIFICATION_TYPES, Notification
 from app.models.orders import Order
 from app.realtime.events import emit
+from app.security.tokens import now_utc
 from app.services import whatsapp
 from app.services.push import PushMessage, send_to_user
 
@@ -64,6 +66,11 @@ PREFERENCE_COLUMN: dict[str, str | None] = {
     t: PREFERENCE_KEY_COLUMN[k] for t, k in LEGACY_PREFERENCE_KEY.items() if t in NOTIFICATION_TYPES
 }
 
+# An order notice already written for the same (user, order, type) this recently is not written
+# again: the server sends the order steps itself and the installed apps still send them after
+# the call (sendNotificationIfEnabled answers {skipped: "duplicate"}).
+DEDUPE_WINDOW = timedelta(seconds=120)
+
 WHATSAPP_FALLBACK_TYPES = {"on_the_way", "new_offer"}  # stored types (courier_on_way → on_the_way)
 TEST_ORDER = re.compile(r"QA TEST|\bPW-", re.IGNORECASE)
 
@@ -97,6 +104,33 @@ def push_skip_reason(user: User | None, type_as_sent: str) -> str | None:
     if key and not getattr(user, PREFERENCE_KEY_COLUMN[key]):
         return f"{key}_disabled"
     return None
+
+
+async def recent_duplicate(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    order_id: uuid.UUID | None,
+    type_: str,
+    offer_id: str | None = None,
+) -> Notification | None:
+    """The notification of the same (user, order, type) written in the last DEDUPE_WINDOW, if any.
+    `type_` may be a legacy synonym. For `new_offer`, `offer_id` narrows it to that offer (two
+    couriers' offers a minute apart are two notices). Notices without an order are never duplicates."""
+    if order_id is None:
+        return None
+    stored = canonical_type(type_)
+    stmt = select(Notification).where(
+        Notification.user_id == user_id,
+        Notification.order_id == order_id,
+        Notification.type == stored,
+        Notification.created_at >= now_utc() - DEDUPE_WINDOW,
+    )
+    if offer_id:
+        stmt = stmt.where(Notification.data["offer_id"].astext == str(offer_id))
+    return (
+        await session.execute(stmt.order_by(Notification.created_at.desc()).limit(1))
+    ).scalar_one_or_none()
 
 
 async def notify(

@@ -112,9 +112,11 @@ async def test_single_shop_delivery_end_to_end(client, world):
     assert doc["courier_live_lat"] is None  # the live position left the order
     assert await rows(select(OrderTracking)) == []
 
-    # the step notices stay with the app (sendNotificationIfEnabled after the write): none from here
-    assert await notifications(world.customer) == []
-    assert await pushes(world.customer) == []
+    # the server told the customer of each step (the app's own notices are duplicates)
+    assert [n.type for n in await notifications(world.customer)] == [
+        "at_shop", "purchased", "on_the_way", "delivered",
+    ]  # fmt: skip
+    assert len(await pushes(world.customer)) == 4
 
     # delivered is final for the courier
     assert (await step(client, world, order, {"status": "on_the_way"})).status_code == 403

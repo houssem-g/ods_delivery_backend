@@ -306,14 +306,18 @@ Hooks and helpers for the no-response / hot-deal features:
 - Commission: `record_delivery` runs inside the transition to `delivered`; nothing to do
   in the flows (a hot-deal order with a delivery fee is charged like any other).
 
-Notifications of the order steps: the apps keep sending them, as today, through
-`sendNotificationIfEnabled` after the call succeeds (`new_offer`, `order_accepted`,
-`at_shop`, `purchased`, `on_the_way`, `delivered`; AdminDashboard for
-`account_verified` / `account_rejected`). The server sends only what the Deno functions
-sent themselves: `new_order` (dispatch), `order_cancelled` (cancelOrder, expiry; always
-pushed), `issue_reported` (in-app only), and the price change of an offer (updateOrderOffer:
-type `new_offer`, `data.kind = "offer_updated"`, pushed at most once per offer every 2 min;
-the app sends nothing after it).
+Notifications of the order steps are sent by the server (`app/services/step_notices.py`, since
+2026-09-29): `new_offer` (createOrderOffer → customer, push per preferences), `order_accepted`
+(acceptOrderOffer → courier, always pushed, vibrating channel), `at_shop` (arrival only) /
+`purchased` / `on_the_way` (courier steps → customer, push per preferences), `delivered` (always
+pushed). The installed apps still send them through `sendNotificationIfEnabled` after the call:
+a notice of the same (recipient, order, type) — for `new_offer`, of the same `metadata.offer_id` —
+written in the last 120 s is skipped (`{success, skipped: "duplicate", notification_id}`;
+`notifications.recent_duplicate`). The server also sends what the Deno functions sent themselves:
+`new_order` (dispatch), `order_cancelled` (cancelOrder, expiry; always pushed), `issue_reported`
+(in-app only), and the price change of an offer (updateOrderOffer: type `new_offer`,
+`data.kind = "offer_updated"`, pushed at most once per offer every 2 min; the app sends nothing
+after it).
 
 ## 7. Incidents: "client ne répond pas" and hot deals
 

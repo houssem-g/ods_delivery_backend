@@ -336,8 +336,11 @@ async def test_create_offer(client, world, factory):
     assert offer["customer_id"] == "cust@example.test"
     doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.customer))).json()
     assert doc["status"] == "offers_received" and doc["status_history"][-1]["source"] == "createOrderOffer"
-    # the customer's notice is still sent by the courier's app (sendNotificationIfEnabled)
-    assert await notifications(world.customer) == []
+    # the customer is told by the server (the app's own notice that follows is a duplicate)
+    [note] = await notifications(world.customer)
+    assert note.type == "new_offer" and note.order_id == order.id
+    assert note.body_fr == "Karim T. propose 6.123 TND · ~25 min"
+    assert note.data["offer_id"] == offer["id"] and note.data["recipient_role"] == "customer"
 
     twice = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
     assert twice.status_code == 409 and twice.json() == {"error": "offer_already_sent"}
@@ -401,8 +404,10 @@ async def test_accept_offer(client, world, factory):
     assert doc["delivery_fee"] == 7.5 and doc["eta_minutes"] == 20 and doc["distance_km"] == 1.5
     assert doc["accepted_at"] is not None and doc["status_history"][-1]["source"] == "acceptOrderOffer"
     assert (await reload(OrderOffer, loser.id)).status == "rejected"
-    # the courier's notice is still sent by the customer's app (sendNotificationIfEnabled)
-    assert await notifications(world.courier_user) == []
+    # the courier is told by the server, always pushed
+    [note] = await notifications(world.courier_user)
+    assert note.type == "order_accepted"
+    assert note.body_fr == "Offre acceptée — Monoprix : 2x Pain. Allez au magasin."
     again = await call(
         client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": str(loser.id)}
     )

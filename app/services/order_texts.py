@@ -356,3 +356,107 @@ def stock_check_for_admin(order_ref: str, nothing_available: bool) -> Text:
         "body_ar": f"الطلب #{order_ref}: {label_ar}",
         "body_fr": f"Commande #{order_ref}: {label_fr}",
     }
+
+
+# --- order steps sent by the server (createOrderOffer, acceptOrderOffer, the courier's steps) ------
+# The same words as the app's orderFlow NOTIF_TEXT, which sent them before (still does on the
+# installed builds: sendNotificationIfEnabled skips its duplicate).
+
+
+def short_name(display_name: str | None) -> str:
+    """'Karim Trabelsi' → 'Karim T.' (a courier's name shown to customers)."""
+    parts = " ".join(str(display_name or "").split()).split(" ")
+    if not parts or not parts[0]:
+        return ""
+    if len(parts) == 1:
+        return parts[0][:40]
+    return f"{parts[0][:40]} {parts[-1][:1].upper()}."
+
+
+def _money(value: object) -> str:
+    return f"{float(value):.3f}"  # type: ignore[arg-type]
+
+
+def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | None) -> Text:
+    name_fr = short_name(courier_name) or "Un livreur"
+    name_ar = short_name(courier_name) or "مندوب"
+    eta_fr = f" · ~{eta} min" if eta else ""
+    eta_ar = f" · ~{eta} د" if eta else ""
+    return {
+        "title_ar": "عرض جديد",
+        "title_fr": "Nouvelle offre",
+        "body_ar": f"{name_ar} يقترح {_money(fee)} د.ت{eta_ar}",
+        "body_fr": f"{name_fr} propose {_money(fee)} TND{eta_fr}",
+    }
+
+
+def offer_accepted_for_courier(shop_name: str | None, items: str | None) -> Text:
+    shop = _short(shop_name, 60)
+    what = _short(items, 80)
+    detail_fr = f"{shop} : {what}" if shop and what else (shop or what)
+    detail_ar = f"{shop}: {what}" if shop and what else (shop or what)
+    return {
+        "title_ar": "🎉 تم قبول عرضك",
+        "title_fr": "🎉 Offre acceptée",
+        "body_ar": f"تم قبول عرضك — {detail_ar}. توجّه إلى المتجر."
+        if detail_ar
+        else "تم قبول عرضك. توجّه إلى المتجر.",
+        "body_fr": f"Offre acceptée — {detail_fr}. Allez au magasin."
+        if detail_fr
+        else "Offre acceptée. Allez au magasin.",
+    }
+
+
+def at_shop(shop_name: str | None) -> Text:
+    shop = _short(shop_name, 60)
+    return {
+        "title_ar": "🏪 المندوب وصل للمتجر",
+        "title_fr": "🏪 Le livreur est au magasin",
+        "body_ar": f"المندوب في {shop or 'المتجر'} ويشتري طلبك الآن",
+        "body_fr": f"Le livreur est chez {shop or 'le magasin'} et fait vos achats",
+    }
+
+
+def purchased(amount: object) -> Text:
+    if amount:
+        return {
+            "title_ar": "🛍️ تم الشراء",
+            "title_fr": "🛍️ Achat effectué",
+            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت (حسب الوصل)",
+            "body_fr": f"Montant des achats : {_money(amount)} TND (selon le reçu)",
+        }
+    return {
+        "title_ar": "🛍️ تم الشراء",
+        "title_fr": "🛍️ Achat effectué",
+        "body_ar": "تم شراء طلبك",
+        "body_fr": "Votre commande a été achetée",
+    }
+
+
+def on_the_way(eta: int | None) -> Text:
+    return {
+        "title_ar": "🚚 المندوب في الطريق إليك",
+        "title_fr": "🚚 Le livreur est en route",
+        "body_ar": f"الوصول خلال ~{eta} دقيقة. جهّز المبلغ نقداً."
+        if eta
+        else "المندوب يتجه نحوك الآن. جهّز المبلغ نقداً.",
+        "body_fr": f"Arrivée dans ~{eta} min. Préparez le paiement en espèces."
+        if eta
+        else "Le livreur arrive. Préparez le paiement en espèces.",
+    }
+
+
+def delivered(total: object) -> Text:
+    if total:
+        return {
+            "title_ar": "✨ تم التوصيل",
+            "title_fr": "✨ Commande livrée",
+            "body_ar": f"تم توصيل طلبك ({_money(total)} د.ت). قيّم المندوب!",
+            "body_fr": f"Votre commande a été livrée ({_money(total)} TND). Notez votre livreur !",
+        }
+    return {
+        "title_ar": "✨ تم التوصيل",
+        "title_fr": "✨ Commande livrée",
+        "body_ar": "تم توصيل طلبك. قيّم المندوب!",
+        "body_fr": "Votre commande a été livrée. Notez votre livreur !",
+    }

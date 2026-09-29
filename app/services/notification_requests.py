@@ -10,6 +10,13 @@ our own services call `notifications.notify` directly). Callers allowed:
 Types are whitelisted, titles capped at 200 chars, bodies at 1000, metadata at 2 KB of
 JSON. Answers {success, notification_id, push_skipped?}.
 
+The server now sends the order notices itself (new_offer, order_accepted, at_shop, purchased,
+on_the_way, delivered: app/services/step_notices.py) while installed apps still send them after
+the call: a notice of the same (recipient, order, type) written in the last 120 s — for new_offer,
+of the same `metadata.offer_id` when given — is not written again: 200
+{success, skipped: "duplicate", notification_id} (the existing row, so the app does not fall back
+to a direct Notification.create).
+
 `userId` is an e-mail. A CourierProfile id (the 119 invisible notifications of the
 2026-09-28 audit) is mapped to its owner — the stored recipient is always a user.
 """
@@ -25,7 +32,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, OrderOffer, User
 from app.security.deps import CurrentUser
 from app.services.messages import courier_user_id, load_order
-from app.services.notifications import BODY_MAX, LEGACY_PREFERENCE_KEY, TITLE_MAX, notify_detailed
+from app.services.notifications import (
+    BODY_MAX,
+    LEGACY_PREFERENCE_KEY,
+    TITLE_MAX,
+    notify_detailed,
+    recent_duplicate,
+)
 
 Result = tuple[int, dict[str, Any]]
 
@@ -127,6 +140,16 @@ async def send_notification_if_enabled(
     ).scalar_one_or_none()
     if target is None:
         return 400, {"error": "invalid_user_id"}
+    offer_ref = metadata.get("offer_id") if type_ == "new_offer" else None
+    duplicate = await recent_duplicate(
+        session,
+        user_id=target.id,
+        order_id=order.id if order else None,
+        type_=type_,
+        offer_id=str(offer_ref) if isinstance(offer_ref, str) and offer_ref else None,
+    )
+    if duplicate is not None:
+        return 200, {"success": True, "skipped": "duplicate", "notification_id": str(duplicate.id)}
 
     result = await notify_detailed(
         session,
