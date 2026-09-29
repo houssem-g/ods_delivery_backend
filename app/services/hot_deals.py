@@ -41,7 +41,7 @@ from app.services import order_transitions as ot
 from app.services.geo import point
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import TEST_ORDER_SQL, courier_of_user, first_stop, mirror_incidents
-from app.services.phones import InvalidPhone, to_e164
+from app.services.phones import InvalidPhone, is_tunisian, to_e164
 from app.services.shops import key_from_public_url, public_prefix
 
 RESELLABLE = frozenset({"purchased", "on_the_way", "client_no_response"})
@@ -292,6 +292,15 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
     if await _active_reservations(session, user.id) >= MAX_ACTIVE_RESERVATIONS:
         return 429, {"error": "too_many_reservations"}
 
+    contact_phone = _buyer_phone(payload.get("phone"), buyer.phone_e164)
+    # Foreign numbers must be confirmed by the WhatsApp code first (like placeOrder).
+    if (
+        contact_phone
+        and not is_tunisian(contact_phone)
+        and not (contact_phone == buyer.phone_e164 and buyer.phone_verified_at is not None)
+    ):
+        return 400, {"error": "phone_unverified"}
+
     fee = deal.delivery_fee or Decimal(0)
     if fee <= 0:
         return 500, {"error": "Invalid hot deal delivery fee"}
@@ -302,7 +311,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         courier_id=deal.courier_id,
         items_text=deal.items_text,
         contact_name=buyer.full_name or "",
-        contact_phone_e164=_buyer_phone(payload.get("phone"), buyer.phone_e164),
+        contact_phone_e164=contact_phone,
         delivery_address=address,
         delivery_location=point(lat, lng) if lat is not None and lng is not None else None,
         # what the buyer reimburses: the discounted price (the legacy total = price + fee)

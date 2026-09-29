@@ -63,3 +63,19 @@ def customer_phone_verified(phone_e164: str | None, phone_verified_at: object | 
     if not phone_e164:
         return False
     return is_tunisian(phone_e164) or phone_verified_at is not None
+
+
+def verification_enforced() -> bool:
+    """Foreign numbers need the WhatsApp code only once WhatsApp is configured: until the
+    WhatsApp Business account exists they are accepted as they are (owner, 2026-09-29)."""
+    from app.config import settings
+
+    return settings.whatsapp_enabled
+
+
+def customer_phone_usable(phone_e164: str | None, phone_verified_at: object | None) -> bool:
+    """May a customer order / reserve with this stored number? Tunisian or verified always;
+    an unverified foreign one only while verification can't be enforced."""
+    if not phone_e164:
+        return False
+    return customer_phone_verified(phone_e164, phone_verified_at) or not verification_enforced()

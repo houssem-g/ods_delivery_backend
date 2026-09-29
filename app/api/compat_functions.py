@@ -6,6 +6,7 @@ the Deno function returned. The handler's writes are committed when it answers
 """
 
 import json
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
@@ -17,6 +18,7 @@ from app.db import get_session
 from app.security.deps import CurrentUser, optional_user
 
 router = APIRouter(prefix="/api/functions", tags=["functions"])
+log = logging.getLogger("odsd.functions")
 
 
 async def _payload(request: Request) -> dict[str, Any]:
@@ -52,4 +54,15 @@ async def invoke(
         await session.commit()
     else:
         await session.rollback()
+        # Why a function was refused, to diagnose a user report ("my order doesn't go
+        # through"): the name, the status and the error code only, never payload values.
+        raw_error = body.get("error") if isinstance(body, dict) else None
+        error = str(raw_error)[:80] if raw_error is not None else "-"
+        log.info(
+            "function %s refused %s %s",
+            name,
+            status,
+            error,
+            extra={"function": name, "status": status, "error": error},
+        )
     return JSONResponse(body, status_code=status)

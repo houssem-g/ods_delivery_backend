@@ -18,6 +18,7 @@ from app.models import Courier, Order, OrderStop, User, UserAddress, customer_st
 from app.realtime.events import emit
 from app.services import order_transitions as ot
 from app.services.geo import ORDER_BOUNDS, as_float, haversine_km, lat_of, lng_of, point, within
+from app.services.phones import InvalidPhone, customer_phone_usable, to_e164
 
 TEST_ORDER_RE = re.compile(r"QA TEST|\bPW-", re.IGNORECASE)
 # Same pattern in SQL (\m = start of a word, like JS \b before a letter).
@@ -153,16 +154,6 @@ def _text(value: Any, limit: int) -> str:
     return str(value).strip()[:limit]
 
 
-def foreign_phone(user: User) -> str | None:
-    """The customer's international number (validated E.164 in the profile), accepted while
-    WhatsApp is not configured: the owner's rule is "foreign numbers are verified by a
-    WhatsApp code", impossible until the WhatsApp Business account exists (2026-09-29)."""
-    stored = user.phone_e164 or ""
-    if not stored.startswith("+") or stored.startswith("+216") or settings.whatsapp_enabled:
-        return None
-    return stored
-
-
 def tunisian_phone(raw: Any) -> str | None:
     """'+216XXXXXXXX' from 8 digits with an optional 216 / 00216 prefix (placeOrder rule)."""
     digits = re.sub(r"\D", "", str(raw or ""))
@@ -176,6 +167,30 @@ def tunisian_phone(raw: Any) -> str | None:
         return None
     # users/orders store E.164 (CHECK ^\+[1-9]...): a local number starting with 0 can't be stored
     return f"+216{local}"
+
+
+def order_contact_phone(user: User, raw: Any) -> str:
+    """The phone couriers will call: the profile's number when it is Tunisian or a verified
+    foreign one, else a Tunisian number typed in the form (placeOrder rule). A foreign number
+    that was not confirmed by the WhatsApp code -> 400 phone_unverified; none -> phone_required.
+
+    While WhatsApp is not configured the code can't be sent: the profile's foreign number is
+    accepted as it is (owner's rule, 2026-09-29, hotfix 89577eb)."""
+    profile = user.phone_e164
+    if profile and customer_phone_usable(profile, user.phone_verified_at):
+        return profile
+    typed = tunisian_phone(raw)
+    if typed:
+        return typed
+    if not settings.whatsapp_enabled:
+        raise OrderRefused(400, "phone_required")
+    if profile:  # a foreign number, not verified
+        raise OrderRefused(400, "phone_unverified")
+    try:
+        typed_e164 = to_e164(str(raw)) if isinstance(raw, str) else None
+    except InvalidPhone:
+        typed_e164 = None
+    raise OrderRefused(400, "phone_unverified" if typed_e164 else "phone_required")
 
 
 def signup_attribution(user: User) -> uuid.UUID | None:
@@ -231,9 +246,7 @@ def build_order(
     delivery_lat, delivery_lng = as_float(d_lat_raw), as_float(d_lng_raw)
     if not within(delivery_lat, delivery_lng, ORDER_BOUNDS):
         raise OrderRefused(400, "invalid_delivery_location")
-    phone = tunisian_phone(user.phone_e164) or tunisian_phone(o.get("customer_phone")) or foreign_phone(user)
-    if not phone:
-        raise OrderRefused(400, "phone_required")
+    phone = order_contact_phone(user, o.get("customer_phone"))
     assert shop_lat is not None and shop_lng is not None
     assert delivery_lat is not None and delivery_lng is not None
 
