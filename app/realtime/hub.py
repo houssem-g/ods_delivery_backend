@@ -3,7 +3,8 @@
 Events arrive from the Postgres listener in commit order and are processed one at a
 time by a single worker. For each event, every distinct subscribed user gets the row
 read through the compat registry *as that user* (read policy + field guards), so a
-user who may not read the row receives nothing.
+user who may not read the row receives nothing. A `signal` event (typing, "new message")
+has no row: its `data` goes as-is to the users of its `audience` only.
 """
 
 import asyncio
@@ -98,12 +99,23 @@ class Hub:
     async def deliver(self, event: dict[str, Any]) -> None:
         name, type_, doc_id = event.get("entity"), event.get("type"), event.get("id")
         entity = get_entity(str(name))
-        if entity is None or type_ not in ("create", "update", "delete") or not doc_id:
+        if entity is None or type_ not in ("create", "update", "delete", "signal") or not doc_id:
             return
         targets = [s for s in self.subscribers if name in s.entities]
         if not targets:
             return
         stamp = legacy_datetime(datetime.now(UTC))
+        if type_ == "signal":
+            # No row to read: only the listed users get it (never the other subscribers).
+            audience = {str(a) for a in event.get("audience") or ()}
+            data = event.get("data") if isinstance(event.get("data"), dict) else {}
+            for subscriber in targets:
+                if str(subscriber.user.id) in audience:
+                    await self._send(
+                        subscriber,
+                        {"entity": name, "type": "signal", "id": doc_id, "data": data, "timestamp": stamp},
+                    )
+            return
         if type_ == "delete":
             audience = event.get("audience")
             allowed = None if audience is None else {str(a) for a in audience}

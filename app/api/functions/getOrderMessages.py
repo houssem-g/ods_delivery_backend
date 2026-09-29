@@ -1,7 +1,9 @@
 """getOrderMessages — the chat of one order, for its parties.
 
 Body { order_id, limit?, mark_read? }. Returns { success, messages, marked? } (`marked` only
-with mark_read: the caller's unread incoming messages are marked read in the same call).
+with mark_read: the caller's unread incoming messages are marked read in the same call). Each
+message also has attachment_url (signed for 10 min) / attachment_type / attachment_duration
+(null without an attachment) and read_at (ISO, only on the caller's own messages, else null).
 Errors: Missing order_id (400), Order not found (404), Forbidden (403)."""
 
 from typing import Any

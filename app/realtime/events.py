@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session, SessionTransaction
 
 from app.config import settings
 
-EventType = Literal["create", "update", "delete"]
+EventType = Literal["create", "update", "delete", "signal"]
 _PENDING = "odsd_realtime_pending"
 
 
@@ -28,17 +28,25 @@ def emit(
     type_: EventType,
     id_: str | uuid.UUID,
     audience: Iterable[uuid.UUID | str] | None = None,
+    data: dict[str, Any] | None = None,
 ) -> None:
     """Queue `{entity, type, id}` for delivery after commit. Call it inside the transaction
     that makes the change.
 
     `audience` (user ids) restricts who receives a *delete* event, whose row can no
     longer be checked against the read policy; admins always receive it.
+
+    A *signal* (type "signal": typing indicator, "new message" ping) carries no row: `data`
+    (small JSON) is forwarded as-is to the `audience` only (admins included only when listed).
     """
+    if type_ == "signal" and not audience:
+        raise ValueError("a signal needs an audience")
     info = session.info
     payload: dict[str, Any] = {"entity": entity, "type": type_, "id": str(id_)}
     if audience is not None:
         payload["audience"] = sorted({str(u) for u in audience})
+    if data is not None:
+        payload["data"] = data
     pending: list[dict[str, Any]] = info.setdefault(_PENDING, [])
     if payload not in pending:
         pending.append(payload)

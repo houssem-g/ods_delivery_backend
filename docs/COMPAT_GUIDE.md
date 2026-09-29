@@ -150,6 +150,11 @@ emit(session, "OrderOffer", "delete", offer.id, audience=[customer_id, courier_u
   only to users who may read it. A delete has no row left to check: pass `audience`
   (user ids; admins always get it), otherwise every subscriber of the entity gets
   `{entity, type:"delete", id}`.
+- Signals (no row, nothing to re-read): `emit(session, "Message", "signal", order_id,
+  audience=[user_id], data={...})` is forwarded as `{entity, type: "signal", id, data, timestamp}`
+  to the subscribers of that entity whose user is in `audience` only (admins too only when
+  listed). Used by signalTyping (`data.kind = "typing"`) and sendOrderMessage (`"message"`, to
+  the recipient). Keep `data` small (pg_notify payloads are limited to 8 KB).
 - Live courier position: when `order_tracking` changes, emit `("Order", "update", order_id)`.
 - The entity name must be registered in the compat registry to be subscribable.
 

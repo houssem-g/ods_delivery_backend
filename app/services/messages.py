@@ -10,12 +10,18 @@ Who may write / read an order's chat (`chat_role`):
   - an admin (reading only; sendOrderMessage has no admin role)   → 'admin'
 The sender role and the recipient are decided here, never taken from the client.
 
+Aurora (2026-09-29): a message may carry a photo or a voice note — the sender's own private upload
+(purpose chat; image ≤ 8 MB, audio ≤ 3 MB), its text may then be empty. getOrderMessages answers
+each attachment as a short-lived signed URL (only to callers who see the message) and, on the
+caller's own messages, `read_at`. The recipient gets a realtime `signal` {kind: "message"} so an
+open chat refreshes at once; signalTyping sends {kind: "typing"} to the other party only.
+
 Every function answers `(status, json)` with the Deno keys and codes.
 """
 
 import logging
 import uuid
-from datetime import timedelta
+from datetime import UTC, timedelta
 from typing import Any
 
 from sqlalchemy import and_, exists, func, or_, select, true, update
@@ -23,11 +29,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.entities.message import ENTITY as MESSAGE_ENTITY
 from app.compat.query import base_select, serialize
-from app.models import Courier, Message, Order
+from app.models import Courier, File, Message, Order
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
+from app.services import order_transitions as ot
+from app.services.geo import as_float
 from app.services.notifications import notify
+from app.storage import keys, s3
 
 MAX_CONTENT = 1000
 PRE_ASSIGN_MAX = 10  # messages a bidder may post on one open order
@@ -37,6 +46,12 @@ ORDERS_PER_SIDE = 50
 MAX_UNREAD = 200
 PREVIEW_PUSH = 80
 PREVIEW_METADATA = 100
+ATTACHMENT_URL_SECONDS = 600
+MAX_AUDIO_SECONDS = 600
+ATTACHMENT_LABEL = {
+    "image": ("📷 Photo", "📷 صورة"),
+    "audio": ("🎤 Message vocal", "🎤 رسالة صوتية"),
+}
 
 Result = tuple[int, dict[str, Any]]
 log = logging.getLogger("odsd.messages")
@@ -112,6 +127,88 @@ async def _docs(session: AsyncSession, *where: Any, newest_first: bool, limit: i
     return [serialize(MESSAGE_ENTITY, row) for row in (await session.execute(stmt)).all()]
 
 
+def _iso(value: Any) -> str | None:
+    return value.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z") if value else None
+
+
+async def enrich(
+    session: AsyncSession, docs: list[dict[str, Any]], user: CurrentUser, *, sign: bool = True
+) -> list[dict[str, Any]]:
+    """Adds attachment_url (signed, short-lived) / attachment_type / attachment_duration and, on the
+    caller's own messages, read_at. Only for messages the caller was already allowed to see."""
+    if not docs:
+        return docs
+    ids = [uuid.UUID(d["id"]) for d in docs]
+    rows = {
+        row.id: row
+        for row in (
+            await session.execute(
+                select(
+                    Message.id,
+                    Message.sender_id,
+                    Message.read_at,
+                    Message.attachment_key,
+                    Message.attachment_type,
+                    Message.attachment_duration,
+                ).where(Message.id.in_(ids))
+            )
+        ).all()
+    }
+    out = []
+    for doc in docs:
+        row = rows.get(uuid.UUID(doc["id"]))
+        key = row.attachment_key if row else None
+        mine = row is not None and row.sender_id == user.id
+        out.append(
+            {
+                **doc,
+                "attachment_url": s3.presign_get(key, ATTACHMENT_URL_SECONDS) if key and sign else None,
+                "attachment_type": row.attachment_type if row else None,
+                "attachment_duration": row.attachment_duration if row else None,
+                "read_at": _iso(row.read_at) if mine and row is not None else None,
+            }
+        )
+    return out
+
+
+class AttachmentRefused(Exception):
+    def __init__(self, error: str, **extra: Any) -> None:
+        super().__init__(error)
+        self.error, self.extra = error, extra
+
+
+async def _attachment(
+    session: AsyncSession, user: CurrentUser, payload: dict[str, Any]
+) -> tuple[str, str, int | None] | None:
+    """The sender's own private chat upload: (key, image | audio, duration)."""
+    raw = payload.get("attachment_url")
+    if raw in (None, ""):
+        return None
+    if not isinstance(raw, str) or len(raw) > 512 or not raw.startswith("private/"):
+        raise AttachmentRefused("invalid_attachment")
+    row = (await session.execute(select(File).where(File.key == raw))).scalar_one_or_none()
+    if row is None or row.owner_id != user.id or row.visibility != "private" or row.purpose != "chat":
+        raise AttachmentRefused("invalid_attachment")
+    if row.content_type in keys.IMAGE_TYPES:
+        kind, limit = "image", keys.CHAT_IMAGE_MAX_BYTES
+    elif row.content_type in keys.AUDIO_TYPES:
+        kind, limit = "audio", keys.CHAT_AUDIO_MAX_BYTES
+    else:
+        raise AttachmentRefused("invalid_attachment")
+    declared = payload.get("attachment_type")
+    if declared not in (None, "", kind):
+        raise AttachmentRefused("invalid_attachment")
+    if row.size_bytes > limit:
+        raise AttachmentRefused("attachment_too_large", max_bytes=limit)
+    duration = None
+    if kind == "audio" and payload.get("attachment_duration") not in (None, ""):
+        seconds = as_float(payload.get("attachment_duration"))
+        if seconds is None or not 0 <= seconds <= MAX_AUDIO_SECONDS:
+            raise AttachmentRefused("invalid_attachment_duration", max=MAX_AUDIO_SECONDS)
+        duration = round(seconds)
+    return row.key, kind, duration
+
+
 # ─────────────────────────── sendOrderMessage ───────────────────────────
 
 
@@ -122,7 +219,11 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
     content = raw_content.strip() if isinstance(raw_content, str) else ""
     if not order_id:
         return 400, {"error": "Missing order_id"}
-    if not content or len(content) > MAX_CONTENT:
+    try:
+        attachment = await _attachment(session, user, payload)
+    except AttachmentRefused as exc:
+        return 400, {"error": exc.error, **exc.extra}
+    if (not content and attachment is None) or len(content) > MAX_CONTENT:
         return 400, {"error": "invalid_content", "max": MAX_CONTENT}
     order = await load_order(session, order_id)
     if order is None:
@@ -157,6 +258,9 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
         sender_role=sender_role,
         body=content,
         is_template=False,
+        attachment_key=attachment[0] if attachment else None,
+        attachment_type=attachment[1] if attachment else None,
+        attachment_duration=attachment[2] if attachment else None,
     )
     session.add(message)
     await session.flush()
@@ -164,7 +268,22 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
 
     notified = False
     if recipient is not None:
+        # the recipient's open chat refreshes at once (the Notification event comes later)
+        ping = {"kind": "message", "order_id": str(order.id), "message_id": str(message.id)}
+        emit(
+            session,
+            "Message",
+            "signal",
+            order.id,
+            audience=[recipient],
+            data={**ping, "sender_role": sender_role},
+        )
         preview = f"{content[:PREVIEW_PUSH]}…" if len(content) > PREVIEW_PUSH else content
+        preview_fr = preview_ar = preview
+        if attachment is not None:
+            label_fr, label_ar = ATTACHMENT_LABEL[attachment[1]]
+            preview_fr = f"{label_fr} · {preview}" if preview else label_fr
+            preview_ar = f"{label_ar} · {preview}" if preview else label_ar
         from_courier = sender_role == "courier"
         try:
             async with session.begin_nested():
@@ -175,13 +294,14 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
                     type_="new_message",
                     title_ar="💬 رسالة من المندوب" if from_courier else "💬 رسالة من العميل",
                     title_fr="💬 Message du livreur" if from_courier else "💬 Message du client",
-                    body_ar=preview,
-                    body_fr=preview,
+                    body_ar=preview_ar,
+                    body_fr=preview_fr,
                     metadata={
                         "recipient_role": "customer" if from_courier else "courier",
                         "sender_role": sender_role,
                         "message_id": str(message.id),
-                        "message_preview": content[:PREVIEW_METADATA],
+                        "message_preview": content[:PREVIEW_METADATA] or preview_fr,
+                        "attachment_type": attachment[1] if attachment else None,
                         "timestamp": now_utc().isoformat().replace("+00:00", "Z"),
                     },
                 )
@@ -190,7 +310,8 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
             # The recipient still sees the message (chat + unread polls).
             log.exception("new_message notification lost: order %s message %s", order.id, message.id)
 
-    doc = (await _docs(session, messages.c.id == message.id, newest_first=True, limit=1))[0]
+    docs = await _docs(session, messages.c.id == message.id, newest_first=True, limit=1)
+    doc = (await enrich(session, docs, user))[0]
     return 200, {"success": True, "message": doc, "notified": notified}
 
 
@@ -244,7 +365,7 @@ async def get_order_messages(session: AsyncSession, user: CurrentUser, payload: 
         session, messages.c.order_id == order.id, _visible(role, user),
         newest_first=True, limit=_limit(payload.get("limit")),
     )  # fmt: skip
-    docs = list(reversed(latest))
+    docs = await enrich(session, list(reversed(latest)), user)
     if payload.get("mark_read") is not True:
         return 200, {"success": True, "messages": docs}
     shown = [uuid.UUID(d["id"]) for d in docs]
@@ -361,4 +482,30 @@ async def list_my_unread_messages(
 ) -> Result:
     mode = "fast" if payload.get("mode") == "fast" else "full"
     found = await (_fast_unread if mode == "fast" else _full_unread)(session, user)
+    # attachment_type for the previews ("📷 Photo"), no signed URL in the unread list
+    found = await enrich(session, found, user, sign=False)
     return 200, {"success": True, "messages": found, "mode": mode}
+
+
+# ─────────────────────────── signalTyping ───────────────────────────
+
+
+async def signal_typing(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
+    """ "… est en train d'écrire": a realtime signal to the other party of a live order only."""
+    raw = payload.get("order_id")
+    if not raw or not isinstance(raw, str):
+        return 400, {"error": "Missing order_id"}
+    order = await load_order(session, raw.strip())
+    if order is None:
+        return 404, {"error": "order_not_found"}
+    role = await chat_role(session, order, user, admin=False)
+    if role not in ("customer", "courier"):
+        return 403, {"error": "not_a_party"}
+    other = await courier_user_id(session, order) if role == "customer" else order.customer_id
+    if order.status not in ot.LIVE_STATUSES or other is None or other == user.id:
+        return 409, {"error": "order_not_live", "status": order.status}
+    emit(
+        session, "Message", "signal", order.id, audience=[other],
+        data={"kind": "typing", "order_id": str(order.id), "sender_role": role},
+    )  # fmt: skip
+    return 200, {"success": True}

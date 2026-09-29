@@ -109,9 +109,12 @@ def emitted(monkeypatch) -> list[dict[str, Any]]:
     seen: list[dict[str, Any]] = []
     original = events.emit
 
-    def record(session, entity, type_, id_, audience=None):
-        seen.append({"entity": entity, "type": type_, "id": str(id_)})
-        original(session, entity, type_, id_, audience)
+    def record(session, entity, type_, id_, audience=None, data=None):
+        event = {"entity": entity, "type": type_, "id": str(id_)}
+        if type_ == "signal":
+            event |= {"audience": [str(a) for a in audience or ()], "data": data}
+        seen.append(event)
+        original(session, entity, type_, id_, audience, data)
 
     for module in (messages, notifications, device_tokens):
         monkeypatch.setattr(module, "emit", record)

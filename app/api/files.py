@@ -38,18 +38,19 @@ async def upload(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, str]:
     content_type = (file.content_type or "").split(";")[0].strip().lower()
-    extension = keys.allowed_types(visibility).get(content_type)
+    clean_purpose = keys.normalize_purpose(purpose)
+    extension = keys.allowed_types(visibility, clean_purpose).get(content_type)
     if extension is None:
         raise ApiError(415, "unsupported_media_type", f"File type not allowed: {content_type or 'unknown'}")
-    body = await file.read(settings.UPLOAD_MAX_BYTES + 1)
+    limit = keys.max_bytes(content_type, clean_purpose, settings.UPLOAD_MAX_BYTES)
+    body = await file.read(limit + 1)
     if not body:
         raise ApiError(400, "empty_file", "The file is empty")
-    if len(body) > settings.UPLOAD_MAX_BYTES:
-        raise ApiError(413, "file_too_large", f"The file exceeds {settings.UPLOAD_MAX_BYTES} bytes")
+    if len(body) > limit:
+        raise ApiError(413, "file_too_large", f"The file exceeds {limit} bytes")
     if not keys.sniff_matches(content_type, body[:16]):
         raise ApiError(415, "unsupported_media_type", "The file content does not match its type")
 
-    clean_purpose = keys.normalize_purpose(purpose)
     key = keys.build_key(visibility, clean_purpose, user.id, extension)
     try:
         await s3.put_object(key, body, content_type)
