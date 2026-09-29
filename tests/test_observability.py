@@ -194,3 +194,13 @@ def test_sentry_events_are_scrubbed():
         assert leaked not in out
     assert "rid-sentry-1" in out
     assert event["user"] == {"id": user_hash("42", "key")}
+
+
+async def test_refused_requests_log_their_reason(client, caplog):
+    import logging
+
+    caplog.set_level(logging.INFO, logger="odsd.errors")
+    r = await client.get("/api/entities/UserProfile", params={"q": '{"no_such_field": 1}'})
+    assert r.status_code in (400, 401)
+    if r.status_code == 400:
+        assert any("refused GET /api/entities/UserProfile" in rec.getMessage() for rec in caplog.records)

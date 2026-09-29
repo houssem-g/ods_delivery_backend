@@ -1,5 +1,6 @@
 """Error shape `{error, message}` (ARCHITECTURE §6.3) for every failure the API returns."""
 
+import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -23,6 +24,9 @@ _DEFAULT_CODES = {
 }
 
 
+log = logging.getLogger("odsd.errors")
+
+
 class ApiError(Exception):
     def __init__(self, status: int, error: str, message: str | None = None, **extra: Any) -> None:
         super().__init__(message or error)
@@ -41,7 +45,18 @@ def error_response(status: int, error: str, message: str, **extra: Any) -> JSONR
 
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
-    async def _api_error(_: Request, exc: ApiError) -> JSONResponse:
+    async def _api_error(request: Request, exc: ApiError) -> JSONResponse:
+        # Why a request was refused, to diagnose a user report ("I can't save"): the
+        # messages name the field and the rule, the log redaction removes personal data.
+        if exc.status in (400, 409, 422):
+            log.info(
+                "refused %s %s: %s %s",
+                request.method,
+                request.url.path,
+                exc.error,
+                exc.message[:200],
+                extra={"status": exc.status, "error": exc.error},
+            )
         return JSONResponse(exc.body(), status_code=exc.status)
 
     @app.exception_handler(StarletteHTTPException)
