@@ -263,10 +263,9 @@ def valid_coordinates(lat: Any, lng: Any) -> str | None:
         return f"Latitude {lat} outside valid range [{min_lat}, {max_lat}]"
     if not min_lng <= lng <= max_lng:
         return f"Longitude {lng} outside valid range [{min_lng}, {max_lng}]"
-    for value in (lat, lng):
-        text = repr(abs(float(value)))
-        if "." in text and "e" not in text and len(text.split(".")[1]) > 10:
-            return "Coordinates have excessive precision (likely spoofed GPS)"
+    # No "excessive precision" refusal (ported from the Deno function): real Android
+    # WebViews report full doubles such as 35.825614699999995, which it rejected.
+    # publish_position rounds to 6 decimals (about 10 cm) instead.
     return None
 
 
@@ -293,6 +292,7 @@ async def publish_position(
     session: AsyncSession, courier: Courier, lat: float, lng: float
 ) -> list[uuid.UUID]:
     """The fix goes onto the courier's orders in progress (not onto abandoned ones) and his profile."""
+    lat, lng = round(float(lat), 6), round(float(lng), 6)
     now = ot.now_utc()
     active = list(
         (

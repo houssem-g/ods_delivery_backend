@@ -265,7 +265,6 @@ async def test_another_couriers_id_is_refused(client, world, factory):
         ("35.8", 10.6, "Coordinates must be numbers"),
         (48.85, 2.35, "Latitude 48.85 outside valid range [30.0, 37.5]"),
         (35.8, 20.0, "Longitude 20.0 outside valid range [8.0, 12.5]"),
-        (35.12345678901, 10.6, "Coordinates have excessive precision (likely spoofed GPS)"),
     ],
 )
 async def test_invalid_coordinates(client, world, lat, lng, reason):
@@ -582,3 +581,10 @@ async def test_id_photos_for_admins_only(client, world, factory):
     flags = {p["id"]: p["has_id_photo"] for p in listed}
     assert flags == {str(other.id): True, str(world.courier.id): False}
     assert "private/courier_id/x/doc.jpg" not in json.dumps(listed)
+
+
+def test_full_double_precision_from_a_real_phone_is_accepted():
+    """Android WebViews report e.g. 35.825614699999995: it used to be refused as 'spoofed'."""
+    from app.services.couriers import valid_coordinates
+
+    assert valid_coordinates(35.825614699999995, 10.636912345678901) is None
