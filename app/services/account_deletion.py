@@ -51,6 +51,7 @@ from app.models import (
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc, revoke_all_for_user
+from app.services.couriers import stop_online
 from app.services.offers import demote_if_no_pending_offer
 from app.storage import s3
 
@@ -128,7 +129,9 @@ async def _anonymize_courier(session: AsyncSession, courier: Courier, counts: di
     courier.phone_e164 = None
     courier.id_document_number = ""
     courier.id_document_key = None
+    stop_online(courier, now_utc())
     courier.is_online = False
+    courier.vehicle_model = courier.vehicle_plate = None
     courier.last_location = None
     courier.last_seen_at = None
     courier.referral_code = None

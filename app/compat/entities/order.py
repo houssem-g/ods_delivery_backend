@@ -32,6 +32,7 @@ from app.models import (
     OrderStop,
     OrderTracking,
     User,
+    courier_stats,
 )
 from app.security.deps import CurrentUser
 from app.services import order_steps
@@ -213,6 +214,30 @@ def _case_when_answered(column: Any) -> Any:
     return case((latest_case.c.resolution.in_(ANSWERED), column), else_=null())
 
 
+def customer_while_assigned(user: CurrentUser) -> Any:
+    """The order's customer while a courier is on his delivery, and admins (the courier's vehicle
+    and plate: how to recognise him at the door)."""
+    if user.is_admin:
+        return true()
+    return and_(
+        orders.c.customer_id == user.id,
+        orders.c.courier_id.is_not(None),
+        orders.c.status.in_(ot.LIVE_STATUSES),
+    )
+
+
+def customer_or_admin(user: CurrentUser) -> Any:
+    return true() if user.is_admin else orders.c.customer_id == user.id
+
+
+def _courier_ratings() -> Any:
+    return (
+        select(func.coalesce(courier_stats.c.ratings_count, 0))
+        .where(courier_stats.c.courier_id == orders.c.courier_id)
+        .scalar_subquery()
+    )
+
+
 delivered = orders.c.status == "delivered"
 purchase_plus_fee = orders.c.purchase_amount + func.coalesce(orders.c.delivery_fee, 0)
 guarded = {"read_guard": party_or_admin}
@@ -317,6 +342,12 @@ FIELDS: dict[str, LegacyField] = {
     "last_dispatched_at": LegacyField(orders.c.last_dispatched_at, "datetime"),
     "accepted_at": LegacyField(orders.c.accepted_at, "datetime"),
     "delivered_at": LegacyField(orders.c.delivered_at, "datetime"),
+    # Aurora: the courier on his way, for the customer (and admins).
+    "courier_vehicle_model": LegacyField(
+        courier.c.vehicle_model, "string", read_guard=customer_while_assigned
+    ),
+    "courier_plate": LegacyField(courier.c.vehicle_plate, "string", read_guard=customer_while_assigned),
+    "courier_rating_count": LegacyField(_courier_ratings(), "integer", read_guard=customer_while_assigned),
 }
 ORDER_FIELDS = set(FIELDS) | {"geocode_status"}
 

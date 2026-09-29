@@ -8,11 +8,12 @@ pages/AdminDashboard.jsx updateCourierVerification.
 import math
 import re
 import uuid
-from datetime import time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import Date, Integer, case, cast, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,6 +83,21 @@ def _hhmm(v: Any) -> tuple[bool, Any]:
     return True, time(parts[0], parts[1])
 
 
+def _plate(v: Any) -> tuple[bool, Any]:
+    """'123 tu 4567 ' → '123 TU 4567' (≤ 20 characters); '' clears it."""
+    if not isinstance(v, str):
+        return False, None
+    clean = " ".join(v.split()).upper()
+    return (len(clean) <= 20, clean or None)
+
+
+def _model(v: Any) -> tuple[bool, Any]:
+    if not isinstance(v, str):
+        return False, None
+    clean = " ".join(v.split())
+    return (len(clean) <= 60, clean or None)
+
+
 def _country(v: Any) -> tuple[bool, Any]:
     if isinstance(v, str) and (v.strip() == "" or re.fullmatch(r"[A-Za-z]{2}", v.strip())):
         return True, v.strip().upper() or None
@@ -111,6 +127,10 @@ UPDATABLE: dict[str, Check] = {
     "address_governorate": _str(120),
     "address_lat": _num(-90, 90),
     "address_lng": _num(-180, 180),
+    # Aurora profile: the customer sees the vehicle and the plate of the courier on his way.
+    "vehicle_model": _model,
+    "vehicle_plate": _plate,
+    "daily_goal": _num(0, 10000),
 }
 ADDRESS_FIELDS = ("address", "address_city", "address_governorate", "address_lat", "address_lng")
 CREATE_ONLY: dict[str, Check] = {
@@ -134,6 +154,9 @@ COLUMN = {
     "service_end_time": "service_end",
     "full_name": "display_name",
     "cin_passport": "id_document_number",
+    "vehicle_model": "vehicle_model",
+    "vehicle_plate": "vehicle_plate",
+    "daily_goal": "daily_goal",
 }
 
 
@@ -167,11 +190,16 @@ async def _private_upload(session: AsyncSession, user: CurrentUser, key: str) ->
 
 
 def _apply(courier: Courier, clean: dict[str, Any]) -> None:
+    if "is_online" in clean:
+        if clean["is_online"]:
+            start_online(courier, ot.now_utc())
+        else:
+            stop_online(courier, ot.now_utc())
     for key, value in clean.items():
         column = COLUMN.get(key)
         if column is None:
             continue
-        if column in ("price_per_km", "min_fee", "notification_radius_km"):
+        if column in ("price_per_km", "min_fee", "notification_radius_km", "daily_goal"):
             value = Decimal(str(value))
         setattr(courier, column, value)
     if "current_lat" in clean and "current_lng" in clean:
@@ -392,9 +420,70 @@ async def publish_position(
     return active
 
 
+# --- time online (the courier's "en ligne aujourd'hui") ---------------------------------------------
+# online_since while online; going offline adds the time since max(online_since, Tunis midnight)
+# to online_seconds of online_day (reset when the Tunis day changed). The same rule in Python
+# (the courier's own switch) and in SQL (the presence expiry, the CourierProfile field).
+
+TUNIS = ZoneInfo("Africa/Tunis")
+
+
+def tunis_day(moment: datetime) -> date:
+    return moment.astimezone(TUNIS).date()
+
+
+def tunis_midnight(moment: datetime) -> datetime:
+    local = moment.astimezone(TUNIS)
+    return local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(UTC)
+
+
+def start_online(courier: Courier, now: datetime) -> None:
+    """Going online (or a heartbeat while online): the session starts now unless one runs."""
+    if courier.online_since is None:
+        courier.online_since = now
+
+
+def stop_online(courier: Courier, now: datetime, end: datetime | None = None) -> None:
+    """Closes the online session at `end` (default now), counted for today (Tunis)."""
+    if courier.online_since is None:
+        return
+    end = end or now
+    today = tunis_day(now)
+    if courier.online_day != today:
+        courier.online_day, courier.online_seconds = today, 0
+    since = max(courier.online_since, tunis_midnight(now))
+    courier.online_seconds = (courier.online_seconds or 0) + max(0, int((end - since).total_seconds()))
+    courier.online_since = None
+
+
+def _sql_today() -> Any:
+    return cast(func.timezone("Africa/Tunis", func.now()), Date)
+
+
+def _sql_midnight() -> Any:
+    return func.timezone("Africa/Tunis", func.date_trunc("day", func.timezone("Africa/Tunis", func.now())))
+
+
+def _sql_seconds(since: Any, end: Any) -> Any:
+    return cast(
+        func.greatest(0, func.floor(func.extract("epoch", end - func.greatest(since, _sql_midnight())))),
+        Integer,
+    )
+
+
+def online_seconds_today_expr(table: Any) -> Any:
+    """Stored seconds of today + the running session's part (the CourierProfile field)."""
+    stored = case((table.c.online_day == _sql_today(), table.c.online_seconds), else_=0)
+    live = case((table.c.online_since.is_(None), 0), else_=_sql_seconds(table.c.online_since, func.now()))
+    return stored + live
+
+
 async def expire_presence(session: AsyncSession) -> int:
-    """Online couriers without a heartbeat (position, online switch) for 15 minutes → offline."""
+    """Online couriers without a heartbeat (position, online switch) for 15 minutes → offline.
+    Their session ends at their last heartbeat."""
     cutoff = ot.now_utc() - PRESENCE_TIMEOUT
+    end = func.coalesce(Courier.last_seen_at, func.now())
+    elapsed = _sql_seconds(Courier.online_since, end)
     ids = list(
         (
             await session.execute(
@@ -403,7 +492,16 @@ async def expire_presence(session: AsyncSession) -> int:
                     Courier.is_online.is_(True),
                     or_(Courier.last_seen_at.is_(None), Courier.last_seen_at < cutoff),
                 )
-                .values(is_online=False)
+                .values(
+                    is_online=False,
+                    online_seconds=case(
+                        (Courier.online_since.is_(None), Courier.online_seconds),
+                        (Courier.online_day == _sql_today(), Courier.online_seconds + elapsed),
+                        else_=elapsed,
+                    ),
+                    online_day=case((Courier.online_since.is_(None), Courier.online_day), else_=_sql_today()),
+                    online_since=None,
+                )
                 .returning(Courier.id)
             )
         ).scalars()

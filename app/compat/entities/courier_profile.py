@@ -4,23 +4,27 @@ Read (base44/entities/CourierProfile.jsonc): the owner and admins. `id_photo_uri
 ID document key) is not a field at all: admins get short-lived links from getCourierIdPhotos;
 `has_id_photo` only says whether there is one. `address*` is the account's default address
 (user_addresses, the same row as UserProfile.default_address for a customer+courier account).
+Aurora fields: vehicle_model / vehicle_plate / daily_goal (written by updateMyCourierProfile),
+online_since and online_seconds_today (time online today, Africa/Tunis, running session
+included), ratings_count, acceptance_rate (0-100, 90 days, NULL under 3 assignments).
 Write: admins change `verification_status` (verified_at / verified_by recorded, the courier
 notified: account_verified / account_rejected); every other write goes through the
 updateMyCourierProfile function (create / delete here: 403).
 """
 
 import uuid
+from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import Text, and_, cast, func, literal, select, true
+from sqlalchemy import Text, and_, case, cast, func, literal, null, select, true, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.payload import coerce_payload
 from app.compat.registry import EntityDef, LegacyField, register
 from app.errors import ApiError
-from app.models import Courier, User, UserAddress, courier_stats
+from app.models import Courier, Order, OrderStatusEvent, User, UserAddress, courier_stats
 from app.security.deps import CurrentUser
-from app.services.couriers import set_verification
+from app.services.couriers import online_seconds_today_expr, set_verification
 from app.services.geo import lat_of, lng_of
 
 couriers = Courier.__table__
@@ -36,6 +40,41 @@ def read_policy(user: CurrentUser) -> Any:
 
 def _hhmm(column: Any) -> Any:
     return func.to_char(column, "HH24:MI")
+
+
+ACCEPTANCE_WINDOW = timedelta(days=90)
+ACCEPTANCE_MIN_ASSIGNED = 3
+
+
+def _acceptance_rate() -> Any:
+    """0-100 over the last 90 days: orders he was assigned to (still his, or given up by him)
+    minus those he cancelled (a courier-cancelled status event of his), over the assigned ones;
+    NULL under 3 assignments."""
+    orders = Order.__table__
+    events = OrderStatusEvent.__table__
+    since = func.now() - ACCEPTANCE_WINDOW
+    his_cancels = and_(
+        events.c.cancelled_by == "courier",
+        events.c.actor_user_id == couriers.c.user_id,
+        events.c.created_at >= since,
+    )
+    assigned_ids = union(
+        select(orders.c.id.label("order_id"))
+        .where(orders.c.courier_id == couriers.c.id, orders.c.accepted_at >= since)
+        .correlate(couriers),
+        select(events.c.order_id).where(his_cancels).correlate(couriers),
+    ).subquery("assigned_orders")
+    assigned = select(func.count()).select_from(assigned_ids).scalar_subquery()
+    cancelled = (
+        select(func.count(func.distinct(events.c.order_id)))
+        .where(his_cancels)
+        .correlate(couriers)
+        .scalar_subquery()
+    )
+    return case(
+        (assigned < ACCEPTANCE_MIN_ASSIGNED, null()),
+        else_=func.round(100.0 * (assigned - cancelled) / assigned),
+    )
 
 
 FIELDS: dict[str, LegacyField] = {
@@ -74,6 +113,14 @@ FIELDS: dict[str, LegacyField] = {
     "address_governorate": LegacyField(home.c.governorate, "string"),
     "address_lat": LegacyField(lat_of(home.c.location), "number"),
     "address_lng": LegacyField(lng_of(home.c.location), "number"),
+    # Aurora profile (owner / admin, like the whole entity).
+    "vehicle_model": LegacyField(couriers.c.vehicle_model, "string"),
+    "vehicle_plate": LegacyField(couriers.c.vehicle_plate, "string"),
+    "daily_goal": LegacyField(couriers.c.daily_goal, "number"),
+    "online_since": LegacyField(couriers.c.online_since, "datetime"),
+    "online_seconds_today": LegacyField(online_seconds_today_expr(couriers), "integer"),
+    "ratings_count": LegacyField(func.coalesce(stats.c.ratings_count, 0), "integer"),
+    "acceptance_rate": LegacyField(_acceptance_rate(), "integer"),
 }
 
 
