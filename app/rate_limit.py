@@ -2,6 +2,7 @@
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from limits import parse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -43,3 +44,12 @@ async def rate_limit_exceeded(_: Request, exc: RateLimitExceeded) -> JSONRespons
         },
         status_code=429,
     )
+
+
+def allow(scope: str, key: str, rate: str) -> bool:
+    """A limit checked inside a function handler (one route serves every function): counts one
+    hit of `key` in `scope` on the limiter's own storage; False once `rate` is spent. Off when
+    the limiter is (RATE_LIMIT_ENABLED=false)."""
+    if not limiter.enabled:
+        return True
+    return limiter.limiter.hit(parse(rate), scope, key)

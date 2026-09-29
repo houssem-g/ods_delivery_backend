@@ -292,6 +292,13 @@ Hooks and helpers for the no-response / hot-deal features:
   expired, courier cancel → expired; it emits `ResaleOrder` updates.
 - `app.services.dispatch.dispatch_order(session, order)` (order locked): broadcast again.
 - `app.services.offers.demote_if_no_pending_offer(session, order_id, actor, source)`.
+- `app.services.offers.offer_rank(session, order_id, courier_id, fee)`: where a price stands
+  among the OTHER couriers' pending offers (`rank`, `total`, `cheapest`, `tied`), counts only —
+  getOfferRank, createOrderOffer and updateOrderOffer answer it; never return another
+  courier's price, id or name from it.
+- A limit inside a function (the route is shared by all of them):
+  `app.rate_limit.allow(scope, key, rate)` on the limiter's storage (getOfferRank,
+  `RATE_LIMIT_OFFER_RANK`); answer your own 429 code, not "rate limit".
 - `app.services.couriers.last_activity_expr()`: the "activity" of an order for the 24 h /
   48 h expiry (order writes, status events, no-response case `started_at / resolved_at /
   final_at`; the live position never counts). A no-response step you write keeps the
@@ -304,7 +311,9 @@ Notifications of the order steps: the apps keep sending them, as today, through
 `at_shop`, `purchased`, `on_the_way`, `delivered`; AdminDashboard for
 `account_verified` / `account_rejected`). The server sends only what the Deno functions
 sent themselves: `new_order` (dispatch), `order_cancelled` (cancelOrder, expiry; always
-pushed), `issue_reported` (in-app only).
+pushed), `issue_reported` (in-app only), and the price change of an offer (updateOrderOffer:
+type `new_offer`, `data.kind = "offer_updated"`, pushed at most once per offer every 2 min;
+the app sends nothing after it).
 
 ## 7. Incidents: "client ne répond pas" and hot deals
 

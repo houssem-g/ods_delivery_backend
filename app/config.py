@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEFAULT: str = "300/minute"
     RATE_LIMIT_AUTH: str = "20/minute"
     RATE_LIMIT_AUTH_EMAIL: str = "6/minute"
+    # getOfferRank per courier: the price sheet asks while he edits (debounced) + his offers list
+    RATE_LIMIT_OFFER_RANK: str = "60/minute"
 
     # --- e-mail ---------------------------------------------------------------
     EMAIL_PROVIDER: Literal["smtp", "log"] = "smtp"
