@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_AUTH_EMAIL: str = "6/minute"
     # getOfferRank per courier: the price sheet asks while he edits (debounced) + his offers list
     RATE_LIMIT_OFFER_RANK: str = "60/minute"
+    # getNetworkPulse: anonymous callers per IP (Welcome screen), signed-in callers per user
+    RATE_LIMIT_PULSE_ANONYMOUS: str = "30/minute"
+    RATE_LIMIT_PULSE: str = "60/minute"
+    # getDemandPulse per courier
+    RATE_LIMIT_DEMAND_PULSE: str = "30/minute"
 
     # --- e-mail ---------------------------------------------------------------
     EMAIL_PROVIDER: Literal["smtp", "log"] = "smtp"
