@@ -29,3 +29,37 @@ def to_e164(raw: str | None, region: str = DEFAULT_REGION) -> str | None:
     if not phonenumbers.is_valid_number(parsed):
         raise InvalidPhone(raw)
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
+TUNISIA_PREFIX = "+216"
+
+
+def is_tunisian(e164: str | None) -> bool:
+    """A stored E.164 number of Tunisia (accepted without verification)."""
+    return bool(e164) and str(e164).startswith(TUNISIA_PREFIX)
+
+
+def is_international_mobile(e164: str | None) -> bool:
+    """A valid non-Tunisian E.164 number that may be a mobile (can receive WhatsApp). Used
+    for the verification code and the messages to a verified foreign number."""
+    if not e164 or is_tunisian(e164) or not str(e164).startswith("+"):
+        return False
+    try:
+        parsed = phonenumbers.parse(str(e164), None)
+    except phonenumbers.NumberParseException:
+        return False
+    if not phonenumbers.is_valid_number(parsed):
+        return False
+    kind = phonenumbers.number_type(parsed)
+    return kind in (
+        phonenumbers.PhoneNumberType.MOBILE,
+        phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE,
+    )
+
+
+def customer_phone_verified(phone_e164: str | None, phone_verified_at: object | None) -> bool:
+    """Tunisian numbers always count as verified; a foreign one once confirmed by code
+    (the trigger `trg_users_phone_unverify` clears the date when the number changes)."""
+    if not phone_e164:
+        return False
+    return is_tunisian(phone_e164) or phone_verified_at is not None

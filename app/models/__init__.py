@@ -2,7 +2,7 @@
 
 from app.models.base import Base
 from app.models.catalog import GeocodeCache, Place, Shop, ShopMenuItem, ShopReview
-from app.models.identity import Courier, EmailCode, RefreshToken, User, UserAddress
+from app.models.identity import Courier, EmailCode, PhoneVerification, RefreshToken, User, UserAddress
 from app.models.incidents import HotDeal, NoResponseCase
 from app.models.misc import AppSetting, AuditLog, CourierLedgerEntry, CourierStatement, File
 from app.models.notifications import DeviceToken, Notification, OutboundMessage, PushDelivery
@@ -41,6 +41,7 @@ __all__ = [
     "OrderStop",
     "OrderTracking",
     "OutboundMessage",
+    "PhoneVerification",
     "Place",
     "PushDelivery",
     "RefreshToken",

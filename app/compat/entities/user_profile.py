@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Any
 
 from geoalchemy2 import Geometry
-from sqlalchemy import Text, and_, case, cast, func, select, true
+from sqlalchemy import Text, and_, case, cast, false, func, select, true
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,7 +25,7 @@ from app.errors import ApiError
 from app.models import Courier, User, UserAddress, customer_stats
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc, revoke_all_for_user
-from app.services.phones import InvalidPhone, to_e164
+from app.services.phones import TUNISIA_PREFIX, InvalidPhone, to_e164
 
 users = User.__table__
 addr = UserAddress.__table__
@@ -61,6 +61,24 @@ def _read_policy(user: CurrentUser) -> Any:
 FIELDS: dict[str, LegacyField] = {
     "user_id": LegacyField(users.c.email, "string"),
     "phone": LegacyField(users.c.phone_e164, "string"),
+    # Tunisian numbers need no verification; a foreign one is verified once confirmed by the
+    # WhatsApp code (trg_users_phone_unverify clears the date when the number changes).
+    "phone_verified": LegacyField(
+        case(
+            (users.c.phone_e164.is_(None), false()),
+            (users.c.phone_e164.startswith(TUNISIA_PREFIX), true()),
+            else_=users.c.phone_verified_at.is_not(None),
+        ),
+        "boolean",
+    ),
+    "phone_verification_required": LegacyField(
+        and_(
+            users.c.phone_e164.is_not(None),
+            ~users.c.phone_e164.startswith(TUNISIA_PREFIX),
+            users.c.phone_verified_at.is_(None),
+        ),
+        "boolean",
+    ),
     # An admin's app role is 'admin'; his profile keeps the customer side (as in Base44).
     "role": LegacyField(
         case((users.c.role == "admin", "customer"), else_=cast(users.c.role, Text)), "string"
@@ -167,9 +185,12 @@ async def _apply_referral(session: AsyncSession, user: User, values: dict[str, A
 async def _apply(session: AsyncSession, actor: CurrentUser, user: User, values: dict[str, Any]) -> None:
     if "phone" in values:
         try:
-            user.phone_e164 = to_e164(values["phone"])
+            phone = to_e164(values["phone"])
         except InvalidPhone as exc:
             raise _bad("phone: invalid phone number") from exc
+        if phone != user.phone_e164:  # a new number is not verified (the same one stays verified)
+            user.phone_e164 = phone
+            user.phone_verified_at = None
     if "role" in values and user.role != "admin":
         if values["role"] not in ("customer", "courier"):
             raise _bad("role: expected customer or courier")

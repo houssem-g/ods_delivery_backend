@@ -52,6 +52,9 @@ class User(Base):
     google_sub: Mapped[str | None] = mapped_column(Text, unique=True)
     full_name: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     phone_e164: Mapped[str | None] = mapped_column(Text)
+    # When phone_e164 was confirmed by a code sent to it (foreign numbers must be; +216 need not).
+    # Cleared by the trigger `trg_users_phone_unverify` whenever phone_e164 changes alone.
+    phone_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # 'admin' replaces Base44 User.role; customer/courier mirror the legacy UserProfile.role.
     role: Mapped[str] = mapped_column(app_role, nullable=False, server_default="customer")
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="ar")
@@ -112,6 +115,28 @@ class EmailCode(Base):
     code_hash: Mapped[str] = mapped_column(Text, nullable=False)
     # sha256 of the long token in the e-mailed reset link (the link works without the e-mail address).
     link_hash: Mapped[str | None] = mapped_column(Text, unique=True)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+
+
+class PhoneVerification(Base):
+    """Six-digit codes sent by WhatsApp to confirm a (foreign) phone number."""
+
+    __tablename__ = "phone_verifications"
+    __table_args__ = (
+        CheckConstraint(f"phone_e164 {E164_CHECK}", name="phone_e164"),
+        Index("ix_phone_verifications_open", "user_id", postgresql_where=text("used_at IS NULL")),
+        Index("ix_phone_verifications_phone_created_at", "phone_e164", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    phone_e164: Mapped[str] = mapped_column(Text, nullable=False)
+    code_hash: Mapped[str] = mapped_column(Text, nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

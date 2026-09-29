@@ -14,7 +14,8 @@ Entry points (all take the caller's session; the caller commits):
     apply_statuses(events) webhook status callbacks
 They answer `(status_code, json)` exactly like the Deno actions.
 
-Reliability (unchanged): strict +216 mobile validation (anti SMS/WA pumping),
+Reliability: strict +216 mobile validation (anti SMS/WA pumping); a foreign mobile only when it
+is the user's verified phone (or for the verification code itself, rate-limited upstream),
 per-number and global limits, idempotency key (unique column), retries with backoff
 on transient errors, SMS on immediate failure / webhook "failed" / critical message not
 "delivered" within WHATSAPP_FALLBACK_SECONDS.
@@ -40,6 +41,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import OutboundMessage, User
 from app.security.tokens import now_utc
+from app.services.phones import InvalidPhone, is_international_mobile, to_e164
 
 log = logging.getLogger("odsd.whatsapp")
 
@@ -114,6 +116,24 @@ def normalize_tunisian_mobile(raw: Any) -> str | None:
     if digits[0] not in "2459":
         return None
     return f"+216{digits}"
+
+
+def _international_number(raw: Any, user: User | None, any_mobile: bool) -> str | None:
+    """A foreign mobile in E.164 when it may receive our messages: the user's verified phone,
+    or any foreign mobile for the verification code (`any_mobile`)."""
+    if raw is None:
+        return None
+    try:
+        number = to_e164(str(raw))
+    except InvalidPhone:
+        return None
+    if not is_international_mobile(number):
+        return None
+    if any_mobile:
+        return number
+    if user is not None and user.phone_verified_at is not None and user.phone_e164 == number:
+        return number
+    return None
 
 
 def sanitize_param(value: Any, max_len: int = 120) -> str:
@@ -384,9 +404,10 @@ async def _child_sms(session: AsyncSession, parent: OutboundMessage) -> Outbound
 
 
 async def send_sms_for(session: AsyncSession, parent: OutboundMessage, reason: str) -> dict[str, Any]:
-    """The SMS fallback of a WhatsApp row (once: its key is `<parent key>:sms`)."""
+    """The SMS fallback of a WhatsApp row (once: its key is `<parent key>:sms`). WinSMS sends to
+    Tunisian numbers only: a foreign number gets no SMS."""
     defn = TEMPLATES.get(parent.purpose)
-    if defn is None or defn.sms is None:
+    if defn is None or defn.sms is None or not (parent.to_e164 or "").startswith("+216"):
         parent.fallback_status = "skipped"
         await session.flush()
         return {"fallback": "skipped"}
@@ -444,8 +465,12 @@ async def send_template(
     notification_id: uuid.UUID | None = None,
     lang: str | None = None,
     critical: bool = False,
+    international: bool = False,
 ) -> Result:
-    """The Deno `send` action. `user_id` gives the phone, language and opt-in when `to` is absent."""
+    """The Deno `send` action. `user_id` gives the phone, language and opt-in when `to` is absent.
+
+    Tunisian mobiles only, except a foreign mobile that is the user's verified phone, or any
+    foreign mobile when `international` (the verification code itself)."""
     defn = TEMPLATES.get(str(template_key or ""))
     if defn is None:
         return 400, {"error": "unknown template_key"}
@@ -461,7 +486,8 @@ async def send_template(
         return 200, {"success": True, "duplicate": True, "log_id": str(prior.id), "status": prior.status}
 
     user = await session.get(User, user_id) if user_id else None
-    number = normalize_tunisian_mobile(to or (user.phone_e164 if user else None))
+    target = to or (user.phone_e164 if user else None)
+    number = normalize_tunisian_mobile(target) or _international_number(target, user, international)
     language = _resolve_lang(lang, user.language if user else None)
     base = {
         "channel": "whatsapp", "purpose": template_key, "template_name": _template_name(defn),
@@ -478,7 +504,9 @@ async def send_template(
         return 200, {"success": False, "reason": reason, **extra, "log_id": str(row.id)}
 
     if number is None:
-        return await refused("invalid_number", "invalid_number", "not a Tunisian mobile number")
+        return await refused(
+            "invalid_number", "invalid_number", "not a Tunisian mobile nor a verified foreign mobile"
+        )
     if defn.requires_opt_in and (user is None or user.whatsapp_opt_in_at is None):
         return await refused("skipped_opt_out", "no_opt_in")
     limited = await check_rate_limits(session, number, now_utc())
