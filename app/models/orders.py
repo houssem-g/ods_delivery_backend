@@ -17,9 +17,10 @@ from sqlalchemy import (
     SmallInteger,
     Text,
     UniqueConstraint,
+    func,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import (
@@ -300,3 +301,28 @@ class Message(Base):
     legacy_b44_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+class OrderDraft(Base):
+    """An unfinished NewOrder form, kept 24 h after its last save (server side: it survives
+    a reinstall or a change of device)."""
+
+    __tablename__ = "order_drafts"
+    __table_args__ = (
+        CheckConstraint("length(title) <= 120", name="title"),
+        Index("ix_order_drafts_user_id_expires_at", "user_id", "expires_at"),
+        Index("ix_order_drafts_expires_at", "expires_at"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_at: Mapped[datetime] = created_at()
+    # Written by the service (no trigger): expires_at = updated_at + 24 h.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

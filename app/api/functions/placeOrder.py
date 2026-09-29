@@ -3,7 +3,8 @@
 Body: { order: { items_text, quantity?, notes?, alternatives?, estimated_price?, package_size?,
   shop_name, shop_address?, shop_phone?, shop_governorate?, shop_city?, shop_lat, shop_lng, shops?,
   delivery_address, delivery_governorate?, delivery_city?, delivery_details?, delivery_lat,
-  delivery_lng, preferred_time?, scheduled_time?, customer_phone? } }
+  delivery_lng, preferred_time?, scheduled_time?, customer_phone? }, draft_id? }
+(draft_id: the caller's order draft, deleted with the placement.)
 Returns { success, order, dispatched }. Errors: invalid_items, invalid_shop, invalid_shop_location,
 invalid_delivery_address, invalid_delivery_location, phone_required, phone_unverified (400: the
 profile's foreign number was not confirmed by the WhatsApp code, see requestPhoneVerification),
@@ -18,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.functions._common import answers_refusals, document
 from app.security.deps import CurrentUser
+from app.services import order_drafts
 from app.services.dispatch import dispatch_order
 from app.services.orders import is_test_order, place_order
 
@@ -29,6 +31,8 @@ async def handle(
     payload: dict[str, Any], user: CurrentUser, session: AsyncSession, request: Request
 ) -> tuple[int, dict[str, Any]]:
     order = await place_order(session, user.id, payload.get("order"))
+    # The draft this order came from goes with it (same transaction: kept if the order fails).
+    await order_drafts.remove(session, user.id, payload.get("draft_id"))
     dispatched = None
     if not is_test_order(order.items_text):
         try:  # the order exists: a failed broadcast never fails it (couriers also list open orders)

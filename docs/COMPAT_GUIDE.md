@@ -176,6 +176,7 @@ async def sweep_5min() -> dict:
 | `expire_stale_orders` | 5 min | `app/jobs/orders.py` | open orders idle 24 h → expired, deliveries idle 48 h → abandoned (expireStaleOrders) |
 | `courier_presence_expiry` | 5 min | `app/jobs/orders.py` | online couriers without heartbeat for 15 min → offline |
 | `expire_orphan_offers` | 1 h | `app/jobs/orders.py` | pending offers of closed orders → expired (expireStaleOrders `offers`) |
+| `purge_order_drafts` | 1 h | `app/jobs/orders.py` | order drafts past their 24 h → deleted (new, 2026-09-29; `app/services/order_drafts.py`, functions saveOrderDraft / listOrderDrafts / deleteOrderDraft, placeOrder `draft_id`) |
 | `hourly_cleanup` | 1 h | `app/jobs/incidents.py` | listed hot deals past their expiry → expired (announced to the listings) |
 | `test_data_purge` | 1 h | `app/jobs/messaging.py` | purge steps; step `hot_deals` (`app/jobs/incidents.py`): expired unsold deals and expired QA deals deleted (sweepExpiredTestData) |
 | `osm_refresh` | daily 03:00 | `app/jobs/periodic.py` | OSM places refresh (refreshOsmIndex), off unless OSM_REFRESH_ENABLED |
