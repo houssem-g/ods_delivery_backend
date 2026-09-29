@@ -350,3 +350,23 @@ after it).
   answering (the router rolls back every other ≥ 400).
 - **Business refusals of triggerEmergencyContact are 409, never 400**: NoResponsePanel falls back
   to a direct `Order.update` on 400 (refused anyway, 403).
+
+## 8. Aurora additions (2026-09-29, migration 9a3c5e7f1b20)
+
+| Function | Who | Module |
+|---|---|---|
+| getNetworkPulse | anyone (30/min per IP), richer when signed in | `app/services/pulse.py` |
+| getDemandPulse | couriers | `app/services/pulse.py` |
+| signalOfferIntent | verified couriers | `app/services/offer_intents.py` |
+| signalTyping | parties of a live order | `app/services/messages.py` |
+| listMyCourierDocuments, uploadCourierDocument | couriers | `app/services/courier_documents.py` |
+| reviewCourierDocument, listCourierDocuments | admins | `app/services/courier_documents.py` |
+
+Changed: sendNotificationIfEnabled (duplicates skipped), createOrderOffer / acceptOrderOffer / the
+courier steps (server-side notices, `app/services/step_notices.py`), updateMyCourierProfile
+(vehicle, plate, goal, time online), placeOrder (budget_max, preferred_courier_id),
+reportUnavailableItems (missing_price, quantity), getCustomerReliability (delivered_orders,
+reliability_pct, avg_reply_seconds), sendOrderMessage / getOrderMessages (attachments, read_at),
+createHotDeal / reserveHotDeal / listHotDeals (price decay, alerts), Notification delete.
+Field-level details: `docs/FIELD_MAPPING.md`.
+

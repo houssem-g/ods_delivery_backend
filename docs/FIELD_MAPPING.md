@@ -74,6 +74,7 @@ customer side on its existence). Compat id = `users.id`.
 | referred_at | front R/W, fn R | `users.referred_at` | |
 | whatsapp_opt_in | front R/W, fn R | *derived* `users.whatsapp_opt_in_at IS NOT NULL` | withdrawing clears the date |
 | whatsapp_opt_in_at | front W | `users.whatsapp_opt_in_at` | |
+| notify_hot_deals | front R/W | `users.notify_hot_deals` | new 2026-09-29 (Aurora): opt-in `hot_deal_new` alerts (default address within 5 km of a new deal) |
 
 ## CourierProfile → `couriers` (+ `courier_stats` view)
 
@@ -103,6 +104,10 @@ customer side on its existence). Compat id = `users.id`.
 | service_city | front R/W\* | `couriers.service_city` | |
 | service_start_time, service_end_time | front R/W\* | `couriers.service_start / service_end` (time) | "HH:mm" in the legacy shape |
 | referral_code | front R\*, fn R/W | `couriers.referral_code` (unique) | |
+| vehicle_model, vehicle_plate, daily_goal | front R, fn R/W | same-name `couriers` columns | new 2026-09-29 (Aurora): written by updateMyCourierProfile (plate upper-cased, ≤ 20; model ≤ 60; goal 0-10000); owner + admin |
+| online_since, online_seconds_today | front R | `couriers.online_since`; *derived* `online_seconds` of today (`online_day`, Africa/Tunis) + the running session | new (Aurora): time online today |
+| ratings_count | front R | *derived* `courier_stats.ratings_count` | new (Aurora) |
+| acceptance_rate | front R | *derived* 90 days: (orders assigned − cancelled by him) / assigned × 100 | new (Aurora); NULL under 3 assignments |
 
 ## Order → `orders` + `order_stops` + `order_status_events` + `order_tracking` + `order_ratings` + `order_issues` + `no_response_cases` + `courier_ledger_entries`
 
@@ -168,6 +173,12 @@ customer side on its existence). Compat id = `users.id`.
 | courier_stats_recorded_at | fn R/W | *derived* `orders.delivered_at` | counters are views: nothing to record |
 | last_dispatched_at | fn R/W | `orders.last_dispatched_at` | |
 | (new) accepted_at, delivered_at | – | `orders.accepted_at / delivered_at` | missing timestamps (audit §3.3 #17). Import: last `accepted` / `delivered` history item; else the accepted offer's date / `courier_stats_recorded_at`, else `updated_date` |
+| picked_items | front R/W (courier) | `orders.picked_items` (jsonb int array) | new 2026-09-29 (Aurora): indexes of the items_text lines in the basket; courier-writable while accepted / at_shop / price_confirmation_needed; guard: parties + admin |
+| budget_max | front R, fn W (placeOrder) | `orders.budget_max` numeric(10,3) 0-2000 | new (Aurora); readable like estimated_price |
+| courier_vehicle_model, courier_plate, courier_rating_count | front R | join `couriers.vehicle_model / vehicle_plate`, `courier_stats.ratings_count` | new (Aurora); guard: the customer while a courier is on the delivery, admins |
+| courier_is_online | front R | join `couriers.is_online` of `orders.courier_id` | new (Aurora); guard: customer + admin |
+| hot_deal_saving, free_cancel_until | front R | *derived* deal `purchase_amount − orders.purchase_amount`; deal `reserved_at` + 3 min | new (Aurora), hot-deal orders only; guard: customer + admin |
+| preparing_offers | front R | *derived* `offer_intents` refreshed < 3 min by couriers without a pending offer | new (Aurora, signalOfferIntent); guard: customer + admin |
 
 ## OrderOffer → `order_offers`
 
@@ -184,6 +195,8 @@ customer side on its existence). Compat id = `users.id`.
 | proposed_fee, eta_minutes, distance_km, message | front R/W\*, fn R/W | same-name columns | |
 | status | front R, fn R/W | `order_offers.status` (enum) | a withdrawal (`OrderOffer.delete`) keeps the row as `withdrawn`, which is not an entity row any more (reads / events behave like a delete) |
 | created_via | fn R/W | *derived* constant `'createOrderOffer'` | every offer is server-made now |
+| courier_ratings_count, courier_deliveries | front R | *derived* `courier_stats.ratings_count / total_deliveries` | new (Aurora); guard: the order's customer + admin |
+| delivered_to_you | front R | *derived* delivered orders of this customer by this courier | new (Aurora); guard: the order's customer + admin |
 
 ## Message → `messages`
 
@@ -196,6 +209,7 @@ customer side on its existence). Compat id = `users.id`.
 | content | front R/W\*, fn R/W | `messages.body` | |
 | is_template | fn W | `messages.is_template` | always false; kept (audit DDL) |
 | is_read | front R, fn R/W | *derived* `messages.read_at IS NOT NULL` | |
+| (fn only) attachment_url, attachment_type, attachment_duration, read_at | front R (getOrderMessages) | `messages.attachment_key` (signed 10 min) / `attachment_type` / `attachment_duration` / `read_at` | new (Aurora): not entity fields; read_at only on the caller's own messages |
 
 Policies: read = sender or admin (the Base44 rule; the app reads the chat through the
 functions only); no
@@ -213,9 +227,12 @@ right of Base44 let him rewrite `recipient_id`, gone).
 | metadata | front R/W, fn W | `notifications.data` (jsonb) | keys read by the front: recipient_role, sender_role, status, notification_type, offer_id, shop_name, shop_address, delivery_address, delivery_governorate, distance_km, quick_actions, main_item, is_emergency, preferred_courier, ctx. Import: the legacy ids in `order_id, offer_id, courier_id, case_id, resale_order_id, message_id` become the new uuids when migrated (else kept); `sender_id` / `courier_user_id` kept as exported |
 | is_read | front R/W | *derived* `notifications.read_at IS NOT NULL` | written by the recipient only (true sets `read_at`, false clears it) |
 
+Aurora (2026-09-29): new types `hot_deal_new`, `document_verified`, `document_rejected`; the
+recipient may DELETE his own notifications.
+
 Policies: read = recipient, admin; create = admin (anyone; pushed, e.g. AdminDashboard's
 `account_verified`) or the recipient himself (orderFlow fallback; not pushed); update =
-recipient, `is_read` only; delete = nobody.
+recipient, `is_read` only; delete = the recipient (Aurora).
 
 ## DeviceToken → `device_tokens`
 
@@ -243,7 +260,8 @@ unregisterDeviceToken; a token registered by another account moves to the caller
 | courier_name | front R\*, fn R/W | join `couriers.display_name` | |
 | courier_phone | front R\* (reserveHotDeal answer) | join `couriers.phone_e164` | admin-only in the entity |
 | items_text, purchase_amount, discount_percentage, include_delivery, delivery_fee, shop_name | front R\*, fn R/W | same-name columns | |
-| discounted_price | front R\*, fn R/W | `hot_deals.price` | |
+| discounted_price | front R\*, fn R/W | `hot_deals.price` → the current decayed price (Aurora) | |
+| current_price, start_price, floor_price | front R | *derived* `max(floor_price, start_price − ⌊minutes / drop_every_min⌋ × drop_step)`; columns | new (Aurora): `discounted_price` is the current (decayed) price since; legacy deals start = floor = price |
 | shop_address | fn R | `hot_deals.shop_address` | never written today |
 | courier_lat, courier_lng | fn R/W | `hot_deals.pickup_location` | admin-only in the entity |
 | photo_url | front R\*/W\* | `hot_deals.photo_key` (public upload) | createHotDeal keeps only the courier's own public upload (Base44 took any https URL); a legacy https URL is answered as is |
@@ -259,7 +277,7 @@ deal for admins (base44/entities/ResaleOrder.jsonc); `courier_phone`, `courier_l
 createHotDeal, reserveHotDeal, cancelOrder, the hourly jobs. listHotDeals answers only the
 public fields + `distance_km`. A deal leaving the listing is announced as a realtime `delete`.
 
-The buyer's order (reserveHotDeal): `purchase_amount` = the deal's discounted `price` (what
+The buyer's order (reserveHotDeal): `purchase_amount` = the deal's current (decayed) price (what
 the buyer reimburses; Base44 stored the original amount and a separate `total_amount` =
 discounted price + fee, which is what the derived `total_amount` answers now), `delivery_fee`
 = the deal's fee, `resale_deal_id` = the deal, one stop (the deal's shop, already
