@@ -3,7 +3,7 @@ what it implies (base44/functions/getCustomerReliability, src/lib/noResponsePoli
 
 Body: { order_id? } — without: the caller's own record; with: the order's customer, for the
 customer, the assigned courier, any verified courier while the order is open, admins. Couriers
-see the level from 2 incidents on. Returns { success, incidents, level, visible_to_couriers,
+see the record from the first incident on. Returns { success, incidents, level, visible_to_couriers,
 max_advance_tnd, phone_confirmation_required, suspended, window_days }.
 """
 

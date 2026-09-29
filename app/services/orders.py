@@ -113,6 +113,8 @@ async def stop_coordinates(session: AsyncSession, stop: OrderStop | None) -> tup
 # --- reliability (getCustomerReliability, src/lib/noResponsePolicy.js) -----------------------------
 
 LEVEL_THRESHOLDS = {"warning": 2, "limited": 3, "suspended": 5}
+# Couriers are warned from the first "client ne répond pas" (owner, 2026-09-29; it was 2).
+VISIBLE_TO_COURIERS_AT = 1
 LIMITED_MAX_ADVANCE_TND = 30
 INCIDENT_WINDOW_DAYS = 180
 
@@ -132,7 +134,7 @@ def reliability_from_count(count: int) -> dict[str, Any]:
     return {
         "incidents": incidents,
         "level": level,
-        "visible_to_couriers": incidents >= LEVEL_THRESHOLDS["warning"],
+        "visible_to_couriers": incidents >= VISIBLE_TO_COURIERS_AT,
         "max_advance_tnd": LIMITED_MAX_ADVANCE_TND if limited else None,
         "phone_confirmation_required": limited,
         "suspended": level == "suspended",

@@ -617,10 +617,11 @@ async def test_reliability(client, world, factory):
     own = (await call(client, world.customer, "getCustomerReliability")).json()
     assert own["incidents"] == 1 and own["level"] == "notice" and own["window_days"] == 180
     order = await world.order()
-    hidden = (
+    first = (
         await call(client, world.courier_user, "getCustomerReliability", {"order_id": str(order.id)})
     ).json()
-    assert hidden["incidents"] == 0 and hidden["level"] == "ok"  # couriers see it from 2 on
+    # couriers are warned from the first incident on (it was 2)
+    assert first["incidents"] == 1 and first["level"] == "notice" and first["visible_to_couriers"] is True
     await incidents(world, 2)
     seen = (
         await call(client, world.courier_user, "getCustomerReliability", {"order_id": str(order.id)})
