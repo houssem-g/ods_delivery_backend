@@ -61,6 +61,8 @@ class Order(Base):
         CheckConstraint("purchase_amount >= 0 AND purchase_amount <= 2000", name="purchase_amount"),
         CheckConstraint("payment_method IN ('cash')", name="payment_method"),
         CheckConstraint("cancelled_by IN ('customer','courier','admin','system')", name="cancelled_by"),
+        CheckConstraint("budget_max >= 0 AND budget_max <= 2000", name="budget_max"),
+        CheckConstraint("jsonb_typeof(picked_items) = 'array'", name="picked_items"),
         CheckConstraint(
             "unavailable_policy IN (" + ",".join(f"'{p}'" for p in UNAVAILABLE_POLICIES) + ")",
             name="unavailable_policy",
@@ -107,6 +109,10 @@ class Order(Base):
     unavailable_policy: Mapped[str] = mapped_column(Text, nullable=False, server_default="call_me")
     package: Mapped[str] = mapped_column(package_size, nullable=False, server_default="petit")
     estimated_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    # The customer's ceiling for the purchase (placeOrder), shown to the bidding couriers.
+    budget_max: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    # Indexes of the items_text lines the courier already has in the basket (courier-written).
+    picked_items: Mapped[list | None] = mapped_column(JSONB)
     # Delivery snapshot: the order keeps the contact/address it was placed with.
     contact_name: Mapped[str] = mapped_column(Text, nullable=False)
     contact_phone_e164: Mapped[str | None] = mapped_column(Text)
@@ -277,6 +283,8 @@ class OrderStockCheck(Base):
         CheckConstraint("length(missing_text) BETWEEN 1 AND 500", name="missing_text"),
         CheckConstraint("length(substitute_text) <= 500", name="substitute_text"),
         CheckConstraint("substitute_price >= 0 AND substitute_price <= 2000", name="substitute_price"),
+        CheckConstraint("missing_price >= 0 AND missing_price <= 2000", name="missing_price"),
+        CheckConstraint("quantity BETWEEN 1 AND 100", name="quantity"),
         Index(
             "one_pending_stock_check_per_order",
             "order_id",
@@ -297,6 +305,9 @@ class OrderStockCheck(Base):
     missing_text: Mapped[str] = mapped_column(Text, nullable=False)
     substitute_text: Mapped[str | None] = mapped_column(Text)
     substitute_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    # The missing item's price (what the customer will not pay) and how many are missing.
+    missing_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     photo_key: Mapped[str | None] = mapped_column(Text)
     nothing_available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
@@ -332,7 +343,13 @@ class Message(Base):
     __tablename__ = "messages"
     __table_args__ = (
         CheckConstraint("sender_role IN ('customer','courier')", name="sender_role"),
-        CheckConstraint("length(body) BETWEEN 1 AND 1000", name="body"),
+        # empty only with an attachment (photo / voice note)
+        CheckConstraint(
+            "length(body) <= 1000 AND (length(body) >= 1 OR attachment_key IS NOT NULL)", name="body"
+        ),
+        CheckConstraint("attachment_type IN ('image','audio')", name="attachment_type"),
+        CheckConstraint("(attachment_key IS NULL) = (attachment_type IS NULL)", name="attachment_complete"),
+        CheckConstraint("attachment_duration BETWEEN 0 AND 600", name="attachment_duration"),
         Index("ix_messages_order_id_created_at", "order_id", "created_at"),
         Index("messages_unread", "recipient_id", postgresql_where=text("read_at IS NULL")),
     )
@@ -350,6 +367,10 @@ class Message(Base):
     sender_role: Mapped[str] = mapped_column(Text, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     is_template: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # Private upload of the sender (purpose chat): a photo or a voice note.
+    attachment_key: Mapped[str | None] = mapped_column(Text)
+    attachment_type: Mapped[str | None] = mapped_column(Text)
+    attachment_duration: Mapped[int | None] = mapped_column(Integer)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     legacy_b44_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
@@ -379,3 +400,23 @@ class OrderDraft(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class OfferIntent(Base):
+    """ "Un livreur prépare une offre…": a courier has the offer sheet of an open order open.
+    Refreshed by signalOfferIntent, deleted when he sends his offer or closes the sheet; rows
+    older than 10 minutes are purged by the hourly cleanup."""
+
+    __tablename__ = "offer_intents"
+    __table_args__ = (Index("ix_offer_intents_updated_at", "updated_at"),)
+
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), primary_key=True
+    )
+    courier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="CASCADE"), primary_key=True
+    )
+    # Written by the service (upsert), no trigger.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

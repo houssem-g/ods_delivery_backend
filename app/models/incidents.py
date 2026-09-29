@@ -3,8 +3,9 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Numeric, Text, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -56,12 +57,20 @@ class NoResponseCase(Base):
     updated_at: Mapped[datetime] = updated_at()
 
 
+def _same_as_price(context: Any) -> Any:
+    """start_price / floor_price not given (imports, older writers): the price, i.e. no decay."""
+    return context.get_current_parameters()["price"]
+
+
 class HotDeal(Base):
     __tablename__ = "hot_deals"
     __table_args__ = (
         CheckConstraint("purchase_amount >= 0", name="purchase_amount"),
         CheckConstraint("discount_percentage BETWEEN 0 AND 100", name="discount_percentage"),
         CheckConstraint("price >= 0", name="price"),
+        CheckConstraint("floor_price >= 0 AND floor_price <= start_price", name="floor_price"),
+        CheckConstraint("drop_step >= 0 AND drop_step <= 100", name="drop_step"),
+        CheckConstraint("drop_every_min BETWEEN 1 AND 1440", name="drop_every_min"),
         CheckConstraint("status IN ('available','sold','expired')", name="status"),
         CheckConstraint("status <> 'sold' OR buyer_id IS NOT NULL", name="sold_has_buyer"),
         Index(
@@ -86,6 +95,12 @@ class HotDeal(Base):
     purchase_amount: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     discount_percentage: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    # Price decay: current = max(floor, start - floor(minutes listed / drop_every_min) * drop_step)
+    # (app/services/hot_deals.current_price). price = start_price.
+    start_price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, default=_same_as_price)
+    floor_price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, default=_same_as_price)
+    drop_step: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, server_default="0.500")
+    drop_every_min: Mapped[int] = mapped_column(Integer, nullable=False, server_default="5")
     include_delivery: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     delivery_fee: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     photo_key: Mapped[str | None] = mapped_column(Text)

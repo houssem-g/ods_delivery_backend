@@ -1,12 +1,13 @@
 """Users (Base44 User + UserProfile merged), auth tables, addresses, couriers."""
 
 import uuid
-from datetime import datetime, time
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     String,
     Text,
     Time,
+    UniqueConstraint,
     text,
 )
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
@@ -42,6 +44,7 @@ class User(Base):
         CheckConstraint("language IN ('ar','fr')", name="language"),
         Index("ix_users_role", "role"),
         Index("ix_users_referred_by_courier_id", "referred_by_courier_id"),
+        Index("users_hot_deal_alerts", "id", postgresql_where=text("notify_hot_deals")),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -65,6 +68,8 @@ class User(Base):
     notify_incoming_orders: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     notify_chat: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     push_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    # Opt-in: a new hot deal near the default address (createHotDeal, type hot_deal_new).
+    notify_hot_deals: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     whatsapp_opt_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     terms_version: Mapped[str | None] = mapped_column(Text)
@@ -173,6 +178,10 @@ class Courier(Base):
         CheckConstraint("price_per_km >= 0 AND price_per_km <= 50", name="price_per_km"),
         CheckConstraint("min_fee >= 0 AND min_fee <= 200", name="min_fee"),
         CheckConstraint("notification_radius_km BETWEEN 0 AND 100", name="notification_radius_km"),
+        CheckConstraint("length(vehicle_model) <= 60", name="vehicle_model"),
+        CheckConstraint("length(vehicle_plate) <= 20", name="vehicle_plate"),
+        CheckConstraint("daily_goal >= 0 AND daily_goal <= 10000", name="daily_goal"),
+        CheckConstraint("online_seconds >= 0", name="online_seconds"),
         Index(
             "couriers_dispatch",
             "last_location",
@@ -213,8 +222,51 @@ class Courier(Base):
     # the rule (outside a verified no-response) is not recoverable from events.
     late_cancellations: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # Time online: online_since while online; online_seconds accumulated for online_day (Tunis date).
+    online_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    online_day: Mapped[date | None] = mapped_column(Date)
+    online_seconds: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    vehicle_model: Mapped[str | None] = mapped_column(Text)
+    vehicle_plate: Mapped[str | None] = mapped_column(Text)
+    daily_goal: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     last_location = mapped_column(Point())
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     legacy_b44_id: Mapped[str | None] = legacy_id()
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()
+
+
+COURIER_DOCUMENT_KINDS = ("cin", "permis", "carte_grise", "assurance", "photo")
+COURIER_DOCUMENT_STATUSES = ("pending", "verified", "rejected")
+
+
+class CourierDocument(Base):
+    """A courier's document (private upload), reviewed by an admin. One row per kind: a new
+    upload replaces the file and sends it back to review."""
+
+    __tablename__ = "courier_documents"
+    __table_args__ = (
+        UniqueConstraint("courier_id", "kind"),
+        CheckConstraint("kind IN (" + ",".join(f"'{k}'" for k in COURIER_DOCUMENT_KINDS) + ")", name="kind"),
+        CheckConstraint(
+            "status IN (" + ",".join(f"'{k}'" for k in COURIER_DOCUMENT_STATUSES) + ")", name="status"
+        ),
+        CheckConstraint("length(note) <= 500", name="note"),
+        Index("ix_courier_documents_status_created_at", "status", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    courier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    file_key: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_on: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    note: Mapped[str | None] = mapped_column(Text)
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
