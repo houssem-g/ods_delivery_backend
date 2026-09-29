@@ -4,7 +4,10 @@ what it implies (base44/functions/getCustomerReliability, src/lib/noResponsePoli
 Body: { order_id? } — without: the caller's own record; with: the order's customer, for the
 customer, the assigned courier, any verified courier while the order is open, admins. Couriers
 see the record from the first incident on. Returns { success, incidents, level, visible_to_couriers,
-max_advance_tnd, phone_confirmation_required, suspended, window_days }.
+max_advance_tnd, phone_confirmation_required, suspended, window_days, delivered_orders (orders
+delivered to this customer, all time), reliability_pct (0-100: delivered / (delivered + incidents
+of the window), 100 without any), avg_reply_seconds (median seconds from a courier's message to the
+customer's next one, last 90 days; null under 3 samples) }.
 """
 
 from typing import Any
@@ -16,7 +19,7 @@ from app.api.functions._common import as_uuid
 from app.models import Order
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
-from app.services.orders import active_incidents, courier_of_user, reliability_from_count
+from app.services.orders import active_incidents, courier_of_user, reliability_extras, reliability_from_count
 
 
 async def handle(
@@ -39,7 +42,9 @@ async def handle(
         if not allowed:
             return 403, {"error": "Forbidden"}
         customer_id = order.customer_id
-    result = reliability_from_count(await active_incidents(session, customer_id))
+    incidents = await active_incidents(session, customer_id)
+    result = reliability_from_count(incidents)
+    extras = await reliability_extras(session, customer_id, incidents)
     if customer_id != user.id and not user.is_admin and not result["visible_to_couriers"]:
-        return 200, {"success": True, **reliability_from_count(0)}
-    return 200, {"success": True, **result}
+        return 200, {"success": True, **reliability_from_count(0), **extras}
+    return 200, {"success": True, **result, **extras}

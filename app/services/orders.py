@@ -4,6 +4,7 @@ Base44 references (base44/functions): placeOrder, getCustomerReliability, _share
 """
 
 import re
+import statistics
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -14,7 +15,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import Courier, Order, OrderStatusEvent, OrderStop, User, UserAddress, customer_stats
+from app.models import Courier, Message, Order, OrderStatusEvent, OrderStop, User, UserAddress, customer_stats
 from app.models.orders import UNAVAILABLE_POLICIES
 from app.realtime.events import emit
 from app.services import order_transitions as ot
@@ -155,6 +156,79 @@ def reliability_from_count(count: int) -> dict[str, Any]:
         "suspended": level == "suspended",
         "window_days": INCIDENT_WINDOW_DAYS,
     }
+
+
+RELIABILITY_REPLY_DAYS = 90
+RELIABILITY_REPLY_MIN_SAMPLES = 3
+
+
+async def reliability_extras(session: AsyncSession, customer_id: uuid.UUID, incidents: int) -> dict[str, Any]:
+    """delivered_orders (all time), reliability_pct (100 × delivered / (delivered + incidents of the
+    window), 100 without any), avg_reply_seconds (median seconds from a courier's message to the
+    customer's next one in the same chat, last 90 days; null under 3 samples)."""
+    delivered = int(
+        (
+            await session.execute(
+                select(func.count()).where(Order.customer_id == customer_id, Order.status == "delivered")
+            )
+        ).scalar_one()
+    )
+    total = delivered + max(0, incidents)
+    pct = round(100 * delivered / total) if total else 100
+    return {
+        "delivered_orders": delivered,
+        "reliability_pct": pct,
+        "avg_reply_seconds": await _median_reply_seconds(session, customer_id),
+    }
+
+
+async def _median_reply_seconds(session: AsyncSession, customer_id: uuid.UUID) -> int | None:
+    """One sample per courier turn: the first courier message after a customer's (or the chat's
+    first), answered by the customer's next message. Template lines (stock checks) are left out."""
+    chat = (
+        select(
+            Message.order_id,
+            Message.sender_role,
+            Message.created_at,
+            func.lag(Message.sender_role)
+            .over(partition_by=Message.order_id, order_by=(Message.created_at, Message.id))
+            .label("previous_role"),
+        )
+        .join(Order, Order.id == Message.order_id)
+        .where(
+            Order.customer_id == customer_id,
+            Message.is_template.is_(False),
+            Message.created_at >= func.now() - timedelta(days=RELIABILITY_REPLY_DAYS),
+        )
+        .subquery("chat")
+    )
+    reply = (
+        select(func.min(Message.created_at))
+        .where(
+            Message.order_id == chat.c.order_id,
+            Message.sender_role == "customer",
+            Message.is_template.is_(False),
+            Message.created_at > chat.c.created_at,
+        )
+        .correlate(chat)
+        .scalar_subquery()
+    )
+    gap = func.extract("epoch", reply - chat.c.created_at)
+    samples = [
+        float(v)
+        for v in (
+            await session.execute(
+                select(gap).where(
+                    chat.c.sender_role == "courier",
+                    func.coalesce(chat.c.previous_role, "customer") == "customer",
+                    reply.is_not(None),
+                )
+            )
+        ).scalars()
+    ]
+    if len(samples) < RELIABILITY_REPLY_MIN_SAMPLES:
+        return None
+    return round(statistics.median(samples))
 
 
 # --- placeOrder -------------------------------------------------------------------------------------
