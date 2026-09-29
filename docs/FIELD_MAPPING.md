@@ -90,7 +90,8 @@ customer side on its existence). Compat id = `users.id`.
 | max_package_size | fn W (whitelist) | `couriers.max_package` | never sent by the front nor read; kept (audit DDL, default `petit`) |
 | price_per_km, min_fee | front R/W\* | `couriers.price_per_km / min_fee` numeric(10,3) | |
 | is_online | front R/W\*, fn R/W | `couriers.is_online` | expires with `last_seen_at` (job); false for every migrated courier (`last_seen_at` = profile update date) |
-| current_lat, current_lng | front R/W\*, fn R/W | `couriers.last_location` (ST_Y / ST_X) | `last_seen_at` set with it |
+| current_lat, current_lng | front R/W\*, fn R/W | `couriers.last_location` (ST_Y / ST_X) | `last_seen_at` set with it; a fix outside Tunisia (`ORDER_BOUNDS`) is dropped (`ignored`) for a courier serving TN — the app publishes his address instead |
+| address, address_city, address_governorate, address_lat, address_lng | front R/W\* | the account's default `user_addresses` row (address / city / governorate / location) | new: the courier's own address, the same row as UserProfile.default_address; written without creating the customer profile; the app shows it instead of a GPS fix taken abroad |
 | notification_radius_km | front R/W\*, fn R | `couriers.notification_radius_km` | |
 | verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason`; the only field an admin writes through the entity (the courier's notice is AdminDashboard's own Notification.create); migrated couriers: `verified_at` NULL (Base44 kept none) |
 | total_deliveries | front R, fn R/W | *derived* `courier_stats.total_deliveries` | stored value was wrong for 7/9 couriers |

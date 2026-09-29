@@ -212,6 +212,103 @@ async def test_profile_update_and_record_delivery(client, world, factory):
     }
 
 
+async def test_a_position_abroad_is_never_published(client, world):
+    """A courier serving Tunisia: a fix outside it (phone abroad) is dropped, the rest is saved."""
+    r = await call(
+        client,
+        world.courier_user,
+        "updateMyCourierProfile",
+        {"fields": {"is_online": True, "current_lat": 48.8566, "current_lng": 2.3522}},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert sorted(body["ignored"]) == ["current_lat", "current_lng"]
+    assert body["profile"]["is_online"] is True
+    # The previous (Sousse) position is kept.
+    assert body["profile"]["current_lat"] == pytest.approx(SOUSSE_SHOP[0])
+    assert body["profile"]["current_lng"] == pytest.approx(SOUSSE_SHOP[1])
+    # A fix inside Tunisia, with a real phone's full precision, still goes through.
+    ok = await call(
+        client,
+        world.courier_user,
+        "updateMyCourierProfile",
+        {"fields": {"current_lat": 35.82561234567891, "current_lng": 10.60841234567891}},
+    )
+    assert ok.json()["ignored"] == []
+    assert ok.json()["profile"]["current_lat"] == pytest.approx(35.8256123, abs=1e-6)
+    # Only one coordinate, outside: dropped too (never half a position).
+    half = await call(
+        client, world.courier_user, "updateMyCourierProfile", {"fields": {"current_lat": 48.85}}
+    )
+    assert half.json()["ignored"] == ["current_lat"]
+    # A courier serving another country keeps his own positions.
+    moved = await call(
+        client,
+        world.courier_user,
+        "updateMyCourierProfile",
+        {"fields": {"service_country": "FR", "current_lat": 48.8566, "current_lng": 2.3522}},
+    )
+    assert moved.json()["ignored"] == []
+    assert moved.json()["profile"]["current_lat"] == pytest.approx(48.8566)
+
+
+async def test_onboarding_abroad_keeps_no_position(client, factory):
+    user = await factory.user(email="abroad@example.test", profile=False)
+    await private_upload(user)
+    fields = {**ONBOARDING, "current_lat": 48.8566, "current_lng": 2.3522}
+    r = await call(client, user, "updateMyCourierProfile", {"action": "create", "fields": fields})
+    assert r.status_code == 200, r.text
+    assert r.json()["profile"]["current_lat"] is None
+    assert sorted(r.json()["ignored"]) == ["current_lat", "current_lng"]
+
+
+async def test_courier_address_is_the_accounts_default_address(client, world, factory):
+    address = {
+        "address": " 12 rue de la Plage ",
+        "address_city": "Hammam Sousse",
+        "address_governorate": "Sousse",
+        "address_lat": 35.8611,
+        "address_lng": 10.5947,
+    }
+    r = await call(client, world.courier_user, "updateMyCourierProfile", {"fields": address})
+    assert r.status_code == 200, r.text
+    profile = r.json()["profile"]
+    assert profile["address"] == "12 rue de la Plage"
+    assert profile["address_city"] == "Hammam Sousse" and profile["address_governorate"] == "Sousse"
+    assert profile["address_lat"] == pytest.approx(35.8611) and profile["address_lng"] == pytest.approx(
+        10.5947
+    )
+    # A courier-only account does not become a customer by saving his address.
+    mine = await client.get("/api/entities/UserProfile", headers=auth(world.courier_user))
+    assert mine.status_code == 200 and mine.json() == []
+    read = await client.get("/api/entities/CourierProfile", headers=auth(world.courier_user))
+    assert read.json()[0]["address"] == "12 rue de la Plage"
+    # Coordinates go together.
+    bad = await call(client, world.courier_user, "updateMyCourierProfile", {"fields": {"address_lat": 36.0}})
+    assert bad.status_code == 400 and bad.json()["fields"] == ["address_lng"]
+
+    # A customer+courier account: one address, the customer profile's.
+    dual = await factory.user(email="dual@example.test")
+    await world.make_courier(dual, display_name="Dual")
+    created = await client.put(
+        f"/api/entities/UserProfile/{dual.id}",
+        json={
+            "default_address": "5 avenue Habib Bourguiba",
+            "city": "Sousse",
+            "governorate": "Sousse",
+            "default_lat": 35.8256,
+            "default_lng": 10.6084,
+        },
+        headers=auth(dual),
+    )
+    assert created.status_code == 200, created.text
+    seen = (await client.get("/api/entities/CourierProfile", headers=auth(dual))).json()[0]
+    assert seen["address"] == "5 avenue Habib Bourguiba" and seen["address_lat"] == pytest.approx(35.8256)
+    await call(client, dual, "updateMyCourierProfile", {"fields": {"address": "7 rue de Tunis"}})
+    customer = (await client.get(f"/api/entities/UserProfile/{dual.id}", headers=auth(dual))).json()
+    assert customer["default_address"] == "7 rue de Tunis" and customer["city"] == "Sousse"
+
+
 # --- trackCourierLocation (base44/tests/live_position_test.ts) ----------------------------------------
 
 

@@ -2,7 +2,8 @@
 
 Read (base44/entities/CourierProfile.jsonc): the owner and admins. `id_photo_uri` (the private
 ID document key) is not a field at all: admins get short-lived links from getCourierIdPhotos;
-`has_id_photo` only says whether there is one.
+`has_id_photo` only says whether there is one. `address*` is the account's default address
+(user_addresses, the same row as UserProfile.default_address for a customer+courier account).
 Write: admins change `verification_status` (verified_at / verified_by recorded, the courier
 notified: account_verified / account_rejected); every other write goes through the
 updateMyCourierProfile function (create / delete here: 403).
@@ -11,19 +12,21 @@ updateMyCourierProfile function (create / delete here: 403).
 import uuid
 from typing import Any
 
-from sqlalchemy import Text, cast, func, literal, select, true
+from sqlalchemy import Text, and_, cast, func, literal, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.payload import coerce_payload
 from app.compat.registry import EntityDef, LegacyField, register
 from app.errors import ApiError
-from app.models import Courier, User, courier_stats
+from app.models import Courier, User, UserAddress, courier_stats
 from app.security.deps import CurrentUser
 from app.services.couriers import set_verification
 from app.services.geo import lat_of, lng_of
 
 couriers = Courier.__table__
 owner = User.__table__.alias("courier_owner")
+# The account's default address (the customer profile's too, for a customer+courier account).
+home = UserAddress.__table__.alias("courier_home")
 stats = courier_stats
 
 
@@ -64,6 +67,13 @@ FIELDS: dict[str, LegacyField] = {
     "service_start_time": LegacyField(_hhmm(couriers.c.service_start), "string"),
     "service_end_time": LegacyField(_hhmm(couriers.c.service_end), "string"),
     "referral_code": LegacyField(couriers.c.referral_code, "string"),
+    # His own address (written through updateMyCourierProfile): the map shows it instead of a
+    # GPS fix taken outside the service country.
+    "address": LegacyField(func.nullif(home.c.address, ""), "string"),
+    "address_city": LegacyField(home.c.city, "string"),
+    "address_governorate": LegacyField(home.c.governorate, "string"),
+    "address_lat": LegacyField(lat_of(home.c.location), "number"),
+    "address_lng": LegacyField(lng_of(home.c.location), "number"),
 }
 
 
@@ -87,9 +97,9 @@ async def update(session: AsyncSession, actor: CurrentUser, doc_id: str, data: d
 ENTITY = register(
     EntityDef(
         name="CourierProfile",
-        source=couriers.join(owner, owner.c.id == couriers.c.user_id).outerjoin(
-            stats, stats.c.courier_id == couriers.c.id
-        ),
+        source=couriers.join(owner, owner.c.id == couriers.c.user_id)
+        .outerjoin(stats, stats.c.courier_id == couriers.c.id)
+        .outerjoin(home, and_(home.c.user_id == couriers.c.user_id, home.c.is_default)),
         id_expr=couriers.c.id,
         id_type="uuid",
         created_expr=couriers.c.created_at,

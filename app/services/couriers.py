@@ -17,11 +17,11 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import ApiError
-from app.models import Courier, File, NoResponseCase, Order, OrderStatusEvent, OrderTracking
+from app.models import Courier, File, NoResponseCase, Order, OrderStatusEvent, OrderTracking, UserAddress
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
-from app.services.geo import TRACKING_BOUNDS, point
+from app.services.geo import ORDER_BOUNDS, TRACKING_BOUNDS, point, within
 from app.services.phones import InvalidPhone, to_e164
 
 VEHICLES = ("walking", "scooter", "car")
@@ -103,7 +103,16 @@ UPDATABLE: dict[str, Check] = {
     "service_city": _str(120),
     "service_start_time": _hhmm,
     "service_end_time": _hhmm,
+    # The courier's own address: the account's default address (user_addresses, the same row as
+    # UserProfile.default_address for a customer+courier account). Shown on his map instead of a
+    # GPS fix taken abroad; written without creating the customer profile.
+    "address": _str(500),
+    "address_city": _str(120),
+    "address_governorate": _str(120),
+    "address_lat": _num(-90, 90),
+    "address_lng": _num(-180, 180),
 }
+ADDRESS_FIELDS = ("address", "address_city", "address_governorate", "address_lat", "address_lng")
 CREATE_ONLY: dict[str, Check] = {
     "full_name": _str(120),
     "phone": _str(40),
@@ -172,6 +181,56 @@ def _apply(courier: Courier, clean: dict[str, Any]) -> None:
         courier.last_seen_at = ot.now_utc()
 
 
+def _drop_foreign_position(courier: Courier, clean: dict[str, Any], ignored: list[str]) -> None:
+    """A courier serving Tunisia never publishes a fix taken outside it (a phone abroad, a spoofed
+    GPS): dispatch radius, nearby orders and the customer's map would use it. The app sends his
+    address instead; a stray foreign fix is dropped (reported in `ignored`), the rest is saved."""
+    if "current_lat" not in clean and "current_lng" not in clean:
+        return
+    country = clean.get("service_country", courier.service_country) or "TN"
+    if country != "TN":
+        return
+    if within(clean.get("current_lat"), clean.get("current_lng"), ORDER_BOUNDS):
+        return
+    for key in ("current_lat", "current_lng"):
+        if key in clean:
+            del clean[key]
+            ignored.append(key)
+
+
+async def _apply_address(session: AsyncSession, courier: Courier, clean: dict[str, Any]) -> bool:
+    """Writes the address fields onto the account's default address. Returns whether any was given."""
+    if not any(key in clean for key in ADDRESS_FIELDS):
+        return False
+    row = (
+        await session.execute(
+            select(UserAddress)
+            .where(UserAddress.user_id == courier.user_id, UserAddress.is_default)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        row = UserAddress(user_id=courier.user_id, is_default=True, address="", country="TN")
+        session.add(row)
+    if "address" in clean:
+        row.address = clean["address"]
+    if "address_city" in clean:
+        row.city = clean["address_city"] or None
+    if "address_governorate" in clean:
+        row.governorate = clean["address_governorate"] or None
+    if "address_lat" in clean and "address_lng" in clean:
+        row.location = point(clean["address_lat"], clean["address_lng"])
+    await session.flush()
+    emit(session, "UserProfile", "update", courier.user_id)
+    return True
+
+
+def _address_pair(clean: dict[str, Any], invalid: list[str]) -> None:
+    """address_lat / address_lng go together."""
+    if ("address_lat" in clean) != ("address_lng" in clean):
+        invalid.extend(k for k in ("address_lat", "address_lng") if k not in clean)
+
+
 async def create_profile(
     session: AsyncSession, user: CurrentUser, fields: Any
 ) -> tuple[Courier, list[str], bool]:
@@ -182,6 +241,7 @@ async def create_profile(
     if existing is not None:
         return existing, [], True
     clean, ignored, invalid = pick(fields, {**UPDATABLE, **CREATE_ONLY})
+    _address_pair(clean, invalid)
     phone = None
     if "phone" in clean:
         try:
@@ -208,6 +268,7 @@ async def create_profile(
         is_online=False,
         verification="pending",
     )
+    _drop_foreign_position(courier, clean, ignored)
     _apply(courier, {k: v for k, v in clean.items() if k not in ("full_name", "cin_passport", "is_online")})
     courier.is_online = False
     if photo is not None:
@@ -216,16 +277,20 @@ async def create_profile(
         photo.purpose = "courier_id"
     session.add(courier)
     await session.flush()
+    await _apply_address(session, courier, clean)
     emit(session, "CourierProfile", "create", courier.id)
     return courier, ignored, False
 
 
 async def update_profile(session: AsyncSession, courier: Courier, fields: Any) -> list[str]:
     clean, ignored, invalid = pick(fields, UPDATABLE)
+    _address_pair(clean, invalid)
     if invalid:
         raise ProfileRefused(400, "invalid_fields", fields=invalid)
+    _drop_foreign_position(courier, clean, ignored)
     if clean:
         _apply(courier, clean)
+        await _apply_address(session, courier, clean)
         await session.flush()
         emit(session, "CourierProfile", "update", courier.id)
     return ignored
