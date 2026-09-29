@@ -172,6 +172,7 @@ async def sweep_5min() -> dict:
 | Job | Every | Module | What it does (port of) |
 |---|---|---|---|
 | `sweep_5min` | 5 min | `app/jobs/incidents.py` | "client ne répond pas" sweep: incident + "last chance" alerts once the deadline is past, auto-close 3 h later; orders in `client_no_response` and orders that left it with a case still open; one transaction per order, SKIP LOCKED (triggerEmergencyContact `sweep`, run by sweepNoResponse) |
+| `no_response_fast` | 15 s | `app/jobs/incidents.py` | cases still counting down: the customer's reminder pushes (every 45 s, at most 3, push only, Android channel `urgent_alarm`) and the "last chance" alert on time instead of up to 5 min late |
 | `whatsapp_check_pending` | 5 min | `app/jobs/messaging.py` | SMS for critical WhatsApp not delivered in time, retries (sendWhatsAppMessage `check_pending`) |
 | `expire_stale_orders` | 5 min | `app/jobs/orders.py` | open orders idle 24 h → expired, deliveries idle 48 h → abandoned (expireStaleOrders) |
 | `courier_presence_expiry` | 5 min | `app/jobs/orders.py` | online couriers without heartbeat for 15 min → offline |

@@ -46,6 +46,19 @@ CUSTOMER_TYPES = {
 }  # fmt: skip
 
 
+# Android channels created by the app shell (ods-delivery-android MainActivity). A channel the
+# installed app does not have yet falls back to the manifest default ("default"), so a newer
+# channel is safe to target before every phone has the update.
+URGENT_TYPES = {"emergency_contact"}  # alarm sound + long vibration, from app 1.1.1
+VIBRATING_TYPES = {"new_order"}
+
+
+def android_channel(type_: str) -> str:
+    if type_ in URGENT_TYPES:
+        return "urgent_alarm"
+    return "new_orders" if type_ in VIBRATING_TYPES else "default"
+
+
 @dataclass(frozen=True)
 class PushMessage:
     type: str
@@ -148,7 +161,7 @@ def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, 
             priority="high",
             collapse_key=collapse,
             notification=messaging.AndroidNotification(
-                channel_id="new_orders" if msg.type == "new_order" else "default",
+                channel_id=android_channel(msg.type),
                 sound="default",
                 tag=collapse,
             ),
@@ -165,7 +178,7 @@ def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, 
                 icon="/icons/icon-192.png",
                 badge="/icons/icon-192.png",
                 tag=collapse,
-                require_interaction=msg.type == "new_order",
+                require_interaction=msg.type == "new_order" or msg.type in URGENT_TYPES,
             ),
             # FCM requires an absolute HTTPS link (a relative one made every send fail).
             fcm_options=_web_link(link),

@@ -15,6 +15,10 @@ The server owns the procedure; the screens only display it:
                       answer voids the incident.
   courier_resume      courier/admin: "I reached the customer myself" (same effect).
   sweep               the 5-minute job (app/jobs/incidents.py), never an HTTP action.
+  reminders           while a case waits, the customer's phone rings again every
+                      REMINDER_EVERY (push only, Android channel `urgent_alarm`): one alert is
+                      easy to miss with the app closed. Sent by whoever looks first (the
+                      courier's status poll, the 15-second `no_response_fast` job).
 
 Rules kept: at most MAX_REPORTS cases per order; reportable only once the goods are bought
 (purchased / on_the_way); QA orders never trigger WhatsApp/SMS; a case adopted from an order
@@ -40,13 +44,14 @@ from typing import Any
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, HotDeal, NoResponseCase, Order, OrderStatusEvent
+from app.models import Courier, HotDeal, NoResponseCase, Order, OrderStatusEvent, User
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import cancellation, whatsapp
 from app.services import order_transitions as ot
 from app.services.order_notices import notify_and_push
 from app.services.orders import courier_of_user, first_stop, is_test_order, mirror_incidents
+from app.services.push import PushMessage, send_to_user
 
 log = logging.getLogger("odsd.no_response")
 
@@ -62,6 +67,8 @@ REPORTABLE = frozenset({"purchased", "on_the_way"})
 CONFIRMED = frozenset({"customer_confirmed", "courier_reached"})
 SOURCE = "triggerEmergencyContact"
 SWEEP_LIMIT = 100
+REMINDER_EVERY = timedelta(seconds=45)
+MAX_REMINDERS = 3  # at 45, 90 and 135 s; the "last chance" alert follows at the deadline
 # A refusal answered with a status >= 400 whose writes must still be committed (the router
 # rolls back otherwise): set on session.info by the flows, read by the function modules.
 COMMIT_REFUSAL = "odsd_commit_refusal"
@@ -329,6 +336,47 @@ async def _auto_close(session: AsyncSession, order: Order, case: NoResponseCase,
     )
 
 
+async def _remind(session: AsyncSession, order: Order, case: NoResponseCase, now: datetime) -> None:
+    """Reminder k is due REMINDER_EVERY * k after the report, before the deadline. Push only (no
+    in-app row: the bell keeps one alert); at most one per look, missed ones are not replayed."""
+    channels = dict(case.channels or {})
+    sent = int(channels.get("reminders") or 0)
+    due = min(MAX_REMINDERS, int((now - case.started_at) / REMINDER_EVERY))
+    if sent >= due or now >= case.deadline_at:
+        return
+    channels["reminders"] = due
+    case.channels = channels
+    await session.flush()
+    user = await session.get(User, order.customer_id)
+    if user is None or user.deleted_at is not None:
+        return
+    left = max(1, math.ceil((case.deadline_at - now).total_seconds() / 60))
+    await send_to_user(
+        session,
+        order.customer_id,
+        PushMessage(
+            type="emergency_contact",
+            title_ar="🚨 المندوب ينتظرك أمام الباب!",
+            title_fr="🚨 Le livreur vous attend devant chez vous !",
+            body_ar=f"تذكير {due}/{MAX_REMINDERS}: اتصل بالمندوب أو أكّد توفّرك، بقي {left} د.",
+            body_fr=(
+                f"Rappel {due}/{MAX_REMINDERS} : appelez-le ou confirmez que vous êtes là. "
+                f"Il reste {left} min."
+            ),
+            order_id=str(order.id),
+            metadata={
+                "is_emergency": True,
+                "priority": "urgent",
+                "recipient_role": "customer",
+                "stage": "reminder",
+                "reminder": due,
+                "deadline_at": js_iso(case.deadline_at),
+                "case_id": str(case.id),
+            },
+        ),
+    )
+
+
 async def advance(session: AsyncSession, order: Order, case: NoResponseCase | None) -> NoResponseCase | None:
     """The timeout, enforced by whoever looks first (courier, customer, sweep). Idempotent;
     the caller holds the order lock."""
@@ -365,6 +413,8 @@ async def advance(session: AsyncSession, order: Order, case: NoResponseCase | No
         await _refresh_channels(session, case)
 
     legacy = case.messaging_status == LEGACY
+    if case.status == "waiting" and not legacy and now < case.deadline_at:
+        await _remind(session, order, case, now)
     if case.status == "waiting" and now >= case.deadline_at:
         if legacy:
             # never given a server deadline: no incident, no "last chance" alerts; only expires
@@ -638,6 +688,21 @@ async def due_order_ids(session: AsyncSession) -> list[uuid.UUID]:
                 select(Order.id)
                 .where(or_(Order.status == "client_no_response", open_case))
                 .order_by(Order.updated_at.desc(), Order.id)
+                .limit(SWEEP_LIMIT)
+            )
+        ).scalars()
+    )
+
+
+async def waiting_order_ids(session: AsyncSession) -> list[uuid.UUID]:
+    """Orders whose case is still counting down (or just ran out): the 15-second job sends
+    their reminders and the "last chance" alerts on time."""
+    return list(
+        (
+            await session.execute(
+                select(NoResponseCase.order_id)
+                .where(NoResponseCase.status == "waiting")
+                .distinct()
                 .limit(SWEEP_LIMIT)
             )
         ).scalars()

@@ -62,6 +62,17 @@ def test_multicast_payload_matches_the_deno_function():
     assert push.build_multicast(["t1"], "ar", MESSAGE).notification.title == "عرض"
 
 
+def test_android_channels():
+    # MainActivity creates them; an unknown one falls back to the manifest's "default".
+    assert push.android_channel("emergency_contact") == "urgent_alarm"
+    assert push.android_channel("new_order") == "new_orders"
+    assert push.android_channel("delivered") == "default"
+    alarm = PushMessage(**{**MESSAGE.__dict__, "type": "emergency_contact"})
+    urgent = push.build_multicast(["t1"], "fr", alarm)
+    assert urgent.android.notification.channel_id == "urgent_alarm" and urgent.android.priority == "high"
+    assert urgent.webpush.notification.require_interaction is True
+
+
 async def _tokens(user, *specs):
     async with SessionLocal() as s:
         rows = [DeviceToken(user_id=user.id, platform="android", **spec) for spec in specs]

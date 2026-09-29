@@ -73,6 +73,8 @@ def test_jobs_are_registered_with_their_triggers():
     assert JOBS["sweep_5min"].func is incidents.sweep_5min
     assert JOBS["sweep_5min"].trigger.interval == timedelta(minutes=5)
     assert JOBS["hourly_cleanup"].trigger.interval == timedelta(hours=1)
+    assert JOBS["no_response_fast"].func is incidents.no_response_fast
+    assert JOBS["no_response_fast"].trigger.interval == timedelta(seconds=15)
     assert PURGE_STEPS["hot_deals"] is incidents.purge_hot_deals
 
 

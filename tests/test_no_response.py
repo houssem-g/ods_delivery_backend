@@ -12,6 +12,7 @@ import pytest
 from sqlalchemy import select, text
 
 from app.db import SessionLocal, transaction
+from app.jobs import incidents as incident_jobs
 from app.models import (
     Courier,
     HotDeal,
@@ -250,6 +251,44 @@ async def test_the_schedule_alone_finalizes_and_later_auto_closes(client, world)
     auto = [n for n in await notifications(world.courier_user) if n.data.get("auto_closed")]
     assert len(auto) == 1
     assert (await sweep_5min())["checked"] == 0
+
+
+async def test_the_customer_phone_rings_again_until_the_deadline(client, world):
+    order = await on_the_way(world)
+    await device(world.customer)
+    await call(client, world.courier_user, "report_no_response", order)
+    assert len(await pushes(world.customer)) == 1  # the alert
+    await call(client, world.courier_user, "status", order)
+    assert len(await pushes(world.customer)) == 1  # nothing due before 45 s
+    await rewind(order, 50)
+    assert (await incident_jobs.no_response_fast())["checked"] == 1
+    await call(client, world.courier_user, "status", order)  # same look again: no duplicate
+    assert len(await pushes(world.customer)) == 2
+    await rewind(order, 45)
+    await call(client, world.customer, "status", order)
+    await rewind(order, 70)  # 165 s: reminder 3 only, reminder 2 is not replayed
+    await incident_jobs.no_response_fast()
+    sent = await pushes(world.customer)
+    assert len(sent) == 4 and {p.payload["type"] for p in sent} == {"emergency_contact"}
+    [case] = await the_cases(order)
+    assert case.channels["reminders"] == 3 and case.channels["push_devices"] == 1
+    # reminders are push only: the bell keeps the alert
+    assert len(await notifications(world.customer, "emergency_contact")) == 1
+    await rewind(order, 20)
+    assert (await incident_jobs.no_response_fast())["advanced"] == 1  # deadline: last chance, on time
+    assert (await the_cases(order))[0].status == "expired"
+    assert len(await pushes(world.customer)) == 5
+    assert await incident_jobs.no_response_fast() is None  # nothing waiting any more
+
+
+async def test_no_reminder_once_the_customer_answered(client, world):
+    order = await on_the_way(world)
+    await device(world.customer)
+    await call(client, world.courier_user, "report_no_response", order)
+    await call(client, world.customer, "customer_confirms", order)
+    await rewind(order, 100)
+    assert await incident_jobs.no_response_fast() is None
+    assert len(await pushes(world.customer)) == 1
 
 
 async def test_customer_answers_in_time(client, world):
