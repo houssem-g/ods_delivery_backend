@@ -59,6 +59,7 @@ WAIT_SECONDS = 300
 MAX_CHECKS = 5
 MAX_TEXT = 500
 MAX_PRICE = Decimal("2000")
+MAX_QUANTITY = 100
 REPORTABLE = ("accepted", "at_shop", "price_confirmation_needed")
 WAITING = "price_confirmation_needed"
 DECISIONS = {"accept": "substitute_accepted", "skip": "item_skipped", "cancel": "order_cancelled"}
@@ -95,6 +96,8 @@ def view(check: OrderStockCheck, now: datetime | None = None) -> dict[str, Any]:
         "missing_text": check.missing_text,
         "substitute_text": check.substitute_text,
         "substitute_price": float(check.substitute_price) if check.substitute_price is not None else None,
+        "missing_price": float(check.missing_price) if check.missing_price is not None else None,
+        "quantity": check.quantity,
         "photo_url": photo_url(check.photo_key),
         "nothing_available": check.nothing_available,
         "decided_by": check.decided_by,
@@ -142,13 +145,22 @@ def _clean(value: Any, limit: int = MAX_TEXT) -> str:
     return " ".join(value.split())[:limit] if isinstance(value, str) else ""
 
 
-def _price(value: Any) -> Decimal | None:
+def _price(value: Any, error: str = "invalid_price") -> Decimal | None:
     if value in (None, ""):
         return None
     number = as_float(value)
     if number is None or number < 0 or Decimal(str(number)) > MAX_PRICE:
-        raise OrderRefused(400, "invalid_price", max=float(MAX_PRICE))
+        raise OrderRefused(400, error, max=float(MAX_PRICE))
     return Decimal(str(round(number, 3)))
+
+
+def _quantity(value: Any) -> int:
+    if value in (None, ""):
+        return 1
+    number = as_float(value)
+    if number is None or not number.is_integer() or not 1 <= number <= MAX_QUANTITY:
+        raise OrderRefused(400, "invalid_quantity", max=MAX_QUANTITY)
+    return int(number)
 
 
 async def _photo_key(session: AsyncSession, url: Any, user: CurrentUser) -> str | None:
@@ -220,6 +232,8 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
     price = None if nothing else _price(payload.get("substitute_price"))
     if price is not None and substitute is None:
         raise OrderRefused(400, "substitute_text_required")
+    missing_price = _price(payload.get("missing_price"), "invalid_missing_price")
+    quantity = _quantity(payload.get("quantity"))
 
     order = await ot.lock_order(session, str(order_id))
     if order is None:
@@ -248,6 +262,8 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
         missing_text=missing,
         substitute_text=substitute,
         substitute_price=price,
+        missing_price=missing_price,
+        quantity=quantity,
         photo_key=photo_key,
         nothing_available=nothing,
         status="pending",

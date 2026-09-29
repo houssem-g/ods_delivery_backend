@@ -16,6 +16,9 @@ What the courier's app sends and what the server keeps of it:
 Any other Order field in the body → 403, as for every other caller (the legacy fallbacks).
 While a stock check waits for the customer (app/services/stock_checks.py) the order stays in
 price_confirmation_needed: any step out of it → 409 stock_check_pending.
+- `picked_items` (Aurora basket checklist): the indexes of the items_text lines already in the
+  basket, unique ints 0..199, at most 200; written while accepted / at_shop /
+  price_confirmation_needed (also while a stock check waits), 403 afterwards unless unchanged.
 The customer's notice of each step (at_shop on arrival, purchased, on_the_way, delivered) is sent
 here, after the transition (app/services/step_notices.py): the installed apps still send it through
 sendNotificationIfEnabled after the write, which skips the duplicate.
@@ -59,8 +62,10 @@ COURIER_FIELDS = frozenset(
         "courier_net_earning",
         "ods_commission",
         "ods_commission_status",
+        "picked_items",
     }
 )
+PICKED_MAX = 200  # entries of picked_items (indexes of items_text lines, 0..199)
 CUSTOMER_FIELDS = frozenset({"shop_lat", "shop_lng", "delivery_lat", "delivery_lng"})
 BUILTINS = frozenset({"id", "created_date", "updated_date", "created_by"})
 
@@ -147,6 +152,31 @@ async def _apply_shops(session: AsyncSession, user: CurrentUser, stops: list[Ord
     return changed
 
 
+def _picked_items(value: Any) -> list[int]:
+    """The indexes of the items_text lines already in the basket: unique ints 0..199, ≤ 200."""
+    if not isinstance(value, list) or len(value) > PICKED_MAX:
+        raise bad(f"picked_items: expected a list of at most {PICKED_MAX} line indexes")
+    if any(isinstance(v, bool) or not isinstance(v, int) or not 0 <= v < PICKED_MAX for v in value):
+        raise bad(f"picked_items: expected integers between 0 and {PICKED_MAX - 1}")
+    if len(set(value)) != len(value):
+        raise bad("picked_items: duplicate index")
+    return list(value)
+
+
+def _apply_picked(order: Order, data: dict[str, Any]) -> bool:
+    """The courier's basket (Aurora checklist), while shopping only. True when it changed."""
+    if "picked_items" not in data:
+        return False
+    raw = data["picked_items"]
+    picked = None if raw is None else _picked_items(raw)
+    if picked == order.picked_items:
+        return False  # the app spreads the whole order into its writes
+    if order.status not in SHOPPING:
+        raise denied("picked_items can only change while shopping")
+    order.picked_items = picked
+    return True
+
+
 def _moves_a_stop(stops: list[OrderStop], shops: Any) -> bool:
     if not isinstance(shops, list) or len(shops) != len(stops):
         return True
@@ -182,12 +212,21 @@ async def courier_step(
     )
     if to_status != from_status and to_status not in COURIER_STEPS.get(from_status, frozenset()):
         raise denied(f"Status change from {from_status} to {to_status} is not allowed")
-    if from_status == "price_confirmation_needed" and await stock_checks.has_pending(session, order.id):
+    # Waiting for the customer's stock-check answer: nothing moves (ticking basket lines does).
+    moves = to_status != from_status or (
+        "shops" in data and len(stops) > 1 and _moves_a_stop(stops, data["shops"])
+    )
+    if (
+        from_status == "price_confirmation_needed"
+        and moves
+        and await stock_checks.has_pending(session, order.id)
+    ):
         raise ApiError(409, "stock_check_pending", "The customer has not answered the stock check yet")
     hot_deal = order.resale_deal_id is not None
     if from_status == "accepted" and to_status == "on_the_way" and not hot_deal:
         raise denied(f"Status change from {from_status} to {to_status} is not allowed")
 
+    picked_changed = _apply_picked(order, data)
     shops_changed = False
     if "shops" in data and len(stops) > 1:
         if from_status not in SHOPPING and _moves_a_stop(stops, data["shops"]):
@@ -195,9 +234,9 @@ async def courier_step(
         if from_status in SHOPPING:
             shops_changed = await _apply_shops(session, user, stops, data["shops"])
     if to_status == from_status:
-        if not shops_changed:
+        if not shops_changed and not picked_changed:
             return  # nothing the courier may change (a repeated tap): a no-op, like Base44
-        if from_status not in ("at_shop", "price_confirmation_needed"):
+        if shops_changed and from_status not in ("at_shop", "price_confirmation_needed"):
             raise denied("The shops can only change while shopping")
 
     single = len(stops) <= 1

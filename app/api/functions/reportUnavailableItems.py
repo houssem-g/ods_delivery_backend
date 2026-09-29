@@ -2,9 +2,11 @@
 customer asked for that the shop does not have (app/services/stock_checks.py).
 
 Body: { order_id, missing_text, substitute_text?, substitute_price? (TND, 0..2000), photo_url?
-(one of the courier's public uploads), nothing_available?: bool, courier_id? }.
+(one of the courier's public uploads), nothing_available?: bool, courier_id?, missing_price? (TND,
+0..2000: the missing item's price), quantity? (1..100, default 1: how many are missing) }.
 Returns { success, stock_check, order_status }. Errors: 'Missing required fields' /
-missing_text_required / substitute_text_required / invalid_price / invalid_photo (400),
+missing_text_required / substitute_text_required / invalid_price / invalid_missing_price (+ max) /
+invalid_quantity (+ max) / invalid_photo (400),
 Unauthorized (403), 'Order not found' (404), not_reportable (409, + status) /
 stock_check_pending (409, + stock_check), too_many_stock_checks (429, + max).
 """

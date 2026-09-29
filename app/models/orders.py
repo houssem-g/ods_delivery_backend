@@ -112,7 +112,7 @@ class Order(Base):
     # The customer's ceiling for the purchase (placeOrder), shown to the bidding couriers.
     budget_max: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     # Indexes of the items_text lines the courier already has in the basket (courier-written).
-    picked_items: Mapped[list | None] = mapped_column(JSONB)
+    picked_items: Mapped[list | None] = mapped_column(JSONB(none_as_null=True))
     # Delivery snapshot: the order keeps the contact/address it was placed with.
     contact_name: Mapped[str] = mapped_column(Text, nullable=False)
     contact_phone_e164: Mapped[str | None] = mapped_column(Text)

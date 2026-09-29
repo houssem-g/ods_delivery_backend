@@ -4,15 +4,33 @@ and commission entry, in the legacy document shape (docs/FIELD_MAPPING.md, Order
 Read (base44/entities/Order.jsonc): the customer, the assigned courier, admins; open orders
 (pending / offers_received) also to every VERIFIED courier, to bid — except QA orders
 ("QA TEST" / "PW-"), shown to the QA accounts only (src/lib/orderUtils.js). Field rules:
-customer_phone, delivery_details, courier_live_*, reported_issues, has_issues, stock_check(s)
-only for the order's parties and admins.
+customer_phone, delivery_details, courier_live_*, reported_issues, has_issues, stock_check(s),
+picked_items only for the order's parties and admins; courier_is_online, hot_deal_saving,
+free_cancel_until, preparing_offers for the customer and admins; courier_vehicle_model,
+courier_plate, courier_rating_count for the customer while a courier is on the delivery.
 Write: no create (placeOrder) and no delete; update = the assigned courier's delivery steps
 and the customer's geocode (app/services/order_steps.py); anything else 403.
 """
 
+from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import Boolean, Text, and_, case, cast, exists, func, literal, not_, null, or_, select, true
+from sqlalchemy import (
+    Boolean,
+    Text,
+    and_,
+    case,
+    cast,
+    exists,
+    false,
+    func,
+    literal,
+    not_,
+    null,
+    or_,
+    select,
+    true,
+)
 from sqlalchemy.dialects.postgresql import JSONB, aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +41,7 @@ from app.errors import ApiError
 from app.models import (
     Courier,
     CourierLedgerEntry,
+    HotDeal,
     NoResponseCase,
     OfferIntent,
     Order,
@@ -178,6 +197,8 @@ def _stock_check_entry(c: Any) -> Any:
         "missing_text", c.c.missing_text,
         "substitute_text", c.c.substitute_text,
         "substitute_price", c.c.substitute_price,
+        "missing_price", c.c.missing_price,
+        "quantity", c.c.quantity,
         "photo_url", _public_url(c.c.photo_key),
         "nothing_available", c.c.nothing_available,
         "decided_by", c.c.decided_by,
@@ -250,6 +271,33 @@ def _preparing_offers() -> Any:
             ),
         )
         .scalar_subquery()
+    )
+
+
+HOT_DEAL_FREE_CANCEL = timedelta(minutes=3)
+
+
+def _hot_deal_saving() -> Any:
+    """A hot-deal order: the original purchase amount minus the price paid."""
+    deals = HotDeal.__table__
+    return (
+        select(deals.c.purchase_amount - orders.c.purchase_amount)
+        .where(deals.c.id == orders.c.resale_deal_id)
+        .scalar_subquery()
+    )
+
+
+def _free_cancel_until() -> Any:
+    """A hot-deal order: the buyer releases the deal for free until 3 min after reserving it."""
+    deals = HotDeal.__table__
+    reserved = (
+        select(deals.c.reserved_at)
+        .where(deals.c.id == orders.c.resale_deal_id, deals.c.buyer_order_id == orders.c.id)
+        .scalar_subquery()
+    )
+    return case(
+        (orders.c.resale_deal_id.is_(None), null()),
+        else_=func.coalesce(reserved, orders.c.created_at) + HOT_DEAL_FREE_CANCEL,
     )
 
 
@@ -371,6 +419,18 @@ FIELDS: dict[str, LegacyField] = {
     ),
     "courier_plate": LegacyField(courier.c.vehicle_plate, "string", read_guard=customer_while_assigned),
     "courier_rating_count": LegacyField(_courier_ratings(), "integer", read_guard=customer_while_assigned),
+    # The courier's basket checklist (order_steps.picked_items), for the parties.
+    "picked_items": LegacyField(orders.c.picked_items, "array", **guarded),
+    # The customer's ceiling for the purchase (placeOrder); bidders see it like estimated_price.
+    "budget_max": LegacyField(orders.c.budget_max, "number"),
+    # The assigned (or last) courier is online now ("Amine en ligne" on past orders).
+    "courier_is_online": LegacyField(
+        case((orders.c.courier_id.is_(None), false()), else_=func.coalesce(courier.c.is_online, false())),
+        "boolean",
+        read_guard=customer_or_admin,
+    ),
+    "hot_deal_saving": LegacyField(_hot_deal_saving(), "number", read_guard=customer_or_admin),
+    "free_cancel_until": LegacyField(_free_cancel_until(), "datetime", read_guard=customer_or_admin),
     # "Un livreur prépare une offre…" (signalOfferIntent), for the customer and admins.
     "preparing_offers": LegacyField(_preparing_offers(), "integer", read_guard=customer_or_admin),
 }

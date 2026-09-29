@@ -4,11 +4,15 @@ Body: { order: { items_text, quantity?, notes?, alternatives?, unavailable_polic
   skip|cancel, default call_me), estimated_price?, package_size?,
   shop_name, shop_address?, shop_phone?, shop_governorate?, shop_city?, shop_lat, shop_lng, shops?,
   delivery_address, delivery_governorate?, delivery_city?, delivery_details?, delivery_lat,
-  delivery_lng, preferred_time?, scheduled_time?, customer_phone? }, draft_id? }
+  delivery_lng, preferred_time?, scheduled_time?, customer_phone?, budget_max? (0-2000, the
+  ceiling for the purchase), preferred_courier_id? (a courier who delivered one of the caller's
+  orders: "même livreur"; anything else is ignored and the referral attribution applies) },
+  draft_id? }
 (draft_id: the caller's order draft, deleted with the placement.)
 Returns { success, order, dispatched }. Errors: invalid_items, invalid_shop, invalid_shop_location,
-invalid_delivery_address, invalid_delivery_location, phone_required, phone_unverified (400: the
-profile's foreign number was not confirmed by the WhatsApp code, see requestPhoneVerification),
+invalid_delivery_address, invalid_delivery_location, invalid_budget (+ max), phone_required,
+phone_unverified (400: the profile's foreign number was not confirmed by the WhatsApp code, see
+requestPhoneVerification),
 customer_suspended (403), too_many_open_orders (429, max). QA orders are not broadcast.
 """
 

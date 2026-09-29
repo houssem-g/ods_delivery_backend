@@ -31,6 +31,7 @@ SIGNUP_WINDOW = timedelta(hours=24)
 PACKAGE_SIZES = ("petit", "moyen", "grand")
 MAX_STOPS = 5
 MAX_QUANTITY = 100  # orders.quantity CHECK (Base44 took up to 999; nothing above 100 exists)
+MAX_BUDGET = Decimal("2000")  # orders.budget_max CHECK
 
 
 def unavailable_policy(value: Any) -> str:
@@ -275,6 +276,12 @@ def build_order(
     quantity_raw = as_float(o.get("quantity"))
     quantity = round(quantity_raw) if quantity_raw is not None else None
     estimated = as_float(o.get("estimated_price"))
+    budget = None
+    if o.get("budget_max") not in (None, ""):
+        budget_raw = as_float(o.get("budget_max"))
+        if budget_raw is None or budget_raw < 0 or Decimal(str(budget_raw)) > MAX_BUDGET:
+            raise OrderRefused(400, "invalid_budget", max=float(MAX_BUDGET))
+        budget = round3(budget_raw)
     scheduled = _parse_scheduled(o.get("scheduled_time")) if o.get("preferred_time") == "scheduled" else None
     package = o.get("package_size") if o.get("package_size") in PACKAGE_SIZES else "petit"
 
@@ -289,6 +296,7 @@ def build_order(
         alternatives=_text(o.get("alternatives"), 500),
         unavailable_policy=unavailable_policy(o.get("unavailable_policy")),
         estimated_price=round3(estimated) if estimated is not None and 0 <= estimated <= 100000 else None,
+        budget_max=budget,
         package=package,
         delivery_address=delivery_address,
         delivery_governorate=_text(o.get("delivery_governorate"), 80) or None,
@@ -353,6 +361,27 @@ async def default_address(
     return address, ((float(lat), float(lng)) if lat is not None else None)
 
 
+async def delivered_before(session: AsyncSession, customer_id: uuid.UUID, raw: Any) -> uuid.UUID | None:
+    """The courier the customer asks for again (reorder "même livreur"): only one who delivered
+    one of his orders; anything else is ignored (None)."""
+    try:
+        courier_id = uuid.UUID(str(raw).strip()) if raw else None
+    except ValueError:
+        return None
+    if courier_id is None:
+        return None
+    found = (
+        await session.execute(
+            select(Order.id)
+            .where(
+                Order.customer_id == customer_id, Order.courier_id == courier_id, Order.status == "delivered"
+            )
+            .limit(1)
+        )
+    ).first()
+    return courier_id if found is not None else None
+
+
 async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Order:
     """Validates and creates the order (placeOrder). Raises OrderRefused."""
     # The user row lock serializes a customer's concurrent placements (open-order cap).
@@ -370,6 +399,11 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     ).scalar_one()
     if open_count >= MAX_OPEN_ORDERS:
         raise OrderRefused(429, "too_many_open_orders", max=MAX_OPEN_ORDERS)
+    same_courier = await delivered_before(
+        session, user.id, (raw or {}).get("preferred_courier_id") if isinstance(raw, dict) else None
+    )
+    if same_courier is not None:
+        built.order.preferred_courier_id = same_courier  # "commander au même livreur"
     if built.order.preferred_courier_id is not None:
         exists = await session.get(Courier, built.order.preferred_courier_id)
         if exists is None:
