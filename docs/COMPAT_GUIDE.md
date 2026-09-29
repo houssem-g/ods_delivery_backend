@@ -126,6 +126,8 @@ async def handle(payload: dict, user: CurrentUser | None, session: AsyncSession,
 - Answer with the Deno function's JSON and status (400/401/403/404/409/410/429...).
   Business refusals keep their snake_case codes; never put "rate limit" in a message
   that is not the generic limiter (the front would pause its polls).
+- A refusal (status >= 400) is logged at INFO by the router: `function <name> refused <status>
+  <error>` (logger `odsd.functions`, no payload values).
 - The router commits when the status is < 400 and rolls back otherwise; emit the
   realtime events (below) for every row you change.
 - Unknown name → `404 {"error":"function_not_found"}`; the 16 retired names →
@@ -204,7 +206,12 @@ async def sweep_5min() -> dict:
 - E-mail: `app.services.email.send_email(to, RenderedEmail)`.
 - Files: `app.storage.s3.presign_get(key, seconds)` (e.g. `getCourierIdPhotos` signs
   `couriers.id_document_key` for admins), `app.storage.keys` conventions.
-- Phones: `app.services.phones.to_e164(raw)`.
+- Phones: `app.services.phones.to_e164(raw)`, `is_tunisian`, `customer_phone_verified`. Customers:
+  a Tunisian number is accepted as is; a foreign one must be confirmed by the WhatsApp code
+  (`app/services/phone_verification.py`, functions requestPhoneVerification /
+  confirmPhoneVerification) before placeOrder / reserveHotDeal accept it (`phone_unverified`), and
+  `whatsapp.send_template` reaches a foreign number only when it is the user's verified phone (no
+  SMS fallback abroad). Couriers and shops stay Tunisian-only.
 - Counters: views `courier_stats`, `customer_stats` (`app.models.views`); the 180-day
   incident window is `INCIDENT_WINDOW_DAYS`.
 

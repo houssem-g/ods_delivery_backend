@@ -50,6 +50,8 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | user_id | front R/W, fn R | join `users.email` | filter key everywhere; must be the caller at create |
 | phone | front R/W, fn R | `users.phone_e164` | normalized to E.164 (TN default) on write |
+| phone_verified | front R (new, 2026-09-29) | *derived* `+216…` → true, else `users.phone_verified_at IS NOT NULL` | foreign numbers are confirmed by a WhatsApp code (requestPhoneVerification / confirmPhoneVerification); read-only |
+| phone_verification_required | front R (new) | *derived* foreign `phone_e164` and `phone_verified_at IS NULL` | placeOrder answers 400 `phone_unverified` while true; a new number clears `phone_verified_at` (trigger `trg_users_phone_unverify`) |
 | role | front R/W | `users.role` (`admin` reads `customer`) | customer/courier; an admin stays admin |
 | language | front R/W, fn R | `users.language` | ar / fr |
 | default_address | front R/W | `user_addresses.address` (is_default) | |
