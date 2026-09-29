@@ -7,7 +7,7 @@
   did not answer a `notification_id` — writing into somebody else's list is refused);
 - update: the recipient only, and only `is_read` (→ `read_at`), as
   roleNotifications.markNotificationsRead does;
-- delete: nobody (the app never deletes one).
+- delete: the recipient only (Aurora: swipe to delete); an admin reading someone else's gets 403.
 The other writers are the domain services, through app/services/notifications.notify.
 """
 
@@ -103,6 +103,22 @@ async def update(session: AsyncSession, actor: CurrentUser, doc_id: str, data: d
     await session.flush()
 
 
+async def delete(session: AsyncSession, actor: CurrentUser, doc_id: str) -> list[uuid.UUID]:
+    try:
+        target = uuid.UUID(doc_id)
+    except ValueError as exc:
+        raise ApiError(404, "not_found", "Notification not found") from exc
+    row = await session.get(Notification, target, with_for_update=True)
+    if row is None or (row.user_id != actor.id and not actor.is_admin):
+        raise ApiError(404, "not_found", "Notification not found")
+    if row.user_id != actor.id:
+        raise _denied("delete")
+    owner = row.user_id
+    await session.delete(row)
+    await session.flush()
+    return [owner]
+
+
 ENTITY = register(
     EntityDef(
         name="Notification",
@@ -125,5 +141,6 @@ ENTITY = register(
         read_policy=_read_policy,
         create=create,
         update=update,
+        delete=delete,
     )
 )

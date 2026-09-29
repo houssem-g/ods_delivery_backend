@@ -318,8 +318,9 @@ async def test_notification_entity_reads_and_is_read_update(client, parties):
     assert read.status_code == 200 and read.json()["is_read"] is True and read.json()["type"] == "at_shop"
     unread = await client.patch(url, json={"is_read": False}, headers=auth(parties.customer))
     assert unread.json()["is_read"] is False
-    delete = await client.delete(url, headers=auth(parties.customer))
-    assert delete.status_code == 403
+    # a stranger can't delete it (404); its recipient can (Aurora)
+    assert (await client.delete(url, headers=auth(parties.stranger))).status_code == 404
+    assert (await client.delete(url, headers=auth(parties.customer))).status_code == 200
 
 
 async def test_notification_entity_create_rules(client, parties):
@@ -516,3 +517,40 @@ async def test_register_via_service_rejects_nothing_else(session, parties):
     )
     assert status == 200 and uuid.UUID(body["device_token_id"])
     await session.rollback()
+
+
+async def test_the_recipient_deletes_his_own_notification(client, parties, monkeypatch):
+    import app.api.compat_entities as router
+    from app.realtime import events
+
+    mine = await notify_detailed_row(parties.customer)
+    other = await notify_detailed_row(parties.stranger)
+    url = "/api/entities/Notification"
+    assert (await client.delete(f"{url}/{other.id}", headers=auth(parties.customer))).status_code == 404
+    assert (await client.delete(f"{url}/{mine.id}", headers=auth(parties.admin))).status_code == 403
+    assert (await client.delete(f"{url}/not-a-uuid", headers=auth(parties.customer))).status_code == 404
+    seen: list[dict] = []
+    original = events.emit
+
+    def record(session, entity, type_, id_, audience=None, data=None):
+        seen.append({"entity": entity, "type": type_, "id": str(id_), "audience": audience})
+        original(session, entity, type_, id_, audience, data)
+
+    monkeypatch.setattr(router, "emit", record)
+    res = await client.delete(f"{url}/{mine.id}", headers=auth(parties.customer))
+    assert res.status_code == 200, res.text
+    assert seen == [
+        {"entity": "Notification", "type": "delete", "id": str(mine.id), "audience": [parties.customer.id]}
+    ]
+    assert await rows(Notification, Notification.id == mine.id) == []
+    assert len(await rows(Notification, Notification.id == other.id)) == 1
+    assert (await client.delete(f"{url}/{mine.id}", headers=auth(parties.customer))).status_code == 404
+
+
+async def notify_detailed_row(user):
+    async with SessionLocal() as s:
+        result = await notify_detailed(
+            s, user_id=user.id, type_="new_message", title_ar="a", title_fr="f", push=False
+        )
+        await s.commit()
+        return result.notification

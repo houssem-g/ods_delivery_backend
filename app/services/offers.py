@@ -167,7 +167,8 @@ async def update_offer(
     """updateOrderOffer: the courier changes the price (and the delay / note) of his pending
     offer on an open order. The customer hears it in-app (type new_offer, data.kind
     offer_updated); pushed at most once per offer every EDIT_PUSH_EVERY. MAX_EDITS per offer,
-    counted on those notifications (never deleted). An unchanged offer is answered as is."""
+    counted on those notifications (the customer may delete his own: only he gets more then).
+    An unchanged offer is answered as is."""
     raw_id = payload.get("offer_id")
     if not raw_id:
         raise OrderRefused(400, "Missing offer_id")
