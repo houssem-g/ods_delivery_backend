@@ -11,11 +11,11 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, Notification, Order, OrderOffer, User, courier_stats
+from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, courier_stats
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
@@ -51,7 +51,7 @@ def _parse_message(value: Any) -> str | None:
     return value.strip()[:MESSAGE_MAX] if isinstance(value, str) else None
 
 
-async def _verified_courier(session: AsyncSession, user: CurrentUser) -> Courier:
+async def verified_courier(session: AsyncSession, user: CurrentUser) -> Courier:
     courier = await courier_of_user(session, user.id)
     if courier is None:
         raise OrderRefused(403, "courier_profile_missing")
@@ -112,7 +112,7 @@ async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, 
     """getOfferRank. One order: `fee` (the price he is typing) or his pending offer's price.
     Several (`order_ids`, his offers list): his pending offers only, orders without one or
     no longer open are left out."""
-    courier = await _verified_courier(session, user)
+    courier = await verified_courier(session, user)
     raw_ids = payload.get("order_ids")
     if raw_ids is not None:
         if not isinstance(raw_ids, list) or len(raw_ids) > RANK_BATCH_MAX:
@@ -174,7 +174,7 @@ async def update_offer(
     fee = _parse_fee(payload.get("fee"))
     if fee is None:
         raise OrderRefused(400, "invalid_fee")
-    courier = await _verified_courier(session, user)
+    courier = await verified_courier(session, user)
     offer_uuid = _as_uuid(raw_id)
     probe = (
         (
@@ -260,7 +260,7 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     distance = Decimal(str(round(dist_raw, 2))) if dist_raw is not None and 0 <= dist_raw <= 1000 else None
     message = _parse_message(payload.get("message")) or ""
 
-    courier = await _verified_courier(session, user)
+    courier = await verified_courier(session, user)
     order = await ot.lock_order(session, order_id)
     if order is None:
         raise OrderRefused(404, "order_not_found")
@@ -305,6 +305,13 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     except IntegrityError as exc:  # a double tap that passed the check at the same time
         raise OrderRefused(409, "offer_already_sent") from exc
     emit(session, "OrderOffer", "create", offer.id)
+    intent = await session.execute(  # his "prépare une offre" is now an offer
+        delete(OfferIntent)
+        .where(OfferIntent.order_id == order.id, OfferIntent.courier_id == courier.id)
+        .returning(OfferIntent.order_id)
+    )
+    if intent.first() is not None:
+        emit(session, "Order", "update", order.id)  # preparing_offers changes
     if order.status == "pending":
         await ot.transition(session, order, "offers_received", user, "createOrderOffer")
     await step_notices.offer_created(session, order, offer, courier)

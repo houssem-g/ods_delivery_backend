@@ -9,7 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.db import transaction
 from app.jobs.registry import job
-from app.services import commission, couriers, expiry, order_drafts, stock_checks
+from app.services import commission, couriers, expiry, offer_intents, order_drafts, stock_checks
 
 log = logging.getLogger("odsd.jobs")
 
@@ -24,10 +24,16 @@ async def expire_stale_orders() -> dict[str, Any]:
         return await expiry.expire_stale_orders(session)
 
 
-@job("expire_orphan_offers", IntervalTrigger(hours=1), "pending offers of closed orders → expired")
+@job(
+    "expire_orphan_offers",
+    IntervalTrigger(hours=1),
+    "pending offers of closed orders → expired; offer intents older than 10 min → deleted",
+)
 async def expire_orphan_offers() -> dict[str, Any]:
     async with transaction() as session:
-        return {"offers_closed": await expiry.expire_orphan_offers(session)}
+        closed = await expiry.expire_orphan_offers(session)
+        intents = await offer_intents.purge_stale(session)
+    return {"offers_closed": closed, "offer_intents_deleted": intents}
 
 
 @job("purge_order_drafts", IntervalTrigger(hours=1), "order drafts past their 24 h → deleted")

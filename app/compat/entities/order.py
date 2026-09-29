@@ -24,8 +24,10 @@ from app.models import (
     Courier,
     CourierLedgerEntry,
     NoResponseCase,
+    OfferIntent,
     Order,
     OrderIssue,
+    OrderOffer,
     OrderRating,
     OrderStatusEvent,
     OrderStockCheck,
@@ -39,6 +41,7 @@ from app.services import order_steps
 from app.services import order_transitions as ot
 from app.services.commission import COMMISSION_KINDS, LEGACY_STATUS
 from app.services.geo import lat_of, lng_of
+from app.services.offer_intents import INTENT_TTL
 from app.services.orders import TEST_ORDER_SQL, is_qa_account
 
 orders = Order.__table__
@@ -230,6 +233,26 @@ def customer_or_admin(user: CurrentUser) -> Any:
     return true() if user.is_admin else orders.c.customer_id == user.id
 
 
+def _preparing_offers() -> Any:
+    """Couriers with the offer sheet open (intent refreshed in the last 3 min) and no pending
+    offer yet (app/services/offer_intents.py)."""
+    intents = OfferIntent.__table__
+    offers = OrderOffer.__table__
+    return (
+        select(func.count())
+        .where(
+            intents.c.order_id == orders.c.id,
+            intents.c.updated_at >= func.now() - INTENT_TTL,
+            ~exists().where(
+                offers.c.order_id == intents.c.order_id,
+                offers.c.courier_id == intents.c.courier_id,
+                offers.c.status == "pending",
+            ),
+        )
+        .scalar_subquery()
+    )
+
+
 def _courier_ratings() -> Any:
     return (
         select(func.coalesce(courier_stats.c.ratings_count, 0))
@@ -348,6 +371,8 @@ FIELDS: dict[str, LegacyField] = {
     ),
     "courier_plate": LegacyField(courier.c.vehicle_plate, "string", read_guard=customer_while_assigned),
     "courier_rating_count": LegacyField(_courier_ratings(), "integer", read_guard=customer_while_assigned),
+    # "Un livreur prépare une offre…" (signalOfferIntent), for the customer and admins.
+    "preparing_offers": LegacyField(_preparing_offers(), "integer", read_guard=customer_or_admin),
 }
 ORDER_FIELDS = set(FIELDS) | {"geocode_status"}
 
