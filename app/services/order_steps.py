@@ -14,6 +14,8 @@ What the courier's app sends and what the server keeps of it:
   courier's lat/lng of its last entry is kept on the event), `platform_fee`,
   `courier_net_earning`, `ods_commission`, `ods_commission_status`.
 Any other Order field in the body → 403, as for every other caller (the legacy fallbacks).
+While a stock check waits for the customer (app/services/stock_checks.py) the order stays in
+price_confirmation_needed: any step out of it → 409 stock_check_pending.
 The customer's notice of each step (at_shop, purchased, on_the_way, delivered) stays with the
 app, as today: CourierOrderActive calls sendNotificationIfEnabled after the write succeeds
 (orderFlow.notifyCustomerOfStatus). The server does not send a second one.
@@ -30,6 +32,7 @@ from app.errors import ApiError
 from app.models import File, Order, OrderStop
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
+from app.services import stock_checks
 from app.services.geo import ORDER_BOUNDS, as_float, point, within
 
 COURIER_STEPS: dict[str, frozenset[str]] = {
@@ -179,6 +182,8 @@ async def courier_step(
     )
     if to_status != from_status and to_status not in COURIER_STEPS.get(from_status, frozenset()):
         raise denied(f"Status change from {from_status} to {to_status} is not allowed")
+    if from_status == "price_confirmation_needed" and await stock_checks.has_pending(session, order.id):
+        raise ApiError(409, "stock_check_pending", "The customer has not answered the stock check yet")
     hot_deal = order.resale_deal_id is not None
     if from_status == "accepted" and to_status == "on_the_way" and not hot_deal:
         raise denied(f"Status change from {from_status} to {to_status} is not allowed")

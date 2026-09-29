@@ -117,7 +117,8 @@ customer side on its existence). Compat id = `users.id`.
 | courier_photo | front W(null) | dropped | always null since `migrateCourierPhotoCopies` |
 | courier_live_lat / lng / at | front R, fn R/W | `order_tracking.location / recorded_at` | guard: customer, assigned courier, admin |
 | items_text, quantity, notes | front R/W\*, fn W | `orders.items_text / quantity / notes` | |
-| alternatives | fn W (if sent) | `orders.alternatives` | never sent by the front; kept (audit DDL) |
+| alternatives | front R/W\*, fn W | `orders.alternatives` | "Alternatives acceptées" (NewOrder, since the stock checks 2026-09-29) |
+| unavailable_policy | front R/W\*, fn W | `orders.unavailable_policy` | new 2026-09-29: call_me (default) / substitute / skip / cancel, applied when a stock check goes unanswered |
 | estimated_price | front R/W\*, fn W | `orders.estimated_price` | |
 | package_size | front W\*, fn W | `orders.package` (enum) | |
 | shop_name, shop_address, shop_phone, shop_governorate, shop_city, shop_lat, shop_lng | front R/W, fn R/W | *derived* from `order_stops` seq 0 (`name, address, phone, governorate, city, location`) | the first shop was stored twice (418/418 equal) |
@@ -160,6 +161,7 @@ customer side on its existence). Compat id = `users.id`.
 | no_response_channels (in_app, push_devices, whatsapp, sms) | front R, fn R/W | *derived* latest case `channels` (jsonb) | |
 | reported_issues[] (type, description, photo_url, reported_at, reported_by, courier_id) | fn R/W | `order_issues` (`issue_type, description, photo_key, created_at, reporter_id`) | aggregated as a JSON array; guard: parties + admin; lost on Base44 before 2026-09-28 |
 | has_issues | fn W | *derived* exists `order_issues` | |
+| stock_check, stock_checks[] (id, status, missing_text, substitute_text, substitute_price, photo_url, nothing_available, decided_by, created_at, deadline_at, decided_at) | front R | `order_stock_checks` | new 2026-09-29 ("article indisponible", `app/services/stock_checks.py`): the latest check / all of them; guard: parties + admin |
 | status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason` (Base44 wrote a `cancelled` then a `pending` entry). Import: `source` absent → `legacy`; synthetic events have `source = 'migration'` (no history: `pending` + final; last item ≠ status: final) |
 | preferred_courier_id | front R, fn R/W | `orders.preferred_courier_id` → `couriers` | |
 | courier_stats_recorded_at | fn R/W | *derived* `orders.delivered_at` | counters are views: nothing to record |

@@ -14,6 +14,7 @@ from app.models.orders import (
     OrderOffer,
     OrderRating,
     OrderStatusEvent,
+    OrderStockCheck,
     OrderStop,
     OrderTracking,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "OrderOffer",
     "OrderRating",
     "OrderStatusEvent",
+    "OrderStockCheck",
     "OrderStop",
     "OrderTracking",
     "OutboundMessage",

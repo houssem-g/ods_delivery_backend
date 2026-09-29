@@ -36,6 +36,11 @@ from app.models.base import (
     uuid_pk,
 )
 
+# What the courier does when an item is missing at the shop and the customer does not answer
+# the stock check in time (app/services/stock_checks.py). 'call_me' = no automatic decision.
+UNAVAILABLE_POLICIES = ("call_me", "substitute", "skip", "cancel")
+STOCK_CHECK_STATUSES = ("pending", "substitute_accepted", "item_skipped", "order_cancelled", "expired")
+
 COURIER_REQUIRED_STATUSES = ",".join(
     f"'{status}'"
     for status in (
@@ -56,6 +61,10 @@ class Order(Base):
         CheckConstraint("purchase_amount >= 0 AND purchase_amount <= 2000", name="purchase_amount"),
         CheckConstraint("payment_method IN ('cash')", name="payment_method"),
         CheckConstraint("cancelled_by IN ('customer','courier','admin','system')", name="cancelled_by"),
+        CheckConstraint(
+            "unavailable_policy IN (" + ",".join(f"'{p}'" for p in UNAVAILABLE_POLICIES) + ")",
+            name="unavailable_policy",
+        ),
         CheckConstraint(
             f"status NOT IN ({COURIER_REQUIRED_STATUSES}) OR courier_id IS NOT NULL",
             name="courier_when_assigned",
@@ -95,6 +104,7 @@ class Order(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     notes: Mapped[str | None] = mapped_column(Text)
     alternatives: Mapped[str | None] = mapped_column(Text)
+    unavailable_policy: Mapped[str] = mapped_column(Text, nullable=False, server_default="call_me")
     package: Mapped[str] = mapped_column(package_size, nullable=False, server_default="petit")
     estimated_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     # Delivery snapshot: the order keeps the contact/address it was placed with.
@@ -252,6 +262,49 @@ class OrderIssue(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resolved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at: Mapped[datetime] = created_at()
+
+
+class OrderStockCheck(Base):
+    """'Article indisponible': the courier at the shop reports missing items, the customer decides
+    (substitute / skip / cancel) within the deadline, else the order's unavailable_policy applies."""
+
+    __tablename__ = "order_stock_checks"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN (" + ",".join(f"'{s}'" for s in STOCK_CHECK_STATUSES) + ")", name="status"
+        ),
+        CheckConstraint("decided_by IN ('customer','system')", name="decided_by"),
+        CheckConstraint("length(missing_text) BETWEEN 1 AND 500", name="missing_text"),
+        CheckConstraint("length(substitute_text) <= 500", name="substitute_text"),
+        CheckConstraint("substitute_price >= 0 AND substitute_price <= 2000", name="substitute_price"),
+        Index(
+            "one_pending_stock_check_per_order",
+            "order_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+        Index("due_stock_checks", "deadline_at", postgresql_where=text("status = 'pending'")),
+        Index("ix_order_stock_checks_order_id_created_at", "order_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
+    )
+    courier_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="SET NULL")
+    )
+    missing_text: Mapped[str] = mapped_column(Text, nullable=False)
+    substitute_text: Mapped[str | None] = mapped_column(Text)
+    substitute_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    photo_key: Mapped[str | None] = mapped_column(Text)
+    nothing_available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    decided_by: Mapped[str | None] = mapped_column(Text)
+    deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()
 
 
 class OrderRating(Base):

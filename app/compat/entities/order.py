@@ -4,8 +4,8 @@ and commission entry, in the legacy document shape (docs/FIELD_MAPPING.md, Order
 Read (base44/entities/Order.jsonc): the customer, the assigned courier, admins; open orders
 (pending / offers_received) also to every VERIFIED courier, to bid — except QA orders
 ("QA TEST" / "PW-"), shown to the QA accounts only (src/lib/orderUtils.js). Field rules:
-customer_phone, delivery_details, courier_live_*, reported_issues, has_issues only for the
-order's parties and admins.
+customer_phone, delivery_details, courier_live_*, reported_issues, has_issues, stock_check(s)
+only for the order's parties and admins.
 Write: no create (placeOrder) and no delete; update = the assigned courier's delivery steps
 and the customer's geocode (app/services/order_steps.py); anything else 403.
 """
@@ -28,6 +28,7 @@ from app.models import (
     OrderIssue,
     OrderRating,
     OrderStatusEvent,
+    OrderStockCheck,
     OrderStop,
     OrderTracking,
     User,
@@ -52,6 +53,7 @@ events = OrderStatusEvent.__table__
 stops = OrderStop.__table__
 issues = OrderIssue.__table__
 cases = NoResponseCase.__table__
+checks = OrderStockCheck.__table__
 ledger = CourierLedgerEntry.__table__
 
 latest_case = (
@@ -164,6 +166,40 @@ def _issues() -> Any:
     )
 
 
+def _stock_check_entry(c: Any) -> Any:
+    """One stock check, keys of app.services.stock_checks.view (without the computed ones)."""
+    return func.jsonb_build_object(
+        "id", cast(c.c.id, Text),
+        "status", c.c.status,
+        "missing_text", c.c.missing_text,
+        "substitute_text", c.c.substitute_text,
+        "substitute_price", c.c.substitute_price,
+        "photo_url", _public_url(c.c.photo_key),
+        "nothing_available", c.c.nothing_available,
+        "decided_by", c.c.decided_by,
+        "created_at", _iso_z(c.c.created_at),
+        "deadline_at", _iso_z(c.c.deadline_at),
+        "decided_at", _iso_z(c.c.decided_at),
+    )  # fmt: skip
+
+
+def _latest_stock_check() -> Any:
+    c = checks.alias("latest_stock_check")
+    return (
+        select(_stock_check_entry(c))
+        .where(c.c.order_id == orders.c.id)
+        .order_by(c.c.created_at.desc(), c.c.id.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
+
+
+def _stock_checks() -> Any:
+    c = checks.alias("all_stock_checks")
+    agg = func.jsonb_agg(aggregate_order_by(_stock_check_entry(c), c.c.created_at, c.c.id))
+    return select(func.coalesce(agg, EMPTY_ARRAY)).where(c.c.order_id == orders.c.id).scalar_subquery()
+
+
 def _has_case() -> Any:
     return exists().where(cases.c.order_id == orders.c.id)
 
@@ -197,6 +233,8 @@ FIELDS: dict[str, LegacyField] = {
     "quantity": LegacyField(orders.c.quantity, "integer"),
     "notes": LegacyField(orders.c.notes, "string"),
     "alternatives": LegacyField(orders.c.alternatives, "string"),
+    # "Si un article est indisponible" (NewOrder): call_me | substitute | skip | cancel.
+    "unavailable_policy": LegacyField(orders.c.unavailable_policy, "string"),
     "estimated_price": LegacyField(orders.c.estimated_price, "number"),
     "package_size": LegacyField(cast(orders.c.package, Text), "string"),
     "shop_name": LegacyField(stop0.c.name, "string"),
@@ -269,6 +307,9 @@ FIELDS: dict[str, LegacyField] = {
     "no_response_case_id": LegacyField(latest_case.c.id, "id"),
     "no_response_channels": LegacyField(latest_case.c.channels, "object"),
     "reported_issues": LegacyField(_issues(), "array", **guarded),
+    # "Article indisponible" (app/services/stock_checks.py): the latest check and all of them.
+    "stock_check": LegacyField(_latest_stock_check(), "object", **guarded),
+    "stock_checks": LegacyField(_stock_checks(), "array", **guarded),
     "has_issues": LegacyField(exists().where(issues.c.order_id == orders.c.id), "boolean", **guarded),
     "status_history": LegacyField(_history(), "array"),
     "preferred_courier_id": LegacyField(orders.c.preferred_courier_id, "id"),

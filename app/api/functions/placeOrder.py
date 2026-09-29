@@ -1,6 +1,7 @@
 """placeOrder — a customer places an order (base44/functions/placeOrder).
 
-Body: { order: { items_text, quantity?, notes?, alternatives?, estimated_price?, package_size?,
+Body: { order: { items_text, quantity?, notes?, alternatives?, unavailable_policy? (call_me|substitute|
+  skip|cancel, default call_me), estimated_price?, package_size?,
   shop_name, shop_address?, shop_phone?, shop_governorate?, shop_city?, shop_lat, shop_lng, shops?,
   delivery_address, delivery_governorate?, delivery_city?, delivery_details?, delivery_lat,
   delivery_lng, preferred_time?, scheduled_time?, customer_phone? }, draft_id? }

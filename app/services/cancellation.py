@@ -7,6 +7,11 @@ Rules kept from the live function:
   a late drop (at_shop … client_no_response) counts a late cancellation, except a
   verified "client ne répond pas" (procedure run to its end, deadline past): then the
   customer gets the incident and the order is closed (not re-dispatched);
+- a courier's product_unavailable cancellation after an unanswered "article indisponible"
+  (app/services/stock_checks.py: his latest check on the order expired, the order still waits)
+  is fault-free: no late cancellation, the order is cancelled (the shop does not have it, no
+  re-dispatch) and the customer is told it costs him nothing; any other cancellation closes a
+  pending stock check with the order;
 - a courier leaving a regular order puts it back to 'pending' in one write, clears
   the courier, his fee and live position, expires his offers and re-dispatches it;
   a hot-deal order is cancelled instead and its deal expires;
@@ -27,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, HotDeal, NoResponseCase, Order, OrderOffer, OrderStop
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
-from app.services import order_texts
+from app.services import order_texts, stock_checks
 from app.services import order_transitions as ot
 from app.services.dispatch import dispatch_order
 from app.services.offers import close_pending_offers
@@ -125,6 +130,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     now = ot.now_utc()
     case: NoResponseCase | None = None
     verified_no_response = False
+    verified_stock_check = False
 
     if cancelled_by == "customer":
         if order.customer_id != user.id:
@@ -135,6 +141,10 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
         mine = await courier_of_user(session, user.id, lock=True)
         if mine is None or str(mine.id) != str(courier_id) or order.courier_id != mine.id:
             raise OrderRefused(403, "Unauthorized")
+        if reason == stock_checks.REASON and order.status in COURIER_CANCELLABLE:
+            verified_stock_check = await stock_checks.courier_may_cancel_free(session, order, mine.id)
+            if order.status == "cancelled":
+                return  # the stock check's own policy (cancel) closed it a moment ago
         if order.status not in COURIER_CANCELLABLE:
             raise OrderRefused(400, "Cannot cancel order at this stage", can_cancel=False)
         if reason in NO_RESPONSE_REASONS:
@@ -142,7 +152,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                 await no_response_refresh(session, order)
             case = await latest_case(session, order.id)
             verified_no_response = no_response_gate(order.status, case, now)["ok"]
-        if order.status in PENALTY_STATUSES and not verified_no_response:
+        if order.status in PENALTY_STATUSES and not verified_no_response and not verified_stock_check:
             mine.late_cancellations += 1
             emit(session, "CourierProfile", "update", mine.id)
         if case is None:
@@ -164,7 +174,9 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     previous_courier_id = order.courier_id
     deal = await linked_hot_deal(session, order)
     order.cancel_reason, order.cancelled_by = reason, cancelled_by
-    back_to_pool = cancelled_by == "courier" and deal is None and not verified_no_response
+    back_to_pool = (
+        cancelled_by == "courier" and deal is None and not verified_no_response and not verified_stock_check
+    )
     if back_to_pool:
         await ot.transition(session, order, "pending", user, "cancelOrder", reason, cancelled_by="courier")
         order.cancelled_at = now
@@ -178,6 +190,8 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
         await ot.transition(
             session, order, "cancelled", user, "cancelOrder", reason, cancelled_by=cancelled_by
         )
+
+    await stock_checks.close_pending(session, order)
 
     stop = await first_stop(session, order.id)
     shop_name = stop.name if stop else None
@@ -200,13 +214,23 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                 )
         return
 
+    texts = (
+        order_texts.stock_cancel_for_customer()
+        if verified_stock_check
+        else order_texts.cancelled_by_courier(reason, verified_no_response, deal is not None)
+    )
     await notify_always_pushed(
         session,
         user_id=order.customer_id,
         type_="order_cancelled",
         order_id=order.id,
-        metadata={"reason": reason, "cancelled_by": cancelled_by, "recipient_role": "customer"},
-        **order_texts.cancelled_by_courier(reason, verified_no_response, deal is not None),
+        metadata={
+            "reason": reason,
+            "cancelled_by": cancelled_by,
+            "recipient_role": "customer",
+            "fault_free": verified_stock_check,
+        },
+        **texts,
     )
     if deal is not None and not verified_no_response:
         deal.status = "expired"

@@ -1,6 +1,7 @@
-"""Order jobs: stale order expiry, orphan offers, expired drafts, courier presence, weekly commission
-statements."""
+"""Order jobs: stale order expiry, orphan offers, expired drafts, stock-check timeout, courier
+presence, weekly commission statements."""
 
+import logging
 from typing import Any
 
 from apscheduler.triggers.cron import CronTrigger
@@ -8,7 +9,9 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.db import transaction
 from app.jobs.registry import job
-from app.services import commission, couriers, expiry, order_drafts
+from app.services import commission, couriers, expiry, order_drafts, stock_checks
+
+log = logging.getLogger("odsd.jobs")
 
 
 @job(
@@ -31,6 +34,25 @@ async def expire_orphan_offers() -> dict[str, Any]:
 async def purge_order_drafts() -> dict[str, Any]:
     async with transaction() as session:
         return {"drafts_deleted": await order_drafts.purge_expired(session)}
+
+
+@job(
+    "stock_check_timeout",
+    IntervalTrigger(minutes=1),
+    "unanswered stock checks past their 5 minutes → the order's unavailable_policy applies",
+)
+async def stock_check_timeout() -> dict[str, Any]:
+    async with transaction() as session:
+        due = await stock_checks.due_order_ids(session)
+    advanced = errors = 0
+    for order_id in due:
+        try:
+            async with transaction() as session:
+                advanced += await stock_checks.sweep_order(session, order_id)
+        except Exception:  # one bad order never blocks the others
+            errors += 1
+            log.exception("stock_check_timeout: order %s failed", order_id)
+    return {"checked": len(due), "advanced": advanced, "errors": errors}
 
 
 @job("courier_presence_expiry", IntervalTrigger(minutes=5), "online couriers silent for 15 min → offline")

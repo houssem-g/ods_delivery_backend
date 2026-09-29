@@ -175,6 +175,7 @@ async def sweep_5min() -> dict:
 | `no_response_fast` | 15 s | `app/jobs/incidents.py` | cases still counting down: the customer's reminder pushes (every 45 s, at most 3, push only, Android channel `urgent_alarm`) and the "last chance" alert on time instead of up to 5 min late |
 | `whatsapp_check_pending` | 5 min | `app/jobs/messaging.py` | SMS for critical WhatsApp not delivered in time, retries (sendWhatsAppMessage `check_pending`) |
 | `expire_stale_orders` | 5 min | `app/jobs/orders.py` | open orders idle 24 h → expired, deliveries idle 48 h → abandoned (expireStaleOrders) |
+| `stock_check_timeout` | 1 min | `app/jobs/orders.py` | "article indisponible" checks unanswered after 5 min → the order's `unavailable_policy` (substitute / skip / cancel, call_me = expired: the courier calls or cancels without penalty); one transaction per order, SKIP LOCKED (new, 2026-09-29; `app/services/stock_checks.py`, functions reportUnavailableItems / answerStockCheck) |
 | `courier_presence_expiry` | 5 min | `app/jobs/orders.py` | online couriers without heartbeat for 15 min → offline |
 | `expire_orphan_offers` | 1 h | `app/jobs/orders.py` | pending offers of closed orders → expired (expireStaleOrders `offers`) |
 | `purge_order_drafts` | 1 h | `app/jobs/orders.py` | order drafts past their 24 h → deleted (new, 2026-09-29; `app/services/order_drafts.py`, functions saveOrderDraft / listOrderDrafts / deleteOrderDraft, placeOrder `draft_id`) |

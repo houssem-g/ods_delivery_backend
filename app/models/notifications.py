@@ -25,6 +25,7 @@ NOTIFICATION_TYPES = (
     "delivery_cancelled", "delivery_delayed", "eta_update", "new_order", "new_offer", "new_message",
     "emergency_contact", "customer_responded", "customer_no_response_final", "order_confirmed",
     "order_preparing", "hot_deal_reserved", "issue_reported", "account_verified", "account_rejected",
+    "stock_check", "stock_check_answered",
 )  # fmt: skip
 # Legacy synonyms merged at import time and when a caller still sends them.
 NOTIFICATION_TYPE_SYNONYMS = {

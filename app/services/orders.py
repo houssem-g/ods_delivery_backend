@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import Courier, Order, OrderStop, User, UserAddress, customer_stats
+from app.models.orders import UNAVAILABLE_POLICIES
 from app.realtime.events import emit
 from app.services import order_transitions as ot
 from app.services.geo import ORDER_BOUNDS, as_float, haversine_km, lat_of, lng_of, point, within
@@ -30,6 +31,11 @@ SIGNUP_WINDOW = timedelta(hours=24)
 PACKAGE_SIZES = ("petit", "moyen", "grand")
 MAX_STOPS = 5
 MAX_QUANTITY = 100  # orders.quantity CHECK (Base44 took up to 999; nothing above 100 exists)
+
+
+def unavailable_policy(value: Any) -> str:
+    """NewOrder's "si un article est indisponible" choice; unknown or missing → the courier calls."""
+    return value if isinstance(value, str) and value in UNAVAILABLE_POLICIES else "call_me"
 
 
 def is_test_order(items_text: str | None) -> bool:
@@ -265,6 +271,7 @@ def build_order(
         quantity=quantity if quantity is not None and 1 <= quantity <= MAX_QUANTITY else 1,
         notes=_text(o.get("notes"), 500),
         alternatives=_text(o.get("alternatives"), 500),
+        unavailable_policy=unavailable_policy(o.get("unavailable_policy")),
         estimated_price=round3(estimated) if estimated is not None and 0 <= estimated <= 100000 else None,
         package=package,
         delivery_address=delivery_address,
