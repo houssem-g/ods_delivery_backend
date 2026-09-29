@@ -41,7 +41,7 @@ from app.services import order_transitions as ot
 from app.services.geo import point
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import TEST_ORDER_SQL, courier_of_user, first_stop, mirror_incidents
-from app.services.phones import InvalidPhone, is_tunisian, to_e164
+from app.services.phones import InvalidPhone, is_tunisian, to_e164, verification_enforced
 from app.services.shops import key_from_public_url, public_prefix
 
 RESELLABLE = frozenset({"purchased", "on_the_way", "client_no_response"})
@@ -293,9 +293,11 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         return 429, {"error": "too_many_reservations"}
 
     contact_phone = _buyer_phone(payload.get("phone"), buyer.phone_e164)
-    # Foreign numbers must be confirmed by the WhatsApp code first (like placeOrder).
+    # Foreign numbers must be confirmed by the WhatsApp code first (like placeOrder), once
+    # WhatsApp is configured (until then the code can't be sent: accepted as they are).
     if (
         contact_phone
+        and verification_enforced()
         and not is_tunisian(contact_phone)
         and not (contact_phone == buyer.phone_e164 and buyer.phone_verified_at is not None)
     ):

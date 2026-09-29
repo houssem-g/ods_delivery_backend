@@ -214,13 +214,35 @@ async def verified(user, phone=FR) -> None:
     ("phone", "is_verified", "required"),
     [(None, False, False), ("+21698765432", True, False), (FR, False, True)],
 )
-async def test_profile_fields(client, factory, phone, is_verified, required):
+async def test_profile_fields(client, factory, meta_on, phone, is_verified, required):
     user = await factory.user(phone_e164=phone)
     doc = await profile(client, user)
     assert doc["phone_verified"] is is_verified and doc["phone_verification_required"] is required
+    assert doc["phone_verification_available"] is True
 
 
-async def test_phone_change_resets_verification(client, customer):
+async def test_nothing_required_while_whatsapp_is_off(client, world, factory):
+    """Owner's rule: without WhatsApp the code can't be sent, a foreign number is accepted."""
+    expat = await factory.user(email="fr@example.test", phone_e164=FR)
+    doc = await profile(client, expat)
+    assert doc["phone_verified"] is False
+    assert doc["phone_verification_required"] is False and doc["phone_verification_available"] is False
+    placed = await fn(client, expat, "placeOrder", {"order": order_form()})
+    assert placed.status_code == 200 and placed.json()["order"]["customer_phone"] == FR
+    deal = await a_deal(world)
+    reserved = await fn(
+        client,
+        world.customer,
+        "reserveHotDeal",
+        {"resale_order_id": str(deal.id), "delivery_address": "Rue X", "phone": "+44 7400 123456"},
+    )
+    assert reserved.status_code == 200, reserved.text
+    nophone = await factory.user(email="np2@example.test")
+    typed = await fn(client, nophone, "placeOrder", {"order": order_form(customer_phone=FR_TYPED)})
+    assert typed.json() == {"error": "phone_required"}  # only the profile's number is taken
+
+
+async def test_phone_change_resets_verification(client, customer, meta_on):
     await verified(customer)
     url = f"/api/entities/UserProfile/{customer.id}"
     same = await client.patch(url, json={"phone": FR_TYPED}, headers=auth(customer))
@@ -252,7 +274,7 @@ async def world(factory):
     return await OrderWorld(factory).setup()
 
 
-async def test_place_order_refuses_an_unverified_foreign_number(client, world, factory, caplog):
+async def test_place_order_refuses_an_unverified_foreign_number(client, world, factory, meta_on, caplog):
     expat = await factory.user(email="fr@example.test", phone_e164=FR)
     with caplog.at_level(logging.INFO, logger="odsd.functions"):
         r = await fn(client, expat, "placeOrder", {"order": order_form(customer_phone="+33 7 00 00 00 00")})
@@ -263,7 +285,7 @@ async def test_place_order_refuses_an_unverified_foreign_number(client, world, f
         assert (await s.execute(select(func.count()).select_from(Order))).scalar_one() == 0
 
 
-async def test_place_order_typed_foreign_number_without_profile_phone(client, factory):
+async def test_place_order_typed_foreign_number_without_profile_phone(client, factory, meta_on):
     nophone = await factory.user(email="np@example.test")
     r = await fn(client, nophone, "placeOrder", {"order": order_form(customer_phone=FR_TYPED)})
     assert r.json() == {"error": "phone_unverified"}
@@ -271,7 +293,7 @@ async def test_place_order_typed_foreign_number_without_profile_phone(client, fa
     assert r.json() == {"error": "phone_required"}
 
 
-async def test_place_order_accepts_a_verified_foreign_number(client, world, factory):
+async def test_place_order_accepts_a_verified_foreign_number(client, world, factory, meta_on):
     expat = await factory.user(email="fr@example.test", phone_e164=FR)
     await verified(expat)
     r = await fn(client, expat, "placeOrder", {"order": order_form()})
@@ -283,13 +305,13 @@ async def test_place_order_accepts_a_verified_foreign_number(client, world, fact
     assert courier_view.status_code == 200
 
 
-async def test_place_order_unverified_foreign_profile_may_give_a_tunisian_number(client, factory):
+async def test_place_order_unverified_foreign_profile_may_give_a_tunisian_number(client, factory, meta_on):
     expat = await factory.user(email="fr@example.test", phone_e164=FR)
     r = await fn(client, expat, "placeOrder", {"order": order_form(customer_phone="98 765 432")})
     assert r.status_code == 200 and r.json()["order"]["customer_phone"] == "+21698765432"
 
 
-async def test_reserve_hot_deal_with_foreign_numbers(client, world, factory):
+async def test_reserve_hot_deal_with_foreign_numbers(client, world, factory, meta_on):
     deal = await a_deal(world)
     expat = await factory.user(email="fr@example.test", phone_e164=FR)
     body = {"resale_order_id": str(deal.id), "delivery_address": "Rue X"}

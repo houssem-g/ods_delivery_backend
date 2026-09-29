@@ -210,7 +210,9 @@ async def sweep_5min() -> dict:
 - Phones: `app.services.phones.to_e164(raw)`, `is_tunisian`, `customer_phone_verified`. Customers:
   a Tunisian number is accepted as is; a foreign one must be confirmed by the WhatsApp code
   (`app/services/phone_verification.py`, functions requestPhoneVerification /
-  confirmPhoneVerification) before placeOrder / reserveHotDeal accept it (`phone_unverified`), and
+  confirmPhoneVerification) before placeOrder / reserveHotDeal accept it (`phone_unverified`) — only once WhatsApp is
+  configured: while it is off the profile's foreign number is accepted as is
+  (`phones.verification_enforced()`, hotfix 89577eb) — and
   `whatsapp.send_template` reaches a foreign number only when it is the user's verified phone (no
   SMS fallback abroad). Couriers and shops stay Tunisian-only.
 - Counters: views `courier_stats`, `customer_stats` (`app.models.views`); the 180-day

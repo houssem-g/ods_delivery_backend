@@ -857,4 +857,4 @@ async def test_place_order_foreign_phone_while_whatsapp_is_off(client, world, fa
     monkeypatch.setattr(type(settings), "whatsapp_enabled", property(lambda self: True))
     other = await factory.user(email="abroad2@example.test", phone_e164="+41791234567")
     refused = await call(client, other, "placeOrder", {"order": order_form()})
-    assert refused.json() == {"error": "phone_required"}
+    assert refused.json() == {"error": "phone_unverified"}

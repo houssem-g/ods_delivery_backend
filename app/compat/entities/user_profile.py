@@ -15,12 +15,13 @@ from datetime import datetime
 from typing import Any
 
 from geoalchemy2 import Geometry
-from sqlalchemy import Text, and_, case, cast, false, func, select, true
+from sqlalchemy import Boolean, Text, and_, bindparam, case, cast, false, func, select, true
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.payload import coerce_payload
 from app.compat.registry import EntityDef, LegacyField, register
+from app.config import settings
 from app.errors import ApiError
 from app.models import Courier, User, UserAddress, customer_stats
 from app.security.deps import CurrentUser
@@ -54,6 +55,11 @@ def _point(coord: str) -> Any:
     return fn(cast(addr.c.location, Geometry))
 
 
+def _whatsapp_on() -> Any:
+    """settings.whatsapp_enabled read at each query (not at import)."""
+    return bindparam("whatsapp_on", callable_=lambda: settings.whatsapp_enabled, type_=Boolean, unique=True)
+
+
 def _read_policy(user: CurrentUser) -> Any:
     return true() if user.is_admin else users.c.id == user.id
 
@@ -71,14 +77,17 @@ FIELDS: dict[str, LegacyField] = {
         ),
         "boolean",
     ),
+    # False while WhatsApp is not configured: the code can't be sent, the number is accepted.
     "phone_verification_required": LegacyField(
         and_(
+            _whatsapp_on(),
             users.c.phone_e164.is_not(None),
             ~users.c.phone_e164.startswith(TUNISIA_PREFIX),
             users.c.phone_verified_at.is_(None),
         ),
         "boolean",
     ),
+    "phone_verification_available": LegacyField(_whatsapp_on(), "boolean"),
     # An admin's app role is 'admin'; his profile keeps the customer side (as in Base44).
     "role": LegacyField(
         case((users.c.role == "admin", "customer"), else_=cast(users.c.role, Text)), "string"
