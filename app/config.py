@@ -79,6 +79,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_PULSE: str = "60/minute"
     # getDemandPulse per courier
     RATE_LIMIT_DEMAND_PULSE: str = "30/minute"
+    # translateOrderMessage per user (cached answers count too)
+    RATE_LIMIT_TRANSLATE: str = "40/minute"
 
     # --- e-mail ---------------------------------------------------------------
     EMAIL_PROVIDER: Literal["smtp", "log"] = "smtp"
@@ -137,6 +139,18 @@ class Settings(BaseSettings):
     MSG_LIMIT_PER_NUMBER_DAY: int = 12
     MSG_LIMIT_GLOBAL_MINUTE: int = 30
     MSG_LIMIT_GLOBAL_HOUR: int = 400
+
+    # --- chat translation (DigitalOcean Serverless Inference, OpenAI-compatible) -------
+    # OFF while TRANSLATE_API_KEY is empty: translateOrderMessage answers available: false.
+    TRANSLATE_API_URL: str = "https://inference.do-ai.run/v1/chat/completions"
+    TRANSLATE_API_KEY: str | None = None
+    TRANSLATE_MODEL: str = "openai-gpt-4o-mini"
+    # USD per million tokens (input / output), to count the month's spend
+    TRANSLATE_PRICE_IN_PER_M: float = 0.15
+    TRANSLATE_PRICE_OUT_PER_M: float = 0.60
+    # no new call once the month's (UTC) spend reaches it; cached translations still answer
+    TRANSLATE_MONTHLY_BUDGET_USD: float = 3.0
+    TRANSLATE_TIMEOUT_SECONDS: float = 6.0
 
     # --- realtime / jobs ------------------------------------------------------
     REALTIME_ENABLED: bool = True
@@ -225,6 +239,10 @@ class Settings(BaseSettings):
     @property
     def sms_enabled(self) -> bool:
         return bool(self.WINSMS_API_KEY and self.WINSMS_SENDER) and not self.MESSAGING_DISABLED
+
+    @property
+    def translate_enabled(self) -> bool:
+        return bool(self.TRANSLATE_API_KEY and self.TRANSLATE_API_URL and self.TRANSLATE_MODEL)
 
     @property
     def public_files_base_url(self) -> str:

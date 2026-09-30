@@ -377,6 +377,38 @@ class Message(Base):
     updated_at: Mapped[datetime] = updated_at()
 
 
+TRANSLATION_TARGETS = ("fr", "ar")
+TRANSLATION_SOURCES = ("fr", "ar", "derja", "arabizi", "other")
+
+
+def _in(values: tuple[str, ...]) -> str:
+    return ",".join(f"'{v}'" for v in values)
+
+
+class MessageTranslation(Base):
+    """A chat message translated for one reader language (app/services/translation.py).
+    translated_text NULL = the model found the message already in that language."""
+
+    __tablename__ = "message_translations"
+    __table_args__ = (
+        CheckConstraint(f"target_lang IN ({_in(TRANSLATION_TARGETS)})", name="target_lang"),
+        CheckConstraint(f"source_lang IN ({_in(TRANSLATION_SOURCES)})", name="source_lang"),
+        CheckConstraint("length(translated_text) <= 4000", name="translated_text"),
+    )
+
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True
+    )
+    target_lang: Mapped[str] = mapped_column(Text, primary_key=True)
+    translated_text: Mapped[str | None] = mapped_column(Text)
+    source_lang: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str] = mapped_column(Text, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(10, 6), nullable=False, server_default=text("0"))
+    created_at: Mapped[datetime] = created_at()
+
+
 class OrderDraft(Base):
     """An unfinished NewOrder form, kept 24 h after its last save (server side: it survives
     a reinstall or a change of device)."""

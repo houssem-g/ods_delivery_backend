@@ -12,10 +12,18 @@ from app.models.identity import (
     UserAddress,
 )
 from app.models.incidents import HotDeal, NoResponseCase
-from app.models.misc import AppSetting, AuditLog, CourierLedgerEntry, CourierStatement, File
+from app.models.misc import (
+    AppSetting,
+    AuditLog,
+    CourierLedgerEntry,
+    CourierStatement,
+    File,
+    TranslationUsage,
+)
 from app.models.notifications import DeviceToken, Notification, OutboundMessage, PushDelivery
 from app.models.orders import (
     Message,
+    MessageTranslation,
     OfferIntent,
     Order,
     OrderDraft,
@@ -43,6 +51,7 @@ __all__ = [
     "GeocodeCache",
     "HotDeal",
     "Message",
+    "MessageTranslation",
     "NoResponseCase",
     "Notification",
     "OfferIntent",
@@ -63,6 +72,7 @@ __all__ = [
     "Shop",
     "ShopMenuItem",
     "ShopReview",
+    "TranslationUsage",
     "User",
     "UserAddress",
     "courier_stats",

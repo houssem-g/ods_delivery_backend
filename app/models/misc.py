@@ -12,9 +12,11 @@ from sqlalchemy import (
     ForeignKey,
     Identity,
     Index,
+    Integer,
     Numeric,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -121,3 +123,16 @@ class File(Base):
     original_name: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+class TranslationUsage(Base):
+    """The chat translation spend per month (UTC; first day of the month), checked against
+    TRANSLATE_MONTHLY_BUDGET_USD before every call."""
+
+    __tablename__ = "translation_usage"
+
+    month: Mapped[date] = mapped_column(Date, primary_key=True)
+    calls: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    input_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    output_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False, server_default=text("0"))
