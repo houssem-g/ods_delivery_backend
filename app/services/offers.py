@@ -84,7 +84,9 @@ async def offer_rank(
     fees = [
         float(f)
         for f in (
-            await session.execute(select(OrderOffer.proposed_fee).where(*others).order_by(OrderOffer.proposed_fee))
+            await session.execute(
+                select(OrderOffer.proposed_fee).where(*others).order_by(OrderOffer.proposed_fee)
+            )
         ).scalars()
     ]
     return {

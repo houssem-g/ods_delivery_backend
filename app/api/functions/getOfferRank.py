@@ -2,7 +2,8 @@
 an open order ("1ʳᵉ sur 3 offres — la moins chère"), live while he edits it.
 
 Body: { order_id, fee? } — `fee`: the price he is typing; omitted, his pending offer's price.
-Returns { success, rank, total, cheapest, tied, other_fees: [..ascending], lowest_other, my_offer: {id, fee} | null }:
+Returns { success, rank, total, cheapest, tied, other_fees: [ascending], lowest_other,
+my_offer: {id, fee} | null }:
 rank = 1 + other pending offers strictly cheaper, total = other pending offers + 1,
 tied = others at the same price (they share the rank).
 Body { order_ids: [...] (≤ 20) } instead: his pending offers on those open orders in one call

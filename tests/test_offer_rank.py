@@ -92,7 +92,16 @@ async def test_rank_of_my_offer_ignores_closed_offers_and_names_nobody(client, w
     assert same["other_fees"] == [1.0, 6.5, 8.0] and same["lowest_other"] == 1.0
     text = json.dumps(same)
     assert str(cheaper.id) not in text and str(cheaper.courier_id) not in text and "Rival" not in text
-    assert set(same) == {"success", "rank", "total", "cheapest", "tied", "my_offer", "other_fees", "lowest_other"}
+    assert set(same) == {
+        "success",
+        "rank",
+        "total",
+        "cheapest",
+        "tied",
+        "my_offer",
+        "other_fees",
+        "lowest_other",
+    }
 
 
 async def test_rank_batch_for_my_offers_list(client, world, factory):
