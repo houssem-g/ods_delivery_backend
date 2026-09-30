@@ -34,6 +34,8 @@ os.environ.update(
         "WINSMS_API_KEY": "",
         "WINSMS_SENDER": "",
         "MESSAGING_DISABLED": "false",
+        # chat translation always OFF unless a test turns it on (HTTP mocked)
+        "TRANSLATE_API_KEY": "",
         # OSM services: never reached (the transport is replaced below), fast pauses.
         "NOMINATIM_ENABLED": "true",
         "NOMINATIM_URL": "http://nominatim.test",

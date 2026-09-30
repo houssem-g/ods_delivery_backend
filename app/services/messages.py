@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.entities.message import ENTITY as MESSAGE_ENTITY
 from app.compat.query import base_select, serialize
-from app.models import Courier, File, Message, Order
+from app.models import Courier, File, Message, MessageTranslation, Order, User
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
@@ -354,6 +354,38 @@ async def _mark(session: AsyncSession, *where: Any) -> list[uuid.UUID]:
     return ids
 
 
+async def with_translations(
+    session: AsyncSession, docs: list[dict[str, Any]], user: CurrentUser
+) -> list[dict[str, Any]]:
+    """Adds `translation`: {target, text, source_lang} when a translation of the message into the
+    caller's language is already stored (translateOrderMessage), else null. Never calls the API."""
+    if not docs:
+        return docs
+    lang = (await session.execute(select(User.language).where(User.id == user.id))).scalar_one_or_none()
+    rows = {
+        row.message_id: row
+        for row in (
+            await session.execute(
+                select(
+                    MessageTranslation.message_id,
+                    MessageTranslation.translated_text,
+                    MessageTranslation.source_lang,
+                ).where(
+                    MessageTranslation.message_id.in_([uuid.UUID(d["id"]) for d in docs]),
+                    MessageTranslation.target_lang == lang,
+                    MessageTranslation.translated_text.is_not(None),
+                )
+            )
+        ).all()
+    }
+    out = []
+    for doc in docs:
+        row = rows.get(uuid.UUID(doc["id"]))
+        found = {"target": lang, "text": row.translated_text, "source_lang": row.source_lang} if row else None
+        out.append({**doc, "translation": found})
+    return out
+
+
 async def get_order_messages(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
     """The latest `limit` (1..500, default 200) visible messages, oldest first; with
     `mark_read: true` the caller's unread incoming ones among them are marked read."""
@@ -365,7 +397,7 @@ async def get_order_messages(session: AsyncSession, user: CurrentUser, payload: 
         session, messages.c.order_id == order.id, _visible(role, user),
         newest_first=True, limit=_limit(payload.get("limit")),
     )  # fmt: skip
-    docs = await enrich(session, list(reversed(latest)), user)
+    docs = await with_translations(session, await enrich(session, list(reversed(latest)), user), user)
     if payload.get("mark_read") is not True:
         return 200, {"success": True, "messages": docs}
     shown = [uuid.UUID(d["id"]) for d in docs]

@@ -370,3 +370,27 @@ reliability_pct, avg_reply_seconds), sendOrderMessage / getOrderMessages (attach
 createHotDeal / reserveHotDeal / listHotDeals (price decay, alerts), Notification delete.
 Field-level details: `docs/FIELD_MAPPING.md`.
 
+
+## 9. Chat translation (2026-09-30, migration e3435ddef81f)
+
+| Function | Who | Module |
+|---|---|---|
+| translateOrderMessage | the chat's readers (getOrderMessages' rule) | `app/services/translation.py` |
+| getTranslationStatus | admins | `app/services/translation.py` |
+
+- DigitalOcean Serverless Inference (OpenAI-compatible, `TRANSLATE_API_URL`, `TRANSLATE_MODEL`).
+  **OFF while `TRANSLATE_API_KEY` is empty**: translateOrderMessage answers
+  `available: false, reason: "disabled"` (stored translations still answer).
+- One call at most per (message, target language): `message_translations` keeps the answer
+  (`translated_text` NULL = already in that language). getOrderMessages adds `translation`
+  ({target, text, source_lang} | null) from that table only, never calling the API.
+- Spend: `translation_usage` (one row per UTC month) counts calls, tokens and `cost_usd` from the
+  answer's `usage` × `TRANSLATE_PRICE_IN_PER_M` / `TRANSLATE_PRICE_OUT_PER_M`; at
+  `TRANSLATE_MONTHLY_BUDGET_USD` no new call is made (`reason: "budget"`, one warning per month
+  and process).
+- No call when the text is already in the target language (Arabic-script share, Latin without
+  Arabizi digits / Derja words), empty or attachment-only. Timeout / network error / 5xx: one
+  retry, then `reason: "unavailable"` (never an error status). The message text is never logged.
+- Limit: `RATE_LIMIT_TRANSLATE` per user → 429 `too_many_translate_requests`.
+- Tests: `tests/test_translation.py` (fixture `llm`, an httpx.MockTransport on
+  `translation.http_client`).
