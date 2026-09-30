@@ -97,6 +97,8 @@ class Settings(BaseSettings):
     S3_ENDPOINT_URL: str = "http://localhost:9110"
     # Host the browser can reach; presigned URLs are signed for it.
     S3_PUBLIC_ENDPOINT_URL: str = "http://localhost:9110"
+    # "virtual" on DO Spaces (bucket in the host, what the app CSP allows); "path" for MinIO.
+    S3_SIGNING_ADDRESSING_STYLE: Literal["path", "virtual"] = "path"
     S3_REGION: str = "us-east-1"
     S3_ACCESS_KEY: str = "odsdlv-local"
     S3_SECRET_KEY: str = "odsdlv-local-secret"
@@ -144,10 +146,10 @@ class Settings(BaseSettings):
     # OFF while TRANSLATE_API_KEY is empty: translateOrderMessage answers available: false.
     TRANSLATE_API_URL: str = "https://inference.do-ai.run/v1/chat/completions"
     TRANSLATE_API_KEY: str | None = None
-    TRANSLATE_MODEL: str = "openai-gpt-4o-mini"
+    TRANSLATE_MODEL: str = "gemma-4-31B-it"
     # USD per million tokens (input / output), to count the month's spend
-    TRANSLATE_PRICE_IN_PER_M: float = 0.15
-    TRANSLATE_PRICE_OUT_PER_M: float = 0.60
+    TRANSLATE_PRICE_IN_PER_M: float = 0.18
+    TRANSLATE_PRICE_OUT_PER_M: float = 0.50
     # no new call once the month's (UTC) spend reaches it; cached translations still answer
     TRANSLATE_MONTHLY_BUDGET_USD: float = 3.0
     TRANSLATE_TIMEOUT_SECONDS: float = 6.0

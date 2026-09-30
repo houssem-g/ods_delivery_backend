@@ -16,24 +16,24 @@ class StorageUnavailable(Exception):
     pass
 
 
-def _config() -> Config:
+def _config(addressing_style: str = "path") -> Config:
     return Config(
         signature_version="s3v4",
-        s3={"addressing_style": "path"},
+        s3={"addressing_style": addressing_style},
         connect_timeout=5,
         read_timeout=settings.S3_TIMEOUT_SECONDS,
         retries={"max_attempts": 2, "mode": "standard"},
     )
 
 
-def _client(endpoint: str) -> BaseClient:
+def _client(endpoint: str, addressing_style: str = "path") -> BaseClient:
     return boto3.client(
         "s3",
         endpoint_url=endpoint,
         region_name=settings.S3_REGION,
         aws_access_key_id=settings.S3_ACCESS_KEY,
         aws_secret_access_key=settings.S3_SECRET_KEY,
-        config=_config(),
+        config=_config(addressing_style),
     )
 
 
@@ -45,8 +45,11 @@ def server_client() -> BaseClient:
 
 @lru_cache
 def signing_client() -> BaseClient:
-    """Signs URLs for the host the browser can reach (signing is local, no network call)."""
-    return _client(settings.S3_PUBLIC_ENDPOINT_URL)
+    """Signs URLs for the host the browser can reach (signing is local, no network call).
+    S3_SIGNING_ADDRESSING_STYLE "virtual" on DO Spaces: https://<bucket>.fra1.digitaloceanspaces.com/…,
+    the origin the app's Content-Security-Policy allows (path style, fra1.digitaloceanspaces.com/<bucket>,
+    was blocked: private photos and voice notes did not load in the app). MinIO keeps "path"."""
+    return _client(settings.S3_PUBLIC_ENDPOINT_URL, settings.S3_SIGNING_ADDRESSING_STYLE)
 
 
 async def _run(func: Any, *args: Any, **kwargs: Any) -> Any:

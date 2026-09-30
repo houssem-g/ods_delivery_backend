@@ -53,6 +53,8 @@ def llm(monkeypatch) -> LlmRecorder:
 def translate_on(monkeypatch):
     monkeypatch.setattr(settings, "TRANSLATE_API_KEY", "do-model-key")
     monkeypatch.setattr(settings, "TRANSLATE_MODEL", "openai-gpt-4o-mini")
+    monkeypatch.setattr(settings, "TRANSLATE_PRICE_IN_PER_M", 0.15)
+    monkeypatch.setattr(settings, "TRANSLATE_PRICE_OUT_PER_M", 0.60)
     monkeypatch.setattr(settings, "TRANSLATE_MONTHLY_BUDGET_USD", 3.0)
 
 
@@ -139,6 +141,9 @@ def test_parse_answer_robustness():
 
 
 def test_cost_and_request_shape(monkeypatch):
+    # prices pinned here: the defaults follow the production model
+    monkeypatch.setattr(settings, "TRANSLATE_PRICE_IN_PER_M", 0.15)
+    monkeypatch.setattr(settings, "TRANSLATE_PRICE_OUT_PER_M", 0.60)
     assert tr.cost_of(1_000_000, 1_000_000) == Decimal("0.750000")
     assert tr.cost_of(400, 30) == Decimal("0.000078")
     body = tr._request_body("salut", "ar", json_mode=True)
