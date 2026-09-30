@@ -54,6 +54,7 @@ async def test_rank_alone_and_by_typed_fee(client, world, factory):
     assert alone.status_code == 200, alone.text
     assert alone.json() == {
         "success": True, "rank": 1, "total": 1, "cheapest": True, "tied": 0, "my_offer": None,
+        "other_fees": [], "lowest_other": None,
     }  # fmt: skip
 
     await rivals(world, factory, order, "4", "6", "6", "9.5")
@@ -69,9 +70,10 @@ async def test_rank_alone_and_by_typed_fee(client, world, factory):
             await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": fee})
         ).json()
         assert (body["rank"], body["total"], body["cheapest"], body["tied"]) == (rank, 5, cheapest, tied), fee
+        assert body["other_fees"] == [4.0, 6.0, 6.0, 9.5] and body["lowest_other"] == 4.0
 
 
-async def test_rank_of_my_offer_ignores_closed_offers_and_leaks_nothing(client, world, factory):
+async def test_rank_of_my_offer_ignores_closed_offers_and_names_nobody(client, world, factory):
     order = await world.order(status="offers_received")
     mine = await world.offer(order, fee="7")
     cheaper, *_ = await rivals(world, factory, order, "6.5", "8", "1")
@@ -85,10 +87,12 @@ async def test_rank_of_my_offer_ignores_closed_offers_and_leaks_nothing(client, 
     same = (await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id)})).json()
     assert same["rank"] == 3 and same["total"] == 4
 
-    # only counts come back: no other courier's price, id or name anywhere in the answer
+    # the others' prices come back anonymous (the prices to beat), never an id or a name;
+    # closed offers are not among them
+    assert same["other_fees"] == [1.0, 6.5, 8.0] and same["lowest_other"] == 1.0
     text = json.dumps(same)
-    assert "6.5" not in text and str(cheaper.id) not in text and str(cheaper.courier_id) not in text
-    assert "Rival" not in text and set(same) == {"success", "rank", "total", "cheapest", "tied", "my_offer"}
+    assert str(cheaper.id) not in text and str(cheaper.courier_id) not in text and "Rival" not in text
+    assert set(same) == {"success", "rank", "total", "cheapest", "tied", "my_offer", "other_fees", "lowest_other"}
 
 
 async def test_rank_batch_for_my_offers_list(client, world, factory):

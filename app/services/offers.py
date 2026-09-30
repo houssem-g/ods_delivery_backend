@@ -63,9 +63,10 @@ async def verified_courier(session: AsyncSession, user: CurrentUser) -> Courier:
 async def offer_rank(
     session: AsyncSession, order_id: uuid.UUID, courier_id: uuid.UUID, fee: Decimal
 ) -> dict[str, Any]:
-    """Where `fee` stands among the OTHER couriers' pending offers on the order. Counts only:
-    never another courier's price, id or name. rank = 1 + strictly cheaper others; ties
-    share the rank (`tied` others at the same price)."""
+    """Where `fee` stands among the OTHER couriers' pending offers on the order. rank = 1 +
+    strictly cheaper others; ties share the rank (`tied` others at the same price).
+    `other_fees`: the other pending prices, ascending, anonymous (never an id or a name): the
+    owner wants couriers to see the prices to beat (2026-09-30), `lowest_other` the cheapest."""
     others = (
         OrderOffer.order_id == order_id,
         OrderOffer.status == "pending",
@@ -80,7 +81,20 @@ async def offer_rank(
             ).where(*others)
         )
     ).one()
-    return {"rank": 1 + cheaper, "total": total + 1, "cheapest": cheaper == 0, "tied": tied}
+    fees = [
+        float(f)
+        for f in (
+            await session.execute(select(OrderOffer.proposed_fee).where(*others).order_by(OrderOffer.proposed_fee))
+        ).scalars()
+    ]
+    return {
+        "rank": 1 + cheaper,
+        "total": total + 1,
+        "cheapest": cheaper == 0,
+        "tied": tied,
+        "other_fees": fees,
+        "lowest_other": fees[0] if fees else None,
+    }
 
 
 async def _pending_offer_of(
