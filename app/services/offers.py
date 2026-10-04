@@ -19,7 +19,7 @@ from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, Us
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
-from app.services import step_notices
+from app.services import step_notices, text_filter
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user, dropped_by
@@ -49,7 +49,8 @@ def _parse_eta(value: Any) -> int | None:
 
 
 def _parse_message(value: Any) -> str | None:
-    return value.strip()[:MESSAGE_MAX] if isinstance(value, str) else None
+    # the offer's message is shown to the customer: objectionable words masked (App Review 1.2)
+    return text_filter.mask(value.strip()[:MESSAGE_MAX])[0] if isinstance(value, str) else None
 
 
 async def verified_courier(session: AsyncSession, user: CurrentUser) -> Courier:

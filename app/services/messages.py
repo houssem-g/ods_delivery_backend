@@ -34,6 +34,7 @@ from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
 from app.services import order_transitions as ot
+from app.services import text_filter
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.safety import blocked_pair, is_blocked
@@ -235,6 +236,7 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
         return 400, {"error": exc.error, **exc.extra}
     if (not content and attachment is None) or len(content) > MAX_CONTENT:
         return 400, {"error": "invalid_content", "max": MAX_CONTENT}
+    content, _ = text_filter.mask(content)  # App Review 1.2: objectionable words masked
     order = await load_order(session, order_id)
     if order is None:
         return 404, {"error": "order_not_found"}

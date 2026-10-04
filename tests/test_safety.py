@@ -214,3 +214,39 @@ async def test_courier_reports_the_customer_without_blocking(client, parties):
     assert await rows(UserBlock) == []
     async with SessionLocal() as s:
         assert (await s.get(Order, order.id)).status == "accepted"
+
+
+# ─────────────────────────── objectionable-word filter ───────────────────────────
+
+
+def test_text_filter_masks_strong_insults_only():
+    from app.services.text_filter import mask
+
+    assert mask("Bonjour, je suis en bas") == ("Bonjour, je suis en bas", False)
+    assert mask("espèce de CONNARD !") == ("espèce de ******* !", True)
+    assert mask("t'es un c0nnard") == ("t'es un *******", True)
+    assert mask("Connaaaard") == ("**********", True)
+    assert mask("yezzi ya zebi") == ("yezzi ya ****", True)
+    assert mask("ya 9a7ba") == ("ya *****", True)
+    assert mask("يا قَحْبَة") == ("يا *******", True)
+    # normal words that contain a blocked one are never touched
+    for fine in ("habite à Tunis", "ma3andich", "مرحبا، وين وصلت؟", "je prends du pain", ""):
+        assert mask(fine) == (fine, False)
+
+
+async def test_chat_and_offer_messages_are_filtered(client, parties):
+    order = await make_order(parties.customer, parties.courier)
+    res = await call(
+        client,
+        "sendOrderMessage",
+        parties.courier_user,
+        {"order_id": str(order.id), "content": "salut connard"},
+    )
+    assert res.status_code == 200 and res.json()["message"]["content"] == "salut *******"
+    open_order = await make_order(parties.customer)
+    res = await call(
+        client, "createOrderOffer", parties.courier_user,
+        {"order_id": str(open_order.id), "fee": 6, "eta_minutes": 20, "message": "j'arrive zebi"},
+    )  # fmt: skip
+    assert res.status_code == 200, res.text
+    assert res.json()["offer"]["message"] == "j'arrive ****"
