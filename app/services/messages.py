@@ -24,7 +24,7 @@ import uuid
 from datetime import UTC, timedelta
 from typing import Any
 
-from sqlalchemy import and_, exists, func, or_, select, true, update
+from sqlalchemy import and_, exists, func, not_, or_, select, true, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.entities.message import ENTITY as MESSAGE_ENTITY
@@ -36,6 +36,7 @@ from app.security.tokens import now_utc
 from app.services import order_transitions as ot
 from app.services.geo import as_float
 from app.services.notifications import notify
+from app.services.safety import blocked_pair, is_blocked
 from app.storage import keys, s3
 
 MAX_CONTENT = 1000
@@ -94,16 +95,25 @@ async def chat_role(
     verification = (
         await session.execute(select(Courier.verification).where(Courier.user_id == user.id))
     ).scalar_one_or_none()
-    if verification == "verified" and order.courier_id is None and order.status in OPEN_STATUSES:
+    if (
+        verification == "verified"
+        and order.courier_id is None
+        and order.status in OPEN_STATUSES
+        and not await is_blocked(session, user.id, order.customer_id)
+    ):
         return "bidder"
     return None
 
 
 def _visible(role: str, user: CurrentUser) -> Any:
-    """A bidder sees his own messages and the customer's only."""
-    if role != "bidder":
+    """A bidder sees his own messages and the customer's only. Nobody but an admin sees the
+    messages of someone he is in a block with (either way)."""
+    if role == "admin":
         return true()
-    return or_(messages.c.sender_id == user.id, messages.c.sender_role == "customer")
+    not_blocked = not_(blocked_pair(messages.c.sender_id, user.id))
+    if role != "bidder":
+        return not_blocked
+    return and_(not_blocked, or_(messages.c.sender_id == user.id, messages.c.sender_role == "customer"))
 
 
 def _incoming_unread(role: str, user: CurrentUser) -> Any:
@@ -250,6 +260,8 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
     recipient = order.customer_id if sender_role == "courier" else await courier_user_id(session, order)
     if recipient == user.id:
         recipient = None
+    if await is_blocked(session, user.id, recipient):
+        return 403, {"error": "blocked"}
 
     message = Message(
         order_id=order.id,
@@ -454,6 +466,7 @@ async def _fast_unread(session: AsyncSession, user: CurrentUser) -> list[dict[st
         messages.c.recipient_id == user.id,
         messages.c.read_at.is_(None),
         messages.c.sender_id.is_distinct_from(user.id),
+        not_(blocked_pair(messages.c.sender_id, user.id)),
         party_and_sender,
         newest_first=True,
         limit=MAX_UNREAD,
@@ -504,6 +517,7 @@ async def _full_unread(session: AsyncSession, user: CurrentUser) -> list[dict[st
         or_(*scope),
         messages.c.read_at.is_(None),
         messages.c.sender_id.is_distinct_from(user.id),
+        not_(blocked_pair(messages.c.sender_id, user.id)),
         newest_first=True,
         limit=MAX_UNREAD,
     )
@@ -536,6 +550,8 @@ async def signal_typing(session: AsyncSession, user: CurrentUser, payload: dict[
     other = await courier_user_id(session, order) if role == "customer" else order.customer_id
     if order.status not in ot.LIVE_STATUSES or other is None or other == user.id:
         return 409, {"error": "order_not_live", "status": order.status}
+    if await is_blocked(session, user.id, other):
+        return 403, {"error": "blocked"}
     emit(
         session, "Message", "signal", order.id, audience=[other],
         data={"kind": "typing", "order_id": str(order.id), "sender_role": role},

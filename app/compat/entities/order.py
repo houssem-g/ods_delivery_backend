@@ -62,6 +62,7 @@ from app.services.commission import COMMISSION_KINDS, LEGACY_STATUS
 from app.services.geo import lat_of, lng_of
 from app.services.offer_intents import INTENT_TTL
 from app.services.orders import TEST_ORDER_SQL, is_qa_account
+from app.services.safety import blocked_pair
 
 orders = Order.__table__
 customer = User.__table__.alias("order_customer")
@@ -125,7 +126,12 @@ def read_policy(user: CurrentUser) -> Any:
         if is_qa_account(user.email)
         else not_(orders.c.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL))
     )
-    open_to_bid = and_(orders.c.status.in_(ot.OPEN_STATUSES), verified_courier, not_qa)
+    open_to_bid = and_(
+        orders.c.status.in_(ot.OPEN_STATUSES),
+        verified_courier,
+        not_qa,
+        not_(blocked_pair(orders.c.customer_id, user.id)),
+    )
     return or_(parties(user), open_to_bid)
 
 

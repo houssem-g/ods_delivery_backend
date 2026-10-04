@@ -23,6 +23,7 @@ from app.services import step_notices
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user, dropped_by
+from app.services.safety import is_blocked
 
 MAX_FEE_TND = Decimal(
     "200"
@@ -287,6 +288,8 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
         raise OrderRefused(409, "order_not_open", status=order.status)
     if user.id in await dropped_by(session, order.id):
         raise OrderRefused(409, "order_dropped")  # he cancelled this delivery himself
+    if await is_blocked(session, user.id, order.customer_id):
+        raise OrderRefused(409, "blocked")
     already = (
         await session.execute(
             select(OrderOffer.id).where(
@@ -368,6 +371,8 @@ async def accept_offer(
         raise OrderRefused(409, "offer_not_pending")
     courier = await session.get(Courier, selected.courier_id)
     courier_user = await session.get(User, courier.user_id) if courier else None
+    if courier is not None and await is_blocked(session, courier.user_id, order.customer_id):
+        raise OrderRefused(409, "blocked")
     if (
         courier is None
         or courier_user is None

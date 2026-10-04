@@ -35,6 +35,7 @@ from app.models.orders import (
     OrderStop,
     OrderTracking,
 )
+from app.models.safety import UserBlock, UserReport
 from app.models.views import courier_stats, customer_stats
 
 __all__ = [
@@ -75,6 +76,8 @@ __all__ = [
     "TranslationUsage",
     "User",
     "UserAddress",
+    "UserBlock",
+    "UserReport",
     "courier_stats",
     "customer_stats",
 ]

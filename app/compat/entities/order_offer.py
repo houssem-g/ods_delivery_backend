@@ -9,12 +9,12 @@ as an entity row, like a Base44 delete); admins too.
 import uuid
 from typing import Any
 
-from sqlalchemy import Text, cast, func, literal, or_, select, true
+from sqlalchemy import Text, and_, cast, exists, func, literal, not_, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.registry import EntityDef, LegacyField, register
 from app.errors import ApiError
-from app.models import Courier, Order, OrderOffer, User, courier_stats
+from app.models import Courier, Order, OrderOffer, User, UserBlock, courier_stats
 from app.security.deps import CurrentUser
 from app.services.offers import withdraw_offer
 from app.services.orders import OrderRefused
@@ -25,13 +25,23 @@ offer_customer = User.__table__.alias("offer_customer")
 offer_courier = Courier.__table__.alias("offer_courier")
 offer_courier_user = User.__table__.alias("offer_courier_user")
 couriers = Courier.__table__
+block_courier = Courier.__table__.alias("block_courier")
 
 
 def read_policy(user: CurrentUser) -> Any:
     if user.is_admin:
         return true()
     mine = select(couriers.c.id).where(couriers.c.user_id == user.id)
-    return or_(offers.c.courier_id.in_(mine), offer_order.c.customer_id == user.id)
+    blocks = UserBlock.__table__
+    blocked = exists().where(
+        block_courier.c.id == offers.c.courier_id,
+        or_(
+            and_(blocks.c.blocker_id == block_courier.c.user_id, blocks.c.blocked_id == user.id),
+            and_(blocks.c.blocker_id == user.id, blocks.c.blocked_id == block_courier.c.user_id),
+        ),
+    )
+    received = and_(offer_order.c.customer_id == user.id, not_(blocked))
+    return or_(offers.c.courier_id.in_(mine), received)
 
 
 def _customer_or_admin(user: CurrentUser) -> Any:

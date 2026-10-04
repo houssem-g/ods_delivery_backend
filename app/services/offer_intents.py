@@ -22,6 +22,7 @@ from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
 from app.services.offers import verified_courier
 from app.services.orders import OrderRefused, dropped_by
+from app.services.safety import is_blocked
 
 INTENT_TTL = timedelta(minutes=3)
 PURGE_AFTER = timedelta(minutes=10)
@@ -62,6 +63,8 @@ async def signal(session: AsyncSession, user: CurrentUser, payload: dict[str, An
         raise OrderRefused(409, "order_not_open", status=order.status)
     if user.id in await dropped_by(session, order.id):
         raise OrderRefused(409, "order_dropped")
+    if await is_blocked(session, user.id, order.customer_id):
+        raise OrderRefused(409, "blocked")
     stmt = insert(OfferIntent).values(order_id=order.id, courier_id=courier.id, updated_at=now)
     await session.execute(
         stmt.on_conflict_do_update(index_elements=["order_id", "courier_id"], set_={"updated_at": now})

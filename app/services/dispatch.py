@@ -26,6 +26,7 @@ from app.services import order_texts
 from app.services.notifications import notify
 from app.services.order_transitions import now_utc
 from app.services.orders import dropped_by, first_stop, is_test_order, signup_attribution, stop_coordinates
+from app.services.safety import blocked_with
 
 BUSY_STATUSES = ("accepted", "at_shop", "purchased", "on_the_way")
 MAX_FAN_OUT = 200
@@ -107,6 +108,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     preferred_id: uuid.UUID | None = None
     preferred_notified = False
     dropped = await dropped_by(session, order.id)  # couriers who gave it up: never offered again
+    dropped |= await blocked_with(session, order.customer_id)  # a block either way: never offered
 
     if order.preferred_courier_id is not None:
         courier, reason, distance = await _preferred(session, order, stop, shop)
