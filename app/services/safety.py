@@ -166,6 +166,21 @@ async def _target(
 
 # ─────────────────────────── blockUser / unblockUser / listBlockedUsers ───────────────────────────
 
+LIVE = ("accepted", "at_shop", "price_confirmation_needed", "purchased", "on_the_way", "client_no_response")
+RELEASABLE = ("accepted", "at_shop", "price_confirmation_needed")  # = cancellation.RELEASABLE_AFTER_BLOCK
+
+
+async def _live_order(
+    session: AsyncSession, user: CurrentUser, order: Order | None, target: uuid.UUID
+) -> dict[str, Any] | None:
+    """The customer just blocked the courier of this running order: may he still give it to someone
+    else (before the purchase: releaseBlockedCourier)? None in every other case."""
+    if order is None or order.customer_id != user.id or order.status not in LIVE:
+        return None
+    if await _courier_user(session, order.courier_id) != target:
+        return None
+    return {"id": str(order.id), "status": order.status, "releasable": order.status in RELEASABLE}
+
 
 async def _block(session: AsyncSession, blocker: uuid.UUID, blocked: uuid.UUID) -> bool:
     """True when the block is new."""
@@ -185,13 +200,18 @@ def _signal(session: AsyncSession, *users: uuid.UUID) -> None:
 
 
 async def block_user(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
-    target, _, _, error = await _target(session, user, payload)
+    target, order, _, error = await _target(session, user, payload)
     if error:
         return error
     assert target is not None
     created = await _block(session, user.id, target)
     _signal(session, user.id, target)
-    return 200, {"success": True, "blocked_user_id": str(target), "already_blocked": not created}
+    return 200, {
+        "success": True,
+        "blocked_user_id": str(target),
+        "already_blocked": not created,
+        "live_order": await _live_order(session, user, order, target),
+    }
 
 
 async def unblock_user(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
@@ -302,7 +322,12 @@ async def report_user(session: AsyncSession, user: CurrentUser, payload: dict[st
             body_ar=f"{label_ar} — الطلب #{ref}. للمعالجة في الإدارة › التبليغات.",
             metadata={"report_id": str(report.id), "reason": reason, "recipient_role": "admin"},
         )
-    return 200, {"success": True, "report_id": str(report.id), "blocked": blocked}
+    return 200, {
+        "success": True,
+        "report_id": str(report.id),
+        "blocked": blocked,
+        "live_order": await _live_order(session, user, order, target) if blocked else None,
+    }
 
 
 # ─────────────────────────── admin: listUserReports / resolveUserReport ───────────────────────────

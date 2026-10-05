@@ -92,6 +92,19 @@ def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool
     }
 
 
+def released_after_block(shop_name: str | None) -> Text:
+    """To the courier the customer blocked: the order is taken back (before the purchase)."""
+    shop = f" ({shop_name})" if shop_name else ""
+    return {
+        "title_ar": "❌ أُلغي تكليفك بالطلب",
+        "title_fr": "❌ Commande retirée",
+        "body_ar": f"اختار العميل مندوباً آخر لهذا الطلب{shop}. لا تشترِ المواد.",
+        "body_fr": (
+            f"Le client a choisi un autre livreur pour cette commande{shop}. N'achetez pas les articles."
+        ),
+    }
+
+
 # --- expireStaleOrders --------------------------------------------------------------------------
 
 

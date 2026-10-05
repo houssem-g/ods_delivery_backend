@@ -38,6 +38,7 @@ from app.services.dispatch import dispatch_order
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import OrderRefused, courier_of_user, first_stop, is_test_order, mirror_incidents
+from app.services.safety import is_blocked
 
 log = logging.getLogger("odsd.cancellation")
 CUSTOMER_CANCELLABLE = ("pending", "offers_received", "accepted")
@@ -260,6 +261,72 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                 await dispatch_order(session, order)
         except Exception:
             log.exception("cancelOrder: re-dispatch failed for %s", order.id)
+
+
+# --- releaseBlockedCourier ---------------------------------------------------------------------------
+
+# Before the purchase: the courier has spent nothing yet, the order can go to someone else.
+RELEASABLE_AFTER_BLOCK = ("accepted", "at_shop", "price_confirmation_needed")
+RELEASE_REASON = "blocked_by_customer"
+
+
+async def release_blocked_courier(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> dict:
+    """The customer blocked the courier of his order and chose "Chercher un autre livreur": the
+    courier leaves the order (no penalty for anyone), it goes back to 'pending' and is offered to
+    the other couriers (never to the blocked one). Only before the purchase."""
+    order = await ot.lock_order(session, payload.get("order_id"))
+    if order is None:
+        raise OrderRefused(404, "order_not_found")
+    if order.customer_id != user.id:
+        raise OrderRefused(403, "Unauthorized")
+    courier = await session.get(Courier, order.courier_id) if order.courier_id else None
+    if courier is None:
+        raise OrderRefused(409, "no_courier")
+    if order.status not in RELEASABLE_AFTER_BLOCK:
+        raise OrderRefused(409, "already_purchased", status=order.status)
+    if not await is_blocked(session, user.id, courier.user_id):
+        raise OrderRefused(409, "not_blocked")
+
+    now = ot.now_utc()
+    await ot.transition(session, order, "pending", user, "releaseBlockedCourier", RELEASE_REASON,
+                        cancelled_by="customer")  # fmt: skip
+    order.courier_id = None
+    order.delivery_fee = None
+    await _reset_stops(session, order)
+    await ot.clear_live_position(session, order.id)
+    await session.flush()
+    await stock_checks.close_pending(session, order)
+    await session.execute(
+        OrderOffer.__table__.update()
+        .where(
+            OrderOffer.order_id == order.id,
+            OrderOffer.courier_id == courier.id,
+            OrderOffer.status.in_(("pending", "accepted")),
+        )
+        .values(status="expired", decided_at=now)
+    )
+    for offer_id in (
+        await session.execute(
+            select(OrderOffer.id).where(OrderOffer.order_id == order.id, OrderOffer.courier_id == courier.id)
+        )
+    ).scalars():
+        emit(session, "OrderOffer", "update", offer_id)
+    stop = await first_stop(session, order.id)
+    await notify_always_pushed(
+        session,
+        user_id=courier.user_id,
+        type_="order_cancelled",
+        order_id=order.id,
+        metadata={"reason": RELEASE_REASON, "cancelled_by": "customer", "recipient_role": "courier"},
+        **order_texts.released_after_block(stop.name if stop else None),
+    )
+    if not is_test_order(order.items_text):
+        try:  # the release is done: a failed broadcast must not undo it
+            async with session.begin_nested():
+                await dispatch_order(session, order)
+        except Exception:
+            log.exception("releaseBlockedCourier: dispatch failed for %s", order.id)
+    return {"success": True, "status": order.status}
 
 
 # --- getCancellationPolicy ---------------------------------------------------------------------------

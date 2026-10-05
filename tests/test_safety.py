@@ -31,6 +31,7 @@ async def test_customer_blocks_the_courier_of_his_order(client, parties):
     assert res.status_code == 200, res.text
     assert res.json() == {
         "success": True, "blocked_user_id": str(parties.courier_user.id), "already_blocked": False,
+        "live_order": {"id": str(order.id), "status": "accepted", "releasable": True},
     }  # fmt: skip
     again = await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})
     assert again.json()["already_blocked"] is True
@@ -250,3 +251,56 @@ async def test_chat_and_offer_messages_are_filtered(client, parties):
     )  # fmt: skip
     assert res.status_code == 200, res.text
     assert res.json()["offer"]["message"] == "j'arrive ****"
+
+
+# ─────────────────────────── blocking the courier of a running order ───────────────────────────
+
+
+async def test_customer_blocks_his_courier_then_chooses_another_one(client, parties):
+    order = await make_order(parties.customer, parties.courier, status="accepted")
+    offer = await make_offer(order, parties.courier, status="accepted")
+    res = await call(client, "releaseBlockedCourier", parties.customer, {"order_id": str(order.id)})
+    assert res.status_code == 409 and res.json()["error"] == "not_blocked"
+
+    res = await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})
+    assert res.json()["live_order"] == {"id": str(order.id), "status": "accepted", "releasable": True}
+    assert (
+        await call(client, "releaseBlockedCourier", parties.stranger, {"order_id": str(order.id)})
+    ).status_code == 403
+
+    res = await call(client, "releaseBlockedCourier", parties.customer, {"order_id": str(order.id)})
+    assert res.status_code == 200 and res.json() == {"success": True, "status": "pending"}
+    async with SessionLocal() as s:
+        fresh = await s.get(Order, order.id)
+        assert fresh.status == "pending" and fresh.courier_id is None and fresh.delivery_fee is None
+        assert (await s.get(type(offer), offer.id)).status == "expired"
+    [note] = await rows(Notification, Notification.user_id == parties.courier_user.id)
+    assert note.type == "order_cancelled" and note.title_fr == "❌ Commande retirée"
+    # gone for the blocked courier: he no longer sees it, cannot bid
+    hidden = await client.get(f"/api/entities/Order/{order.id}", headers=auth(parties.courier_user))
+    assert hidden.status_code == 404
+    again = await call(client, "releaseBlockedCourier", parties.customer, {"order_id": str(order.id)})
+    assert again.status_code == 409 and again.json()["error"] == "no_courier"
+
+
+async def test_after_the_purchase_the_delivery_goes_on(client, parties):
+    order = await make_order(parties.customer, parties.courier, status="purchased")
+    res = await call(
+        client,
+        "reportUser",
+        parties.customer,
+        {"order_id": str(order.id), "reason": "harassment", "block": True},
+    )
+    assert res.json()["live_order"] == {"id": str(order.id), "status": "purchased", "releasable": False}
+    res = await call(client, "releaseBlockedCourier", parties.customer, {"order_id": str(order.id)})
+    assert res.status_code == 409 and res.json()["error"] == "already_purchased"
+    # no running order with that person: nothing to decide
+    old = await make_order(
+        parties.customer, parties.courier, status="delivered", delivered_at=datetime.now(UTC)
+    )
+    res = await call(client, "blockUser", parties.customer, {"order_id": str(old.id)})
+    assert res.json()["live_order"] is None
+    # the courier blocking the customer is never asked (only the customer chooses)
+    live = await make_order(parties.customer, parties.courier, status="accepted")
+    res = await call(client, "blockUser", parties.courier_user, {"order_id": str(live.id)})
+    assert res.json()["live_order"] is None
