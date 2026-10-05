@@ -292,6 +292,8 @@ async def release_blocked_courier(session: AsyncSession, user: CurrentUser, payl
                         cancelled_by="customer")  # fmt: skip
     order.courier_id = None
     order.delivery_fee = None
+    # the app tells "the courier cancelled" from cancelled_by: this one is the customer's choice
+    order.cancel_reason, order.cancelled_by = RELEASE_REASON, "customer"
     await _reset_stops(session, order)
     await ot.clear_live_position(session, order.id)
     await session.flush()
