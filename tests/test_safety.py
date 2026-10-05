@@ -96,16 +96,19 @@ async def test_block_stops_the_chat_both_ways(client, parties):
     await make_message(order, parties.courier_user, "courier", parties.customer, body="avant")
     await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})
 
-    for sender in (parties.customer, parties.courier_user):
+    # each side is told who blocked: the customer can unblock, the courier was blocked
+    for sender, who in ((parties.customer, "me"), (parties.courier_user, "them")):
         res = await call(client, "sendOrderMessage", sender, {"order_id": str(order.id), "content": "hey"})
-        assert res.status_code == 403 and res.json()["error"] == "blocked"
+        assert res.status_code == 403 and res.json() == {"error": "blocked", "blocked_by": who}
+        res = await call(client, "getOrderMessages", sender, {"order_id": str(order.id)})
+        assert res.status_code == 200 and res.json()["blocked_by"] == who
     res = await call(client, "getOrderMessages", parties.customer, {"order_id": str(order.id)})
     assert res.status_code == 200 and res.json()["messages"] == []
     unread = await call(client, "listMyUnreadMessages", parties.customer, {"mode": "fast"})
     assert unread.json()["messages"] == []
     # the admin still sees everything (to judge a report)
     res = await call(client, "getOrderMessages", parties.admin, {"order_id": str(order.id)})
-    assert [m["content"] for m in res.json()["messages"]] == ["avant"]
+    assert [m["content"] for m in res.json()["messages"]] == ["avant"] and res.json()["blocked_by"] is None
 
     await call(client, "unblockUser", parties.customer, {"user_id": str(parties.courier_user.id)})
     res = await call(

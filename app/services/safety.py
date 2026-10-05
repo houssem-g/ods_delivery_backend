@@ -64,6 +64,30 @@ async def is_blocked(session: AsyncSession, a: uuid.UUID | None, b: uuid.UUID | 
     return bool((await session.execute(select(blocked_pair(a, b)))).scalar())
 
 
+async def block_direction(session: AsyncSession, me: uuid.UUID, other: uuid.UUID | None) -> str | None:
+    """'me' when I blocked the other person (also when both did: I can unblock), 'them' when only
+    they blocked me, None without a block. The app words its banner after it."""
+    if other is None or other == me:
+        return None
+    rows = (
+        (
+            await session.execute(
+                select(blocks.c.blocker_id).where(
+                    or_(
+                        and_(blocks.c.blocker_id == me, blocks.c.blocked_id == other),
+                        and_(blocks.c.blocker_id == other, blocks.c.blocked_id == me),
+                    )
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if me in rows:
+        return "me"
+    return "them" if rows else None
+
+
 async def blocked_with(session: AsyncSession, user_id: uuid.UUID) -> set[uuid.UUID]:
     """Every user in a block with `user_id`, whoever blocked whom."""
     rows = await session.execute(

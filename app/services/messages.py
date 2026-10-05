@@ -37,7 +37,7 @@ from app.services import order_transitions as ot
 from app.services import text_filter
 from app.services.geo import as_float
 from app.services.notifications import notify
-from app.services.safety import blocked_pair, is_blocked
+from app.services.safety import block_direction, blocked_pair, is_blocked
 from app.storage import keys, s3
 
 MAX_CONTENT = 1000
@@ -262,8 +262,9 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
     recipient = order.customer_id if sender_role == "courier" else await courier_user_id(session, order)
     if recipient == user.id:
         recipient = None
-    if await is_blocked(session, user.id, recipient):
-        return 403, {"error": "blocked"}
+    blocked_by = await block_direction(session, user.id, recipient)
+    if blocked_by:
+        return 403, {"error": "blocked", "blocked_by": blocked_by}
 
     message = Message(
         order_id=order.id,
@@ -412,8 +413,11 @@ async def get_order_messages(session: AsyncSession, user: CurrentUser, payload: 
         newest_first=True, limit=_limit(payload.get("limit")),
     )  # fmt: skip
     docs = await with_translations(session, await enrich(session, list(reversed(latest)), user), user)
+    # a block with the other party of this chat: 'me' (I blocked) / 'them' (I was blocked) / None
+    other = await courier_user_id(session, order) if role == "customer" else order.customer_id
+    blocked_by = None if role == "admin" else await block_direction(session, user.id, other)
     if payload.get("mark_read") is not True:
-        return 200, {"success": True, "messages": docs}
+        return 200, {"success": True, "messages": docs, "blocked_by": blocked_by}
     shown = [uuid.UUID(d["id"]) for d in docs]
     marked = {
         str(i)
@@ -423,6 +427,7 @@ async def get_order_messages(session: AsyncSession, user: CurrentUser, payload: 
         "success": True,
         "messages": [{**d, "is_read": True} if d["id"] in marked else d for d in docs],
         "marked": len(marked),
+        "blocked_by": blocked_by,
     }
 
 
