@@ -214,48 +214,73 @@ def _dedupe_key(doc: dict[str, Any]) -> str:
 
 async def search_places(session: AsyncSession, q: PlaceQuery) -> list[dict[str, Any]]:
     """searchPlaces: places within the radius, scored 0.45 text + 0.25 distance + 0.2
-    category + 0.1 quality, best first (then nearest), deduplicated by name + position."""
+    category + 0.1 quality, best first (then nearest), deduplicated by name + position.
+
+    With a typed text (QA 06/10, B1), the search is by NAME, in every category:
+    - the category no longer filters, it only lifts the places of that category (+0.2):
+      « Monoprix » typed while « Top cafés » is selected must still find the Monoprix;
+    - only places matching the text are returned: every word if some place has them all,
+      else at least one word (a typo in one word still finds something). No more
+      dentists, banks or petrol stations under a « Monoprix » search.
+    Without text, the category stays a filter (browsing a category)."""
     center = point(q.lat, q.lng)
     distance_m = func.ST_Distance(places.c.location, center, False)
     distance_km_2 = func.round(cast(distance_m / 1000.0, Numeric), 2)
 
-    if q.tokens:
-        matchers = await _token_matchers(session, q.tokens)
-        matched = sum((case((m, 1), else_=0) for m in matchers), start=literal(0))
-        text_score = cast(matched, Float) / float(len(q.tokens))
-    else:
-        text_score = literal(0.5, Float)
-    distance_score = func.greatest(0.0, 1.0 - (distance_m / 1000.0) / max(q.radius_km, 1.0))
-    quality = func.least(
-        1.0, func.greatest(0.0, func.coalesce(quality_fraction(func.nullif(places.c.quality_score, 0)), 0.6))
-    )
-    # The category filter below keeps only matching places: its score is always 1.
-    raw_score = 0.45 * text_score + 0.25 * distance_score + 0.2 + 0.1 * quality
-    score = func.round(cast(raw_score * 1000.0, Numeric)) / 1000.0
-
-    where = [
+    where: list[ColumnElement[bool]] = [
         func.ST_DWithin(places.c.location, center, q.radius_km * 1000.0 + 10.0, False),
         distance_km_2 <= q.radius_km,
         await lenient_filter(session, places.c.governorate, q.governorate),
         await lenient_filter(session, places.c.city, q.city),
     ]
+    in_category: ColumnElement[bool] | None = None
     if q.category:
         categories = await _distinct(session, places.c.category)
-        where.append(
-            places.c.category.in_(_categories_where(categories, lambda c: same_category(c, q.category)))
+        in_category = places.c.category.in_(
+            _categories_where(categories, lambda c: same_category(c, q.category))
         )
-    # (Deno also dropped scores < 0.2 when a text was given: the category term alone is 0.2.)
+
+    matched: ColumnElement[Any] | None = None
+    if q.tokens:
+        matchers = await _token_matchers(session, q.tokens)
+        matched = sum((case((m, 1), else_=0) for m in matchers), start=literal(0))
+        text_score = cast(matched, Float) / float(len(q.tokens))
+        category_score = (
+            case((in_category, 0.2), else_=0.0) if in_category is not None else literal(0.2, Float)
+        )
+    else:
+        text_score = literal(0.5, Float)
+        # The category filter below keeps only matching places: its score is always 1.
+        category_score = literal(0.2, Float)
+        if in_category is not None:
+            where.append(in_category)
+    distance_score = func.greatest(0.0, 1.0 - (distance_m / 1000.0) / max(q.radius_km, 1.0))
+    quality = func.least(
+        1.0, func.greatest(0.0, func.coalesce(quality_fraction(func.nullif(places.c.quality_score, 0)), 0.6))
+    )
+    raw_score = 0.45 * text_score + 0.25 * distance_score + category_score + 0.1 * quality
+    score = func.round(cast(raw_score * 1000.0, Numeric)) / 1000.0
 
     stmt = (
         select(*place_columns(), distance_km_2.label("distance_km"), score.label("score"))
         .where(*where)
         .order_by(score.desc(), distance_km_2.asc(), places.c.id.asc())
     )
-    batch = max(q.max_results * 2, 50)
+    if matched is None:
+        return await _collect_places(session, stmt, q.max_results)
+    every_word = await _collect_places(session, stmt.where(matched == len(q.tokens)), q.max_results)
+    if every_word or len(q.tokens) == 1:
+        return every_word
+    return await _collect_places(session, stmt.where(matched >= 1), q.max_results)
+
+
+async def _collect_places(session: AsyncSession, stmt: Any, max_results: int) -> list[dict[str, Any]]:
+    """Pages through `stmt` until `max_results` distinct places (name + position)."""
+    batch = max(max_results * 2, 50)
     offset = 0
     seen: set[str] = set()
     found: list[dict[str, Any]] = []
-    while len(found) < q.max_results:
+    while len(found) < max_results:
         rows = (await session.execute(stmt.limit(batch).offset(offset))).all()
         for row in rows:
             doc = place_document(row)
@@ -266,7 +291,7 @@ async def search_places(session: AsyncSession, q: PlaceQuery) -> list[dict[str, 
                 continue
             seen.add(key)
             found.append(doc)
-            if len(found) == q.max_results:
+            if len(found) == max_results:
                 break
         if len(rows) < batch:
             break
@@ -400,8 +425,8 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
             "address": row.address or "",
             "city": row.city or "",
         }
-        if not bbox_category_matches(category, q.category):
-            continue
+        if not tokens and not bbox_category_matches(category, q.category):
+            continue  # a typed name is searched in every category (B1)
         if q.min_rating:
             continue  # rating 0 never passes a minimum
         haystack = text_norm.fold_trim(" ".join([item["name"], item["address"], item["city"], category]))
@@ -413,7 +438,8 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
 async def _bbox_place_filters(session: AsyncSession, q: BboxQuery) -> list[ColumnElement[bool]]:
     where = _in_bbox_where(places.c.location, q.bbox)
     rating = func.coalesce(quality_fraction(), 0.0)
-    if q.category:
+    tokens = text_norm.tokenize(q.search_query)
+    if q.category and not tokens:  # a typed name is searched in every category (B1)
         categories = await _distinct(session, places.c.category)
         where.append(
             places.c.category.in_(
@@ -423,7 +449,6 @@ async def _bbox_place_filters(session: AsyncSession, q: BboxQuery) -> list[Colum
     if q.min_rating:
         where.append(rating >= q.min_rating)
         where.append(rating > 0)
-    tokens = text_norm.tokenize(q.search_query)
     if tokens:
         where.extend(await _token_matchers(session, tokens, empty_category_as="place"))
     return where

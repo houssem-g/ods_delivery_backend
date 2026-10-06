@@ -143,7 +143,10 @@ async def test_each_step_one_notice_even_with_the_app_resending(client, world):
         assert len(await notifications(world.customer, type_)) == 1, type_
     notes = {n.type: n for n in await notifications(world.customer)}
     assert notes["at_shop"].body_fr == "Le livreur est chez Monoprix et fait vos achats"
-    assert notes["purchased"].body_fr == "Montant des achats : 20.000 DT (selon le reçu)"
+    # no receipt photo in this step: never « selon le reçu » (N16)
+    assert (
+        notes["purchased"].body_fr == "Montant des achats : 20.000 DT (sans ticket, annoncé par le livreur)"
+    )
     assert (
         notes["on_the_way"].body_fr == "Arrivée dans ~3 min. Préparez le paiement en espèces."
     )  # the ride, not the offer's 12 min (B7)
@@ -216,3 +219,27 @@ async def test_server_side_notices_are_idempotent(world):
         assert await step_notices.courier_step(session, row, "purchased", "on_the_way") is False
         assert await step_notices.courier_step(session, row, "on_the_way", "client_no_response") is False
     assert len(await notifications(world.customer, "on_the_way")) == 1
+
+
+# --- QA 06/10, N16: « (selon le reçu) » only when there is a receipt -------------------------
+
+
+async def test_purchased_notice_says_receipt_only_when_there_is_one(client, world):
+    from tests.test_order_steps import receipt
+
+    with_ticket = await world.order(status="at_shop", courier=world.courier, fee="7")
+    url = await receipt(world, "n16.jpg")
+    r = await step(
+        client, world, with_ticket, {"status": "purchased", "purchase_amount": 12.5, "receipt_photo_url": url}
+    )
+    assert r.status_code == 200, r.text
+    without = await world.order(status="at_shop", courier=world.courier, fee="7")
+    r = await step(client, world, without, {"status": "purchased", "purchase_amount": 2.4})
+    assert r.status_code == 200, r.text
+
+    by_order = {n.order_id: n for n in await notifications(world.customer, "purchased")}
+    ticket, no_ticket = by_order[with_ticket.id], by_order[without.id]
+    assert ticket.body_fr == "Montant des achats : 12.500 DT (selon le reçu)"
+    assert ticket.body_ar == "مبلغ المشتريات: 12.500 د.ت (حسب الوصل)"
+    assert no_ticket.body_fr == "Montant des achats : 2.400 DT (sans ticket, annoncé par le livreur)"
+    assert no_ticket.body_ar == "مبلغ المشتريات: 2.400 د.ت (بدون وصل، حسب ما أعلنه المندوب)"

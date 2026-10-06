@@ -4,8 +4,10 @@ functions (dispatchOrderToCouriers, cancelOrder, expireStaleOrders, reportOrderI
 Text = dict[str, str]
 
 
-def _km(value: float) -> str:
-    return f"{value:.1f}"
+def _km(value: float, lang: str = "fr") -> str:
+    """« 5,0 » in French (decimal comma, QA B79: « 5.0 km »), « 5.0 » in Arabic, like the app."""
+    text = f"{value:.1f}"
+    return text if lang == "ar" else text.replace(".", ",")
 
 
 def minutes_ar(n: int) -> str:
@@ -38,14 +40,14 @@ def new_order(items: str, shop_name: str | None, distance_km: float) -> Text:
     return {
         "title_ar": "🎯 طلب جديد متاح",
         "title_fr": "🎯 Nouvelle commande disponible",
-        "body_ar": f"{items} من {shop_name} - {_km(distance_km)} كم",
+        "body_ar": f"{items} من {shop_name} - {_km(distance_km, 'ar')} كم",
         "body_fr": f"{items} de {shop_name} - À {_km(distance_km)} km",
     }
 
 
 def new_order_preferred(client: str, items: str, shop_name: str | None, distance_km: float | None) -> Text:
     dist_fr = "" if distance_km is None else f" - À {_km(distance_km)} km"
-    dist_ar = "" if distance_km is None else f" - {_km(distance_km)} كم"
+    dist_ar = "" if distance_km is None else f" - {_km(distance_km, 'ar')} كم"
     return {
         "title_ar": f"⭐ حريفك {client} قدّم طلباً" if client else "⭐ حريفك قدّم طلباً",
         "title_fr": f"⭐ Votre client {client} a passé une commande"
@@ -106,12 +108,18 @@ def offer_closed_by_customer_cancel(shop_name: str | None) -> Text:
 
 def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool) -> Text:
     if verified_no_response:
-        body_ar = "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي طلبك وسُجّلت حادثة عدم رد."
-        body_fr = (
-            "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : votre commande "
-            "est annulée et un incident de non-réponse est enregistré."
-        )
-    elif hot_deal:
+        # the courier did nothing wrong: the title doesn't blame him (QA 06/10 B30), same title as
+        # after a resale (createHotDeal)
+        return {
+            "title_ar": "❌ تم إلغاء طلبك",
+            "title_fr": "❌ Commande annulée",
+            "body_ar": "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي طلبك وسُجّلت حادثة عدم رد.",
+            "body_fr": (
+                "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : votre commande "
+                "est annulée et un incident de non-réponse est enregistré."
+            ),
+        }
+    if hot_deal:
         body_ar = f"السبب: {reason_text(reason, 'ar')}. تم إلغاء الطلب."
         body_fr = f"Raison : {reason_text(reason, 'fr')}. La commande est annulée."
     else:
@@ -512,14 +520,18 @@ def _of_shop(title_fr: str, title_ar: str, shop_name: str | None) -> tuple[str, 
     return f"{title_fr} · {shop}", f"{title_ar} · {shop}"
 
 
-def purchased(amount: object, shop_name: str | None = None) -> Text:
+def purchased(amount: object, shop_name: str | None = None, with_receipt: bool = True) -> Text:
+    """« Achat effectué »: the amount is « selon le reçu » only when the courier photographed
+    one; without a ticket it is the amount he announced (QA 06/10, N16)."""
     title_fr, title_ar = _of_shop("🛍️ Achat effectué", "🛍️ تم الشراء", shop_name)
     if amount:
+        source_fr = "selon le reçu" if with_receipt else "sans ticket, annoncé par le livreur"
+        source_ar = "حسب الوصل" if with_receipt else "بدون وصل، حسب ما أعلنه المندوب"
         return {
             "title_ar": title_ar,
             "title_fr": title_fr,
-            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت (حسب الوصل)",
-            "body_fr": f"Montant des achats : {_money(amount)} DT (selon le reçu)",
+            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت ({source_ar})",
+            "body_fr": f"Montant des achats : {_money(amount)} DT ({source_fr})",
         }
     return {
         "title_ar": title_ar,

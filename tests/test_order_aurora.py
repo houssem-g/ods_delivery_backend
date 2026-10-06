@@ -69,6 +69,8 @@ async def test_the_courier_ticks_his_basket(client, world):
 async def test_picked_items_while_accepted_and_during_a_stock_check(client, world):
     order = await world.order(status="accepted", courier=world.courier, fee="5", items="Pain\nLait")
     assert (await write(client, world, order, {"picked_items": [1]})).status_code == 200
+    # a report is made from the shop (B58)
+    assert (await write(client, world, order, {"status": "at_shop"})).status_code == 200
     r = await call(
         client,
         world.courier_user,

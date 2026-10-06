@@ -34,7 +34,7 @@ async def handle(
         user.is_admin or order.customer_id == user.id or await is_assigned_courier(session, order, user.id)
     ):
         return 403, {"error": "Forbidden"}
-    policy = courier_policy(order.status) if actor == "courier" else customer_policy(order.status)
+    policy = courier_policy(order) if actor == "courier" else customer_policy(order.status)
     return 200, {
         "success": True,
         "actor": actor,

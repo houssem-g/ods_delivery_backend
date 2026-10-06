@@ -45,7 +45,7 @@ async def handle(
     rows = (
         await session.execute(select(Courier.id, Courier.id_document_key).where(Courier.id.in_(ids)))
     ).all()
-    expires_at = legacy_datetime(ot.now_utc() + timedelta(seconds=SIGNED_URL_SECONDS)) + "Z"
+    expires_at = legacy_datetime(ot.now_utc() + timedelta(seconds=SIGNED_URL_SECONDS))
     for courier_id, key in rows:
         if not key or not key.startswith("private/"):
             continue

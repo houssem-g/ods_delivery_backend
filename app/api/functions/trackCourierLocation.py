@@ -44,6 +44,6 @@ async def handle(
         "validation_status": "all_checks_passed",
         "lat": lat,
         "lng": lng,
-        "updated_at": legacy_datetime(ot.now_utc()) + "Z",
+        "updated_at": legacy_datetime(ot.now_utc()),
         "live_orders": len(live),
     }

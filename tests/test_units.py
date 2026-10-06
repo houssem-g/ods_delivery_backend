@@ -100,6 +100,6 @@ def test_storage_key_rules():
 
 def test_legacy_dates():
     assert legacy_datetime(None) is None
-    assert legacy_datetime(datetime(2026, 9, 28, 8, 31, 58, 996000)) == "2026-09-28T08:31:58.996000"
+    assert legacy_datetime(datetime(2026, 9, 28, 8, 31, 58, 996000)) == "2026-09-28T08:31:58.996000Z"
     assert parse_legacy_datetime("2026-09-28T08:31:58.996000").tzinfo == UTC
     assert parse_legacy_datetime("2026-09-28T10:31:58+02:00").astimezone(UTC).hour == 8

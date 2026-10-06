@@ -102,7 +102,7 @@ async def test_place_order_builds_the_whitelisted_order_and_dispatches(client, w
     assert order["last_dispatched_at"] is not None
     [note] = await notifications(world.courier_user, "new_order")
     assert note.title_fr == "🎯 Nouvelle commande disponible"
-    assert note.body_fr == "2x Pain\n1x Lait de Monoprix - À 0.0 km"
+    assert note.body_fr == "2x Pain\n1x Lait de Monoprix - À 0,0 km"
     assert note.data["quick_actions"] == ["accept", "decline"] and note.data["recipient_role"] == "courier"
     assert len(await pushes(world.courier_user)) == 1
     assert await notifications(far_user) == []
@@ -700,8 +700,11 @@ async def test_verified_no_response_closes_the_order(client, world):
     assert await notifications(type_="new_order") == []  # not re-dispatched
 
 
-async def test_unverified_no_response_is_a_late_drop(client, world):
-    order = await world.order(status="client_no_response", courier=world.courier, fee="5")
+async def test_unverified_no_response_never_sends_the_bought_goods_to_another_courier(client, world):
+    """Owner's rule (06/10, QA B26, wave 3): during the countdown the goods are paid, so the order is
+    never put back for other couriers; the courier can only return them to the shop (or resell
+    after the deadline)."""
+    order = await world.order(status="client_no_response", courier=world.courier, fee="5", purchase="20")
     async with SessionLocal() as s:
         s.add(
             NoResponseCase(
@@ -724,11 +727,25 @@ async def test_unverified_no_response_is_a_late_drop(client, world):
             "courier_id": str(world.courier.id),
         },
     )
-    assert r.status_code == 200
+    assert r.status_code == 409 and r.json()["error"] == "after_purchase_resell_or_return"
+    assert (await reload(Order, order.id)).status == "client_no_response"
+    r = await call(
+        client,
+        world.courier_user,
+        "cancelOrder",
+        {
+            "order_id": str(order.id),
+            "reason": "returned_to_shop",
+            "cancelled_by": "courier",
+            "courier_id": str(world.courier.id),
+        },
+    )
+    assert r.status_code == 200, r.text
     [case] = await rows(select(NoResponseCase))
     assert case.resolution == "courier_cancelled_other" and case.incident_counted is False
-    assert (await reload(Order, order.id)).status == "pending"
+    assert (await reload(Order, order.id)).status == "cancelled"
     assert (await reload(Courier, world.courier.id)).late_cancellations == 1
+    assert await notifications(type_="new_order") == []  # not re-dispatched
 
 
 def test_no_response_gate():
