@@ -341,7 +341,7 @@ async def test_me_get_and_patch(client, factory):
     assert me.status_code == 200
     body = me.json()
     assert body["role"] == "admin" and body["full_name"] == "Boss"
-    assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}", body["created_date"])
+    assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z", body["created_date"])
     patched = await client.patch(
         "/api/auth/me", json={"full_name": "Chief", "language": "fr"}, headers=auth(user)
     )

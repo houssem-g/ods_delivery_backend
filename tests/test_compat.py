@@ -14,7 +14,7 @@ from app.db import SessionLocal
 from app.models import NoResponseCase, Order, User, UserAddress
 from tests.factories import auth, error_of
 
-ISO_NAIVE = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}$")
+ISO_UTC = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$")  # B18: always zoned
 
 
 async def listing(client, user, entity="UserProfile", q=None, **params):
@@ -49,7 +49,7 @@ async def test_list_shape_and_dates(client, people):
     assert emails(response) == ["admin@example.test", "ali@example.test", "fatma@example.test"]
     ali = next(d for d in docs if d["user_id"] == "ali@example.test")
     assert ali["id"] == str(people["ali"].id)
-    assert ISO_NAIVE.match(ali["created_date"]) and ISO_NAIVE.match(ali["updated_date"])
+    assert ISO_UTC.match(ali["created_date"]) and ISO_UTC.match(ali["updated_date"])
     assert ali["created_by"] == "ali@example.test"
     assert ali["default_lat"] == pytest.approx(35.8256) and ali["default_lng"] == pytest.approx(10.6084)
     assert ali["notification_preferences"] == {
@@ -273,7 +273,7 @@ async def test_profile_update_by_owner(client, factory):
     doc = response.json()
     assert doc["phone"] == "+21622123456" and doc["country"] == "TN" and doc["city"] == "Sahloul"
     assert doc["default_lat"] == pytest.approx(35.83) and doc["whatsapp_opt_in"] is True
-    assert ISO_NAIVE.match(doc["whatsapp_opt_in_at"])
+    assert ISO_UTC.match(doc["whatsapp_opt_in_at"])
     assert doc["notification_preferences"]["chat_messages"] is False
     assert doc["notification_preferences"]["new_orders"] is True
     assert doc["is_blacklisted"] is False  # admin-only field ignored for the owner
@@ -389,7 +389,7 @@ async def test_referral_attribution_is_set_once_and_never_to_oneself(client, fac
     )
     doc = first.json()
     assert doc["referred_by_courier_id"] == str(courier.id) and doc["referred_by_code"] == "K7M3Q"
-    assert ISO_NAIVE.match(doc["referred_at"])
+    assert ISO_UTC.match(doc["referred_at"])
     later = await client.patch(
         f"/api/entities/UserProfile/{customer.id}",
         json={"referred_by_courier_id": str(other_courier.id), "referred_by_code": "ZZ999"},
