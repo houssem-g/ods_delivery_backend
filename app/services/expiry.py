@@ -25,6 +25,7 @@ from app.realtime.events import emit
 from app.services import order_texts
 from app.services import order_transitions as ot
 from app.services.couriers import last_activity_expr
+from app.services.notifications import retire_acceptance_notices
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import first_stop, mirror_incidents
@@ -78,6 +79,8 @@ async def _abandon(session: AsyncSession, order: Order) -> str:
     await ot.transition(session, order, "cancelled", None, "expireStaleOrders", reason, cancelled_by="system")
     order.courier_id = None
     await session.flush()
+    if courier is not None:  # R1: no « Offre acceptée » left for an order that ended
+        await retire_acceptance_notices(session, order.id, courier.user_id)
     if was_no_response:
         cases = (
             await session.execute(

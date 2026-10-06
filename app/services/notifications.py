@@ -273,6 +273,32 @@ async def _whatsapp_instead_of_push(
 MARK_READ_MAX = 500
 
 
+async def retire_acceptance_notices(session: AsyncSession, order_id: uuid.UUID, courier_user_id: Any) -> int:
+    """The courier lost this order (customer blocked him then chose someone else, cancelled, order
+    expired): his unread « 🎉 Offre acceptée » notices for it are marked read, so that no app
+    shows « Allez au magasin » for an order that is no longer his (QA 06/10, R1)."""
+    if order_id is None or courier_user_id is None:
+        return 0
+    retired = list(
+        (
+            await session.execute(
+                update(Notification)
+                .where(
+                    Notification.order_id == order_id,
+                    Notification.user_id == courier_user_id,
+                    Notification.type == "order_accepted",
+                    Notification.read_at.is_(None),
+                )
+                .values(read_at=now_utc())
+                .returning(Notification.id)
+            )
+        ).scalars()
+    )
+    for notice_id in retired:
+        emit(session, "Notification", "update", notice_id)
+    return len(retired)
+
+
 async def mark_read(session: AsyncSession, user: Any, raw_ids: Any) -> tuple[int, dict[str, Any]]:
     """The caller's own unread rows among `raw_ids` (1..500) marked read in one statement (QA 06/10
     B59: the Notifications page sent one request per row). Junk / foreign ids are ignored."""

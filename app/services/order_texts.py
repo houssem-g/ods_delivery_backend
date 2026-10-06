@@ -485,6 +485,8 @@ def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | Non
 
 
 def offer_accepted_for_courier(shop_name: str | None, items: str | None) -> Text:
+    """The title already says « Offre acceptée »: the body goes straight to the shop and the
+    articles, never the title again (QA 06/10, R24: « Offre acceptée — Offre acceptée — … »)."""
     shop = _short(shop_name, 60)
     what = _short(items, 80)
     detail_fr = f"{shop} : {what}" if shop and what else (shop or what)
@@ -492,12 +494,8 @@ def offer_accepted_for_courier(shop_name: str | None, items: str | None) -> Text
     return {
         "title_ar": "🎉 تم قبول عرضك",
         "title_fr": "🎉 Offre acceptée",
-        "body_ar": f"تم قبول عرضك — {detail_ar}. توجّه إلى المتجر."
-        if detail_ar
-        else "تم قبول عرضك. توجّه إلى المتجر.",
-        "body_fr": f"Offre acceptée — {detail_fr}. Allez au magasin."
-        if detail_fr
-        else "Offre acceptée. Allez au magasin.",
+        "body_ar": f"{detail_ar}. توجّه إلى المتجر." if detail_ar else "توجّه إلى المتجر.",
+        "body_fr": f"{detail_fr}. Allez au magasin." if detail_fr else "Allez au magasin.",
     }
 
 

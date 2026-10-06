@@ -354,6 +354,45 @@ async def test_customer_blocks_his_courier_then_chooses_another_one(client, part
     assert again.status_code == 409 and again.json()["error"] == "no_courier"
 
 
+async def _accepted_notice(order, courier_user) -> Notification:
+    async with SessionLocal() as s:
+        note = Notification(
+            user_id=courier_user.id, order_id=order.id, type="order_accepted",
+            title_fr="🎉 Offre acceptée", body_fr="Monoprix : Pain. Allez au magasin.",
+        )  # fmt: skip
+        s.add(note)
+        await s.commit()
+        return note
+
+
+async def test_r1_released_courier_keeps_no_offer_accepted_notice(client, parties):
+    """R1: blocked, then « Chercher un autre livreur »: his unread « Offre acceptée » is read."""
+    order = await make_order(parties.customer, parties.courier, status="accepted")
+    await make_offer(order, parties.courier, status="accepted")
+    note = await _accepted_notice(order, parties.courier_user)
+    other = await make_order(parties.customer, parties.courier, status="accepted")
+    kept = await _accepted_notice(other, parties.courier_user)  # another order: untouched
+    await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})
+    res = await call(client, "releaseBlockedCourier", parties.customer, {"order_id": str(order.id)})
+    assert res.status_code == 200, res.text
+    [fresh] = await rows(Notification, Notification.id == note.id)
+    assert fresh.read_at is not None
+    [other_note] = await rows(Notification, Notification.id == kept.id)
+    assert other_note.read_at is None
+
+
+async def test_r1_customer_cancel_retires_the_offer_accepted_notice(client, parties):
+    order = await make_order(parties.customer, parties.courier, status="accepted")
+    note = await _accepted_notice(order, parties.courier_user)
+    res = await call(
+        client, "cancelOrder", parties.customer,
+        {"order_id": str(order.id), "reason": "changed_mind", "cancelled_by": "customer"},
+    )  # fmt: skip
+    assert res.status_code == 200, res.text
+    [fresh] = await rows(Notification, Notification.id == note.id)
+    assert fresh.read_at is not None
+
+
 async def test_after_the_purchase_the_delivery_goes_on(client, parties):
     order = await make_order(parties.customer, parties.courier, status="purchased")
     res = await call(
