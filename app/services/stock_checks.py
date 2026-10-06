@@ -325,7 +325,7 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
                 "photo_url": photo_url(photo_key) or "",
                 "stock_check_id": str(check.id),
             },
-            **order_texts.stock_check_for_admin(str(order.id)[-6:], nothing),
+            **order_texts.stock_check_for_admin(str(order.id)[-6:].upper(), nothing),
         )
     return 200, {"success": True, "stock_check": view(check, now), "order_status": order.status}
 

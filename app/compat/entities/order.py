@@ -367,6 +367,10 @@ FIELDS: dict[str, LegacyField] = {
     ),
     "payment_method": LegacyField(orders.c.payment_method, "string"),
     "payment_status": LegacyField(literal("pending"), "string"),
+    # a receipt photo exists (private uploads included: the app asks getOrderReceipt for the link)
+    "has_receipt": LegacyField(
+        exists().where(stops.c.order_id == orders.c.id, stops.c.receipt_key.is_not(None)), "boolean"
+    ),
     "receipt_photo_url": LegacyField(
         select(_public_url(stops.c.receipt_key))
         .where(stops.c.order_id == orders.c.id, stops.c.seq == orders.c.current_stop_seq)

@@ -86,16 +86,29 @@ async def test_send_validation_and_refusals(client, parties, factory):
     assert anonymous.status_code == 401
 
 
-async def test_cancelled_order_chat_is_closed_to_the_courier_only(client, parties):
+async def test_finished_order_chat_is_closed_to_both(client, parties):
+    """QA 06/10, B47: a cancelled order (and a delivery older than 2 h) closes the chat for both."""
+    from datetime import UTC, datetime, timedelta
+
     order = await make_order(parties.customer, parties.courier, status="cancelled")
-    courier = await call(
-        client, "sendOrderMessage", parties.courier_user, {"order_id": str(order.id), "content": "?"}
+    for user in (parties.courier_user, parties.customer):
+        r = await call(client, "sendOrderMessage", user, {"order_id": str(order.id), "content": "?"})
+        assert (r.status_code, r.json()) == (409, {"error": "order_closed"})
+    fresh = await make_order(
+        parties.customer, parties.courier, status="delivered", delivered_at=datetime.now(UTC)
     )
-    assert (courier.status_code, courier.json()) == (409, {"error": "order_closed"})
-    customer = await call(
-        client, "sendOrderMessage", parties.customer, {"order_id": str(order.id), "content": "ok"}
+    r = await call(
+        client, "sendOrderMessage", parties.customer, {"order_id": str(fresh.id), "content": "merci"}
     )
-    assert customer.status_code == 200
+    assert r.status_code == 200
+    old = await make_order(
+        parties.customer,
+        parties.courier,
+        status="delivered",
+        delivered_at=datetime.now(UTC) - timedelta(hours=3),
+    )
+    r = await call(client, "sendOrderMessage", parties.customer, {"order_id": str(old.id), "content": "?"})
+    assert r.status_code == 409
 
 
 async def test_bidder_on_an_open_order(client, parties, factory):

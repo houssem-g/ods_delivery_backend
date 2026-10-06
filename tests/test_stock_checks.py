@@ -209,7 +209,7 @@ async def test_report_nothing_available(client, world):
     assert check["nothing_available"] is True and check["substitute_text"] is None
     assert check["can_accept"] is False and check["can_skip"] is False
     [alert] = await notifications(world.customer, "stock_check")
-    assert alert.title_fr == "🛒 Rien n'est disponible au magasin"
+    assert alert.title_fr == "🛒 Aucun article de votre commande n'est disponible"
 
 
 async def test_report_with_the_couriers_own_photo(client, world):

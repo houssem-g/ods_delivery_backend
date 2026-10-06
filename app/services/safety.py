@@ -327,7 +327,7 @@ async def report_user(session: AsyncSession, user: CurrentUser, payload: dict[st
         blocked = True
 
     label_fr, label_ar = REASON_LABELS[reason]
-    ref = str(order.id)[-6:]
+    ref = str(order.id)[-6:].upper()
     admins = (
         await session.execute(
             select(User.id).where(User.role == "admin", User.deleted_at.is_(None), User.id != target)

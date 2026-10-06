@@ -244,8 +244,8 @@ def stock_check_for_customer(
 ) -> Text:
     if nothing_available:
         return {
-            "title_ar": "🛒 المنتجات مش موجودة في المحل",
-            "title_fr": "🛒 Rien n'est disponible au magasin",
+            "title_ar": "🛒 لا يتوفر أي منتج من طلبك في المتجر",
+            "title_fr": "🛒 Aucun article de votre commande n'est disponible",
             "body_ar": (
                 f"المندوب ما لقاش طلبك ({_short(missing)}). جاوب خلال {minutes} دقايق: "
                 "تلغي بلاش مصاريف ولا تكلمو."

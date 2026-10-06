@@ -172,3 +172,56 @@ async def test_the_customer_cannot_buy_back_his_own_order(client, world):
         client, world.buyer, "reserveHotDeal", {"resale_order_id": str(deal.id), "delivery_address": "Rue X"}
     )
     assert r.status_code == 403 and r.json()["error"] == "own_order_resale"
+
+
+# ─────────────────────────── B19 ───────────────────────────
+
+
+async def test_the_customer_sees_the_receipt_photo(client, world):
+    from app.db import SessionLocal
+    from app.models import OrderStop
+
+    order = await world.order(status="on_the_way", courier=world.courier, fee="5", purchase="12")
+    key = f"private/receipt/{world.courier_user.id}/r.jpg"
+    async with SessionLocal() as s:
+        stop = (await s.execute(select(OrderStop).where(OrderStop.order_id == order.id))).scalar_one()
+        stop.receipt_key, stop.purchase_amount = key, Decimal("12")
+        await s.commit()
+    doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.customer))).json()
+    assert doc["has_receipt"] is True
+    for user in (world.customer, world.courier_user, world.admin):
+        r = await fn(client, user, "getOrderReceipt", {"order_id": str(order.id)})
+        assert r.status_code == 200, r.text
+        [receipt] = r.json()["receipts"]
+        assert key in receipt["url"] and "X-Amz-Signature" in receipt["url"] and receipt["amount"] == 12.0
+    stranger = await world.factory.user(email="nosy@example.test")
+    assert (await fn(client, stranger, "getOrderReceipt", {"order_id": str(order.id)})).status_code == 403
+
+
+# ─────────────────────────── B47 / B48 ───────────────────────────
+
+
+async def test_unread_counts_only_running_orders_and_reading_reads_the_notices(client, world):
+    from tests.messaging_factories import make_message
+
+    live = await world.order(status="on_the_way", courier=world.courier, fee="5", purchase="10")
+    done = await world.order(status="cancelled", courier=world.courier, fee="5")
+    await make_message(live, world.customer, "customer", world.courier_user, body="je suis en bas")
+    await make_message(done, world.customer, "customer", world.courier_user, body="old")
+    unread = (await fn(client, world.courier_user, "listMyUnreadMessages", {"mode": "fast"})).json()[
+        "messages"
+    ]
+    assert [m["order_id"] for m in unread] == [str(live.id)]
+    # a message notice for the courier, then he reads the chat: the notice is read too
+    sent = await fn(
+        client, world.customer, "sendOrderMessage", {"order_id": str(live.id), "content": "allô ?"}
+    )
+    assert sent.status_code == 200
+    [notice] = await notifications(world.courier_user, "new_message")
+    assert notice.read_at is None
+    r = await fn(
+        client, world.courier_user, "getOrderMessages", {"order_id": str(live.id), "mark_read": True}
+    )
+    assert r.status_code == 200
+    [notice] = await notifications(world.courier_user, "new_message")
+    assert notice.read_at is not None

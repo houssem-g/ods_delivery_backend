@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.entities.message import ENTITY as MESSAGE_ENTITY
 from app.compat.query import base_select, serialize
-from app.models import Courier, File, Message, MessageTranslation, Order, User
+from app.models import Courier, File, Message, MessageTranslation, Notification, Order, User
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
@@ -41,6 +41,8 @@ from app.services.safety import block_direction, blocked_pair, is_blocked
 from app.storage import keys, s3
 
 MAX_CONTENT = 1000
+CHAT_AFTER_DELIVERY = timedelta(hours=2)  # a « merci » after the delivery, then the chat closes
+FINISHED = ("delivered", "cancelled")
 PRE_ASSIGN_MAX = 10  # messages a bidder may post on one open order
 BURST_MAX = 10  # messages a minute per sender and order
 OPEN_STATUSES = ("pending", "offers_received")
@@ -243,7 +245,12 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
     role = await chat_role(session, order, user, admin=False)
     if role is None:
         return 403, {"error": "not_a_party"}
-    if order.status == "cancelled" and role != "customer":
+    if order.status == "cancelled" or (
+        order.status == "delivered"
+        and order.delivered_at is not None
+        and now_utc() - order.delivered_at > CHAT_AFTER_DELIVERY
+    ):
+        # the conversation of a finished order is closed for both sides (QA 06/10, B47)
         return 409, {"error": "order_closed"}
 
     mine = messages.c.order_id == order.id, messages.c.sender_id == user.id
@@ -423,12 +430,35 @@ async def get_order_messages(session: AsyncSession, user: CurrentUser, payload: 
         str(i)
         for i in await _mark(session, messages.c.id.in_(shown), _incoming_unread(role, user))
     } if shown else set()  # fmt: skip
+    await _read_message_notices(session, user, order.id)
     return 200, {
         "success": True,
         "messages": [{**d, "is_read": True} if d["id"] in marked else d for d in docs],
         "marked": len(marked),
         "blocked_by": blocked_by,
     }
+
+
+async def _read_message_notices(session: AsyncSession, user: CurrentUser, order_id: uuid.UUID) -> None:
+    """The chat was read: its « new message » notifications too (QA 06/10, B48: the courier's bell
+    climbed to 38 for messages he had already read in the chat)."""
+    ids = list(
+        (
+            await session.execute(
+                update(Notification)
+                .where(
+                    Notification.user_id == user.id,
+                    Notification.order_id == order_id,
+                    Notification.type == "new_message",
+                    Notification.read_at.is_(None),
+                )
+                .values(read_at=now_utc())
+                .returning(Notification.id)
+            )
+        ).scalars()
+    )
+    for notice_id in ids:
+        emit(session, "Notification", "update", notice_id)
 
 
 async def mark_order_messages_read(
@@ -441,6 +471,8 @@ async def mark_order_messages_read(
     ids = await _mark(
         session, messages.c.order_id == order.id, _visible(role, user), _incoming_unread(role, user)
     )
+    if role != "admin":
+        await _read_message_notices(session, user, order.id)
     return 200, {"success": True, "marked": len(ids)}
 
 
@@ -457,6 +489,7 @@ async def _fast_unread(session: AsyncSession, user: CurrentUser) -> list[dict[st
         .select_from(o.outerjoin(c, c.c.id == o.c.courier_id))
         .where(
             o.c.id == messages.c.order_id,
+            o.c.status.not_in(FINISHED),  # only the orders still running count (QA B47)
             or_(o.c.customer_id == user.id, c.c.user_id == user.id),
             or_(
                 and_(
@@ -481,7 +514,12 @@ async def _fast_unread(session: AsyncSession, user: CurrentUser) -> list[dict[st
 
 
 async def _latest_order_ids(session: AsyncSession, *where: Any) -> list[uuid.UUID]:
-    stmt = select(Order.id).where(*where).order_by(Order.updated_at.desc()).limit(ORDERS_PER_SIDE)
+    stmt = (
+        select(Order.id)
+        .where(*where, Order.status.not_in(FINISHED))  # only the orders still running (QA B47)
+        .order_by(Order.updated_at.desc())
+        .limit(ORDERS_PER_SIDE)
+    )
     return list((await session.execute(stmt)).scalars())
 
 

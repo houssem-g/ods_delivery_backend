@@ -114,6 +114,6 @@ async def handle(
                 "courier_id": str(courier.id),
                 "photo_url": photo_url,
             },
-            **order_texts.issue_for_admin(issue_type, str(order.id)[-6:]),
+            **order_texts.issue_for_admin(issue_type, str(order.id)[-6:].upper()),
         )
     return 200, {"success": True, "message": "Issue reported successfully"}
