@@ -512,14 +512,18 @@ def _of_shop(title_fr: str, title_ar: str, shop_name: str | None) -> tuple[str, 
     return f"{title_fr} · {shop}", f"{title_ar} · {shop}"
 
 
-def purchased(amount: object, shop_name: str | None = None) -> Text:
+def purchased(amount: object, shop_name: str | None = None, with_receipt: bool = True) -> Text:
+    """« Achat effectué »: the amount is « selon le reçu » only when the courier photographed
+    one; without a ticket it is the amount he announced (QA 06/10, N16)."""
     title_fr, title_ar = _of_shop("🛍️ Achat effectué", "🛍️ تم الشراء", shop_name)
     if amount:
+        source_fr = "selon le reçu" if with_receipt else "sans ticket, annoncé par le livreur"
+        source_ar = "حسب الوصل" if with_receipt else "بدون وصل، حسب ما أعلنه المندوب"
         return {
             "title_ar": title_ar,
             "title_fr": title_fr,
-            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت (حسب الوصل)",
-            "body_fr": f"Montant des achats : {_money(amount)} DT (selon le reçu)",
+            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت ({source_ar})",
+            "body_fr": f"Montant des achats : {_money(amount)} DT ({source_fr})",
         }
     return {
         "title_ar": title_ar,

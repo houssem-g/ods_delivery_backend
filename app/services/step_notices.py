@@ -123,7 +123,7 @@ async def courier_step(session: AsyncSession, order: Order, from_status: str, to
     else:
         shop = await _stop_name(session, order.id, 0)  # names the order (B60)
         if to_status == "purchased":
-            text = order_texts.purchased(order.purchase_amount, shop)
+            text = order_texts.purchased(order.purchase_amount, shop, await _has_receipt(session, order.id))
         elif to_status == "on_the_way":
             # the ride's real time (same computation as the tracking ring), not the offer's delay (QA B7)
             text = order_texts.on_the_way(await tracking.ride_eta_minutes(session, order), shop)
@@ -147,3 +147,19 @@ async def _stop_name(session: AsyncSession, order_id: uuid.UUID, seq: int) -> st
             select(OrderStop.name).where(OrderStop.order_id == order_id, OrderStop.seq == seq)
         )
     ).scalar_one_or_none()
+
+
+async def _has_receipt(session: AsyncSession, order_id: uuid.UUID) -> bool:
+    """A receipt photo on any shop of the order (« selon le reçu » only then, QA N16)."""
+    found = (
+        await session.execute(
+            select(OrderStop.id)
+            .where(
+                OrderStop.order_id == order_id,
+                OrderStop.receipt_key.is_not(None),
+                OrderStop.receipt_key != "",
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    return found is not None
