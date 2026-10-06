@@ -84,7 +84,9 @@ async def test_after_a_block_phones_stay_until_the_running_order_ends(client, pa
 
     async def phones() -> tuple[Any, Any, Any]:
         seen_by_customer = await client.get(f"/api/entities/Order/{order.id}", headers=auth(parties.customer))
-        seen_by_courier = await client.get(f"/api/entities/Order/{order.id}", headers=auth(parties.courier_user))
+        seen_by_courier = await client.get(
+            f"/api/entities/Order/{order.id}", headers=auth(parties.courier_user)
+        )
         card = (await call(client, "getOrderCourier", parties.customer, {"order_id": str(order.id)})).json()
         return (
             seen_by_customer.json().get("courier_phone"),
@@ -288,8 +290,19 @@ def test_text_filter_masks_strong_insults_only():
     for word in ("manyek", "Manyak", "MANYIK", "manyouk", "mnayek", "mnayak", "manyeeeek", "منياك"):
         assert mask(f"QA TEST {word}") == ("QA TEST " + "*" * len(word), True), word
     # normal words that contain a blocked one are never touched
-    for fine in ("habite à Tunis", "ma3andich", "مرحبا، وين وصلت؟", "je prends du pain", "many thanks",
-                 "Germany", "maniaque", "manie", "mayonnaise", "mnih", ""):
+    for fine in (
+        "habite à Tunis",
+        "ma3andich",
+        "مرحبا، وين وصلت؟",
+        "je prends du pain",
+        "many thanks",
+        "Germany",
+        "maniaque",
+        "manie",
+        "mayonnaise",
+        "mnih",
+        "",
+    ):
         assert mask(fine) == (fine, False)
 
 
