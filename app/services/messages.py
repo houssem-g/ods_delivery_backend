@@ -307,6 +307,15 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
             preview_fr = f"{label_fr} · {preview}" if preview else label_fr
             preview_ar = f"{label_ar} · {preview}" if preview else label_ar
         from_courier = sender_role == "courier"
+        # first name shown on the notification card (QA B50)
+        sender_name = (
+            await session.execute(
+                select(Courier.display_name).where(Courier.user_id == user.id)
+                if from_courier
+                else select(User.full_name).where(User.id == user.id)
+            )
+        ).scalar_one_or_none()
+        sender_name = (sender_name or "").strip().split(" ")[0] or None
         try:
             async with session.begin_nested():
                 await notify(
@@ -321,6 +330,7 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
                     metadata={
                         "recipient_role": "customer" if from_courier else "courier",
                         "sender_role": sender_role,
+                        "sender_name": sender_name,
                         "message_id": str(message.id),
                         "message_preview": content[:PREVIEW_METADATA] or preview_fr,
                         "attachment_type": attachment[1] if attachment else None,
