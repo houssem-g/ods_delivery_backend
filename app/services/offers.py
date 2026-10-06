@@ -242,14 +242,14 @@ async def update_offer(
     name = courier.display_name or "Le livreur"
     name_ar = courier.display_name or "المندوب"
     delay_fr = f" · ~{new_eta} min" if new_eta else ""
-    delay_ar = f" · ~{new_eta} د" if new_eta else ""
+    delay_ar = f" · ~{new_eta} دق" if new_eta else ""
     await notify(
         session,
         user_id=order.customer_id,
         type_="new_offer",
         title_fr="Offre modifiée",
         title_ar="تم تعديل العرض",
-        body_fr=f"{name} a modifié son offre : {fee:.3f} TND{delay_fr}",
+        body_fr=f"{name} a modifié son offre : {fee:.3f} DT{delay_fr}",
         body_ar=f"{name_ar} عدّل عرضه: {fee:.3f} د.ت{delay_ar}",
         order_id=order.id,
         metadata={

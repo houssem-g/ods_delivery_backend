@@ -208,8 +208,8 @@ async def test_update_offer_changes_price_rank_and_tells_the_customer(client, wo
 
     [note] = await notifications(world.customer, "new_offer")
     assert note.title_fr == "Offre modifiée" and note.title_ar == "تم تعديل العرض"
-    assert note.body_fr == "Karim Trabelsi a modifié son offre : 4.556 TND · ~15 min"
-    assert note.body_ar == "Karim Trabelsi عدّل عرضه: 4.556 د.ت · ~15 د"
+    assert note.body_fr == "Karim Trabelsi a modifié son offre : 4.556 DT · ~15 min"
+    assert note.body_ar == "Karim Trabelsi عدّل عرضه: 4.556 د.ت · ~15 دق"
     assert note.order_id == order.id and note.data["kind"] == "offer_updated"
     assert note.data["offer_id"] == str(mine.id) and note.data["previous_fee"] == 7.0
     assert note.data["recipient_role"] == "customer"

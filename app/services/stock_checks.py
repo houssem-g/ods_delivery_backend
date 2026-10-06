@@ -227,7 +227,7 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
     if not missing:
         if not nothing:
             raise OrderRefused(400, "missing_text_required")
-        missing = "Rien n'est disponible / حتى شي مش موجود"
+        missing = "Rien n'est disponible / لا يتوفر أي منتج"
     substitute = None if nothing else (_clean(payload.get("substitute_text")) or None)
     price = None if nothing else _price(payload.get("substitute_price"))
     if price is not None and substitute is None:

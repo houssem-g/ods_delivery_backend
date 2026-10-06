@@ -5,7 +5,7 @@ Body: { offer_id, fee, eta_minutes?, message? } — same bounds as createOrderOf
 TND, 3 decimals; eta 1-600 min, an invalid one keeps the current; message ≤ 300 chars, "" clears).
 Returns { success, offer, rank, total, cheapest, tied } (the rank of the new price, getOfferRank).
 The customer's OrderOffers screen hears the OrderOffer update event; he is notified in-app
-(type new_offer, data.kind = "offer_updated": "Karim a modifié son offre : 6.500 TND"), pushed at
+(type new_offer, data.kind = "offer_updated": "Karim a modifié son offre : 6.500 DT"), pushed at
 most once per offer every 2 minutes. An unchanged offer is answered without any notice.
 Errors: Missing offer_id / invalid_fee (400), courier_profile_missing / courier_not_verified
 (403), offer_not_found (404, also someone else's offer), offer_not_pending / order_not_open

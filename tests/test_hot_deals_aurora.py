@@ -199,8 +199,8 @@ async def test_new_deal_alerts_opted_in_neighbours(client, world, factory):
     assert r.status_code == 200, r.text
     assert r.json()["alerted"] == 1
     [note] = await notifications(near, "hot_deal_new")
-    assert note.title_fr == "🔥 Offre chaude près de chez vous"
-    assert note.body_fr == "2x Pain — 20.000 TND au lieu de 25.000 TND"
+    assert note.title_fr == "🔥 Offre Chaude près de chez vous"
+    assert note.body_fr == "2x Pain — 20.000 DT au lieu de 25.000 DT"
     assert note.data["resale_order_id"] == r.json()["deal_id"] and note.data["recipient_role"] == "customer"
     for user in (world.buyer, quiet, gone, world.customer, world.courier_user, no_address):
         assert await notifications(user, "hot_deal_new") == []

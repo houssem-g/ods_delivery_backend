@@ -67,13 +67,13 @@ def _sms_no_response(p: list[str], lang: Lang) -> str:
     if lang == "ar":
         return f"ODS: المندوب {p[0]} أمام منزلك بطلبك ({p[1]}) ولا يستطيع الوصول إليك. اتصل به: {p[2]}"
     return (
-        f"ODS: votre livreur {p[0]} est devant chez vous avec votre commande ({p[1]}) "
+        f"ODS : votre livreur {p[0]} est devant chez vous avec votre commande ({p[1]}) "
         f"et n'arrive pas à vous joindre. Appelez-le : {p[2]}"
     )
 
 
 def _sms_code(p: list[str], lang: Lang) -> str:
-    return f"ODS: رمز التحقق {p[0]}" if lang == "ar" else f"ODS: votre code de vérification est {p[0]}"
+    return f"ODS: رمز التحقق {p[0]}" if lang == "ar" else f"ODS : votre code de vérification est {p[0]}"
 
 
 TEMPLATES: dict[str, TemplateDef] = {

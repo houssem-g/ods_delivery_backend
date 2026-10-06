@@ -118,7 +118,7 @@ def test_winsms_reply_parsing():
 
 def test_sms_texts():
     fr = wa.TEMPLATES["customer_no_response"].sms(["Sami", "Carrefour", "+216 1"], "fr")
-    assert fr.startswith("ODS: votre livreur Sami est devant chez vous avec votre commande (Carrefour)")
+    assert fr.startswith("ODS : votre livreur Sami est devant chez vous avec votre commande (Carrefour)")
     assert wa.TEMPLATES["customer_no_response"].sms(["a", "b", "c"], "ar").startswith("ODS: المندوب a")
     assert wa.TEMPLATES["verification_code"].sms(["1234"], "ar") == "ODS: رمز التحقق 1234"
 

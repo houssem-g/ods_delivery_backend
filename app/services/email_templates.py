@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from html import escape
 from typing import Literal
 
+from app.services.order_texts import minutes_ar
+
 CodePurpose = Literal["verify", "reset", "migrate"]
 
 _COPY: dict[str, dict[str, tuple[str, str]]] = {
@@ -35,7 +37,7 @@ _COPY: dict[str, dict[str, tuple[str, str]]] = {
     },
 }
 _VALIDITY = {
-    "ar": "صالح لمدة {minutes} دقائق. إذا لم تطلب هذا الرمز، تجاهل هذه الرسالة.",
+    "ar": "صالح لمدة {minutes_ar}. إذا لم تطلب هذا الرمز، تجاهل هذه الرسالة.",
     "fr": "Valable {minutes} minutes. Si vous n'avez rien demandé, ignorez ce message.",
 }
 
@@ -58,7 +60,7 @@ def code_email(
     text_parts, html_parts = [], []
     for lang in order:
         intro = _COPY[purpose][lang][1]
-        validity = _VALIDITY[lang].format(minutes=ttl_minutes)
+        validity = _VALIDITY[lang].format(minutes=ttl_minutes, minutes_ar=minutes_ar(ttl_minutes))
         direction = "rtl" if lang == "ar" else "ltr"
         link_text = f"\n{_LINK_TEXT[lang]} {link}" if link else ""
         link_html = (

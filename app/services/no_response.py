@@ -53,6 +53,7 @@ from app.security.deps import CurrentUser
 from app.services import cancellation, whatsapp
 from app.services import order_transitions as ot
 from app.services.order_notices import notify_and_push
+from app.services.order_texts import minutes_ar
 from app.services.orders import courier_of_user, first_stop, is_test_order, mirror_incidents
 from app.services.push import PushMessage, send_to_user
 
@@ -265,11 +266,11 @@ async def _finalize(session: AsyncSession, order: Order, case: NoResponseCase, n
             user_id=courier_user,
             order_id=order.id,
             type_="customer_no_response_final",
-            title_ar="❌ العميل لم يرد",
+            title_ar="❌ الحريف لم يردّ",
             title_fr="❌ Le client ne répond toujours pas",
             body_ar=(
-                f"لم يرد العميل خلال {mins} دقائق رغم الإشعار والتنبيه. يمكنك الآن إعادة البيع "
-                "(عرض ساخن) أو إرجاع البضاعة للمتجر أو الإلغاء بدون عقوبة."
+                f"لم يردّ الحريف خلال {minutes_ar(mins)} رغم الإشعار والتنبيه. يمكنك الآن إعادة البيع "
+                "(عرض ساخن) أو إرجاع البضاعة إلى المتجر أو الإلغاء دون عقوبة."
             ),
             body_fr=(
                 f"Aucune réponse en {mins} min malgré la notification et l'alarme. Vous pouvez "
@@ -331,7 +332,7 @@ async def _auto_close(session: AsyncSession, order: Order, case: NoResponseCase,
             type_="customer_no_response_final",
             title_ar="تم إغلاق الطلب",
             title_fr="Commande clôturée",
-            body_ar="أُغلق الطلب تلقائياً لأن العميل لم يرد. البضاعة تبقى لك، بدون عقوبة.",
+            body_ar="أُغلق الطلب تلقائياً لأن الحريف لم يردّ. البضاعة تبقى لك، دون عقوبة.",
             body_fr=(
                 "La commande a été clôturée automatiquement : le client n’a jamais répondu. "
                 "La marchandise reste à vous, sans pénalité."
@@ -345,7 +346,7 @@ async def _auto_close(session: AsyncSession, order: Order, case: NoResponseCase,
         type_="delivery_cancelled",
         title_ar="❌ أُلغي طلبك",
         title_fr="❌ Commande annulée",
-        body_ar="أُلغي طلبك لأنك لم ترد على المندوب.",
+        body_ar="أُلغي طلبك لأنك لم تردّ على المندوب.",
         body_fr="Votre commande est annulée : vous n'avez pas répondu au livreur.",
         metadata={"recipient_role": "customer", "reason": "client_no_response"},
     )
@@ -373,7 +374,7 @@ async def _remind(session: AsyncSession, order: Order, case: NoResponseCase, now
             type="emergency_contact",
             title_ar="🚨 المندوب ينتظرك أمام الباب!",
             title_fr="🚨 Le livreur vous attend devant chez vous !",
-            body_ar=f"تذكير {due}/{MAX_REMINDERS}: اتصل بالمندوب أو أكّد توفّرك، بقي {left} د.",
+            body_ar=f"تذكير {due}/{MAX_REMINDERS}: اتصل بالمندوب أو أكّد توفّرك، بقي {minutes_ar(left)}.",
             body_fr=(
                 f"Rappel {due}/{MAX_REMINDERS} : appelez-le ou confirmez que vous êtes là. "
                 f"Il reste {left} min."
@@ -548,7 +549,7 @@ async def _open_case(
         ),
         body_ar=(
             f"المندوب {courier_name} اشترى طلبك بماله ولا يستطيع الوصول إليك. "
-            f"اتصل به{phone_part} أو أكّد توفّرك خلال {mins} دقائق."
+            f"اتصل به{phone_part} أو أكّد توفّرك خلال {minutes_ar(mins)}."
         ),
         body_fr=(
             f"Votre livreur {courier_name} a avancé l'argent de vos achats et n'arrive pas à vous "
@@ -702,9 +703,9 @@ async def answered(session: AsyncSession, order: Order, how: str, actor: Current
                 user_id=courier_user,
                 order_id=order.id,
                 type_="customer_responded",
-                title_ar="✅ العميل رد!",
+                title_ar="✅ ردّ الحريف!",
                 title_fr="✅ Le client a répondu !",
-                body_ar=f"العميل {name} أكد أنه متاح. اتصل به وأكمل التوصيل.",
+                body_ar=f"أكّد الحريف {name} أنه متاح. اتصل به وأكمل التوصيل.",
                 body_fr=(
                     f"Le client {name} a confirmé qu'il est disponible. Appelez-le et terminez la livraison."
                 ),

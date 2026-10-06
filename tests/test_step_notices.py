@@ -70,8 +70,8 @@ async def test_new_offer_is_sent_once_per_offer(client, world):
     offer_id = r.json()["offer"]["id"]
     [note] = await notifications(world.customer, "new_offer")
     assert note.title_fr == "Nouvelle offre" and note.title_ar == "عرض جديد"
-    assert note.body_fr == "Karim T. propose 4.110 TND · ~25 min"
-    assert note.body_ar == "Karim T. يقترح 4.110 د.ت · ~25 د"
+    assert note.body_fr == "Karim T. propose 4.110 DT · ~25 min"
+    assert note.body_ar == "Karim T. يقترح 4.110 د.ت · ~25 دق"
     assert note.data["offer_id"] == offer_id and note.data["proposed_fee"] == 4.11
     assert len(await pushes(world.customer)) == 1
 
@@ -86,7 +86,7 @@ async def test_new_offer_is_sent_once_per_offer(client, world):
     r2 = await call(client, world.rival_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
     assert r2.status_code == 200
     notes = await notifications(world.customer, "new_offer")
-    assert len(notes) == 2 and notes[1].body_fr == "Sami propose 5.000 TND"
+    assert len(notes) == 2 and notes[1].body_fr == "Sami propose 5.000 DT"
 
 
 async def test_new_offer_push_follows_the_preferences(client, world):

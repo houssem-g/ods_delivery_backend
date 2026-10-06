@@ -41,7 +41,7 @@ async def test_customer_message_goes_to_the_assigned_courier(client, parties):
     assert msg["order_id"] == str(order.id) and msg["is_read"] is False and msg["is_template"] is False
     [notif] = await notifications_of(parties.courier_user)
     assert notif.type == "new_message" and notif.order_id == order.id
-    assert notif.title_fr == "💬 Message du client" and notif.title_ar == "💬 رسالة من العميل"
+    assert notif.title_fr == "💬 Message du client" and notif.title_ar == "💬 رسالة من الحريف"
     assert notif.body_fr == "Salut"
     assert notif.data["recipient_role"] == "courier" and notif.data["sender_role"] == "customer"
     assert notif.data["message_id"] == msg["id"] and notif.data["message_preview"] == "Salut"

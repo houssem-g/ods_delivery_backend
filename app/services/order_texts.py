@@ -8,6 +8,29 @@ def _km(value: float) -> str:
     return f"{value:.1f}"
 
 
+def minutes_ar(n: int) -> str:
+    """« 1 دقيقة », « دقيقتين », « 5 دقائق », « 15 دقيقة »: the Arabic noun agrees with the number."""
+    n = int(n)
+    if n == 1:
+        return "دقيقة واحدة"
+    if n == 2:
+        return "دقيقتين"
+    if 3 <= n <= 10:
+        return f"{n} دقائق"
+    return f"{n} دقيقة"
+
+
+def hours_ar(n: int) -> str:
+    n = int(n)
+    if n == 1:
+        return "ساعة واحدة"
+    if n == 2:
+        return "ساعتين"
+    if 3 <= n <= 10:
+        return f"{n} ساعات"
+    return f"{n} ساعة"
+
+
 # --- dispatchOrderToCouriers ----------------------------------------------------------------------
 
 
@@ -24,7 +47,7 @@ def new_order_preferred(client: str, items: str, shop_name: str | None, distance
     dist_fr = "" if distance_km is None else f" - À {_km(distance_km)} km"
     dist_ar = "" if distance_km is None else f" - {_km(distance_km)} كم"
     return {
-        "title_ar": f"⭐ حريفك {client} عمل طلب" if client else "⭐ حريفك عمل طلب",
+        "title_ar": f"⭐ حريفك {client} قدّم طلباً" if client else "⭐ حريفك قدّم طلباً",
         "title_fr": f"⭐ Votre client {client} a passé une commande"
         if client
         else "⭐ Votre client a passé une commande",
@@ -42,17 +65,17 @@ REASON_TEXT = {
     "taking_too_long": {"fr": "délai trop long", "ar": "التأخير"},
     "product_unavailable": {"fr": "produit indisponible", "ar": "المنتج غير متوفر"},
     "shop_closed": {"fr": "magasin fermé", "ar": "المتجر مغلق"},
-    "cannot_reach_customer": {"fr": "client injoignable", "ar": "لا يمكن الوصول للعميل"},
-    "client_no_response": {"fr": "client injoignable", "ar": "لا يمكن الوصول للعميل"},
+    "cannot_reach_customer": {"fr": "client injoignable", "ar": "تعذّر الوصول إلى الحريف"},
+    "client_no_response": {"fr": "client injoignable", "ar": "تعذّر الوصول إلى الحريف"},
     "goods_returned_to_shop": {
         "fr": "client injoignable, marchandise rendue au magasin",
-        "ar": "لا يمكن الوصول للعميل، أُرجعت البضاعة للمتجر",
+        "ar": "تعذّر الوصول إلى الحريف، فأُرجعت البضاعة إلى المتجر",
     },
     "vehicle_issue": {"fr": "problème de véhicule", "ar": "مشكلة في الوسيلة"},
     "emergency": {"fr": "urgence personnelle", "ar": "حالة طوارئ"},
     "other": {"fr": "autre raison", "ar": "سبب آخر"},
-    "returned_to_shop": {"fr": "articles rendus au magasin", "ar": "أُرجعت المواد للمتجر"},
-    "courier_resale": {"fr": "articles revendus en Offre Chaude", "ar": "أُعيد بيع المواد كعرض ساخن"},
+    "returned_to_shop": {"fr": "articles rendus au magasin", "ar": "أُرجعت المواد إلى المتجر"},
+    "courier_resale": {"fr": "articles revendus en Offre Chaude", "ar": "أُعيد بيع المواد في عرض ساخن"},
 }
 
 
@@ -66,7 +89,7 @@ def cancelled_by_customer(shop_name: str | None, reason: str) -> Text:
     return {
         "title_ar": "❌ تم إلغاء الطلب",
         "title_fr": "❌ Commande annulée",
-        "body_ar": f"قام العميل بإلغاء الطلب{shop}: {reason_text(reason, 'ar')}",
+        "body_ar": f"ألغى الحريف الطلب{shop}: {reason_text(reason, 'ar')}",
         "body_fr": f"Le client a annulé la commande{shop} : {reason_text(reason, 'fr')}",
     }
 
@@ -110,7 +133,7 @@ def released_after_block(shop_name: str | None) -> Text:
     return {
         "title_ar": "❌ أُلغي تكليفك بالطلب",
         "title_fr": "❌ Commande retirée",
-        "body_ar": f"اختار العميل مندوباً آخر لهذا الطلب{shop}. لا تشترِ المواد.",
+        "body_ar": f"اختار الحريف مندوباً آخر لهذا الطلب{shop}. لا تشترِ المواد.",
         "body_fr": (
             f"Le client a choisi un autre livreur pour cette commande{shop}. N'achetez pas les articles."
         ),
@@ -154,7 +177,7 @@ def expired_open(shop_name: str | None, never_offered: bool, hours: int) -> Text
     label = _label(shop_name)
     if never_offered:
         body_ar = (
-            f"لم يقبل أي مندوب طلبك{label} خلال {hours} ساعة، فأُلغي تلقائياً. يمكنك إعادة الطلب في أي وقت."
+            f"لم يقبل أي مندوب طلبك{label} خلال {hours_ar(hours)}، فأُلغي تلقائياً. يمكنك إعادة الطلب في أي وقت."
         )
         body_fr = (
             f"Aucun livreur n'a pris votre commande{label} en {hours} h : elle a été annulée "
@@ -162,7 +185,7 @@ def expired_open(shop_name: str | None, never_offered: bool, hours: int) -> Text
         )
     else:
         body_ar = (
-            f"بقي طلبك{label} دون متابعة لمدة {hours} ساعة، فأُلغي تلقائياً وأُغلقت العروض المستلمة. "
+            f"بقي طلبك{label} دون متابعة لمدة {hours_ar(hours)}، فأُلغي تلقائياً وأُغلقت العروض المستلمة. "
             "يمكنك إعادة الطلب في أي وقت."
         )
         body_fr = (
@@ -184,7 +207,7 @@ def abandoned(shop_name: str | None, hours: int, for_courier: bool) -> Text:
         "incident. Contactez le support en cas de question."
     )
     body_ar = (
-        f"لم يطرأ عليه أي تحديث منذ أكثر من {hours} ساعة، فأُغلق تلقائياً دون أي عقوبة أو حادثة. "
+        f"لم يطرأ عليه أي تحديث منذ أكثر من {hours_ar(hours)}، فأُغلق تلقائياً دون أي عقوبة أو حادثة. "
         "تواصل مع الدعم إن كان لديك سؤال."
     )
     if for_courier:
@@ -206,7 +229,7 @@ def abandoned(shop_name: str | None, hours: int, for_courier: bool) -> Text:
 
 ISSUE_LABELS = {
     "wrong_address": {"ar": "العنوان خاطئ", "fr": "Mauvaise adresse"},
-    "customer_not_available": {"ar": "العميل غير متاح", "fr": "Client indisponible"},
+    "customer_not_available": {"ar": "الحريف غير متاح", "fr": "Client indisponible"},
     "product_damaged": {"ar": "المنتج تالف", "fr": "Produit endommagé"},
     "partial_order": {"ar": "طلب جزئي", "fr": "Commande partielle"},
     "price_different": {"ar": "السعر مختلف", "fr": "Prix différent"},
@@ -232,7 +255,7 @@ def issue_for_admin(issue_type: str, order_ref: str) -> Text:
         "title_ar": "مشكلة في طلب",
         "title_fr": "Problème de commande",
         "body_ar": f"الطلب #{order_ref}: {label['ar']}",
-        "body_fr": f"Commande #{order_ref}: {label['fr']}",
+        "body_fr": f"Commande #{order_ref} : {label['fr']}",
     }
 
 
@@ -259,8 +282,8 @@ def stock_check_for_customer(
             "title_ar": "🛒 لا يتوفر أي منتج من طلبك في المتجر",
             "title_fr": "🛒 Aucun article de votre commande n'est disponible",
             "body_ar": (
-                f"المندوب ما لقاش طلبك ({_short(missing)}). جاوب خلال {minutes} دقايق: "
-                "تلغي بلاش مصاريف ولا تكلمو."
+                f"لم يجد المندوب طلبك ({_short(missing)}). أجب خلال {minutes_ar(minutes)}: "
+                "ألغِ الطلب دون مصاريف أو اتصل به."
             ),
             "body_fr": (
                 f"Le livreur ne trouve pas votre commande ({_short(missing)}). Répondez sous {minutes} min : "
@@ -268,14 +291,14 @@ def stock_check_for_customer(
             ),
         }
     if substitute:
-        price_ar = f" بـ {_price(price)} د.ت" if price is not None else ""
+        price_ar = f" بسعر {_price(price)} د.ت" if price is not None else ""
         price_fr = f" à {_price(price)} DT" if price is not None else ""
         return {
-            "title_ar": "🛒 منتج مش موجود",
+            "title_ar": "🛒 منتج غير متوفر",
             "title_fr": "🛒 Article indisponible",
             "body_ar": (
-                f"{_short(missing)} مش موجود. المندوب يقترح {_short(substitute, 60)}{price_ar}. "
-                f"جاوب خلال {minutes} دقايق."
+                f"{_short(missing)} غير متوفر. يقترح المندوب {_short(substitute, 60)}{price_ar}. "
+                f"أجب خلال {minutes_ar(minutes)}."
             ),
             "body_fr": (
                 f"{_short(missing)} est indisponible. Le livreur propose {_short(substitute, 60)}{price_fr}. "
@@ -283,9 +306,9 @@ def stock_check_for_customer(
             ),
         }
     return {
-        "title_ar": "🛒 منتج مش موجود",
+        "title_ar": "🛒 منتج غير متوفر",
         "title_fr": "🛒 Article indisponible",
-        "body_ar": f"{_short(missing)} مش موجود. نكمّل بلاش بيه ولا نلغي؟ جاوب خلال {minutes} دقايق.",
+        "body_ar": f"{_short(missing)} غير متوفر. هل نواصل دونه أم نلغي الطلب؟ أجب خلال {minutes_ar(minutes)}.",
         "body_fr": (
             f"{_short(missing)} est indisponible. Continuer sans ou annuler ? Répondez sous {minutes} min."
         ),
@@ -320,34 +343,38 @@ DECISION_CHAT = {  # French line, then Arabic line (see stock_check_chat)
 def stock_decision_for_courier(status: str, decided_by: str, substitute: str | None) -> Text:
     """The customer's (or the policy's) decision, told to the courier."""
     auto_fr = "Sans réponse, le choix fait à la commande s'applique : " if decided_by == "system" else ""
-    auto_ar = "ما جاوبش، طبّقنا الاختيار متاع الطلب: " if decided_by == "system" else ""
+    auto_ar = "لم يُجب الحريف، فطُبّق الاختيار المحدّد عند الطلب: " if decided_by == "system" else ""
+
+    def fr(text: str) -> str:  # a sentence starts with a capital letter (QA 06/10, B80)
+        return f"{auto_fr}{text}" if auto_fr else text[:1].upper() + text[1:]
+
     if status == "substitute_accepted":
         sub = _short(substitute, 60)
         return {
-            "title_ar": "✅ الحريف قبل البديل",
+            "title_ar": "✅ قبل الحريف البديل",
             "title_fr": "✅ Remplacement accepté",
-            "body_ar": f"{auto_ar}اشري البديل ({sub}) وكمّل الطلب.",
-            "body_fr": f"{auto_fr}achetez le remplacement ({sub}) et continuez la commande.",
+            "body_ar": f"{auto_ar}اشترِ البديل ({sub}) وأكمل الطلب.",
+            "body_fr": fr(f"achetez le remplacement ({sub}) et continuez la commande."),
         }
     if status == "item_skipped":
         return {
-            "title_ar": "➖ كمّل بلاش المنتج",
+            "title_ar": "➖ أكمل دون المنتج",
             "title_fr": "➖ Continuer sans l'article",
-            "body_ar": f"{auto_ar}ما تشريش المنتج الناقص وكمّل بقية الطلب.",
-            "body_fr": f"{auto_fr}n'achetez pas l'article manquant, continuez le reste de la commande.",
+            "body_ar": f"{auto_ar}لا تشترِ المنتج الناقص وأكمل بقية الطلب.",
+            "body_fr": fr("n'achetez pas l'article manquant, continuez le reste de la commande."),
         }
     if status == "order_cancelled":
         return {
-            "title_ar": "❌ الطلب تلغى",
+            "title_ar": "❌ أُلغي الطلب",
             "title_fr": "❌ Commande annulée",
-            "body_ar": f"{auto_ar}الطلب تلغى خاطر المنتج مش موجود. بلاش عقوبة ليك.",
-            "body_fr": f"{auto_fr}la commande est annulée (article indisponible). Aucune pénalité pour vous.",
+            "body_ar": f"{auto_ar}أُلغي الطلب لأن المنتج غير متوفر. لا عقوبة عليك.",
+            "body_fr": fr("la commande est annulée (article indisponible). Aucune pénalité pour vous."),
         }
     # expired: no answer, no automatic decision
     return {
-        "title_ar": "⏱️ الحريف ما جاوبش",
+        "title_ar": "⏱️ لم يُجب الحريف",
         "title_fr": "⏱️ Pas de réponse du client",
-        "body_ar": "كلّم الحريف، ولا ألغي الطلب بلاش عقوبة (المنتج مش موجود).",
+        "body_ar": "اتصل بالحريف أو ألغِ الطلب دون عقوبة (المنتج غير متوفر).",
         "body_fr": "Pas de réponse — appelez le client ou annulez sans pénalité (article indisponible).",
     }
 
@@ -356,34 +383,34 @@ def stock_timeout_for_customer(status: str, substitute: str | None) -> Text:
     """The deadline passed: what was applied (the customer's own choice at order time)."""
     if status == "substitute_accepted":
         return {
-            "title_ar": "✅ طبّقنا اختيارك: البديل",
+            "title_ar": "✅ طُبّق اختيارك: البديل",
             "title_fr": "✅ Votre choix appliqué : remplacement",
-            "body_ar": f"ما جاوبتش في الوقت، المندوب باش يشري البديل ({_short(substitute, 60)}).",
+            "body_ar": f"لم تُجب في الوقت المحدّد، فسيشتري المندوب البديل ({_short(substitute, 60)}).",
             "body_fr": (
                 f"Sans réponse de votre part, le livreur achète le remplacement ({_short(substitute, 60)})."
             ),
         }
     if status == "item_skipped":
         return {
-            "title_ar": "➖ طبّقنا اختيارك: بلاش المنتج",
+            "title_ar": "➖ طُبّق اختيارك: دون المنتج",
             "title_fr": "➖ Votre choix appliqué : sans l'article",
-            "body_ar": "ما جاوبتش في الوقت، المندوب يكمّل بلاش المنتج الناقص.",
+            "body_ar": "لم تُجب في الوقت المحدّد، فسيواصل المندوب دون المنتج الناقص.",
             "body_fr": "Sans réponse de votre part, le livreur continue sans l'article manquant.",
         }
     if status == "order_cancelled":
         return {
-            "title_ar": "❌ طلبك تلغى",
+            "title_ar": "❌ أُلغي طلبك",
             "title_fr": "❌ Commande annulée",
-            "body_ar": "المنتج مش موجود وما جاوبتش، الطلب تلغى كيما اخترت. بلاش مصاريف.",
+            "body_ar": "المنتج غير متوفر ولم تُجب، فأُلغي الطلب كما اخترت. دون مصاريف.",
             "body_fr": (
                 "Article indisponible et pas de réponse : commande annulée comme vous l'aviez choisi. "
                 "Sans frais."
             ),
         }
     return {
-        "title_ar": "📞 المندوب باش يكلمك",
+        "title_ar": "📞 سيتصل بك المندوب",
         "title_fr": "📞 Le livreur va vous appeler",
-        "body_ar": "ما جاوبتش على المنتج الناقص. المندوب باش يكلمك، ولا جاوب من التطبيق.",
+        "body_ar": "لم تُجب بخصوص المنتج الناقص. سيتصل بك المندوب، أو أجب من التطبيق.",
         "body_fr": (
             "Vous n'avez pas répondu pour l'article manquant. Le livreur va vous appeler, "
             "ou répondez dans l'app."
@@ -394,9 +421,9 @@ def stock_timeout_for_customer(status: str, substitute: str | None) -> Text:
 def stock_cancel_for_customer() -> Text:
     """The courier cancelled after an unanswered stock check (no penalty for anybody)."""
     return {
-        "title_ar": "❌ طلبك تلغى",
+        "title_ar": "❌ أُلغي طلبك",
         "title_fr": "❌ Commande annulée",
-        "body_ar": "المنتج مش موجود في المحل وما وصلناش ليك، المندوب ألغى الطلب. بلاش مصاريف.",
+        "body_ar": "المنتج غير متوفر في المتجر وتعذّر الوصول إليك، فألغى المندوب الطلب. دون مصاريف.",
         "body_fr": (
             "L'article est indisponible et vous n'avez pas pu être joint : le livreur a annulé. Sans frais."
         ),
@@ -405,12 +432,12 @@ def stock_cancel_for_customer() -> Text:
 
 def stock_check_for_admin(order_ref: str, nothing_available: bool) -> Text:
     label_fr = "Rien n'est disponible" if nothing_available else "Article indisponible"
-    label_ar = "حتى شي مش موجود" if nothing_available else "منتج مش موجود"
+    label_ar = "لا يتوفر أي منتج" if nothing_available else "منتج غير متوفر"
     return {
         "title_ar": "مشكلة في طلب",
         "title_fr": "Problème de commande",
         "body_ar": f"الطلب #{order_ref}: {label_ar}",
-        "body_fr": f"Commande #{order_ref}: {label_fr}",
+        "body_fr": f"Commande #{order_ref} : {label_fr}",
     }
 
 
@@ -437,12 +464,12 @@ def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | Non
     name_fr = short_name(courier_name) or "Un livreur"
     name_ar = short_name(courier_name) or "مندوب"
     eta_fr = f" · ~{eta} min" if eta else ""
-    eta_ar = f" · ~{eta} د" if eta else ""
+    eta_ar = f" · ~{eta} دق" if eta else ""
     return {
         "title_ar": "عرض جديد",
         "title_fr": "Nouvelle offre",
         "body_ar": f"{name_ar} يقترح {_money(fee)} د.ت{eta_ar}",
-        "body_fr": f"{name_fr} propose {_money(fee)} TND{eta_fr}",
+        "body_fr": f"{name_fr} propose {_money(fee)} DT{eta_fr}",
     }
 
 
@@ -466,7 +493,7 @@ def offer_accepted_for_courier(shop_name: str | None, items: str | None) -> Text
 def at_shop(shop_name: str | None) -> Text:
     shop = _short(shop_name, 60)
     return {
-        "title_ar": "🏪 المندوب وصل للمتجر",
+        "title_ar": "🏪 وصل المندوب إلى المتجر",
         "title_fr": "🏪 Le livreur est au magasin",
         "body_ar": f"المندوب في {shop or 'المتجر'} ويشتري طلبك الآن",
         "body_fr": f"Le livreur est chez {shop or 'le magasin'} et fait vos achats",

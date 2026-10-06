@@ -322,7 +322,7 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         title_ar="❌ تم إلغاء طلبك",
         title_fr="❌ Commande annulée",
         body_ar=(
-            "لم تردّ على المندوب رغم الإشعار والتنبيه، فتم إلغاء الطلب وإعادة عرض المشتريات "
+            "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي الطلب وأُعيد عرض المشتريات "
             "للبيع. سُجّلت حادثة عدم رد."
         ),
         body_fr=(
@@ -381,9 +381,9 @@ async def _alert_nearby(
                     user_id=user_id,
                     type_="hot_deal_new",
                     title_ar="🔥 عرض ساخن قريب منك",
-                    title_fr="🔥 Offre chaude près de chez vous",
+                    title_fr="🔥 Offre Chaude près de chez vous",
                     body_ar=f"{items} — {price:.3f} د.ت بدل {deal.purchase_amount:.3f} د.ت",
-                    body_fr=f"{items} — {price:.3f} TND au lieu de {deal.purchase_amount:.3f} TND",
+                    body_fr=f"{items} — {price:.3f} DT au lieu de {deal.purchase_amount:.3f} DT",
                     metadata={
                         "resale_order_id": str(deal.id),
                         "recipient_role": "customer",
@@ -531,7 +531,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
     announce(session, deal, deal.status)
 
     if courier is not None:
-        who_ar = buyer.full_name or "عميل"
+        who_ar = buyer.full_name or "حريف"
         who_fr = buyer.full_name or "Un client"
         await notify_always_pushed(
             session,

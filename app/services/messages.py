@@ -323,7 +323,7 @@ async def send_order_message(session: AsyncSession, user: CurrentUser, payload: 
                     user_id=recipient,
                     order_id=order.id,
                     type_="new_message",
-                    title_ar="💬 رسالة من المندوب" if from_courier else "💬 رسالة من العميل",
+                    title_ar="💬 رسالة من المندوب" if from_courier else "💬 رسالة من الحريف",
                     title_fr="💬 Message du livreur" if from_courier else "💬 Message du client",
                     body_ar=preview_ar,
                     body_fr=preview_fr,
