@@ -233,8 +233,12 @@ def test_text_filter_masks_strong_insults_only():
     assert mask("yezzi ya zebi") == ("yezzi ya ****", True)
     assert mask("ya 9a7ba") == ("ya *****", True)
     assert mask("يا قَحْبَة") == ("يا *******", True)
+    # « manyak » in its usual spellings (B53)
+    for word in ("manyek", "Manyak", "MANYIK", "manyouk", "mnayek", "mnayak", "manyeeeek", "منياك"):
+        assert mask(f"QA TEST {word}") == ("QA TEST " + "*" * len(word), True), word
     # normal words that contain a blocked one are never touched
-    for fine in ("habite à Tunis", "ma3andich", "مرحبا، وين وصلت؟", "je prends du pain", ""):
+    for fine in ("habite à Tunis", "ma3andich", "مرحبا، وين وصلت؟", "je prends du pain", "many thanks",
+                 "Germany", "maniaque", "manie", "mayonnaise", "mnih", ""):
         assert mask(fine) == (fine, False)
 
 
