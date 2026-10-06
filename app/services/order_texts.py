@@ -283,14 +283,15 @@ def stock_check_for_customer(
 
 
 def stock_check_chat(missing: str, substitute: str | None, price: object, nothing_available: bool) -> str:
-    """The line the report leaves in the order chat (both languages: one row for both sides)."""
+    """The line the report leaves in the order chat: French on the first line, Arabic on the
+    second (one row serves both sides; the app shows only the reader's line, QA 06/10 B51)."""
     if nothing_available:
         return (
             f"🛒 Rien n'est disponible au magasin : {_short(missing, 200)}\n"
-            f"🛒 حتى شي مش موجود في المحل: {_short(missing, 200)}"
+            f"🛒 لا يتوفر أي منتج في المتجر: {_short(missing, 200)}"
         )
     fr = f"🛒 Article indisponible : {_short(missing, 200)}"
-    ar = f"🛒 منتج مش موجود: {_short(missing, 200)}"
+    ar = f"🛒 منتج غير متوفر: {_short(missing, 200)}"
     if substitute:
         price_fr = f" ({_price(price)} DT)" if price is not None else ""
         price_ar = f" ({_price(price)} د.ت)" if price is not None else ""
@@ -299,10 +300,10 @@ def stock_check_chat(missing: str, substitute: str | None, price: object, nothin
     return f"{fr}\n{ar}"
 
 
-DECISION_CHAT = {
-    "substitute_accepted": "✅ Remplacement accepté\n✅ قبلت البديل",
-    "item_skipped": "➖ Continuer sans cet article\n➖ كمّل بلاش المنتج هذا",
-    "order_cancelled": "❌ Commande annulée (article indisponible)\n❌ الطلب تلغى (المنتج مش موجود)",
+DECISION_CHAT = {  # French line, then Arabic line (see stock_check_chat)
+    "substitute_accepted": "✅ Remplacement accepté\n✅ تم قبول البديل",
+    "item_skipped": "➖ Continuer sans cet article\n➖ مواصلة الطلب دون هذا المنتج",
+    "order_cancelled": "❌ Commande annulée (article indisponible)\n❌ تم إلغاء الطلب (منتج غير متوفر)",
 }
 
 
@@ -462,26 +463,37 @@ def at_shop(shop_name: str | None) -> Text:
     }
 
 
-def purchased(amount: object) -> Text:
+def _of_shop(title_fr: str, title_ar: str, shop_name: str | None) -> tuple[str, str]:
+    """A step title that names the order's shop: with two orders, the customer knows which one
+    moves (QA 06/10, B60: « Le livreur est en route » of another order, right after a block)."""
+    shop = _short(shop_name, 40)
+    if not shop:
+        return title_fr, title_ar
+    return f"{title_fr} · {shop}", f"{title_ar} · {shop}"
+
+
+def purchased(amount: object, shop_name: str | None = None) -> Text:
+    title_fr, title_ar = _of_shop("🛍️ Achat effectué", "🛍️ تم الشراء", shop_name)
     if amount:
         return {
-            "title_ar": "🛍️ تم الشراء",
-            "title_fr": "🛍️ Achat effectué",
+            "title_ar": title_ar,
+            "title_fr": title_fr,
             "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت (حسب الوصل)",
-            "body_fr": f"Montant des achats : {_money(amount)} TND (selon le reçu)",
+            "body_fr": f"Montant des achats : {_money(amount)} DT (selon le reçu)",
         }
     return {
-        "title_ar": "🛍️ تم الشراء",
-        "title_fr": "🛍️ Achat effectué",
+        "title_ar": title_ar,
+        "title_fr": title_fr,
         "body_ar": "تم شراء طلبك",
         "body_fr": "Votre commande a été achetée",
     }
 
 
-def on_the_way(eta: int | None) -> Text:
+def on_the_way(eta: int | None, shop_name: str | None = None) -> Text:
+    title_fr, title_ar = _of_shop("🚚 Le livreur est en route", "🚚 المندوب في الطريق إليك", shop_name)
     return {
-        "title_ar": "🚚 المندوب في الطريق إليك",
-        "title_fr": "🚚 Le livreur est en route",
+        "title_ar": title_ar,
+        "title_fr": title_fr,
         "body_ar": f"الوصول خلال ~{eta} دقيقة. جهّز المبلغ نقداً."
         if eta
         else "المندوب يتجه نحوك الآن. جهّز المبلغ نقداً.",
@@ -491,17 +503,18 @@ def on_the_way(eta: int | None) -> Text:
     }
 
 
-def delivered(total: object) -> Text:
+def delivered(total: object, shop_name: str | None = None) -> Text:
+    title_fr, title_ar = _of_shop("✨ Commande livrée", "✨ تم التوصيل", shop_name)
     if total:
         return {
-            "title_ar": "✨ تم التوصيل",
-            "title_fr": "✨ Commande livrée",
+            "title_ar": title_ar,
+            "title_fr": title_fr,
             "body_ar": f"تم توصيل طلبك ({_money(total)} د.ت). قيّم المندوب!",
-            "body_fr": f"Votre commande a été livrée ({_money(total)} TND). Notez votre livreur !",
+            "body_fr": f"Votre commande a été livrée ({_money(total)} DT). Notez votre livreur !",
         }
     return {
-        "title_ar": "✨ تم التوصيل",
-        "title_fr": "✨ Commande livrée",
+        "title_ar": title_ar,
+        "title_fr": title_fr,
         "body_ar": "تم توصيل طلبك. قيّم المندوب!",
         "body_fr": "Votre commande a été livrée. Notez votre livreur !",
     }

@@ -2,6 +2,7 @@
 the timeout job per unavailable_policy, the fault-free cancellation, the courier steps blocked
 while the customer decides, the Order document fields and placeOrder's policy."""
 
+import re
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -186,6 +187,10 @@ async def test_report_parks_the_order_and_alerts_the_customer(client, world):
     [line] = await chat(order)
     assert line.sender_role == "courier" and line.recipient_id == world.customer.id and line.is_template
     assert "Coca 1L" in line.body and "Pepsi 1L" in line.body
+    # one line per language (French, then Arabic): the app shows the reader's line only (B51)
+    fr, ar = line.body.split("\n")
+    assert fr.startswith("🛒 Article indisponible") and not re.search("[\u0600-\u06ff]", fr)
+    assert re.search("[\u0600-\u06ff]", ar) and "Article" not in ar and "د.ت" in ar
 
 
 async def test_report_from_accepted_goes_through_at_shop(client, world):

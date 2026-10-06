@@ -101,6 +101,9 @@ def recipient_role(type_: str, metadata: dict[str, Any]) -> str | None:
     return None
 
 
+CHAT_TYPES = ("new_message", "message")
+
+
 def push_link(type_: str, order_id: str | None, metadata: dict[str, Any]) -> str:
     """In-app link; `as=<role>` makes a dual account switch to that side first."""
     role = recipient_role(type_, metadata)
@@ -109,12 +112,19 @@ def push_link(type_: str, order_id: str | None, metadata: dict[str, Any]) -> str
             path = "/CourierHome"
         elif type_ == "new_order":
             path = f"/CourierOrderDetail?id={order_id}"
+        elif type_ == "order_cancelled" and metadata.get("reason") == "blocked_by_customer":
+            # « Commande retirée »: the page says why instead of « introuvable » (QA 06/10, B56)
+            path = f"/CourierOrderActive?id={order_id}&retired=1"
+        elif type_ in CHAT_TYPES:
+            path = f"/CourierOrderActive?id={order_id}&showChat=true"  # the chat opens (B57)
         else:
             path = f"/CourierOrderActive?id={order_id}"
     elif not order_id:
         path = "/"
     elif type_ == "new_offer":
         path = f"/OrderOffers?id={order_id}"
+    elif type_ in CHAT_TYPES:
+        path = f"/OrderTracking?id={order_id}&showChat=true"
     else:
         path = f"/OrderTracking?id={order_id}"
     if not role:

@@ -120,13 +120,15 @@ async def courier_step(session: AsyncSession, order: Order, from_status: str, to
         return False
     if to_status == "at_shop":
         text = order_texts.at_shop(await _stop_name(session, order.id, order.current_stop_seq))
-    elif to_status == "purchased":
-        text = order_texts.purchased(order.purchase_amount)
-    elif to_status == "on_the_way":
-        text = order_texts.on_the_way(order.eta_minutes)
     else:
-        total = (order.purchase_amount or Decimal(0)) + (order.delivery_fee or Decimal(0))
-        text = order_texts.delivered(total if order.purchase_amount is not None else None)
+        shop = await _stop_name(session, order.id, 0)  # names the order (B60)
+        if to_status == "purchased":
+            text = order_texts.purchased(order.purchase_amount, shop)
+        elif to_status == "on_the_way":
+            text = order_texts.on_the_way(order.eta_minutes, shop)
+        else:
+            total = (order.purchase_amount or Decimal(0)) + (order.delivery_fee or Decimal(0))
+            text = order_texts.delivered(total if order.purchase_amount is not None else None, shop)
     return await _send(
         session,
         mode="always" if to_status == "delivered" else "prefs",

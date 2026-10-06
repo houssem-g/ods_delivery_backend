@@ -20,7 +20,7 @@ from sqlalchemy import and_, delete, exists, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, Message, Order, OrderOffer, User, UserBlock, UserReport
+from app.models import Courier, Message, Order, OrderOffer, OrderStop, User, UserBlock, UserReport
 from app.models.safety import REPORT_REASONS
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
@@ -251,28 +251,83 @@ async def unblock_user(session: AsyncSession, user: CurrentUser, payload: dict[s
     return 200, {"success": True}
 
 
-async def list_blocked_users(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
-    """The people the caller blocked (first name only), newest first."""
-    rows = await session.execute(
-        select(UserBlock.blocked_id, UserBlock.created_at, User.full_name, Courier.display_name)
-        .join(User, User.id == UserBlock.blocked_id)
-        .outerjoin(Courier, Courier.user_id == UserBlock.blocked_id)
-        .where(UserBlock.blocker_id == user.id)
-        .order_by(UserBlock.created_at.desc())
-        .limit(200)
+async def _last_shared_order(
+    session: AsyncSession, me: uuid.UUID, other: uuid.UUID
+) -> tuple[str, str | None, Any] | None:
+    """The latest order where the caller met `other`: (the other's role there 'customer' /
+    'courier', the shop's name, the order's date), None when there is none. One account can be
+    both customer and courier: the role comes from the order, not from the profile (QA B54)."""
+    my_couriers = select(Courier.id).where(Courier.user_id == me)
+    their_couriers = select(Courier.id).where(Courier.user_id == other)
+    met = or_(
+        and_(Order.customer_id == me, Order.courier_id.in_(their_couriers)),
+        and_(Order.customer_id == other, Order.courier_id.in_(my_couriers)),
+        and_(
+            Order.customer_id == me,
+            exists().where(OrderOffer.order_id == Order.id, OrderOffer.courier_id.in_(their_couriers)),
+        ),
+        and_(
+            Order.customer_id == other,
+            exists().where(Message.order_id == Order.id, Message.sender_id == me),
+        ),
     )
-    return 200, {
-        "success": True,
-        "blocked": [
+    shop = (
+        select(OrderStop.name)
+        .where(OrderStop.order_id == Order.id)
+        .order_by(OrderStop.seq)
+        .limit(1)
+        .scalar_subquery()
+    )
+    row = (
+        await session.execute(
+            select(Order.customer_id, shop, Order.created_at)
+            .where(met)
+            .order_by(Order.created_at.desc())
+            .limit(1)
+        )
+    ).first()
+    if row is None:
+        return None
+    customer_id, shop_name, created = row
+    return ("customer" if customer_id == other else "courier"), shop_name, created
+
+
+def _iso_z(value: Any) -> str | None:
+    return value.isoformat().replace("+00:00", "Z") if value else None
+
+
+async def list_blocked_users(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
+    """The people the caller blocked (first name only), newest first, each with the role he met
+    them in (`role`: 'customer' / 'courier') and the shop + date of that order, so two people
+    with the same first name can be told apart."""
+    rows = (
+        await session.execute(
+            select(UserBlock.blocked_id, UserBlock.created_at, User.full_name, Courier.display_name)
+            .join(User, User.id == UserBlock.blocked_id)
+            .outerjoin(Courier, Courier.user_id == UserBlock.blocked_id)
+            .where(UserBlock.blocker_id == user.id)
+            .order_by(UserBlock.created_at.desc())
+            .limit(200)
+        )
+    ).all()
+    blocked = []
+    for blocked_id, created, full_name, display_name in rows:
+        shared = await _last_shared_order(session, user.id, blocked_id)
+        role = shared[0] if shared else ("courier" if display_name is not None else "customer")
+        # the name he goes by in that role: a customer's own name, a courier's display name
+        name = (full_name or display_name) if role == "customer" else (display_name or full_name)
+        blocked.append(
             {
                 "user_id": str(blocked_id),
-                "first_name": _first_name(display_name or full_name) or "—",
-                "is_courier": display_name is not None,
-                "blocked_at": created.isoformat().replace("+00:00", "Z"),
+                "first_name": _first_name(name) or "—",
+                "role": role,
+                "is_courier": role == "courier",
+                "shop_name": shared[1] if shared else None,
+                "order_date": _iso_z(shared[2]) if shared else None,
+                "blocked_at": _iso_z(created),
             }
-            for blocked_id, created, full_name, display_name in rows
-        ],
-    }
+        )
+    return 200, {"success": True, "blocked": blocked}
 
 
 # ─────────────────────────── reportUser ───────────────────────────

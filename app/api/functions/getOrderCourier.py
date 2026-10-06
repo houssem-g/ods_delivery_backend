@@ -4,7 +4,9 @@
 Body: { order_id } (the order's customer, its courier, admins) or { offer_id } (the customer the
 offer was sent to, admins). The phone and full name are given for an assigned courier and for
 an offer: every assignment and every offer is made by the server now, so both are genuine
-(`verified` true). The live position only while the delivery runs.
+(`verified` true). The live position only while the delivery runs. After a block between the
+customer and the courier the phone is kept only while the order runs (owner's rule, QA 06/10
+B55): no phone once it is over, nor on an offer.
 Returns { success, courier, tracking?, verified? }.
 """
 
@@ -18,6 +20,7 @@ from app.api.functions._common import as_uuid
 from app.models import Courier, Order, OrderOffer
 from app.security.deps import CurrentUser
 from app.services.order_transitions import LIVE_STATUSES
+from app.services.safety import is_blocked
 from app.services.tracking import courier_card
 
 
@@ -50,7 +53,8 @@ async def handle(
         courier = await session.get(Courier, offer.courier_id)
         if courier is None:
             return 200, {"success": True, "courier": None}
-        card = await courier_card(session, courier, contact=True, position=False)
+        contact = user.is_admin or not await is_blocked(session, customer_id, courier.user_id)
+        card = await courier_card(session, courier, contact=contact, position=False)
         return 200, {"success": True, "courier": card, "verified": True}
 
     oid = as_uuid(order_id)
@@ -69,5 +73,6 @@ async def handle(
     if courier is None:
         return 200, {"success": True, "courier": None, "tracking": False}
     tracking = order.status in LIVE_STATUSES
-    card = await courier_card(session, courier, contact=True, position=tracking, order_id=order.id)
+    contact = user.is_admin or tracking or not await is_blocked(session, order.customer_id, courier.user_id)
+    card = await courier_card(session, courier, contact=contact, position=tracking, order_id=order.id)
     return 200, {"success": True, "courier": card, "tracking": tracking, "verified": True}

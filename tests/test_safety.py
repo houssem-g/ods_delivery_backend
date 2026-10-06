@@ -3,6 +3,7 @@ reportUser / listUserReports / resolveUserReport, and what a block hides (chat, 
 offers, dispatch)."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 
@@ -55,6 +56,58 @@ async def test_courier_blocks_the_customer(client, parties):
     res = await call(client, "blockUser", parties.courier_user, {"order_id": str(order.id)})
     assert res.status_code == 200
     assert res.json()["blocked_user_id"] == str(parties.customer.id)
+
+
+async def test_blocked_list_says_the_role_the_person_was_met_in(client, parties, factory):
+    """QA 06/10 B54: a customer who also has a courier profile, blocked by the courier of his
+    order, is listed as « client » (with his own name and the order's shop), not « livreur »."""
+    await factory.courier(parties.customer, display_name="Zied", phone_e164="+21622000999")
+    order = await make_order(parties.customer, parties.courier)
+    res = await call(client, "blockUser", parties.courier_user, {"order_id": str(order.id)})
+    assert res.status_code == 200
+    [row] = (await call(client, "listBlockedUsers", parties.courier_user)).json()["blocked"]
+    customer_first = ((await rows(User, User.id == parties.customer.id))[0].full_name or "").split(" ")[0]
+    assert row["role"] == "customer" and row["is_courier"] is False
+    assert row["first_name"] == (customer_first or "—") and row["first_name"] != "Zied"
+    assert row["shop_name"] == "Carrefour" and row["order_date"].endswith("Z")
+    # the other way round: the customer blocked the courier of the same order
+    await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})
+    [row] = (await call(client, "listBlockedUsers", parties.customer)).json()["blocked"]
+    assert (row["role"], row["first_name"], row["shop_name"]) == ("courier", "Sami", "Carrefour")
+
+
+async def test_after_a_block_phones_stay_until_the_running_order_ends(client, parties):
+    """Owner's rule (QA 06/10 B55): a block during a running delivery keeps Appeler / WhatsApp
+    (the phones) until the order ends; then, and on any order outside a running one, the phones
+    between the two people are gone."""
+    order = await make_order(parties.customer, parties.courier, contact_phone_e164="+21698765432")
+
+    async def phones() -> tuple[Any, Any, Any]:
+        seen_by_customer = await client.get(f"/api/entities/Order/{order.id}", headers=auth(parties.customer))
+        seen_by_courier = await client.get(
+            f"/api/entities/Order/{order.id}", headers=auth(parties.courier_user)
+        )
+        card = (await call(client, "getOrderCourier", parties.customer, {"order_id": str(order.id)})).json()
+        return (
+            seen_by_customer.json().get("courier_phone"),
+            seen_by_courier.json().get("customer_phone"),
+            card["courier"]["phone"],
+        )
+
+    before = await phones()
+    assert before == (parties.courier.phone_e164, "+21698765432", parties.courier.phone_e164)
+    assert (await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})).status_code == 200
+    assert await phones() == before  # the delivery runs: still reachable
+
+    async with SessionLocal() as s:
+        row = await s.get(Order, order.id)
+        row.status, row.delivered_at = "delivered", datetime.now(UTC)
+        await s.commit()
+    assert await phones() == (None, None, "")  # over: gone both ways
+
+    # unblocked: the phones of the finished order come back
+    await call(client, "unblockUser", parties.customer, {"user_id": str(parties.courier_user.id)})
+    assert await phones() == before
 
 
 async def test_block_from_a_message(client, parties):
@@ -233,8 +286,23 @@ def test_text_filter_masks_strong_insults_only():
     assert mask("yezzi ya zebi") == ("yezzi ya ****", True)
     assert mask("ya 9a7ba") == ("ya *****", True)
     assert mask("يا قَحْبَة") == ("يا *******", True)
+    # « manyak » in its usual spellings (B53)
+    for word in ("manyek", "Manyak", "MANYIK", "manyouk", "mnayek", "mnayak", "manyeeeek", "منياك"):
+        assert mask(f"QA TEST {word}") == ("QA TEST " + "*" * len(word), True), word
     # normal words that contain a blocked one are never touched
-    for fine in ("habite à Tunis", "ma3andich", "مرحبا، وين وصلت؟", "je prends du pain", ""):
+    for fine in (
+        "habite à Tunis",
+        "ma3andich",
+        "مرحبا، وين وصلت؟",
+        "je prends du pain",
+        "many thanks",
+        "Germany",
+        "maniaque",
+        "manie",
+        "mayonnaise",
+        "mnih",
+        "",
+    ):
         assert mask(fine) == (fine, False)
 
 

@@ -18,12 +18,15 @@ _FR = {
 }  # fmt: skip
 _DERJA = {
     "zebi", "zeby", "zab", "zabour", "nayek", "nayk", "nik", "nikomek", "nikmok", "kahba", "9a7ba",
-    "qahba", "kahbe", "miboun", "mibboun", "zok", "zokk", "zokomek", "tahan", "manyak", "mnayek",
+    "qahba", "kahbe", "miboun", "mibboun", "zok", "zokk", "zokomek", "tahan",
+    # « manyak » and its usual spellings (e/i/ou, with or without the first a, plural / feminine)
+    "manyak", "manyek", "manyik", "manyok", "manyouk", "maniouk", "manyaka", "manyka", "manyouka",
+    "mnayek", "mnayak", "mnayik", "mnaykia", "mnayka", "mnaike", "mnayeik",
     "3ahra", "khra", "khara", "zamel", "zemel",
 }  # fmt: skip
 _AR = {
     "قحبة", "كحبة", "قحاب", "زبي", "زب", "زبور", "نيك", "نيكمك", "زك", "زكمك", "ميبون", "طحان",
-    "شرموطة", "شرموط", "منيوك", "منيك", "عاهرة", "خرا", "زامل",
+    "شرموطة", "شرموط", "منيوك", "منيك", "منياك", "مانياك", "مانيك", "منايك", "عاهرة", "خرا", "زامل",
 }  # fmt: skip
 BLOCKED_WORDS = frozenset(_FR | _DERJA | _AR)
 
