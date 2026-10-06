@@ -7,7 +7,9 @@ Read (base44/entities/Order.jsonc): the customer, the assigned courier, admins; 
 customer_phone, delivery_details, courier_live_*, reported_issues, has_issues, stock_check(s),
 picked_items only for the order's parties and admins; courier_is_online, hot_deal_saving,
 free_cancel_until, preparing_offers for the customer and admins; courier_vehicle_model,
-courier_plate, courier_rating_count for the customer while a courier is on the delivery.
+courier_plate, courier_rating_count for the customer while a courier is on the delivery;
+customer_phone / courier_phone are gone after a block between the two, once the order no longer
+runs (QA B55).
 Write: no create (placeOrder) and no delete; update = the assigned courier's delivery steps
 and the customer's geocode (app/services/order_steps.py); anything else 403.
 """
@@ -256,6 +258,26 @@ def customer_while_assigned(user: CurrentUser) -> Any:
     )
 
 
+def _reachable() -> Any:
+    """No block between the customer and the courier, or the order still runs: after a block,
+    Appeler / WhatsApp stay until the end of the running order, then the phones are gone
+    (owner's rule, QA 06/10 B55)."""
+    return or_(
+        orders.c.status.in_(ot.LIVE_STATUSES),
+        not_(blocked_pair(orders.c.customer_id, courier.c.user_id)),
+    )
+
+
+def contact_of_party(user: CurrentUser) -> Any:
+    """customer_phone: the order's parties (and admins) while the two can reach each other."""
+    return true() if user.is_admin else and_(parties(user), _reachable())
+
+
+def contact_reachable(user: CurrentUser) -> Any:
+    """courier_phone: as before (whoever reads the order), minus a block outside a running order."""
+    return true() if user.is_admin else _reachable()
+
+
 def customer_or_admin(user: CurrentUser) -> Any:
     return true() if user.is_admin else orders.c.customer_id == user.id
 
@@ -322,11 +344,11 @@ guarded = {"read_guard": party_or_admin}
 FIELDS: dict[str, LegacyField] = {
     "customer_id": LegacyField(customer.c.email, "string"),
     "customer_name": LegacyField(orders.c.contact_name, "string"),
-    "customer_phone": LegacyField(orders.c.contact_phone_e164, "string", **guarded),
+    "customer_phone": LegacyField(orders.c.contact_phone_e164, "string", read_guard=contact_of_party),
     "courier_id": LegacyField(orders.c.courier_id, "id"),
     "courier_user_id": LegacyField(courier_user.c.email, "string"),
     "courier_name": LegacyField(courier.c.display_name, "string"),
-    "courier_phone": LegacyField(courier.c.phone_e164, "string"),
+    "courier_phone": LegacyField(courier.c.phone_e164, "string", read_guard=contact_reachable),
     "courier_photo": LegacyField(cast(null(), Text), "string"),
     "courier_live_lat": LegacyField(lat_of(live.c.location), "number", **guarded),
     "courier_live_lng": LegacyField(lng_of(live.c.location), "number", **guarded),
