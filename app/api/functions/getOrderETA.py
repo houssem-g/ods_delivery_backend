@@ -8,15 +8,13 @@ Body: { order_id }. Returns { success, order_id, status, eta_minutes, distance_k
 from typing import Any
 
 from fastapi import Request
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.functions._common import as_uuid
 from app.models import Order
 from app.security.deps import CurrentUser
-from app.services.geo import lat_of, lng_of
-from app.services.orders import first_stop, is_assigned_courier, stop_coordinates
-from app.services.tracking import order_eta
+from app.services.orders import is_assigned_courier
+from app.services.tracking import eta_destination, order_eta
 
 
 async def handle(
@@ -33,17 +31,7 @@ async def handle(
         user.is_admin or order.customer_id == user.id or await is_assigned_courier(session, order, user.id)
     ):
         return 403, {"error": "Forbidden"}
-    if order.status in ("accepted", "at_shop"):
-        destination = await stop_coordinates(session, await first_stop(session, order.id))
-    else:
-        row = (
-            await session.execute(
-                select(lat_of(Order.delivery_location), lng_of(Order.delivery_location)).where(
-                    Order.id == order.id
-                )
-            )
-        ).first()
-        destination = (float(row[0]), float(row[1])) if row and row[0] is not None else None
+    destination = await eta_destination(session, order)
     answer = await order_eta(session, order, destination)
     answer["order_id"] = order_id
     return 200, answer

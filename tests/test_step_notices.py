@@ -144,7 +144,8 @@ async def test_each_step_one_notice_even_with_the_app_resending(client, world):
     notes = {n.type: n for n in await notifications(world.customer)}
     assert notes["at_shop"].body_fr == "Le livreur est chez Monoprix et fait vos achats"
     assert notes["purchased"].body_fr == "Montant des achats : 20.000 TND (selon le reçu)"
-    assert notes["on_the_way"].body_fr == "Arrivée dans ~12 min. Préparez le paiement en espèces."
+    # the ride's time from the courier's position (getOrderETA), not the offer's 12 min (QA B7)
+    assert notes["on_the_way"].body_fr == "Arrivée dans ~3 min. Préparez le paiement en espèces."
     assert notes["delivered"].body_fr == "Votre commande a été livrée (27.000 TND). Notez votre livreur !"
     assert len(await pushes(world.customer)) == 4
 

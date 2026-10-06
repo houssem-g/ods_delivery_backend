@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, Order, OrderOffer, OrderStop
 from app.security.tokens import now_utc
-from app.services import order_texts
+from app.services import order_texts, tracking
 from app.services.notifications import notify, recent_duplicate
 from app.services.order_notices import notify_always_pushed, notify_and_push
 
@@ -123,7 +123,8 @@ async def courier_step(session: AsyncSession, order: Order, from_status: str, to
     elif to_status == "purchased":
         text = order_texts.purchased(order.purchase_amount)
     elif to_status == "on_the_way":
-        text = order_texts.on_the_way(order.eta_minutes)
+        # the ride's real time (same computation as the tracking ring), not the offer's delay (QA B7)
+        text = order_texts.on_the_way(await tracking.ride_eta_minutes(session, order))
     else:
         total = (order.purchase_amount or Decimal(0)) + (order.delivery_fee or Decimal(0))
         text = order_texts.delivered(total if order.purchase_amount is not None else None)
