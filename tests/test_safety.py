@@ -57,6 +57,24 @@ async def test_courier_blocks_the_customer(client, parties):
     assert res.json()["blocked_user_id"] == str(parties.customer.id)
 
 
+async def test_blocked_list_says_the_role_the_person_was_met_in(client, parties, factory):
+    """QA 06/10 B54: a customer who also has a courier profile, blocked by the courier of his
+    order, is listed as « client » (with his own name and the order's shop), not « livreur »."""
+    await factory.courier(parties.customer, display_name="Zied", phone_e164="+21622000999")
+    order = await make_order(parties.customer, parties.courier)
+    res = await call(client, "blockUser", parties.courier_user, {"order_id": str(order.id)})
+    assert res.status_code == 200
+    [row] = (await call(client, "listBlockedUsers", parties.courier_user)).json()["blocked"]
+    customer_first = ((await rows(User, User.id == parties.customer.id))[0].full_name or "").split(" ")[0]
+    assert row["role"] == "customer" and row["is_courier"] is False
+    assert row["first_name"] == (customer_first or "—") and row["first_name"] != "Zied"
+    assert row["shop_name"] == "Carrefour" and row["order_date"].endswith("Z")
+    # the other way round: the customer blocked the courier of the same order
+    await call(client, "blockUser", parties.customer, {"order_id": str(order.id)})
+    [row] = (await call(client, "listBlockedUsers", parties.customer)).json()["blocked"]
+    assert (row["role"], row["first_name"], row["shop_name"]) == ("courier", "Sami", "Carrefour")
+
+
 async def test_block_from_a_message(client, parties):
     order = await make_order(parties.customer, parties.courier)
     msg = await make_message(order, parties.courier_user, "courier", parties.customer, body="insulte")
