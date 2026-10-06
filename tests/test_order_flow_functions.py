@@ -339,7 +339,7 @@ async def test_create_offer(client, world, factory):
     # the customer is told by the server (the app's own notice that follows is a duplicate)
     [note] = await notifications(world.customer)
     assert note.type == "new_offer" and note.order_id == order.id
-    assert note.body_fr == "Karim T. propose 6.123 DT · ~25 min"
+    assert note.body_fr == "Karim T. propose : Achats + 6.123 DT · ~25 min"
     assert note.data["offer_id"] == offer["id"] and note.data["recipient_role"] == "customer"
 
     twice = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})

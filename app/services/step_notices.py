@@ -113,6 +113,14 @@ async def offer_accepted(
     )
 
 
+def _cash_total(order: Order) -> Decimal | None:
+    """Goods + delivery once the goods are bought (the app's lib/cashDue « final »), else None:
+    before the purchase no notice gives a total (QA 06/10 R2)."""
+    if order.purchase_amount is None:
+        return None
+    return order.purchase_amount + (order.delivery_fee or Decimal(0))
+
+
 async def courier_step(session: AsyncSession, order: Order, from_status: str, to_status: str) -> bool:
     """The customer's notice of the courier's step `from_status → to_status` (after the transition).
     at_shop only on arrival (accepted → at_shop), not when a stock check sends it back there."""
@@ -122,14 +130,17 @@ async def courier_step(session: AsyncSession, order: Order, from_status: str, to
         text = order_texts.at_shop(await _stop_name(session, order.id, order.current_stop_seq))
     else:
         shop = await _stop_name(session, order.id, 0)  # names the order (B60)
+        # the real amount to pay (goods + delivery), once the goods are bought (QA R2)
+        total = _cash_total(order)
         if to_status == "purchased":
-            text = order_texts.purchased(order.purchase_amount, shop, await _has_receipt(session, order.id))
+            text = order_texts.purchased(
+                order.purchase_amount, shop, await _has_receipt(session, order.id), total
+            )
         elif to_status == "on_the_way":
             # the ride's real time (same computation as the tracking ring), not the offer's delay (QA B7)
-            text = order_texts.on_the_way(await tracking.ride_eta_minutes(session, order), shop)
+            text = order_texts.on_the_way(await tracking.ride_eta_minutes(session, order), shop, total)
         else:
-            total = (order.purchase_amount or Decimal(0)) + (order.delivery_fee or Decimal(0))
-            text = order_texts.delivered(total if order.purchase_amount is not None else None, shop)
+            text = order_texts.delivered(total, shop)
     return await _send(
         session,
         mode="always" if to_status == "delivered" else "prefs",

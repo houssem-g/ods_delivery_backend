@@ -479,8 +479,10 @@ def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | Non
     return {
         "title_ar": "عرض جديد",
         "title_fr": "Nouvelle offre",
-        "body_ar": f"{name_ar} يقترح {_money(fee)} د.ت{eta_ar}",
-        "body_fr": f"{name_fr} propose {_money(fee)} DT{eta_fr}",
+        # « Achats + fee »: the goods are paid on top, at the receipt's price — never the fee alone
+        # read as the total (QA 06/10 R2, the app's lib/cashDue)
+        "body_ar": f"{name_ar} يقترح: المشتريات + {_money(fee)} د.ت{eta_ar}",
+        "body_fr": f"{name_fr} propose : Achats + {_money(fee)} DT{eta_fr}",
     }
 
 
@@ -520,18 +522,23 @@ def _of_shop(title_fr: str, title_ar: str, shop_name: str | None) -> tuple[str, 
     return f"{title_fr} · {shop}", f"{title_ar} · {shop}"
 
 
-def purchased(amount: object, shop_name: str | None = None, with_receipt: bool = True) -> Text:
+def purchased(
+    amount: object, shop_name: str | None = None, with_receipt: bool = True, total: object = None
+) -> Text:
     """« Achat effectué »: the amount is « selon le reçu » only when the courier photographed
-    one; without a ticket it is the amount he announced (QA 06/10, N16)."""
+    one; without a ticket it is the amount he announced (QA 06/10, N16). `total` (goods + delivery)
+    is the real amount to pay from now on, said as on every screen (QA 06/10 R2)."""
     title_fr, title_ar = _of_shop("🛍️ Achat effectué", "🛍️ تم الشراء", shop_name)
     if amount:
         source_fr = "selon le reçu" if with_receipt else "sans ticket, annoncé par le livreur"
         source_ar = "حسب الوصل" if with_receipt else "بدون وصل، حسب ما أعلنه المندوب"
+        due_fr = f". À payer : {_money(total)} DT" if total else ""
+        due_ar = f". للدفع: {_money(total)} د.ت" if total else ""
         return {
             "title_ar": title_ar,
             "title_fr": title_fr,
-            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت ({source_ar})",
-            "body_fr": f"Montant des achats : {_money(amount)} DT ({source_fr})",
+            "body_ar": f"مبلغ المشتريات: {_money(amount)} د.ت ({source_ar}){due_ar}",
+            "body_fr": f"Montant des achats : {_money(amount)} DT ({source_fr}){due_fr}",
         }
     return {
         "title_ar": title_ar,
@@ -541,17 +548,16 @@ def purchased(amount: object, shop_name: str | None = None, with_receipt: bool =
     }
 
 
-def on_the_way(eta: int | None, shop_name: str | None = None) -> Text:
+def on_the_way(eta: int | None, shop_name: str | None = None, total: object = None) -> Text:
+    """« En route »: with the real amount to prepare once known (goods + delivery, QA 06/10 R2)."""
     title_fr, title_ar = _of_shop("🚚 Le livreur est en route", "🚚 المندوب في الطريق إليك", shop_name)
+    cash_fr = f"Préparez {_money(total)} DT en espèces." if total else "Préparez le paiement en espèces."
+    cash_ar = f"جهّز {_money(total)} د.ت نقداً." if total else "جهّز المبلغ نقداً."
     return {
         "title_ar": title_ar,
         "title_fr": title_fr,
-        "body_ar": f"الوصول خلال ~{eta} دقيقة. جهّز المبلغ نقداً."
-        if eta
-        else "المندوب يتجه نحوك الآن. جهّز المبلغ نقداً.",
-        "body_fr": f"Arrivée dans ~{eta} min. Préparez le paiement en espèces."
-        if eta
-        else "Le livreur arrive. Préparez le paiement en espèces.",
+        "body_ar": f"الوصول خلال ~{eta} دقيقة. {cash_ar}" if eta else f"المندوب يتجه نحوك الآن. {cash_ar}",
+        "body_fr": f"Arrivée dans ~{eta} min. {cash_fr}" if eta else f"Le livreur arrive. {cash_fr}",
     }
 
 

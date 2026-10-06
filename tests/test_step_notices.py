@@ -70,8 +70,8 @@ async def test_new_offer_is_sent_once_per_offer(client, world):
     offer_id = r.json()["offer"]["id"]
     [note] = await notifications(world.customer, "new_offer")
     assert note.title_fr == "Nouvelle offre" and note.title_ar == "عرض جديد"
-    assert note.body_fr == "Karim T. propose 4.110 DT · ~25 min"
-    assert note.body_ar == "Karim T. يقترح 4.110 د.ت · ~25 دق"
+    assert note.body_fr == "Karim T. propose : Achats + 4.110 DT · ~25 min"
+    assert note.body_ar == "Karim T. يقترح: المشتريات + 4.110 د.ت · ~25 دق"
     assert note.data["offer_id"] == offer_id and note.data["proposed_fee"] == 4.11
     assert len(await pushes(world.customer)) == 1
 
@@ -86,7 +86,7 @@ async def test_new_offer_is_sent_once_per_offer(client, world):
     r2 = await call(client, world.rival_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
     assert r2.status_code == 200
     notes = await notifications(world.customer, "new_offer")
-    assert len(notes) == 2 and notes[1].body_fr == "Sami propose 5.000 DT"
+    assert len(notes) == 2 and notes[1].body_fr == "Sami propose : Achats + 5.000 DT"
 
 
 async def test_new_offer_push_follows_the_preferences(client, world):
@@ -145,10 +145,11 @@ async def test_each_step_one_notice_even_with_the_app_resending(client, world):
     assert notes["at_shop"].body_fr == "Le livreur est chez Monoprix et fait vos achats"
     # no receipt photo in this step: never « selon le reçu » (N16)
     assert (
-        notes["purchased"].body_fr == "Montant des achats : 20.000 DT (sans ticket, annoncé par le livreur)"
+        notes["purchased"].body_fr
+        == "Montant des achats : 20.000 DT (sans ticket, annoncé par le livreur). À payer : 27.000 DT"
     )
     assert (
-        notes["on_the_way"].body_fr == "Arrivée dans ~3 min. Préparez le paiement en espèces."
+        notes["on_the_way"].body_fr == "Arrivée dans ~3 min. Préparez 27.000 DT en espèces."
     )  # the ride, not the offer's 12 min (B7)
     assert notes["delivered"].body_fr == "Votre commande a été livrée (27.000 DT). Notez votre livreur !"
     # each step names the order's shop: with two orders the customer knows which one moves (B60)
@@ -239,7 +240,24 @@ async def test_purchased_notice_says_receipt_only_when_there_is_one(client, worl
 
     by_order = {n.order_id: n for n in await notifications(world.customer, "purchased")}
     ticket, no_ticket = by_order[with_ticket.id], by_order[without.id]
-    assert ticket.body_fr == "Montant des achats : 12.500 DT (selon le reçu)"
-    assert ticket.body_ar == "مبلغ المشتريات: 12.500 د.ت (حسب الوصل)"
-    assert no_ticket.body_fr == "Montant des achats : 2.400 DT (sans ticket, annoncé par le livreur)"
-    assert no_ticket.body_ar == "مبلغ المشتريات: 2.400 د.ت (بدون وصل، حسب ما أعلنه المندوب)"
+    assert ticket.body_fr == "Montant des achats : 12.500 DT (selon le reçu). À payer : 19.500 DT"
+    assert ticket.body_ar == "مبلغ المشتريات: 12.500 د.ت (حسب الوصل). للدفع: 19.500 د.ت"
+    assert no_ticket.body_fr == "Montant des achats : 2.400 DT (sans ticket, annoncé par le livreur). À payer : 9.400 DT"
+    assert no_ticket.body_ar == "مبلغ المشتريات: 2.400 د.ت (بدون وصل، حسب ما أعلنه المندوب). للدفع: 9.400 د.ت"
+
+
+# --- QA 06/10 R2: one text for the cash to prepare (the app's lib/cashDue) -------------------------
+
+
+def test_r2_no_notice_gives_the_fee_alone_as_the_total():
+    from app.services import order_texts
+
+    offer = order_texts.new_offer_for_customer("Karim Trabelsi", 6, None)
+    assert offer["body_fr"] == "Karim T. propose : Achats + 6.000 DT"
+    assert offer["body_ar"] == "Karim T. يقترح: المشتريات + 6.000 د.ت"
+    # before the purchase: no amount in « en route »; afterwards the real total
+    assert order_texts.on_the_way(4)["body_fr"] == "Arrivée dans ~4 min. Préparez le paiement en espèces."
+    assert order_texts.on_the_way(4, None, 26)["body_fr"] == "Arrivée dans ~4 min. Préparez 26.000 DT en espèces."
+    assert order_texts.on_the_way(None, None, 26)["body_ar"] == "المندوب يتجه نحوك الآن. جهّز 26.000 د.ت نقداً."
+    bought = order_texts.purchased(20, None, True, 26)
+    assert bought["body_fr"] == "Montant des achats : 20.000 DT (selon le reçu). À payer : 26.000 DT"
