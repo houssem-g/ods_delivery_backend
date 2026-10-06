@@ -25,7 +25,10 @@ from app.models.base import Base, created_at, updated_at, uuid_pk
 
 LEDGER_KINDS = (
     "commission_due", "commission_waived_launch", "commission_waived_quota", "payment_received", "adjustment",
+    "credit_topup", "credit_bonus", "credit_prime",
 )  # fmt: skip
+CREDIT_TOPUP_METHODS = ("bank_deposit", "cashier")
+CREDIT_TOPUP_STATUSES = ("pending", "approved", "rejected")
 
 
 class CourierStatement(Base):
@@ -136,3 +139,62 @@ class TranslationUsage(Base):
     input_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
     output_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
     cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False, server_default=text("0"))
+
+
+class CreditTopup(Base):
+    """A courier's prepaid-credit top-up (decision D-10): a cash deposit at a bank counter on the ODS
+    account (receipt photo, approved by an admin) or cash handed to a cashier (approved at once).
+    The money itself lives in courier_ledger_entries (credit_topup / credit_bonus, negative amounts)."""
+
+    __tablename__ = "credit_topups"
+    __table_args__ = (
+        CheckConstraint("method IN (" + ",".join(f"'{m}'" for m in CREDIT_TOPUP_METHODS) + ")", name="method"),
+        CheckConstraint("status IN (" + ",".join(f"'{s}'" for s in CREDIT_TOPUP_STATUSES) + ")", name="status"),
+        CheckConstraint("amount > 0 AND amount <= 1000", name="amount"),
+        CheckConstraint("bonus >= 0", name="bonus"),
+        CheckConstraint("method <> 'cashier' OR cashier_user_id IS NOT NULL", name="cashier"),
+        Index("ix_credit_topups_courier_id_created_at", "courier_id", "created_at"),
+        Index("credit_topups_pending", "created_at", postgresql_where=text("status = 'pending'")),
+        Index(
+            "credit_topups_unremitted",
+            "cashier_user_id",
+            postgresql_where=text("method = 'cashier' AND status = 'approved' AND remitted_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    courier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="RESTRICT"), nullable=False
+    )
+    method: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    # Cash the courier paid (DT); the bonus is added on approval (TOPUP_BONUS in app/services/credit.py).
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    bonus: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, server_default="0")
+    # bank_deposit: the receipt photo (PRIVATE bucket, signed for admins only) and the reference he typed.
+    receipt_key: Mapped[str | None] = mapped_column(Text)
+    reference: Mapped[str | None] = mapped_column(Text)
+    cashier_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    note: Mapped[str | None] = mapped_column(Text)
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # cashier: when the cashier handed this cash over to ODS (set by an admin).
+    remitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+
+
+class CreditCashier(Base):
+    """A user allowed to sell prepaid credit for cash (the ODS café in Sousse): one row per user."""
+
+    __tablename__ = "credit_cashiers"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    label: Mapped[str] = mapped_column(Text, nullable=False)
+    address: Mapped[str | None] = mapped_column(Text)
+    active: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = created_at()
