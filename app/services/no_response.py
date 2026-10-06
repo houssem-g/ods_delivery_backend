@@ -54,7 +54,7 @@ from app.security.deps import CurrentUser
 from app.services import cancellation, whatsapp
 from app.services import order_transitions as ot
 from app.services.order_notices import notify_and_push
-from app.services.order_texts import minutes_ar
+from app.services.order_texts import minutes_ar, short_name
 from app.services.orders import courier_of_user, first_stop, is_test_order, mirror_incidents
 from app.services.push import PushMessage, send_to_user
 
@@ -579,7 +579,7 @@ async def _open_case(
         await ot.transition(session, order, "client_no_response", actor, SOURCE)
 
     courier = await session.get(Courier, order.courier_id) if order.courier_id else None
-    courier_name = courier.display_name if courier is not None else ""
+    courier_name = short_name(courier.display_name) if courier is not None else ""
     courier_phone = (courier.phone_e164 if courier is not None else None) or ""
     phone_part = f" ({courier_phone})" if courier_phone else ""
     mins = round(WAIT_SECONDS / 60)

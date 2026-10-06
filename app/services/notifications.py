@@ -29,7 +29,7 @@ from app.models.notifications import NOTIFICATION_TYPE_SYNONYMS, NOTIFICATION_TY
 from app.models.orders import Order
 from app.realtime.events import emit
 from app.security.tokens import now_utc
-from app.services import whatsapp
+from app.services import order_texts, whatsapp
 from app.services.push import PushMessage, send_to_user
 
 log = logging.getLogger("odsd.notifications")
@@ -251,7 +251,8 @@ async def _whatsapp_instead_of_push(
                             select(Courier.display_name).where(Courier.id == order.courier_id)
                         )
                     ).scalar_one_or_none()
-                template, params = "courier_on_the_way", [courier_name or "ODS", label]
+                shown = order_texts.short_name(courier_name) or "ODS"  # one way to write the name (R30)
+                template, params = "courier_on_the_way", [shown, label]
                 key = f"ontheway:{order_id}"
             _status, body = await whatsapp.send_template(
                 session,
