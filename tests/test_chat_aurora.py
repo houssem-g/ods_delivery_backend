@@ -43,6 +43,21 @@ async def rows(model, *where):
 # ─────────────────────────── attachments ───────────────────────────
 
 
+async def test_photo_after_the_burst_limit_is_refused_not_lost(client, parties):
+    """QA 06/10 B52: a photo right after « Trop de messages » answers 429 too_many_messages (the
+    app says so) and stores nothing, never a success with a message that never shows."""
+    order = await make_order(parties.customer, parties.courier)
+    for _ in range(chat.BURST_MAX):
+        await make_message(order, parties.customer, "customer", parties.courier_user)
+    key = await private_file(parties.customer)
+    res = await call(
+        client, "sendOrderMessage", parties.customer,
+        {"order_id": str(order.id), "content": "", "attachment_url": key, "attachment_type": "image"},
+    )  # fmt: skip
+    assert (res.status_code, res.json()) == (429, {"error": "too_many_messages"})
+    assert await rows(Message, Message.order_id == order.id, Message.attachment_key == key) == []
+
+
 async def test_photo_message_without_text(client, parties, emitted):
     order = await make_order(parties.customer, parties.courier)
     key = await private_file(parties.courier_user)
