@@ -143,9 +143,14 @@ async def test_each_step_one_notice_even_with_the_app_resending(client, world):
         assert len(await notifications(world.customer, type_)) == 1, type_
     notes = {n.type: n for n in await notifications(world.customer)}
     assert notes["at_shop"].body_fr == "Le livreur est chez Monoprix et fait vos achats"
-    assert notes["purchased"].body_fr == "Montant des achats : 20.000 TND (selon le reçu)"
+    assert notes["purchased"].body_fr == "Montant des achats : 20.000 DT (selon le reçu)"
     assert notes["on_the_way"].body_fr == "Arrivée dans ~12 min. Préparez le paiement en espèces."
-    assert notes["delivered"].body_fr == "Votre commande a été livrée (27.000 TND). Notez votre livreur !"
+    assert notes["delivered"].body_fr == "Votre commande a été livrée (27.000 DT). Notez votre livreur !"
+    # each step names the order's shop: with two orders the customer knows which one moves (B60)
+    assert notes["on_the_way"].title_fr == "🚚 Le livreur est en route · Monoprix"
+    assert notes["on_the_way"].title_ar == "🚚 المندوب في الطريق إليك · Monoprix"
+    assert notes["purchased"].title_fr == "🛍️ Achat effectué · Monoprix"
+    assert notes["delivered"].title_fr == "✨ Commande livrée · Monoprix"
     assert len(await pushes(world.customer)) == 4
 
 
