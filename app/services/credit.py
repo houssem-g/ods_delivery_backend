@@ -16,7 +16,7 @@ Top-ups (no online payment at first, owner's decision):
     (requestCreditTopup) and an admin approves it (reviewCreditTopup) -> credit_topup + credit_bonus;
   - cashier: cash handed to a cashier (the ODS café in Sousse), who credits him at once
     (cashierCreditTopup); an admin later marks that cash as handed over (markCashierRemitted).
-Bonus (TOPUP_BONUS): 10 DT -> +1 DT, 20 DT -> +3 DT. Primes (fondateur, recrutement) are paid in credit
+Bonus: none since D-11 (TOPUP_BONUS empty; the mechanism stays for a real, time-limited offer). Primes (fondateur, recrutement) are paid in credit
 (grantCourierCredit, kind credit_prime). Nothing is refundable in cash.
 
 December 2026 is the "à blanc" month: the launch waives every commission (commission.py), and the
@@ -51,7 +51,7 @@ from app.storage import keys, s3
 CREDIT_ENFORCED_FROM = LAUNCH_END_DATE  # 1 January 2027, Tunis: before it every commission is waived
 BALANCE_KINDS = (KIND_DUE, "payment_received", "adjustment", "credit_topup", "credit_bonus", "credit_prime")
 CREDIT_KINDS = ("credit_topup", "credit_bonus", "credit_prime")
-TOPUP_BONUS = {Decimal("10"): Decimal("1"), Decimal("20"): Decimal("3")}
+TOPUP_BONUS: dict[Decimal, Decimal] = {}  # no top-up bonus (owner, D-11): the price is simply 0.250 DT
 TOPUP_MIN = Decimal("5")
 TOPUP_MAX = Decimal("200")
 SUGGESTED_TOPUPS = (Decimal("10"), Decimal("20"))

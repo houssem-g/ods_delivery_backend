@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, CourierLedgerEntry, CourierStatement, Order
 
-COMMISSION_PER_DELIVERY_TND = Decimal("0.500")
+COMMISSION_PER_DELIVERY_TND = Decimal("0.250")  # 0.250 since 06/10/2026 (owner, decision D-11)
 FREE_DELIVERIES_PER_MONTH = 20
 LAUNCH_FREE = True
 TUNIS = ZoneInfo("Africa/Tunis")

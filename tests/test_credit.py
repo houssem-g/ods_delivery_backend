@@ -64,8 +64,8 @@ async def test_summary_before_the_launch_ends_shows_what_he_would_have_paid(clie
     body = r.json()
     assert body["enforced"] is False and body["blocked"] is False
     assert body["credit"] == "0.000" and body["month_deliveries"] == 22 and body["free_left"] == 0
-    assert body["would_have_paid"] == "1.000"  # 2 deliveries beyond the 20 free ones
-    assert [t["bonus"] for t in body["suggested_topups"]] == ["1.000", "3.000"]
+    assert body["would_have_paid"] == "0.500"  # 2 deliveries beyond the 20 free ones, 0.250 each
+    assert [t["bonus"] for t in body["suggested_topups"]] == ["0.000", "0.000"]
     assert (await call(client, world.customer, "getMyCredit")).json()["error"] == "courier_profile_missing"
 
 
@@ -124,12 +124,12 @@ async def test_bank_deposit_topup_reviewed_by_an_admin(client, world):
 
     r = await call(client, world.admin, "reviewCreditTopup", {"id": topup["id"], "status": "approved"})
     assert r.status_code == 200, r.text
-    assert r.json()["topup"]["bonus"] == "1.000"
+    assert r.json()["topup"]["bonus"] == "0.000"
     after = (await call(client, world.courier_user, "getMyCredit")).json()
-    assert after["credit"] == "11.000" and after["deliveries_covered"] == 22 and after["pending_topups"] == []
-    assert {h["kind"]: h["amount"] for h in after["history"]} == {"credit_topup": "10.000", "credit_bonus": "1.000"}
+    assert after["credit"] == "10.000" and after["deliveries_covered"] == 40 and after["pending_topups"] == []
+    assert {h["kind"]: h["amount"] for h in after["history"]} == {"credit_topup": "10.000"}
     [told] = await notifications(world.courier_user, "credit_topup_approved")
-    assert "11.000 DT" in told.body_fr
+    assert "10.000 DT" in told.body_fr and "bonus" not in told.body_fr
     twice = await call(client, world.admin, "reviewCreditTopup", {"id": topup["id"], "status": "rejected"})
     assert twice.status_code == 409 and twice.json()["error"] == "topup_already_reviewed"
 
@@ -173,8 +173,8 @@ async def test_cashier_sells_credit_for_cash(client, world, factory):
 
     r = await call(client, cafe, "cashierCreditTopup", {"phone": "+21655123456", "amount": 20})
     assert r.status_code == 200, r.text
-    assert r.json()["credited"] == "23.000" and r.json()["cash_to_collect"] == "20.000"
-    assert (await call(client, world.courier_user, "getMyCredit")).json()["credit"] == "23.000"
+    assert r.json()["credited"] == "20.000" and r.json()["cash_to_collect"] == "20.000"
+    assert (await call(client, world.courier_user, "getMyCredit")).json()["credit"] == "20.000"
     assert await notifications(world.courier_user, "credit_topup_approved")
 
     drawer = (await call(client, cafe, "listMyCashierTopups")).json()
@@ -231,8 +231,8 @@ async def test_settings_are_shown_on_my_credit(client, world, factory):
 async def test_low_credit_alert_once_when_crossing(world, monkeypatch):
     monkeypatch.setattr(commission, "LAUNCH_FREE", False)
     monkeypatch.setattr(commission, "FREE_DELIVERIES_PER_MONTH", 0)
-    await ledger(world.courier, "credit_topup", "-2.000")  # 4 commissions
-    for expected in (0, 1, 1, 1):  # 1.500 (not under 3 commissions yet), 1.000 (crossed), 0.500, 0
+    await ledger(world.courier, "credit_topup", "-1.000")  # 4 commissions of 0.250
+    for expected in (0, 1, 1, 1):  # 0.750 (not under 3 commissions yet), 0.500 (crossed), 0.250, 0
         order = await world.order(status="delivered", courier=world.courier, fee="5")
         async with SessionLocal() as s:
             row = await s.get(type(order), order.id)

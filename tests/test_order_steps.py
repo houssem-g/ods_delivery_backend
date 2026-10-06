@@ -108,7 +108,7 @@ async def test_single_shop_delivery_end_to_end(client, world):
     doc = delivered.json()
     assert doc["status"] == "delivered" and doc["delivered_at"] is not None
     assert doc["platform_fee"] == 0 and doc["courier_net_earning"] == 7
-    assert doc["ods_commission"] == 0.5 and doc["ods_commission_status"] == "offered_launch"
+    assert doc["ods_commission"] == float(commission.COMMISSION_PER_DELIVERY_TND) and doc["ods_commission_status"] == "offered_launch"
     assert doc["courier_live_lat"] is None  # the live position left the order
     assert await rows(select(OrderTracking)) == []
 
@@ -354,7 +354,7 @@ async def test_monthly_quota_then_due(world):
     assert got.count("commission_waived_quota") == 20 and got[-1] == "commission_due"
     await deliver_at(world, datetime(2027, 4, 1, 0, 30, tzinfo=TUNIS))  # a new month in Tunis
     assert (await kinds(world))[-1] == "commission_waived_quota"
-    assert all(e.amount == Decimal("0.500") for e in await rows(select(CourierLedgerEntry)))
+    assert all(e.amount == commission.COMMISSION_PER_DELIVERY_TND for e in await rows(select(CourierLedgerEntry)))
 
 
 async def test_no_fee_no_commission_and_idempotent(world):
