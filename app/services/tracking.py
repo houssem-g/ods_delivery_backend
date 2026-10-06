@@ -12,6 +12,7 @@ from app.compat.dates import legacy_datetime
 from app.integrations import osrm
 from app.models import Courier, Order, OrderTracking, courier_stats
 from app.services.geo import haversine_km, lat_of, lng_of
+from app.services.orders import first_stop, stop_coordinates
 
 
 def first_name(full_name: str | None) -> str:
@@ -98,6 +99,32 @@ def speed_kmh(vehicle: str | None) -> int:
 
 
 ETA_STATUSES = ("accepted", "at_shop", "purchased", "on_the_way", "client_no_response")
+
+
+async def eta_destination(session: AsyncSession, order: Order) -> tuple[float, float] | None:
+    """Where the courier rides to: the shop before the purchase, the customer after it. A hot-deal
+    order (resale_deal_id) is bought already: straight to the customer from its acceptance."""
+    if order.status in ("accepted", "at_shop") and order.resale_deal_id is None:
+        return await stop_coordinates(session, await first_stop(session, order.id))
+    row = (
+        await session.execute(
+            select(lat_of(Order.delivery_location), lng_of(Order.delivery_location)).where(
+                Order.id == order.id
+            )
+        )
+    ).first()
+    return (float(row[0]), float(row[1])) if row and row[0] is not None else None
+
+
+async def ride_eta_minutes(session: AsyncSession, order: Order) -> int | None:
+    """Minutes left of the ride to the customer, computed like getOrderETA (what the tracking ring
+    shows), never the delay the courier typed in his offer (QA B7). None when unknown."""
+    try:
+        answer = await order_eta(session, order, await eta_destination(session, order))
+    except Exception:  # an ETA never fails a step
+        return None
+    eta = answer.get("eta_minutes")
+    return int(eta) if isinstance(eta, (int, float)) and eta > 0 else None
 
 
 async def order_eta(

@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, GeocodeCache, Order, OrderOffer, OrderStop, User
 from app.services import order_transitions as ot
+from app.services.dispatch import DEFAULT_RADIUS_KM
 from app.services.geo import ORDER_BOUNDS, as_float, haversine_km, lat_of, lng_of, within
 from app.services.orders import TEST_ORDER_SQL
 
@@ -79,6 +80,19 @@ async def _count_online(session: AsyncSession, where: tuple[float, float] | None
     stmt = select(func.count()).select_from(Courier).join(User, User.id == Courier.user_id).where(*_online())
     if where is not None:
         stmt = stmt.where(_within(Courier.last_location, where, km))
+    return int((await session.execute(stmt)).scalar_one())
+
+
+async def _count_reaching(session: AsyncSession, shop: tuple[float, float]) -> int:
+    """Online couriers whose notification radius covers the shop: those a new order there is sent
+    to (dispatch.py rule). One number for « Vérifier & publier » and « En attente d'offres » (QA B12)."""
+    radius_m = func.coalesce(func.nullif(Courier.notification_radius_km, 0), DEFAULT_RADIUS_KM) * 1000
+    stmt = (
+        select(func.count())
+        .select_from(Courier)
+        .join(User, User.id == Courier.user_id)
+        .where(*_online(), func.ST_DWithin(Courier.last_location, _geog(*shop), radius_m))
+    )
     return int((await session.execute(stmt)).scalar_one())
 
 
@@ -176,19 +190,31 @@ def _half(value: Decimal) -> float:
 async def _fee_range(
     session: AsyncSession, shop: tuple[float, float], where: tuple[float, float] | None, km: float
 ) -> dict[str, float] | None:
+    """What the online couriers around the shop would ask: the app's suggested price of each
+    (src/lib/orderFlow.js computeOfferQuote: his tariff × (him → shop + shop → customer), his
+    minimum, 1 DT at least), so the customer's « ≈ » matches the offers he gets (QA B8)."""
     if where is None:
         return None
     rows = (
         await session.execute(
-            select(Courier.price_per_km, Courier.min_fee)
+            select(
+                Courier.price_per_km,
+                Courier.min_fee,
+                lat_of(Courier.last_location),
+                lng_of(Courier.last_location),
+            )
             .join(User, User.id == Courier.user_id)
             .where(*_online(), _within(Courier.last_location, shop, km))
         )
     ).all()
     if not rows:
         return None
-    distance = Decimal(str(round(haversine_km(*shop, *where), 3)))
-    fees = [_half(max(min_fee or Decimal(0), distance * price)) for price, min_fee in rows]
+    ride = haversine_km(*shop, *where)
+    fees = []
+    for price, min_fee, lat, lng in rows:
+        to_shop = haversine_km(float(lat), float(lng), *shop) if lat is not None else 0.0
+        distance = Decimal(str(round(to_shop + ride, 3)))
+        fees.append(_half(max(Decimal(1), min_fee or Decimal(0), distance * (price or Decimal(0)))))
     return {"min": min(fees), "max": max(fees)}
 
 
@@ -210,6 +236,7 @@ async def network_pulse(session: AsyncSession, payload: dict[str, Any], signed_i
     shop = _point(payload, "shop_lat", "shop_lng")
     if shop is not None:
         body["couriers_near_shop"] = await _count_online(session, shop, SHOP_RADIUS_KM)
+        body["couriers_for_shop"] = await _count_reaching(session, shop)
         body["fee_range"] = await _fee_range(session, shop, where, km)
     return body
 
