@@ -15,7 +15,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import Courier, Message, Order, OrderStatusEvent, OrderStop, User, UserAddress, customer_stats
+from app.models import (
+    Courier,
+    Message,
+    NoResponseCase,
+    Order,
+    OrderStatusEvent,
+    OrderStop,
+    User,
+    UserAddress,
+    customer_stats,
+)
 from app.models.orders import UNAVAILABLE_POLICIES
 from app.realtime.events import emit
 from app.services import order_transitions as ot
@@ -128,11 +138,24 @@ async def stop_coordinates(session: AsyncSession, stop: OrderStop | None) -> tup
 
 # --- reliability (getCustomerReliability, src/lib/noResponsePolicy.js) -----------------------------
 
-LEVEL_THRESHOLDS = {"warning": 2, "limited": 3, "suspended": 5}
+LEVEL_THRESHOLDS = {"warning": 2, "limited": 3, "suspended": SUSPENDED_AT}
 # Couriers are warned from the first "client ne répond pas" (owner, 2026-09-29; it was 2).
 VISIBLE_TO_COURIERS_AT = 1
 LIMITED_MAX_ADVANCE_TND = 30
 INCIDENT_WINDOW_DAYS = 180
+
+
+# The one source of the incident rules (QA 06/10, R8/R11/R12): every screen reads them from
+# getCustomerReliability (`rules`) instead of its own copy — the customer's alert said « 2 incidents :
+# les livreurs le voient » while the Home said « dès le 1er incident ».
+INCIDENT_RULES: dict[str, int] = {
+    "visible_to_couriers_at": VISIBLE_TO_COURIERS_AT,
+    "warning_at": LEVEL_THRESHOLDS["warning"],
+    "limited_at": LEVEL_THRESHOLDS["limited"],
+    "suspended_at": LEVEL_THRESHOLDS["suspended"],
+    "limited_max_advance_tnd": LIMITED_MAX_ADVANCE_TND,
+    "window_days": INCIDENT_WINDOW_DAYS,
+}
 
 
 def reliability_from_count(count: int) -> dict[str, Any]:
@@ -155,7 +178,31 @@ def reliability_from_count(count: int) -> dict[str, Any]:
         "phone_confirmation_required": limited,
         "suspended": level == "suspended",
         "window_days": INCIDENT_WINDOW_DAYS,
+        "rules": dict(INCIDENT_RULES),
     }
+
+
+async def suspended_until(session: AsyncSession, customer_id: uuid.UUID) -> datetime | None:
+    """When a suspended customer can order again (QA 06/10, R11/R12): the suspension is not a
+    sentence of fixed length, it lasts while SUSPENDED_AT incidents sit in the window — it ends
+    when the SUSPENDED_AT-th most recent one leaves it (unless a new incident comes in). None when
+    not suspended. Same incident definition as the customer_stats view."""
+    when = func.coalesce(NoResponseCase.final_at, NoResponseCase.started_at)
+    nth = (
+        await session.execute(
+            select(when)
+            .join(Order, Order.id == NoResponseCase.order_id)
+            .where(
+                Order.customer_id == customer_id,
+                NoResponseCase.incident_counted.is_(True),
+                when >= func.now() - timedelta(days=INCIDENT_WINDOW_DAYS),
+            )
+            .order_by(when.desc())
+            .offset(SUSPENDED_AT - 1)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    return nth + timedelta(days=INCIDENT_WINDOW_DAYS) if nth is not None else None
 
 
 RELIABILITY_REPLY_DAYS = 90
@@ -463,7 +510,12 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     address, default_point = await default_address(session, user.id)
     built = build_order(raw, user, address, default_point)
     if await active_incidents(session, user.id) >= SUSPENDED_AT:
-        raise OrderRefused(403, "customer_suspended")
+        until = await suspended_until(session, user.id)
+        raise OrderRefused(
+            403,
+            "customer_suspended",
+            suspended_until=until.isoformat().replace("+00:00", "Z") if until else None,
+        )
     open_count = (
         await session.execute(
             select(func.count())

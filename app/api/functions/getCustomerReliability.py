@@ -7,7 +7,10 @@ see the record from the first incident on. Returns { success, incidents, level, 
 max_advance_tnd, phone_confirmation_required, suspended, window_days, delivered_orders (orders
 delivered to this customer, all time), reliability_pct (0-100: delivered / (delivered + incidents
 of the window), 100 without any), avg_reply_seconds (median seconds from a courier's message to the
-customer's next one, last 90 days; null under 3 samples) }.
+customer's next one, last 90 days; null under 3 samples), rules (the incident thresholds every
+screen words its texts with: visible_to_couriers_at, warning_at, limited_at, suspended_at,
+limited_max_advance_tnd, window_days), suspended_until (ISO, own record / admins only, null unless
+suspended: when the oldest of the counted incidents leaves the window) }.
 """
 
 from typing import Any
@@ -19,7 +22,13 @@ from app.api.functions._common import as_uuid
 from app.models import Order
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
-from app.services.orders import active_incidents, courier_of_user, reliability_extras, reliability_from_count
+from app.services.orders import (
+    active_incidents,
+    courier_of_user,
+    reliability_extras,
+    reliability_from_count,
+    suspended_until,
+)
 
 
 async def handle(
@@ -46,5 +55,9 @@ async def handle(
     result = reliability_from_count(incidents)
     extras = await reliability_extras(session, customer_id, incidents)
     if customer_id != user.id and not user.is_admin and not result["visible_to_couriers"]:
-        return 200, {"success": True, **reliability_from_count(0), **extras}
-    return 200, {"success": True, **result, **extras}
+        return 200, {"success": True, **reliability_from_count(0), **extras, "suspended_until": None}
+    until = None
+    if result["suspended"] and (customer_id == user.id or user.is_admin):
+        found = await suspended_until(session, customer_id)
+        until = found.isoformat().replace("+00:00", "Z") if found else None
+    return 200, {"success": True, **result, **extras, "suspended_until": until}
