@@ -554,3 +554,55 @@ async def notify_detailed_row(user):
         )
         await s.commit()
         return result.notification
+
+
+# ─────────────────────────── markNotificationsRead (one call for the page) ───────────────────────────
+
+
+async def test_mark_notifications_read_in_one_call(client, parties, emitted):
+    """QA 06/10 B59: the Notifications page marks its rows read in ONE call, only the caller's
+    own unread ones (another user's row, a row already read and junk ids are left alone)."""
+    async with SessionLocal() as s:
+        mine = [
+            Notification(user_id=parties.customer.id, type="delivered", title_ar="t", title_fr="t")
+            for _ in range(28)
+        ]
+        already = Notification(
+            user_id=parties.customer.id,
+            type="delivered",
+            title_ar="t",
+            title_fr="t",
+            read_at=datetime.now(UTC),
+        )
+        other = Notification(user_id=parties.stranger.id, type="delivered", title_ar="t", title_fr="t")
+        s.add_all([*mine, already, other])
+        await s.commit()
+        ids = [str(n.id) for n in mine]
+        already_id, other_id, already_at = str(already.id), other.id, already.read_at
+
+    res = await client.post(
+        "/api/functions/markNotificationsRead",
+        json={"ids": [*ids, already_id, str(other_id), "not-an-id"]},
+        headers=auth(parties.customer),
+    )
+    assert (res.status_code, res.json()) == (200, {"success": True, "marked": 28})
+    assert all(
+        n.read_at is not None for n in await rows(Notification, Notification.user_id == parties.customer.id)
+    )
+    [kept] = await rows(Notification, Notification.id == uuid.UUID(already_id))
+    assert kept.read_at == already_at
+    [untouched] = await rows(Notification, Notification.id == other_id)
+    assert untouched.read_at is None
+    assert sum(1 for e in emitted if e["entity"] == "Notification" and e["type"] == "update") == 28
+
+    again = await client.post(
+        "/api/functions/markNotificationsRead", json={"ids": ids}, headers=auth(parties.customer)
+    )
+    assert again.json() == {"success": True, "marked": 0}
+    for bad in ({}, {"ids": []}, {"ids": "x"}, {"ids": [str(uuid.uuid4())] * 501}):
+        res = await client.post(
+            "/api/functions/markNotificationsRead", json=bad, headers=auth(parties.customer)
+        )
+        assert res.status_code == 400 and res.json()["error"] == "invalid_ids"
+    anonymous = await client.post("/api/functions/markNotificationsRead", json={"ids": ids})
+    assert anonymous.status_code == 401

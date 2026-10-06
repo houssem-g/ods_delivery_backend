@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -266,3 +266,38 @@ async def _whatsapp_instead_of_push(
     except Exception:
         log.exception("WhatsApp fallback failed for order %s", order_id)
         return None
+
+
+# ─────────────────────────── markNotificationsRead ───────────────────────────
+
+MARK_READ_MAX = 500
+
+
+async def mark_read(session: AsyncSession, user: Any, raw_ids: Any) -> tuple[int, dict[str, Any]]:
+    """The caller's own unread rows among `raw_ids` (1..500) marked read in one statement (QA 06/10
+    B59: the Notifications page sent one request per row). Junk / foreign ids are ignored."""
+    if not isinstance(raw_ids, list) or not 0 < len(raw_ids) <= MARK_READ_MAX:
+        return 400, {"error": "invalid_ids", "max": MARK_READ_MAX}
+    ids: set[uuid.UUID] = set()
+    for value in raw_ids:
+        try:
+            ids.add(uuid.UUID(str(value)))
+        except ValueError:
+            continue
+    if not ids:
+        return 200, {"success": True, "marked": 0}
+    marked = list(
+        (
+            await session.execute(
+                update(Notification)
+                .where(
+                    Notification.id.in_(ids), Notification.user_id == user.id, Notification.read_at.is_(None)
+                )
+                .values(read_at=now_utc())
+                .returning(Notification.id)
+            )
+        ).scalars()
+    )
+    for notice_id in marked:
+        emit(session, "Notification", "update", notice_id)
+    return 200, {"success": True, "marked": len(marked)}
