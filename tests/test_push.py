@@ -48,6 +48,15 @@ def test_push_links():
     assert push_link("delivered", "o1", {}) == "/OrderTracking?id=o1&as=customer"
     assert push_link("delivered", None, {}) == "/?as=customer"
     assert push_link("mystery", None, {}) == "/"
+    # « Commande retirée » explains itself; a chat message opens the chat (QA 06/10, B56 / B57)
+    retired = {"reason": "blocked_by_customer", "recipient_role": "courier"}
+    assert push_link("order_cancelled", "o1", retired) == "/CourierOrderActive?id=o1&retired=1&as=courier"
+    assert push_link("new_message", "o1", {"recipient_role": "courier"}) == (
+        "/CourierOrderActive?id=o1&showChat=true&as=courier"
+    )
+    assert push_link("new_message", "o1", {"recipient_role": "customer"}) == (
+        "/OrderTracking?id=o1&showChat=true&as=customer"
+    )
 
 
 def test_multicast_payload_matches_the_deno_function():
