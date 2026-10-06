@@ -34,7 +34,7 @@ def test_short_name(raw, shown):
 
 def test_new_offer_text_uses_short_name():
     text = new_offer_for_customer("QA Livreur 1", 7, None)
-    assert text["body_fr"] == "QA L. propose 7.000 DT"
+    assert text["body_fr"] == "QA L. propose : Achats + 7.000 DT"  # R2 wording
     assert text["body_ar"].startswith("QA L. ")
 
 

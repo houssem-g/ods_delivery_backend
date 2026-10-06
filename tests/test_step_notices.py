@@ -242,7 +242,10 @@ async def test_purchased_notice_says_receipt_only_when_there_is_one(client, worl
     ticket, no_ticket = by_order[with_ticket.id], by_order[without.id]
     assert ticket.body_fr == "Montant des achats : 12.500 DT (selon le reçu). À payer : 19.500 DT"
     assert ticket.body_ar == "مبلغ المشتريات: 12.500 د.ت (حسب الوصل). للدفع: 19.500 د.ت"
-    assert no_ticket.body_fr == "Montant des achats : 2.400 DT (sans ticket, annoncé par le livreur). À payer : 9.400 DT"
+    assert (
+        no_ticket.body_fr
+        == "Montant des achats : 2.400 DT (sans ticket, annoncé par le livreur). À payer : 9.400 DT"
+    )
     assert no_ticket.body_ar == "مبلغ المشتريات: 2.400 د.ت (بدون وصل، حسب ما أعلنه المندوب). للدفع: 9.400 د.ت"
 
 
@@ -257,7 +260,10 @@ def test_r2_no_notice_gives_the_fee_alone_as_the_total():
     assert offer["body_ar"] == "Karim T. يقترح: المشتريات + 6.000 د.ت"
     # before the purchase: no amount in « en route »; afterwards the real total
     assert order_texts.on_the_way(4)["body_fr"] == "Arrivée dans ~4 min. Préparez le paiement en espèces."
-    assert order_texts.on_the_way(4, None, 26)["body_fr"] == "Arrivée dans ~4 min. Préparez 26.000 DT en espèces."
+    assert (
+        order_texts.on_the_way(4, None, 26)["body_fr"]
+        == "Arrivée dans ~4 min. Préparez 26.000 DT en espèces."
+    )
     assert order_texts.on_the_way(None, None, 26)["body_ar"] == "المندوب يتجه نحوك الآن. جهّز 26.000 د.ت نقداً."
     bought = order_texts.purchased(20, None, True, 26)
     assert bought["body_fr"] == "Montant des achats : 20.000 DT (selon le reçu). À payer : 26.000 DT"
