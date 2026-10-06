@@ -8,7 +8,9 @@ Returns { success, stock_check, order_status }. Errors: 'Missing required fields
 missing_text_required / substitute_text_required / invalid_price / invalid_missing_price (+ max) /
 invalid_quantity (+ max) / invalid_photo (400),
 Unauthorized (403), 'Order not found' (404), not_reportable (409, + status) /
-stock_check_pending (409, + stock_check), too_many_stock_checks (429, + max).
+stock_check_pending (409, + stock_check), item_already_reported (409, + stock_check: the same
+article — or « rien n'est disponible » — was already reported on this order), too_many_stock_checks
+(429, + max).
 """
 
 from typing import Any

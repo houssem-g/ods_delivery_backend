@@ -189,7 +189,11 @@ async def test_place_order_limits(client, world):
             )
         await s.commit()
     suspended = await call(client, world.customer, "placeOrder", {"order": order_form()})
-    assert suspended.status_code == 403 and suspended.json() == {"error": "customer_suspended"}
+    assert suspended.status_code == 403 and suspended.json()["error"] == "customer_suspended"
+    # when he can order again: the 5th most recent incident leaves the 180-day window (QA R11)
+    assert suspended.json()["suspended_until"].startswith(
+        (datetime.now(UTC) + timedelta(days=180)).date().isoformat()
+    )
     assert (await client.post("/api/functions/placeOrder", json={})).status_code == 401
 
 
