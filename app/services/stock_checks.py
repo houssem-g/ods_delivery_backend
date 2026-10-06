@@ -42,7 +42,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import File, Message, Order, OrderOffer, OrderStockCheck, OrderStop, User
+from app.models import File, Message, Order, OrderOffer, OrderStockCheck, User
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import order_texts
@@ -60,7 +60,10 @@ MAX_CHECKS = 5
 MAX_TEXT = 500
 MAX_PRICE = Decimal("2000")
 MAX_QUANTITY = 100
-REPORTABLE = ("accepted", "at_shop", "price_confirmation_needed")
+# Reported from the shop only (QA 06/10, B58): an accepted order used to jump to « au magasin » on
+# the report, and the customer read « Karim attend au magasin » while he had not arrived. The
+# courier swipes « Arrivé au magasin » first (the app hides « Indisponible ? » before that).
+REPORTABLE = ("at_shop", "price_confirmation_needed")
 WAITING = "price_confirmation_needed"
 DECISIONS = {"accept": "substitute_accepted", "skip": "item_skipped", "cancel": "order_cancelled"}
 REASON = "product_unavailable"
@@ -203,18 +206,6 @@ async def _chat(
     emit(session, "Message", "create", message.id)
 
 
-async def _mark_current_stop_at_shop(session: AsyncSession, order: Order) -> None:
-    stop = (
-        await session.execute(
-            select(OrderStop)
-            .where(OrderStop.order_id == order.id, OrderStop.seq == order.current_stop_seq)
-            .with_for_update()
-        )
-    ).scalar_one_or_none()
-    if stop is not None and stop.status in ("pending", "en_route"):
-        stop.status = "at_shop"
-
-
 # ─────────────────────────── report ───────────────────────────
 
 
@@ -272,9 +263,6 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
     )
     session.add(check)
     await session.flush()
-    if order.status == "accepted":
-        await _mark_current_stop_at_shop(session, order)
-        await ot.transition(session, order, "at_shop", user, SOURCE_REPORT)
     if order.status == "at_shop":
         await ot.transition(session, order, WAITING, user, SOURCE_REPORT, "stock_check")
     _touch(session, check)
