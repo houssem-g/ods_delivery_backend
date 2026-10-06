@@ -296,3 +296,55 @@ async def test_search_by_bbox_large_box_uses_whole_area(client, factory):
     whole = {"minLat": 30.2, "maxLat": 37.6, "minLng": 7.5, "maxLng": 11.6}
     r = await client.post("/api/functions/searchByBbox", json=whole, headers=auth(user))
     assert r.json()["data"]["total_count"] == 2
+
+
+# --- QA 06/10, B1: a typed name is searched in every category, and only matches are listed --
+
+
+async def test_search_places_typed_name_ignores_category_and_drops_unrelated(client, factory):
+    user = await factory.user()
+    await add_place("Café Victor Hugo", *north(0.2), category="restaurant")
+    await add_place("Monoprix Lafayette", *north(1.0), category="supermarché")
+    await add_place("Monoprix Menzah", *north(2.0), category="supermarket")
+    await add_place("Dentiste Dr Ali", *north(0.3), category="dentist")
+    await add_place("BTE Banque", *north(0.4), category="banque")
+
+    async def names(**extra) -> list[str]:
+        r = await client.post(
+            "/api/functions/searchPlaces", json={"lat": LAT, "lng": LNG, **extra}, headers=auth(user)
+        )
+        assert r.status_code == 200, r.text
+        return [p["name"] for p in r.json()["places"]]
+
+    # « Top cafés » selected (the shop picker sends its category): the Monoprix are still found
+    assert await names(query="Monoprix", category="restaurant") == ["Monoprix Lafayette", "Monoprix Menzah"]
+    # Explorer (no category): only the Monoprix, no dentist, bank or café after them
+    assert await names(query="monoprix", limit=15) == ["Monoprix Lafayette", "Monoprix Menzah"]
+    # two words: places with both words only, when some exist
+    assert await names(query="monoprix menzah") == ["Monoprix Menzah"]
+    # a typo in one word still finds the place by the other word
+    assert await names(query="monoprix menzhaa") == ["Monoprix Lafayette", "Monoprix Menzah"]
+    # the chosen category still lifts its places when several match
+    assert (await names(query="monoprix", category="supermarket"))[0] == "Monoprix Menzah"
+    # no text: the category is still a filter (browsing « Top supermarchés »)
+    assert await names(category="supermarche") == ["Monoprix Lafayette"]
+    assert await names(query="nothing-like-this") == []
+
+
+async def test_search_by_bbox_typed_name_ignores_category(client, factory):
+    user = await factory.user()
+    await add_place("Monoprix", LAT + 0.01, LNG, category="supermarché", quality=80)
+    await add_place("Café Sport", LAT + 0.02, LNG, category="restaurant", quality=80)
+    await add_shop("Monoprix Express", LAT, LNG + 0.01, categories=["supermarket"])
+
+    r = await client.post(
+        "/api/functions/searchByBbox",
+        json={**BOX, "category": "restaurant", "search_query": "monoprix"},
+        headers=auth(user),
+    )
+    assert r.status_code == 200, r.text
+    assert sorted(row["name"] for row in r.json()["data"]["results"]) == ["Monoprix", "Monoprix Express"]
+    browse = await client.post(
+        "/api/functions/searchByBbox", json={**BOX, "category": "restaurant"}, headers=auth(user)
+    )
+    assert [row["name"] for row in browse.json()["data"]["results"]] == ["Café Sport"]
