@@ -131,8 +131,22 @@ def read_policy(user: CurrentUser) -> Any:
         verified_courier,
         not_qa,
         not_(blocked_pair(orders.c.customer_id, user.id)),
+        not_(dropped_by_user(user)),
     )
     return or_(parties(user), open_to_bid)
+
+
+def dropped_by_user(user: CurrentUser) -> Any:
+    """He gave this order up as its courier (cancelOrder put it back to 'pending'): it is never
+    offered to him again (services.orders.dropped_by), so it is not listed to him either — the
+    app's own memory of it is per device (B21)."""
+    dropped = events.alias("dropped_event")
+    return exists().where(
+        dropped.c.order_id == orders.c.id,
+        dropped.c.to_status == "pending",
+        dropped.c.cancelled_by == "courier",
+        dropped.c.actor_user_id == user.id,
+    )
 
 
 def _history() -> Any:

@@ -626,10 +626,16 @@ async def test_courier_drops_back_to_the_pool(client, world, factory):
     assert world.courier_user.id not in notified
     again = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
     assert again.status_code == 409 and again.json()["error"] == "order_dropped"
-    # the courier who left can no longer read it once it is open again? he is a verified courier: yes, to bid
+    # ...nor read or list it, so it never comes back as « Meilleure course » on another device (B21)
     assert (
         await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.courier_user))
-    ).status_code == 200
+    ).status_code == 404
+    listed = await client.get(
+        "/api/entities/Order", params={"q": '{"status": "pending"}'}, headers=auth(world.courier_user)
+    )
+    assert listed.status_code == 200 and str(order.id) not in {o["id"] for o in listed.json()}
+    # the other couriers still see it, to bid
+    assert (await client.get(f"/api/entities/Order/{order.id}", headers=auth(other_user))).status_code == 200
 
 
 async def test_courier_early_drop_has_no_penalty(client, world):
