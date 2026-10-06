@@ -71,6 +71,16 @@ def cancelled_by_customer(shop_name: str | None, reason: str) -> Text:
     }
 
 
+def offer_closed_by_customer_cancel(shop_name: str | None) -> Text:
+    shop = f" ({shop_name})" if shop_name else ""
+    return {
+        "title_ar": "❌ ألغى الحريف الطلب",
+        "title_fr": "❌ Le client a annulé",
+        "body_ar": f"ألغى الحريف الطلب{shop}، لم يعد عرضك صالحاً.",
+        "body_fr": f"Le client a annulé la commande{shop} : votre offre n'est plus valable.",
+    }
+
+
 def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool) -> Text:
     if verified_no_response:
         body_ar = "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي طلبك وسُجّلت حادثة عدم رد."

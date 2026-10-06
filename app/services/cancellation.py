@@ -122,6 +122,41 @@ async def _reset_stops(session: AsyncSession, order: Order) -> None:
     order.current_stop_seq = 0
 
 
+async def _tell_offer_couriers(
+    session: AsyncSession,
+    order: Order,
+    offer_ids: list[uuid.UUID],
+    skip_courier_id: uuid.UUID | None,
+    shop_name: str | None,
+    reason: str,
+) -> None:
+    """QA B29: every courier whose pending offer the customer's cancellation closed is told that his
+    offer no longer stands (once per courier; the courier of the order gets his own notice)."""
+    if not offer_ids:
+        return
+    courier_ids = set(
+        (await session.execute(select(OrderOffer.courier_id).where(OrderOffer.id.in_(offer_ids)))).scalars()
+    )
+    courier_ids.discard(skip_courier_id)
+    for courier_id in courier_ids:
+        courier = await session.get(Courier, courier_id)
+        if courier is None:
+            continue
+        await notify_always_pushed(
+            session,
+            user_id=courier.user_id,
+            type_="order_cancelled",
+            order_id=order.id,
+            metadata={
+                "reason": reason,
+                "cancelled_by": "customer",
+                "recipient_role": "courier",
+                "offer_closed": True,
+            },
+            **order_texts.offer_closed_by_customer_cancel(shop_name),
+        )
+
+
 async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> None:
     order_id, cancelled_by, courier_id = (
         payload.get("order_id"),
@@ -226,7 +261,8 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     stop = await first_stop(session, order.id)
     shop_name = stop.name if stop else None
     if cancelled_by == "customer":
-        await close_pending_offers(session, OrderOffer.order_id == order.id, "rejected")
+        closed = await close_pending_offers(session, OrderOffer.order_id == order.id, "rejected")
+        await _tell_offer_couriers(session, order, closed, previous_courier_id, shop_name, reason)
         if deal is not None:
             deal.status = "expired" if deal.expires_at <= now else "available"
             deal.buyer_id, deal.reserved_at, deal.buyer_order_id = None, None, None
