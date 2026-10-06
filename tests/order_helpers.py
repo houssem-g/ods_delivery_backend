@@ -76,6 +76,7 @@ class OrderWorld:
         fee: str | None = None,
         purchase: str | None = None,
         governorate: str | None = "Sousse",
+        at_door: bool = False,
         **fields: Any,
     ) -> Order:
         customer = customer or self.customer
@@ -111,6 +112,18 @@ class OrderWorld:
                         governorate=governorate if seq == 0 else None,
                         location=pt(*shop) if shop else None,
                         status="pending",
+                    )
+                )
+            if (
+                at_door
+                and courier
+                and delivery
+                and status in ("purchased", "on_the_way", "client_no_response")
+            ):
+                # the courier's live position at the door: « Client ne répond pas » needs ≤ 300 m (B34)
+                s.add(
+                    OrderTracking(
+                        order_id=order.id, courier_id=courier.id, location=pt(*delivery), recorded_at=now()
                     )
                 )
             s.add(OrderStatusEvent(order_id=order.id, to_status="pending", source="test"))
@@ -194,7 +207,7 @@ async def set_live(
     order: Order, courier: Courier, lat: float, lng: float, at: datetime | None = None
 ) -> None:
     async with SessionLocal() as s:
-        s.add(
+        await s.merge(
             OrderTracking(
                 order_id=order.id, courier_id=courier.id, location=pt(lat, lng), recorded_at=at or now()
             )

@@ -25,7 +25,9 @@ async def world(factory):
 
 
 async def parked(client, world) -> Order:
-    order = await world.order(status="on_the_way", courier=world.courier, fee="5", purchase="25")
+    order = await world.order(
+        status="on_the_way", courier=world.courier, fee="5", purchase="25", at_door=True
+    )
     r = await client.post(
         "/api/functions/triggerEmergencyContact",
         json={"order_id": str(order.id), "action": "report_no_response"},

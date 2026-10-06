@@ -51,6 +51,8 @@ REASON_TEXT = {
     "vehicle_issue": {"fr": "problème de véhicule", "ar": "مشكلة في الوسيلة"},
     "emergency": {"fr": "urgence personnelle", "ar": "حالة طوارئ"},
     "other": {"fr": "autre raison", "ar": "سبب آخر"},
+    "returned_to_shop": {"fr": "articles rendus au magasin", "ar": "أُرجعت المواد للمتجر"},
+    "courier_resale": {"fr": "articles revendus en Offre Chaude", "ar": "أُعيد بيع المواد كعرض ساخن"},
 }
 
 
@@ -71,9 +73,9 @@ def cancelled_by_customer(shop_name: str | None, reason: str) -> Text:
 
 def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool) -> Text:
     if verified_no_response:
-        body_ar = "لم تردّ على المندوب رغم الإشعار ورسائل واتساب/SMS، فأُلغي طلبك وسُجّلت حادثة عدم رد."
+        body_ar = "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي طلبك وسُجّلت حادثة عدم رد."
         body_fr = (
-            "Vous n'avez pas répondu au livreur malgré la notification et WhatsApp/SMS : votre commande "
+            "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : votre commande "
             "est annulée et un incident de non-réponse est enregistré."
         )
     elif hot_deal:
@@ -101,6 +103,31 @@ def released_after_block(shop_name: str | None) -> Text:
         "body_ar": f"اختار العميل مندوباً آخر لهذا الطلب{shop}. لا تشترِ المواد.",
         "body_fr": (
             f"Le client a choisi un autre livreur pour cette commande{shop}. N'achetez pas les articles."
+        ),
+    }
+
+
+def courier_final_cancel(reason: str, shop_name: str | None) -> Text:
+    """To the customer: the courier stopped for a reason that ends the order (not sent to others)."""
+    shop = f" {shop_name}" if shop_name else ""
+    if reason == "shop_closed":
+        return {
+            "title_ar": "🏪 المتجر مغلق",
+            "title_fr": "🏪 Magasin fermé",
+            "body_ar": (
+                f"وجد المندوب المتجر{shop} مغلقاً، فأُلغي الطلب دون أي مصاريف. يمكنك إعادة الطلب من متجر آخر."
+            ),
+            "body_fr": (
+                f"Le livreur a trouvé le magasin{shop} fermé : la commande est annulée, sans aucun frais. "
+                "Vous pouvez la repasser avec un autre magasin."
+            ),
+        }
+    return {
+        "title_ar": "⚠️ لم يتمكّن المندوب من إتمام التوصيل",
+        "title_fr": "⚠️ Le livreur ne peut pas terminer la livraison",
+        "body_ar": "أرجع المندوب المواد للمتجر وأُلغي الطلب. ليس عليك أن تدفع شيئاً.",
+        "body_fr": (
+            "Le livreur a rendu les articles au magasin et la commande est annulée. Vous n'avez rien à payer."
         ),
     }
 

@@ -23,4 +23,4 @@ from app.services import hot_deals
 async def handle(
     payload: dict[str, Any], user: CurrentUser, session: AsyncSession, request: Request
 ) -> tuple[int, dict[str, Any]]:
-    return await hot_deals.list_deals(session, payload)
+    return await hot_deals.list_deals(session, payload, user)

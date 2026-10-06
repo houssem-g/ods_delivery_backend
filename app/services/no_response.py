@@ -44,10 +44,10 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, HotDeal, NoResponseCase, Order, OrderStatusEvent, User
+from app.models import Courier, HotDeal, NoResponseCase, Order, OrderStatusEvent, OrderTracking, User
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import cancellation, whatsapp
@@ -268,11 +268,11 @@ async def _finalize(session: AsyncSession, order: Order, case: NoResponseCase, n
             title_ar="❌ العميل لم يرد",
             title_fr="❌ Le client ne répond toujours pas",
             body_ar=(
-                f"لم يرد العميل خلال {mins} دقائق رغم الإشعار وواتساب/SMS. يمكنك الآن إعادة البيع "
+                f"لم يرد العميل خلال {mins} دقائق رغم الإشعار والتنبيه. يمكنك الآن إعادة البيع "
                 "(عرض ساخن) أو إرجاع البضاعة للمتجر أو الإلغاء بدون عقوبة."
             ),
             body_fr=(
-                f"Aucune réponse en {mins} min malgré la notification et WhatsApp/SMS. Vous pouvez "
+                f"Aucune réponse en {mins} min malgré la notification et l'alarme. Vous pouvez "
                 "maintenant revendre (Offre Chaude), rendre la marchandise au magasin ou annuler, "
                 "sans pénalité."
             ),
@@ -458,6 +458,31 @@ def _label(stop_name: str | None, order: Order) -> str:
     return (stop_name or "").strip() or (order.items_text or "").strip()[:40] or "ODS"
 
 
+REPORT_MAX_DISTANCE_M = 300
+POSITION_MAX_AGE = timedelta(minutes=10)
+
+
+async def _courier_distance_m(session: AsyncSession, order: Order) -> float | None:
+    """Metres between the courier's latest fresh position (live tracking of this order, else his
+    last known position) and the delivery address; None without a position of the last 10 min."""
+    since = ot.now_utc() - POSITION_MAX_AGE
+    tracked = (
+        select(OrderTracking.location)
+        .where(OrderTracking.order_id == order.id, OrderTracking.recorded_at >= since)
+        .order_by(OrderTracking.recorded_at.desc())
+        .limit(1)
+        .scalar_subquery()
+    )
+    last = (
+        select(Courier.last_location)
+        .where(Courier.id == order.courier_id, Courier.last_seen_at >= since)
+        .scalar_subquery()
+    )
+    target = select(Order.delivery_location).where(Order.id == order.id).scalar_subquery()
+    value = (await session.execute(select(func.ST_Distance(func.coalesce(tracked, last), target)))).scalar()
+    return float(value) if value is not None else None
+
+
 async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Result:
     cases = await _cases(session, order.id)
     open_case = next((c for c in cases if c.status != "resolved"), None)
@@ -468,6 +493,13 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
         return 409, {"error": "not_reportable", "status": order.status}
     if len(cases) >= MAX_REPORTS:
         return 409, {"error": "too_many_reports", "max": MAX_REPORTS}
+    if not actor.is_admin and order.delivery_location is not None:
+        # Only at the door: it records an incident against the customer (owner, 06/10, QA B34).
+        distance = await _courier_distance_m(session, order)
+        if distance is None:
+            return 409, {"error": "position_unknown", "max_m": REPORT_MAX_DISTANCE_M}
+        if distance > REPORT_MAX_DISTANCE_M:
+            return 409, {"error": "too_far", "distance_m": round(distance), "max_m": REPORT_MAX_DISTANCE_M}
     now = ot.now_utc()
     if open_case is not None:
         # a case left open while the order moved on: closed before the new one opens

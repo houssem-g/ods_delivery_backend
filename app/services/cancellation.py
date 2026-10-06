@@ -51,6 +51,14 @@ COURIER_CANCELLABLE = (
     "client_no_response",
 )
 PENALTY_STATUSES = ("at_shop", "purchased", "on_the_way", "client_no_response")
+# Owner's rules (06/10, QA B26/B31):
+# - after the purchase the courier can't just cancel (the order would go to a 2nd courier who buys
+#   the same items again): he resells (createHotDeal courier_choice) or returns the goods to the shop;
+# - « Magasin fermé » before the purchase: no penalty, the order is not sent to other couriers.
+AFTER_PURCHASE = ("purchased", "on_the_way")
+RETURNED_TO_SHOP = "returned_to_shop"
+SHOP_CLOSED = "shop_closed"
+BEFORE_PURCHASE = ("accepted", "at_shop", "price_confirmation_needed")
 NO_RESPONSE_REASONS = frozenset({"client_no_response", "cannot_reach_customer", "goods_returned_to_shop"})
 LEGACY_WAIT = timedelta(minutes=2)
 
@@ -148,12 +156,26 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                 return  # the stock check's own policy (cancel) closed it a moment ago
         if order.status not in COURIER_CANCELLABLE:
             raise OrderRefused(400, "Cannot cancel order at this stage", can_cancel=False)
+        if (
+            order.status in AFTER_PURCHASE
+            and reason not in NO_RESPONSE_REASONS
+            and reason != RETURNED_TO_SHOP
+        ):
+            raise OrderRefused(409, "after_purchase_resell_or_return", status=order.status)
         if reason in NO_RESPONSE_REASONS:
             if no_response_refresh is not None:
                 await no_response_refresh(session, order)
             case = await latest_case(session, order.id)
             verified_no_response = no_response_gate(order.status, case, now)["ok"]
-        if order.status in PENALTY_STATUSES and not verified_no_response and not verified_stock_check:
+        shop_closed = reason == SHOP_CLOSED and order.status in BEFORE_PURCHASE
+        if order.status in AFTER_PURCHASE and reason in NO_RESPONSE_REASONS and not verified_no_response:
+            raise OrderRefused(409, "after_purchase_resell_or_return", status=order.status)
+        if (
+            order.status in PENALTY_STATUSES
+            and not verified_no_response
+            and not verified_stock_check
+            and not shop_closed
+        ):
             mine.late_cancellations += 1
             emit(session, "CourierProfile", "update", mine.id)
         if case is None:
@@ -175,8 +197,15 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     previous_courier_id = order.courier_id
     deal = await linked_hot_deal(session, order)
     order.cancel_reason, order.cancelled_by = reason, cancelled_by
+    final_for_courier = cancelled_by == "courier" and (
+        (reason == SHOP_CLOSED and order.status in BEFORE_PURCHASE) or order.status in AFTER_PURCHASE
+    )
     back_to_pool = (
-        cancelled_by == "courier" and deal is None and not verified_no_response and not verified_stock_check
+        cancelled_by == "courier"
+        and deal is None
+        and not verified_no_response
+        and not verified_stock_check
+        and not final_for_courier
     )
     if back_to_pool:
         await ot.transition(session, order, "pending", user, "cancelOrder", reason, cancelled_by="courier")
@@ -215,11 +244,12 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                 )
         return
 
-    texts = (
-        order_texts.stock_cancel_for_customer()
-        if verified_stock_check
-        else order_texts.cancelled_by_courier(reason, verified_no_response, deal is not None)
-    )
+    if verified_stock_check:
+        texts = order_texts.stock_cancel_for_customer()
+    elif final_for_courier and not verified_no_response:
+        texts = order_texts.courier_final_cancel(reason, shop_name)
+    else:
+        texts = order_texts.cancelled_by_courier(reason, verified_no_response, deal is not None)
     await notify_always_pushed(
         session,
         user_id=order.customer_id,
@@ -229,7 +259,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
             "reason": reason,
             "cancelled_by": cancelled_by,
             "recipient_role": "customer",
-            "fault_free": verified_stock_check,
+            "fault_free": verified_stock_check or (final_for_courier and not verified_no_response),
         },
         **texts,
     )
@@ -346,14 +376,18 @@ def customer_policy(status: str) -> dict[str, Any]:
             "message_ar": "يمكنك الإلغاء بدون رسوم",
             "message_fr": "Vous pouvez annuler sans frais",
         }
-    if status in CUSTOMER_DELAY_CANCEL_STATUSES:
+    if status in CUSTOMER_DELAY_CANCEL_STATUSES or status in ("price_confirmation_needed", "on_the_way"):
+        # Owner's rule (06/10, QA B25): free until the courier is at the shop, then no cancel button
         return {
-            "can_cancel": True,
+            "can_cancel": False,
             "is_delay_cancel": True,
-            "penalty_applies": True,
-            "reason_code": "post_purchase_cancel",
-            "message_ar": "الإلغاء ممكن لكن قد تنطبق رسوم بعد الشراء",
-            "message_fr": "Annulation possible mais des frais peuvent s'appliquer après achat",
+            "penalty_applies": False,
+            "reason_code": "courier_at_shop",
+            "message_ar": "المندوب في المتجر أو اشترى المواد: لم يعد الإلغاء ممكناً. اتصل بالمندوب أو بالدعم.",
+            "message_fr": (
+                "Le livreur est au magasin ou a déjà acheté vos articles : l'annulation n'est plus possible. "
+                "Contactez le livreur ou le support."
+            ),
         }
     return {
         "can_cancel": False,
@@ -367,6 +401,19 @@ def customer_policy(status: str) -> dict[str, Any]:
 
 def courier_policy(status: str) -> dict[str, Any]:
     penalty = status in PENALTY_STATUSES
+    if status in AFTER_PURCHASE:
+        return {
+            "can_cancel": False,
+            "is_delay_cancel": True,
+            "penalty_applies": True,
+            "after_purchase": True,
+            "reason_code": "courier_after_purchase",
+            "message_ar": "اشتريت المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو أرجعها للمتجر.",
+            "message_fr": (
+                "Vous avez déjà payé les articles : revendez-les en Offre Chaude pour récupérer "
+                "votre argent, ou rendez-les au magasin."
+            ),
+        }
     return {
         "can_cancel": True,
         "is_delay_cancel": penalty,

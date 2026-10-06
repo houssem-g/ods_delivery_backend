@@ -11,7 +11,7 @@ subscriber (for all but admins the row is gone), see `app.services.hot_deals.ann
 
 from typing import Any
 
-from sqlalchemy import false, true
+from sqlalchemy import Boolean, and_, false, not_, true
 
 from app.compat.entities.shop import photo_expr
 from app.compat.registry import EntityDef, LegacyField, register
@@ -19,6 +19,7 @@ from app.models import Courier, HotDeal, Order, User
 from app.security.deps import CurrentUser
 from app.services.geo import lat_of, lng_of
 from app.services.hot_deals import current_price_sql
+from app.services.orders import TEST_ORDER_SQL, is_qa_account
 
 deals = HotDeal.__table__
 deal_courier = Courier.__table__.alias("deal_courier")
@@ -32,7 +33,15 @@ def _admin(user: CurrentUser) -> Any:
 
 
 def read_policy(user: CurrentUser) -> Any:
-    return true() if user.is_admin else deals.c.status == "available"
+    if user.is_admin:
+        return true()
+    if is_qa_account(user.email):
+        return deals.c.status == "available"
+    # deals born from QA orders stay hidden from real customers (B43)
+    return and_(
+        deals.c.status == "available",
+        not_(deals.c.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL)),
+    )
 
 
 private = {"read_guard": _admin}

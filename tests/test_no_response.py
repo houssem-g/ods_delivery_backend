@@ -50,6 +50,7 @@ async def call(client, user: User | None, action: str, order: Order | str | None
 async def on_the_way(world, **fields: Any) -> Order:
     fields.setdefault("status", "on_the_way")
     fields.setdefault("items", "Lait x2")
+    fields.setdefault("at_door", True)
     return await world.order(courier=world.courier, fee="5", purchase="25", **fields)
 
 

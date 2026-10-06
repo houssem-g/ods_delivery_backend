@@ -61,7 +61,14 @@ from app.services import order_transitions as ot
 from app.services.geo import point
 from app.services.notifications import notify
 from app.services.order_notices import notify_always_pushed
-from app.services.orders import TEST_ORDER_RE, TEST_ORDER_SQL, courier_of_user, first_stop, mirror_incidents
+from app.services.orders import (
+    TEST_ORDER_RE,
+    TEST_ORDER_SQL,
+    courier_of_user,
+    first_stop,
+    is_qa_account,
+    mirror_incidents,
+)
 from app.services.phones import InvalidPhone, is_tunisian, to_e164, verification_enforced
 from app.services.shops import key_from_public_url, public_prefix
 
@@ -206,14 +213,23 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
     ).first() is not None
     purchase = order.purchase_amount or Decimal(0)
     no_report = not (order.status == "client_no_response" or reported)
-    if order.status not in RESELLABLE or no_report or purchase <= 0:
+    # The courier's own choice after the purchase (he can't deliver: vehicle, emergency...): he
+    # resells to get his money back, the customer is not at fault (owner, 06/10, QA B26).
+    courier_choice = (
+        payload.get("courier_choice") is True and no_report and order.status in cancellation.AFTER_PURCHASE
+    )
+    if order.status not in RESELLABLE or (no_report and not courier_choice) or purchase <= 0:
         return 409, {"error": "order_not_resellable", "status": order.status}
 
-    # The waiting time is enforced here, not by the courier's screen: the case is brought up to
-    # date (incident + notifications when the deadline just passed, as the live `status` call).
-    await no_response.refresh(session, order)
-    case = await no_response.latest_case(session, order.id)
-    gate = cancellation.no_response_gate(order.status, case, ot.now_utc())
+    case = None
+    if courier_choice:
+        gate = {"ok": True}
+    else:
+        # The waiting time is enforced here, not by the courier's screen: the case is brought up to
+        # date (incident + notifications when the deadline just passed, as the live `status` call).
+        await no_response.refresh(session, order)
+        case = await no_response.latest_case(session, order.id)
+        gate = cancellation.no_response_gate(order.status, case, ot.now_utc())
     if not gate["ok"] or order.status not in RESELLABLE:
         no_response.keep_writes(session)  # what the refresh recorded stays
         return 409, {
@@ -268,10 +284,12 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
 
     note = "تم إعادة عرضه للبيع" if payload.get("lang") == "ar" else "Remis en vente"
     order.notes = f"{order.notes} | {note}" if order.notes else note
-    order.cancelled_by, order.cancel_reason = "courier", "client_no_response"
-    await ot.transition(
-        session, order, "cancelled", user, "createHotDeal", "client_no_response", cancelled_by="courier"
-    )
+    reason = "courier_resale" if courier_choice else "client_no_response"
+    order.cancelled_by, order.cancel_reason = "courier", reason
+    await ot.transition(session, order, "cancelled", user, "createHotDeal", reason, cancelled_by="courier")
+    if courier_choice:
+        courier.late_cancellations += 1  # he leaves after the purchase: a late cancellation
+        emit(session, "CourierProfile", "update", courier.id)
     if case is not None and case.status != "resolved":
         # the courier's choice closes the case; the incident stays counted
         case.status, case.resolution, case.resolved_at = "resolved", "resold", now
@@ -281,6 +299,26 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         emit(session, "NoResponseCase", "update", case.id)
         await mirror_incidents(session, order.customer_id)
 
+    if courier_choice:
+        await notify_always_pushed(
+            session,
+            user_id=order.customer_id,
+            order_id=order.id,
+            type_="order_cancelled",
+            metadata={"reason": reason, "recipient_role": "customer", "fault_free": True},
+            title_ar="⚠️ لم يتمكّن المندوب من إتمام التوصيل",
+            title_fr="⚠️ Le livreur ne peut pas terminer la livraison",
+            body_ar="أُلغي طلبك ولا شيء عليك. يمكنك إعادة الطلب.",
+            body_fr="Votre commande est annulée et vous n'avez rien à payer. Vous pouvez la repasser.",
+        )
+        alerted = await _alert_nearby(session, deal, courier.user_id, order.customer_id)
+        return 200, {
+            "success": True,
+            "deal_id": str(deal.id),
+            "start_price": float(start),
+            "floor_price": float(floor),
+            "alerted": alerted,
+        }
     await notify_always_pushed(
         session,
         user_id=order.customer_id,
@@ -289,11 +327,11 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         title_ar="❌ تم إلغاء طلبك",
         title_fr="❌ Commande annulée",
         body_ar=(
-            "لم تردّ على المندوب رغم الإشعار ورسائل واتساب/SMS، فتم إلغاء الطلب وإعادة عرض المشتريات "
+            "لم تردّ على المندوب رغم الإشعار والتنبيه، فتم إلغاء الطلب وإعادة عرض المشتريات "
             "للبيع. سُجّلت حادثة عدم رد."
         ),
         body_fr=(
-            "Vous n'avez pas répondu au livreur malgré la notification et WhatsApp/SMS : la commande "
+            "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : la commande "
             "est annulée, les achats sont remis en vente et un incident de non-réponse est enregistré."
         ),
         metadata={
@@ -417,8 +455,14 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
     ).scalar_one_or_none()
     if deal is None:
         return 404, {"error": "Hot deal not found"}
+    if TEST_ORDER_RE.search(deal.items_text or "") and not is_qa_account(user.email):
+        return 404, {"error": "Hot deal not found"}  # a QA deal is invisible to real customers (B43)
     if deal.status != "available":
         return 409, {"error": "Hot deal is no longer available"}
+    original = await session.get(Order, deal.original_order_id)
+    if original is not None and original.customer_id == user.id:
+        # the customer who did not answer can't buy his own order back cheaper (owner, 06/10, B44)
+        return 403, {"error": "own_order_resale"}
     now = ot.now_utc()
     if deal.expires_at <= now:
         deal.status = "expired"
@@ -537,7 +581,9 @@ def _uuid_or_none(value: Any) -> uuid.UUID | None:
         return None
 
 
-async def list_deals(session: AsyncSession, payload: dict[str, Any]) -> Result:
+async def list_deals(
+    session: AsyncSession, payload: dict[str, Any], user: CurrentUser | None = None
+) -> Result:
     lat, lng = payload.get("lat"), payload.get("lng")
     has_point = is_finite_number(lat) and is_finite_number(lng)
     radius = LIST_RADIUS_DEFAULT if "radius_km" not in payload else payload.get("radius_km")
@@ -585,6 +631,9 @@ async def list_deals(session: AsyncSession, payload: dict[str, Any]) -> Result:
         .outerjoin(courier_stats, courier_stats.c.courier_id == HotDeal.courier_id)
         .where(HotDeal.status == "available", HotDeal.expires_at > func.now())
     )
+    if user is None or not is_qa_account(user.email):
+        # deals born from QA orders ("QA TEST" / "PW-") are for the QA accounts only (QA campaign 06/10, B43)
+        stmt = stmt.where(~HotDeal.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL))
     if deal_id is not None:
         # one deal (the detail page): its distance when a point is given, whatever the radius
         stmt = stmt.where(HotDeal.id == deal_id)

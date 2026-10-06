@@ -370,6 +370,12 @@ async def accept_offer(
         raise OrderRefused(404, "offer_not_found")
     if selected.status != "pending" or not selected.proposed_fee or selected.proposed_fee <= 0:
         raise OrderRefused(409, "offer_not_pending")
+    # The price the customer saw (expected_fee): the courier may have changed it a moment before
+    # the tap — never accept a price he did not see (QA 06/10, B4). Older apps don't send it.
+    if payload.get("expected_fee") is not None:
+        seen = _parse_fee(payload.get("expected_fee"))
+        if seen is None or seen != selected.proposed_fee:
+            raise OrderRefused(409, "offer_price_changed", fee=float(selected.proposed_fee))
     courier = await session.get(Courier, selected.courier_id)
     courier_user = await session.get(User, courier.user_id) if courier else None
     if courier is not None and await is_blocked(session, courier.user_id, order.customer_id):

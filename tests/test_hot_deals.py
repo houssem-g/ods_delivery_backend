@@ -47,6 +47,7 @@ async def rewind(order_id: uuid.UUID, seconds: float) -> None:
 async def parked(client, world, *, wait_over: bool = True, **fields: Any) -> Order:
     """An order whose customer did not answer (reported, deadline past when wait_over)."""
     fields.setdefault("purchase", "25")
+    fields.setdefault("at_door", True)
     order = await world.order(status="on_the_way", courier=world.courier, fee="5", **fields)
     r = await fn(
         client,
@@ -69,7 +70,10 @@ async def upload(owner: User, name: str = "deal.jpg") -> str:
 
 
 async def a_deal(world, *, at: tuple[float, float] | None = SOUSSE_SHOP, **fields: Any) -> HotDeal:
-    source = await world.order(status="cancelled", courier=world.courier, purchase="20")
+    # the order resold belongs to another customer: its own customer may not buy it back (B44)
+    if getattr(world, "first_customer", None) is None:
+        world.first_customer = await world.factory.user(email="first-customer@example.test")
+    source = await world.order(world.first_customer, status="cancelled", courier=world.courier, purchase="20")
     values: dict[str, Any] = {
         "original_order_id": source.id,
         "courier_id": world.courier.id,

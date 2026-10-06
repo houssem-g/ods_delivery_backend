@@ -585,7 +585,8 @@ async def test_courier_drops_back_to_the_pool(client, world, factory):
     other_user = await factory.user(email="c2@example.test", profile=False)
     await world.make_courier(other_user)
     await device(world.customer)
-    order = await world.order(status="purchased", courier=world.courier, fee="5", purchase="12", stops=2)
+    # before the purchase (at the shop, one shop already paid): back to the pool
+    order = await world.order(status="at_shop", courier=world.courier, fee="5", purchase="12", stops=2)
     offer = await world.offer(order, status="accepted")
     async with SessionLocal() as s:
         for stop in (await s.execute(select(OrderStop).where(OrderStop.order_id == order.id))).scalars():
@@ -797,7 +798,7 @@ async def test_hot_deal_cancellations(client, world, factory):
         "cancelOrder",
         {
             "order_id": str(bought3.id),
-            "reason": "vehicle_issue",
+            "reason": "returned_to_shop",  # the goods are bought: return or resell only (B26)
             "cancelled_by": "courier",
             "courier_id": str(world.courier.id),
         },
@@ -806,7 +807,7 @@ async def test_hot_deal_cancellations(client, world, factory):
     assert (await reload(Order, bought3.id)).status == "cancelled"  # not back to the pool
     assert (await reload(HotDeal, third.id)).status == "expired"
     [note] = await notifications(buyer, "order_cancelled")
-    assert note.body_fr == "Raison : problème de véhicule. La commande est annulée."
+    assert note.title_fr == "⚠️ Le livreur ne peut pas terminer la livraison"
 
 
 # --- getCancellationPolicy -------------------------------------------------------------------------
@@ -817,9 +818,8 @@ async def test_cancellation_policy(client, world, factory):
     r = await call(client, world.customer, "getCancellationPolicy", {"order_id": str(order.id)})
     body = r.json()
     assert body["actor"] == "customer" and body["status"] == "at_shop"
-    assert (
-        body["policy"]["reason_code"] == "post_purchase_cancel" and body["policy"]["penalty_applies"] is True
-    )
+    # owner's rule (06/10, B25): no customer cancel once the courier is at the shop
+    assert body["policy"]["reason_code"] == "courier_at_shop" and body["policy"]["can_cancel"] is False
     r = await call(
         client, world.courier_user, "getCancellationPolicy", {"order_id": str(order.id), "actor": "courier"}
     )
@@ -867,3 +867,38 @@ async def test_place_order_foreign_phone_while_whatsapp_is_off(client, world, fa
     other = await factory.user(email="abroad2@example.test", phone_e164="+41791234567")
     refused = await call(client, other, "placeOrder", {"order": order_form()})
     assert refused.json() == {"error": "phone_unverified"}
+
+
+async def test_after_the_purchase_the_courier_resells_or_returns_never_drops(client, world):
+    """Owner's rule (06/10, QA B26): the goods are paid — no plain cancel, never back to the pool."""
+    order = await world.order(status="purchased", courier=world.courier, fee="5", purchase="12")
+    body = {"order_id": str(order.id), "cancelled_by": "courier", "courier_id": str(world.courier.id)}
+    r = await call(client, world.courier_user, "cancelOrder", {**body, "reason": "vehicle_issue"})
+    assert r.status_code == 409 and r.json()["error"] == "after_purchase_resell_or_return"
+    r = await call(client, world.courier_user, "cancelOrder", {**body, "reason": "returned_to_shop"})
+    assert r.status_code == 200, r.text
+    fresh = await reload(Order, order.id)
+    assert fresh.status == "cancelled" and fresh.cancel_reason == "returned_to_shop"
+    [note] = await notifications(world.customer, "order_cancelled")
+    assert (
+        note.title_fr == "⚠️ Le livreur ne peut pas terminer la livraison" and note.data["fault_free"] is True
+    )
+
+
+async def test_shop_closed_no_penalty_and_not_sent_to_others(client, world):
+    """Owner's rule (06/10, QA B31)."""
+    order = await world.order(status="at_shop", courier=world.courier, fee="5")
+    r = await call(
+        client, world.courier_user, "cancelOrder",
+        {
+            "order_id": str(order.id),
+            "reason": "shop_closed",
+            "cancelled_by": "courier",
+            "courier_id": str(world.courier.id),
+        },
+    )  # fmt: skip
+    assert r.status_code == 200, r.text
+    assert (await reload(Order, order.id)).status == "cancelled"
+    assert (await reload(Courier, world.courier.id)).late_cancellations == 0
+    [note] = await notifications(world.customer, "order_cancelled")
+    assert note.title_fr == "🏪 Magasin fermé" and "autre magasin" in note.body_fr
