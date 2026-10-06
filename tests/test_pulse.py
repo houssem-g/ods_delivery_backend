@@ -151,10 +151,17 @@ async def test_signed_in_pulse_has_coarse_dots_and_the_shop_figures(client, worl
         assert (dot["lat"], dot["lng"]) == pulse.snap(dot["lat"], dot["lng"])  # grid centres only
         assert (dot["lat"], dot["lng"]) not in {(35.8301, 10.6201), (35.8302, 10.6202), SOUSSE_SHOP}
     assert body["couriers_near_shop"] == 1  # within 1 km of the shop: world.courier only
-    # tariffs of the couriers within 3 km of the shop for shop → home (≈ 1.16 km), 0.5 steps
-    km = haversine_km(*SOUSSE_SHOP, *SOUSSE_HOME)
-    fees = [round(max(3, km * 0.8) * 2) / 2, round(km * 2 * 2) / 2, round(km * 1 * 2) / 2]
-    assert body["fee_range"] == {"min": min(fees), "max": max(fees)} == {"min": 1.0, "max": 3.0}
+    # the app's suggested price of each courier within 3 km of the shop: his tariff × (him → shop
+    # + shop → home ≈ 1.16 km), his minimum, 1 DT at least, 0.5 steps (QA B8: as computeOfferQuote)
+    ride = haversine_km(*SOUSSE_SHOP, *SOUSSE_HOME)
+    near_home = haversine_km(35.8301, 10.6201, *SOUSSE_SHOP) + ride
+    near_home_2 = haversine_km(35.8302, 10.6202, *SOUSSE_SHOP) + ride
+    fees = [
+        round(max(1, ride * 1) * 2) / 2,  # world.courier, on the shop, 1 DT/km
+        round(max(3, near_home * 0.8) * 2) / 2,
+        round(max(1, near_home_2 * 2) * 2) / 2,
+    ]
+    assert body["fee_range"] == {"min": min(fees), "max": max(fees)} == {"min": 1.0, "max": 4.5}
     no_point = (
         await call(
             client,

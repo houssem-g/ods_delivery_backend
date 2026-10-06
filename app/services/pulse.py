@@ -176,19 +176,31 @@ def _half(value: Decimal) -> float:
 async def _fee_range(
     session: AsyncSession, shop: tuple[float, float], where: tuple[float, float] | None, km: float
 ) -> dict[str, float] | None:
+    """What the online couriers around the shop would ask: the app's suggested price of each
+    (src/lib/orderFlow.js computeOfferQuote: his tariff × (him → shop + shop → customer), his
+    minimum, 1 DT at least), so the customer's « ≈ » matches the offers he gets (QA B8)."""
     if where is None:
         return None
     rows = (
         await session.execute(
-            select(Courier.price_per_km, Courier.min_fee)
+            select(
+                Courier.price_per_km,
+                Courier.min_fee,
+                lat_of(Courier.last_location),
+                lng_of(Courier.last_location),
+            )
             .join(User, User.id == Courier.user_id)
             .where(*_online(), _within(Courier.last_location, shop, km))
         )
     ).all()
     if not rows:
         return None
-    distance = Decimal(str(round(haversine_km(*shop, *where), 3)))
-    fees = [_half(max(min_fee or Decimal(0), distance * price)) for price, min_fee in rows]
+    ride = haversine_km(*shop, *where)
+    fees = []
+    for price, min_fee, lat, lng in rows:
+        to_shop = haversine_km(float(lat), float(lng), *shop) if lat is not None else 0.0
+        distance = Decimal(str(round(to_shop + ride, 3)))
+        fees.append(_half(max(Decimal(1), min_fee or Decimal(0), distance * (price or Decimal(0)))))
     return {"min": min(fees), "max": max(fees)}
 
 
