@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, GeocodeCache, Order, OrderOffer, OrderStop, User
 from app.services import order_transitions as ot
+from app.services.dispatch import DEFAULT_RADIUS_KM
 from app.services.geo import ORDER_BOUNDS, as_float, haversine_km, lat_of, lng_of, within
 from app.services.orders import TEST_ORDER_SQL
 
@@ -79,6 +80,19 @@ async def _count_online(session: AsyncSession, where: tuple[float, float] | None
     stmt = select(func.count()).select_from(Courier).join(User, User.id == Courier.user_id).where(*_online())
     if where is not None:
         stmt = stmt.where(_within(Courier.last_location, where, km))
+    return int((await session.execute(stmt)).scalar_one())
+
+
+async def _count_reaching(session: AsyncSession, shop: tuple[float, float]) -> int:
+    """Online couriers whose notification radius covers the shop: those a new order there is sent
+    to (dispatch.py rule). One number for « Vérifier & publier » and « En attente d'offres » (QA B12)."""
+    radius_m = func.coalesce(func.nullif(Courier.notification_radius_km, 0), DEFAULT_RADIUS_KM) * 1000
+    stmt = (
+        select(func.count())
+        .select_from(Courier)
+        .join(User, User.id == Courier.user_id)
+        .where(*_online(), func.ST_DWithin(Courier.last_location, _geog(*shop), radius_m))
+    )
     return int((await session.execute(stmt)).scalar_one())
 
 
@@ -222,6 +236,7 @@ async def network_pulse(session: AsyncSession, payload: dict[str, Any], signed_i
     shop = _point(payload, "shop_lat", "shop_lng")
     if shop is not None:
         body["couriers_near_shop"] = await _count_online(session, shop, SHOP_RADIUS_KM)
+        body["couriers_for_shop"] = await _count_reaching(session, shop)
         body["fee_range"] = await _fee_range(session, shop, where, km)
     return body
 

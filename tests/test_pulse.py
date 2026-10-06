@@ -151,6 +151,8 @@ async def test_signed_in_pulse_has_coarse_dots_and_the_shop_figures(client, worl
         assert (dot["lat"], dot["lng"]) == pulse.snap(dot["lat"], dot["lng"])  # grid centres only
         assert (dot["lat"], dot["lng"]) not in {(35.8301, 10.6201), (35.8302, 10.6202), SOUSSE_SHOP}
     assert body["couriers_near_shop"] == 1  # within 1 km of the shop: world.courier only
+    # QA B12: those the order would be sent to (their notification radius covers the shop)
+    assert body["couriers_for_shop"] == 4
     # the app's suggested price of each courier within 3 km of the shop: his tariff × (him → shop
     # + shop → home ≈ 1.16 km), his minimum, 1 DT at least, 0.5 steps (QA B8: as computeOfferQuote)
     ride = haversine_km(*SOUSSE_SHOP, *SOUSSE_HOME)
@@ -177,6 +179,7 @@ async def test_fee_range_is_null_without_couriers(client, world):
     far_shop = {"lat": 33.88, "lng": 10.09, "shop_lat": 33.881, "shop_lng": 10.1}
     body = (await call(client, world.customer, "getNetworkPulse", far_shop)).json()
     assert body["couriers_near_shop"] == 0 and body["fee_range"] is None and body["courier_dots"] == []
+    assert body["couriers_for_shop"] == 0
 
 
 async def test_pulse_rate_limits(client, world):
