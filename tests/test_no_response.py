@@ -140,12 +140,12 @@ async def test_report_parks_the_order_and_alerts_every_channel(client, world):
     assert d["status_history"][-1]["status"] == "client_no_response"
     assert d["status_history"][-1]["source"] == "triggerEmergencyContact"
     [alert] = await notifications(world.customer, "emergency_contact")
-    assert "+21655123456" in alert.body_fr and "Karim Trabelsi" in alert.body_fr
+    assert "+21655123456" in alert.body_fr and "Karim T." in alert.body_fr  # one way to write the name (R30)
     assert alert.data["stage"] == "alert" and alert.data["case_id"] == str(case.id)
     assert len(await pushes(world.customer)) == 1
     [wa] = await rows(select(OutboundMessage).where(OutboundMessage.channel == "whatsapp"))
     assert wa.purpose == "customer_no_response" and wa.critical is True
-    assert wa.params == ["Karim Trabelsi", "Monoprix", "+21655123456"]
+    assert wa.params == ["Karim T.", "Monoprix", "+21655123456"]
     assert wa.idempotency_key == f"noresp:{case.id}" and wa.to_e164 == "+21622111222"
 
 

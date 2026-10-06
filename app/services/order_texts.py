@@ -458,13 +458,19 @@ def stock_check_for_admin(order_ref: str, nothing_available: bool) -> Text:
 
 
 def short_name(display_name: str | None) -> str:
-    """'Karim Trabelsi' → 'Karim T.' (a courier's name shown to customers)."""
+    """'Karim Trabelsi' → 'Karim T.': THE way a courier's name is written to customers, in every
+    notification (QA R30: « QA 1. » on a new offer, « QA Livreur 1 » on the edited one).
+
+    The initial is the one of the last word that starts with a letter (« QA Livreur 1 » →
+    « QA L. », never « QA 1. »); no such word → the first name alone.
+    """
     parts = " ".join(str(display_name or "").split()).split(" ")
     if not parts or not parts[0]:
         return ""
-    if len(parts) == 1:
+    last = next((p for p in reversed(parts[1:]) if p[:1].isalpha()), "")
+    if not last:
         return parts[0][:40]
-    return f"{parts[0][:40]} {parts[-1][:1].upper()}."
+    return f"{parts[0][:40]} {last[:1].upper()}."
 
 
 def _money(value: object) -> str:

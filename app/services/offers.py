@@ -22,6 +22,7 @@ from app.services import order_transitions as ot
 from app.services import step_notices, text_filter
 from app.services.geo import as_float
 from app.services.notifications import notify
+from app.services.order_texts import short_name
 from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user, dropped_by
 from app.services.safety import is_blocked
 
@@ -239,8 +240,9 @@ async def update_offer(
     offer.proposed_fee, offer.eta_minutes, offer.message = fee, new_eta, new_message
     await session.flush()
     emit(session, "OrderOffer", "update", offer.id)
-    name = courier.display_name or "Le livreur"
-    name_ar = courier.display_name or "المندوب"
+    # the same name as on the new offer (QA R30): one function for every customer notification
+    name = short_name(courier.display_name) or "Le livreur"
+    name_ar = short_name(courier.display_name) or "المندوب"
     delay_fr = f" · ~{new_eta} min" if new_eta else ""
     delay_ar = f" · ~{new_eta} دق" if new_eta else ""
     await notify(
