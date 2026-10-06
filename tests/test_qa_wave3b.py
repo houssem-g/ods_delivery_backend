@@ -39,7 +39,9 @@ async def test_offer_accepted_notification_has_a_zoned_fresh_date(client, factor
     world = await OrderWorld(factory).setup()
     order = await world.order(status="offers_received")
     offer = await world.offer(order, fee="7")
-    r = await fn(client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": str(offer.id)})
+    r = await fn(
+        client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": str(offer.id)}
+    )
     assert r.status_code == 200, r.text
 
     q = {"q": json.dumps({"user_id": world.courier_user.email, "type": "order_accepted", "is_read": False})}
