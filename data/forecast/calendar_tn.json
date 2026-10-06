@@ -1,0 +1,30 @@
+{
+  "source_notes": {
+    "holidays": "publicholidays.africa/tunisia + La Presse (lapresse.tn) ; Ramadan/Aïd = estimations astronomiques, à confirmer à l'annonce officielle",
+    "ramadan_2027": "allafrica.com 08/09/2026, tuniscope.com 08/09/2026"
+  },
+  "fixed_holidays_2027": {
+    "2027-01-01": "Jour de l'An",
+    "2027-03-20": "Indépendance",
+    "2027-04-09": "Martyrs",
+    "2027-05-01": "Travail",
+    "2027-07-25": "République",
+    "2027-08-13": "Fête de la Femme",
+    "2027-10-15": "Évacuation",
+    "2027-12-17": "Révolution"
+  },
+  "religious_2027_estimated": {
+    "ramadan_start": "2027-02-08",
+    "eid_al_fitr": [
+      "2027-03-09",
+      "2027-03-10"
+    ],
+    "eid_al_adha": [
+      "2027-05-16",
+      "2027-05-17"
+    ],
+    "ras_el_am_el_hijri": "2027-06-06",
+    "mouled": "2027-08-14"
+  },
+  "university_exams_sousse": "À COMPLÉTER : calendrier 2026-2027 de l'Université de Sousse introuvable en ligne le 06/10/2026 (ne pas inventer)"
+}
