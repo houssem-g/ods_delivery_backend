@@ -281,26 +281,27 @@ def stock_check_for_customer(
 
 
 def stock_check_chat(missing: str, substitute: str | None, price: object, nothing_available: bool) -> str:
-    """The line the report leaves in the order chat (both languages: one row for both sides)."""
+    """The line the report leaves in the order chat: French on the first line, Arabic on the
+    second (one row serves both sides; the app shows only the reader's line, QA 06/10 B51)."""
     if nothing_available:
         return (
             f"🛒 Rien n'est disponible au magasin : {_short(missing, 200)}\n"
-            f"🛒 حتى شي مش موجود في المحل: {_short(missing, 200)}"
+            f"🛒 لا يتوفر أي منتج في المتجر: {_short(missing, 200)}"
         )
     fr = f"🛒 Article indisponible : {_short(missing, 200)}"
-    ar = f"🛒 منتج مش موجود: {_short(missing, 200)}"
+    ar = f"🛒 منتج غير متوفر: {_short(missing, 200)}"
     if substitute:
         price_fr = f" ({_price(price)} DT)" if price is not None else ""
-        price_ar = f" ({_price(price)} د)" if price is not None else ""
+        price_ar = f" ({_price(price)} د.ت)" if price is not None else ""
         fr += f" · Remplacement proposé : {_short(substitute, 200)}{price_fr}"
         ar += f" · البديل المقترح: {_short(substitute, 200)}{price_ar}"
     return f"{fr}\n{ar}"
 
 
-DECISION_CHAT = {
-    "substitute_accepted": "✅ Remplacement accepté\n✅ قبلت البديل",
-    "item_skipped": "➖ Continuer sans cet article\n➖ كمّل بلاش المنتج هذا",
-    "order_cancelled": "❌ Commande annulée (article indisponible)\n❌ الطلب تلغى (المنتج مش موجود)",
+DECISION_CHAT = {  # French line, then Arabic line (see stock_check_chat)
+    "substitute_accepted": "✅ Remplacement accepté\n✅ تم قبول البديل",
+    "item_skipped": "➖ Continuer sans cet article\n➖ مواصلة الطلب دون هذا المنتج",
+    "order_cancelled": "❌ Commande annulée (article indisponible)\n❌ تم إلغاء الطلب (منتج غير متوفر)",
 }
 
 
