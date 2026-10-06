@@ -558,7 +558,7 @@ async def test_report_issue(client, world):
     r = await call(client, world.courier_user, "reportOrderIssue", payload)
     assert r.json() == {"success": True, "message": "Issue reported successfully"}
     [note] = await notifications(world.customer, "issue_reported")
-    assert note.body_fr == "Le livreur a signalé un problème: Produit endommagé"
+    assert note.body_fr == "Le livreur a signalé un problème : Produit endommagé — « cassé »"  # B38
     assert note.data == {"issue_type": "product_damaged", "description": "cassé"}
     [admin_note] = await notifications(world.admin, "issue_reported")
     assert admin_note.body_fr == f"Commande #{str(order.id)[-6:].upper()}: Produit endommagé"

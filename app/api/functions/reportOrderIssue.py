@@ -95,7 +95,7 @@ async def handle(
         order_id=order.id,
         push=False,
         metadata={"issue_type": issue_type, "description": description},
-        **order_texts.issue_for_customer(issue_type),
+        **order_texts.issue_for_customer(issue_type, description),
     )
     photo_url = f"{settings.public_files_base_url}/{photo_key}" if photo_key else ""
     admins = (

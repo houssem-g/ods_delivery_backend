@@ -204,13 +204,15 @@ ISSUE_LABELS = {
 }
 
 
-def issue_for_customer(issue_type: str) -> Text:
+def issue_for_customer(issue_type: str, description: str = "") -> Text:
+    """The customer reads the courier's own words too (QA B38: only the type was shown)."""
     label = ISSUE_LABELS.get(issue_type, ISSUE_LABELS["other"])
+    words = _short(description, 160) if description else ""
     return {
         "title_ar": "تم الإبلاغ عن مشكلة",
         "title_fr": "Problème signalé",
-        "body_ar": f"المندوب أبلغ عن مشكلة: {label['ar']}",
-        "body_fr": f"Le livreur a signalé un problème: {label['fr']}",
+        "body_ar": f"أبلغ المندوب عن مشكلة: {label['ar']}" + (f" — «{words}»" if words else ""),
+        "body_fr": f"Le livreur a signalé un problème : {label['fr']}" + (f" — « {words} »" if words else ""),
     }
 
 
@@ -256,7 +258,7 @@ def stock_check_for_customer(
             ),
         }
     if substitute:
-        price_ar = f" ب{_price(price)} د" if price is not None else ""
+        price_ar = f" بـ {_price(price)} د.ت" if price is not None else ""
         price_fr = f" à {_price(price)} DT" if price is not None else ""
         return {
             "title_ar": "🛒 منتج مش موجود",
@@ -291,7 +293,7 @@ def stock_check_chat(missing: str, substitute: str | None, price: object, nothin
     ar = f"🛒 منتج مش موجود: {_short(missing, 200)}"
     if substitute:
         price_fr = f" ({_price(price)} DT)" if price is not None else ""
-        price_ar = f" ({_price(price)} د)" if price is not None else ""
+        price_ar = f" ({_price(price)} د.ت)" if price is not None else ""
         fr += f" · Remplacement proposé : {_short(substitute, 200)}{price_fr}"
         ar += f" · البديل المقترح: {_short(substitute, 200)}{price_ar}"
     return f"{fr}\n{ar}"
