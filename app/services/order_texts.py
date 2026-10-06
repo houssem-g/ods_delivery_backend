@@ -177,7 +177,8 @@ def expired_open(shop_name: str | None, never_offered: bool, hours: int) -> Text
     label = _label(shop_name)
     if never_offered:
         body_ar = (
-            f"لم يقبل أي مندوب طلبك{label} خلال {hours_ar(hours)}، فأُلغي تلقائياً. يمكنك إعادة الطلب في أي وقت."
+            f"لم يقبل أي مندوب طلبك{label} خلال {hours_ar(hours)}، فأُلغي تلقائياً. "
+            "يمكنك إعادة الطلب في أي وقت."
         )
         body_fr = (
             f"Aucun livreur n'a pris votre commande{label} en {hours} h : elle a été annulée "
@@ -308,7 +309,9 @@ def stock_check_for_customer(
     return {
         "title_ar": "🛒 منتج غير متوفر",
         "title_fr": "🛒 Article indisponible",
-        "body_ar": f"{_short(missing)} غير متوفر. هل نواصل دونه أم نلغي الطلب؟ أجب خلال {minutes_ar(minutes)}.",
+        "body_ar": (
+            f"{_short(missing)} غير متوفر. هل نواصل دونه أم نلغي الطلب؟ أجب خلال {minutes_ar(minutes)}."
+        ),
         "body_fr": (
             f"{_short(missing)} est indisponible. Continuer sans ou annuler ? Répondez sous {minutes} min."
         ),

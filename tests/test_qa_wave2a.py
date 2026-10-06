@@ -9,7 +9,7 @@ import httpx
 
 from app.models import OrderOffer
 from tests.factories import auth
-from tests.order_helpers import OrderWorld, notifications, reload, set_live
+from tests.order_helpers import OrderWorld, notifications, reload
 
 
 async def fn(client, user, name: str, body: dict[str, Any]) -> httpx.Response:
@@ -49,7 +49,9 @@ async def test_customer_cancel_tells_the_couriers_who_had_an_offer(client, facto
 
 async def test_on_the_way_notice_uses_the_ride_time_not_the_offer_delay(client, factory):
     world = await OrderWorld(factory).setup()
-    order = await world.order(status="purchased", courier=world.courier, fee="5", purchase="10", eta_minutes=53)
+    order = await world.order(
+        status="purchased", courier=world.courier, fee="5", purchase="10", eta_minutes=53
+    )
     r = await client.patch(
         f"/api/entities/Order/{order.id}", json={"status": "on_the_way"}, headers=auth(world.courier_user)
     )
