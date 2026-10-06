@@ -652,6 +652,13 @@ async def grant(session: AsyncSession, admin: CurrentUser, payload: dict[str, An
     return {"success": True, "credit": _dt(credit), "entry": _entry_view(entry)}
 
 
+async def get_settings(session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
+    """getCreditSettings (admin): the bank details as saved (to prefill the form)."""
+    if not admin.is_admin:
+        raise OrderRefused(403, "Forbidden")
+    return {"success": True, "settings": await settings(session)}
+
+
 async def set_settings(session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
     """setCreditSettings (admin): the bank details shown on "Mon crédit" (account holder, bank, RIB)."""
     if not admin.is_admin:

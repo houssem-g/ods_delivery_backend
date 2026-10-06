@@ -220,6 +220,9 @@ async def test_settings_are_shown_on_my_credit(client, world, factory):
     assert r.status_code == 200, r.text
     cafe = await factory.user(email="cafe@example.test", full_name="Café")
     await call(client, world.admin, "setCreditCashier", {"email": cafe.email, "label": "Café ODS", "address": "Sousse"})
+    assert (await call(client, world.courier_user, "getCreditSettings")).status_code == 403
+    saved = (await call(client, world.admin, "getCreditSettings")).json()["settings"]
+    assert saved["bank_name"] == "Attijari bank" and saved["instructions_fr"] is None
     where = (await call(client, world.courier_user, "getMyCredit")).json()["where"]
     assert where["bank"]["bank_name"] == "Attijari bank" and where["bank"]["rib"].startswith("04")
     assert where["cashiers"] == [{"label": "Café ODS", "address": "Sousse"}]
