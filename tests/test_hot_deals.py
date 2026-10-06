@@ -308,7 +308,7 @@ async def test_reserve_creates_the_buyers_order(client, world):
         and order.customer_id == world.buyer.id
     )
     assert order.resale_deal_id == deal.id and order.delivery_address == "Rue X"
-    assert order.contact_phone_e164 == "+21698765432" and order.notes == "Hot deal reservation (10% off)"
+    assert order.contact_phone_e164 == "+21698765432" and order.notes is None  # no English note on screen (B45)
     doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.courier_user))).json()
     assert doc["total_amount"] == 22 and doc["purchase_amount"] == 18 and doc["delivery_fee"] == 4
     assert doc["resale_order_id"] == str(deal.id) and doc["shop_name"] == "Monoprix"

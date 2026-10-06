@@ -175,11 +175,6 @@ def _bounded(payload: dict[str, Any], key: str, low: float, high: float, fallbac
     return clamp(number, low, high) if math.isfinite(number) else fallback
 
 
-def _js_num_text(value: Decimal | None) -> str:
-    number = float(value or 0)
-    return str(int(number)) if number.is_integer() else str(number)
-
-
 async def _ewkt(session: AsyncSession, column: Any, where: Any) -> str | None:
     """A stored point as EWKT text, to copy it onto another row (no shapely needed)."""
     return (await session.execute(select(func.ST_AsEWKT(column)).where(where))).scalar_one_or_none()
@@ -508,7 +503,9 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         purchase_amount=charged,
         delivery_fee=fee,
         payment_method="cash",
-        notes=f"Hot deal reservation ({_js_num_text(deal.discount_percentage)}% off)",
+        # No technical note any more (QA B45: « 📝 Hot deal reservation (0% off) » on screen): the
+        # order is a hot deal by resale_deal_id (the app's resale_order_id).
+        notes=None,
         resale_deal_id=deal.id,
     )
     session.add(order)
@@ -542,7 +539,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
             order_id=order.id,
             type_="hot_deal_reserved",
             title_ar="🔥 تم حجز العرض الساخن",
-            title_fr="🔥 Hot deal réservé",
+            title_fr="🔥 Offre Chaude réservée",
             body_ar=f"{who_ar} حجز العرض: {deal.items_text}. ابدأ التوصيل.",
             body_fr=f"{who_fr} a réservé l'offre : {deal.items_text}. Lancez la livraison.",
             metadata={
