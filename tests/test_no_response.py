@@ -438,7 +438,9 @@ async def test_second_urgent_alert_after_the_deadline_then_resale(client, world)
     assert body["can_resell"] is False and body["can_realert"] is False
     first, second = await the_cases(order)
     assert first.resolution == "realerted" and first.incident_counted is False
-    assert second.status == "waiting" and await incidents(world.customer) == 0
+    # the incident moves to the last alert and stays counted (QA 06/10 N3: « déjà enregistré »)
+    assert second.status == "waiting" and second.incident_counted is True
+    assert await incidents(world.customer) == 1
     sent = await notifications(world.customer, "emergency_contact")
     alerts = [n for n in sent if n.data["stage"] == "alert"]
     assert [n.data["attempt"] for n in alerts] == [1, 2] and "Dernier appel" in alerts[1].title_fr

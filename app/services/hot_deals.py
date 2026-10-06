@@ -101,6 +101,7 @@ PUBLIC_FIELDS = (
     "original_price", "current_price", "start_price", "floor_price", "next_price", "next_drop_at",
     "discount_pct_now", "courier_rating", "courier_deliveries", "receipt_verified", "sealed",
     "purchased_at", "no_response_at", "listed_at",
+    "own_order", "own_deal",  # for the reader only (QA 06/10 N11)
 )  # fmt: skip
 PURGE_BATCH = 500
 FLOOR_MIN_SHARE = Decimal("0.3")  # the floor price is at least 30 % of the start price
@@ -210,10 +211,12 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
     no_report = not (order.status == "client_no_response" or reported)
     # The courier's own choice after the purchase (he can't deliver: vehicle, emergency...): he
     # resells to get his money back, the customer is not at fault (owner, 06/10, QA B26).
+    # A course bought from an Offre Chaude is paid from its acceptance on (QA B26, wave 3).
     courier_choice = (
-        payload.get("courier_choice") is True and no_report and order.status in cancellation.AFTER_PURCHASE
+        payload.get("courier_choice") is True and no_report and cancellation.after_purchase(order)
     )
-    if order.status not in RESELLABLE or (no_report and not courier_choice) or purchase <= 0:
+    resellable = order.status in RESELLABLE or courier_choice
+    if not resellable or (no_report and not courier_choice) or purchase <= 0:
         return 409, {"error": "order_not_resellable", "status": order.status}
 
     case = None
@@ -225,7 +228,7 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         await no_response.refresh(session, order)
         case = await no_response.latest_case(session, order.id)
         gate = cancellation.no_response_gate(order.status, case, ot.now_utc())
-    if not gate["ok"] or order.status not in RESELLABLE:
+    if not gate["ok"] or not (order.status in RESELLABLE or courier_choice):  # the refresh may close it
         no_response.keep_writes(session)  # what the refresh recorded stays
         return 409, {
             "error": gate["reason"] if not gate["ok"] else "order_not_resellable",
@@ -285,6 +288,12 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
     if courier_choice:
         courier.late_cancellations += 1  # he leaves after the purchase: a late cancellation
         emit(session, "CourierProfile", "update", courier.id)
+    if order.resale_deal_id is not None:
+        # resold again: the deal this order was bought from is over (never relisted)
+        bought_from = await session.get(HotDeal, order.resale_deal_id, with_for_update=True)
+        if bought_from is not None and bought_from.id != deal.id and bought_from.status != "expired":
+            bought_from.status = "expired"
+            announce(session, bought_from, bought_from.status)
     if case is not None and case.status != "resolved":
         # the courier's choice closes the case; the incident stays counted
         case.status, case.resolution, case.resolved_at = "resolved", "resold", now
@@ -614,6 +623,9 @@ async def list_deals(
         .scalar_subquery()
         > 0
     )
+    original_customer = (
+        select(Order.customer_id).where(Order.id == HotDeal.original_order_id).scalar_subquery()
+    )
     stmt = (
         select(
             HotDeal,
@@ -623,6 +635,8 @@ async def list_deals(
             receipt.label("receipt_verified"),
             courier_stats.c.average_rating,
             func.coalesce(courier_stats.c.total_deliveries, 0),
+            original_customer.label("original_customer_id"),
+            Courier.user_id,
         )
         .join(Courier, Courier.id == HotDeal.courier_id)
         .outerjoin(courier_stats, courier_stats.c.courier_id == HotDeal.courier_id)
@@ -631,6 +645,12 @@ async def list_deals(
     if user is None or not is_qa_account(user.email):
         # deals born from QA orders ("QA TEST" / "PW-") are for the QA accounts only (QA campaign 06/10, B43)
         stmt = stmt.where(~HotDeal.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL))
+    if deal_id is None and user is not None:
+        # QA 06/10 N11: the customer who did not answer never sees his own order offered back to him
+        # (reserveHotDeal refuses it, B44), nor the courier his own deal
+        stmt = stmt.where(
+            or_(original_customer.is_(None), original_customer != user.id), Courier.user_id != user.id
+        )
     if deal_id is not None:
         # one deal (the detail page): its distance when a point is given, whatever the radius
         stmt = stmt.where(HotDeal.id == deal_id)
@@ -650,7 +670,8 @@ async def list_deals(
     deals = []
     for row in rows[:take]:
         deal, courier_name, bought_at, reported_at, has_receipt, rating, deliveries = row[:7]
-        km = row[7] if has_point else None
+        customer_of_original, courier_user_id = row[7], row[8]
+        km = row[9] if has_point else None
         price, next_price, next_drop_at = price_schedule(deal, now)
         original = deal.purchase_amount
         deals.append(
@@ -683,6 +704,9 @@ async def list_deals(
                 "listed_at": legacy_datetime(deal.created_at),
                 "created_date": legacy_datetime(deal.created_at),
                 "distance_km": float(km) if km is not None else None,
+                # the detail page shows « C'était votre commande » instead of « Réserver »
+                "own_order": user is not None and customer_of_original == user.id,
+                "own_deal": user is not None and courier_user_id == user.id,
             }
         )
     next_cursor = str(offset + take) if len(rows) > take else None

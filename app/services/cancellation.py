@@ -56,11 +56,24 @@ PENALTY_STATUSES = ("at_shop", "purchased", "on_the_way", "client_no_response")
 #   the same items again): he resells (createHotDeal courier_choice) or returns the goods to the shop;
 # - « Magasin fermé » before the purchase: no penalty, the order is not sent to other couriers.
 AFTER_PURCHASE = ("purchased", "on_the_way")
+# A hot-deal order (reserveHotDeal) starts with the goods already paid: from its acceptance on.
+HOT_DEAL_RUNNING = ("accepted", "at_shop", "price_confirmation_needed", "purchased", "on_the_way")
 RETURNED_TO_SHOP = "returned_to_shop"
 SHOP_CLOSED = "shop_closed"
 BEFORE_PURCHASE = ("accepted", "at_shop", "price_confirmation_needed")
 NO_RESPONSE_REASONS = frozenset({"client_no_response", "cannot_reach_customer", "goods_returned_to_shop"})
 LEGACY_WAIT = timedelta(minutes=2)
+
+
+def after_purchase(order: Order) -> bool:
+    """The courier has paid the goods (QA 06/10 B26, wave 3): a bought order, one parked in
+    « client ne répond pas », and every running order bought from an Offre Chaude. He can't
+    just leave it (it would go to another courier who buys again): he resells it or returns the
+    goods to the shop."""
+    if order.status in AFTER_PURCHASE or order.status == "client_no_response":
+        return True
+    return order.resale_deal_id is not None and order.status in HOT_DEAL_RUNNING
+
 
 # Filled by the no-response feature: brings the case up to date before a no-response
 # cancellation is judged (the live code calls triggerEmergencyContact {action:'status'}).
@@ -191,11 +204,8 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                 return  # the stock check's own policy (cancel) closed it a moment ago
         if order.status not in COURIER_CANCELLABLE:
             raise OrderRefused(400, "Cannot cancel order at this stage", can_cancel=False)
-        if (
-            order.status in AFTER_PURCHASE
-            and reason not in NO_RESPONSE_REASONS
-            and reason != RETURNED_TO_SHOP
-        ):
+        paid = after_purchase(order)
+        if paid and reason not in NO_RESPONSE_REASONS and reason != RETURNED_TO_SHOP:
             raise OrderRefused(409, "after_purchase_resell_or_return", status=order.status)
         if reason in NO_RESPONSE_REASONS:
             if no_response_refresh is not None:
@@ -203,10 +213,10 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
             case = await latest_case(session, order.id)
             verified_no_response = no_response_gate(order.status, case, now)["ok"]
         shop_closed = reason == SHOP_CLOSED and order.status in BEFORE_PURCHASE
-        if order.status in AFTER_PURCHASE and reason in NO_RESPONSE_REASONS and not verified_no_response:
+        if paid and reason in NO_RESPONSE_REASONS and not verified_no_response:
             raise OrderRefused(409, "after_purchase_resell_or_return", status=order.status)
         if (
-            order.status in PENALTY_STATUSES
+            (order.status in PENALTY_STATUSES or paid)
             and not verified_no_response
             and not verified_stock_check
             and not shop_closed
@@ -233,7 +243,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     deal = await linked_hot_deal(session, order)
     order.cancel_reason, order.cancelled_by = reason, cancelled_by
     final_for_courier = cancelled_by == "courier" and (
-        (reason == SHOP_CLOSED and order.status in BEFORE_PURCHASE) or order.status in AFTER_PURCHASE
+        after_purchase(order) or (reason == SHOP_CLOSED and order.status in BEFORE_PURCHASE)
     )
     back_to_pool = (
         cancelled_by == "courier"
@@ -435,16 +445,20 @@ def customer_policy(status: str) -> dict[str, Any]:
     }
 
 
-def courier_policy(status: str) -> dict[str, Any]:
+def courier_policy(order: Order) -> dict[str, Any]:
+    status = order.status
     penalty = status in PENALTY_STATUSES
-    if status in AFTER_PURCHASE:
+    if after_purchase(order):
+        # No simple cancel: the courier's « Je ne peux pas terminer la course » opens the choice
+        # « Revendre en Offre Chaude » / « J'ai rendu les articles au magasin » (resell_or_return).
         return {
             "can_cancel": False,
             "is_delay_cancel": True,
             "penalty_applies": True,
             "after_purchase": True,
+            "resell_or_return": True,
             "reason_code": "courier_after_purchase",
-            "message_ar": "اشتريت المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو أرجعها للمتجر.",
+            "message_ar": "دفعت ثمن المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو أرجعها للمتجر.",
             "message_fr": (
                 "Vous avez déjà payé les articles : revendez-les en Offre Chaude pour récupérer "
                 "votre argent, ou rendez-les au magasin."
