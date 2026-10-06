@@ -4,8 +4,10 @@ functions (dispatchOrderToCouriers, cancelOrder, expireStaleOrders, reportOrderI
 Text = dict[str, str]
 
 
-def _km(value: float) -> str:
-    return f"{value:.1f}"
+def _km(value: float, lang: str = "fr") -> str:
+    """« 5,0 » in French (decimal comma, QA B79: « 5.0 km »), « 5.0 » in Arabic, like the app."""
+    text = f"{value:.1f}"
+    return text if lang == "ar" else text.replace(".", ",")
 
 
 def minutes_ar(n: int) -> str:
@@ -38,14 +40,14 @@ def new_order(items: str, shop_name: str | None, distance_km: float) -> Text:
     return {
         "title_ar": "🎯 طلب جديد متاح",
         "title_fr": "🎯 Nouvelle commande disponible",
-        "body_ar": f"{items} من {shop_name} - {_km(distance_km)} كم",
+        "body_ar": f"{items} من {shop_name} - {_km(distance_km, 'ar')} كم",
         "body_fr": f"{items} de {shop_name} - À {_km(distance_km)} km",
     }
 
 
 def new_order_preferred(client: str, items: str, shop_name: str | None, distance_km: float | None) -> Text:
     dist_fr = "" if distance_km is None else f" - À {_km(distance_km)} km"
-    dist_ar = "" if distance_km is None else f" - {_km(distance_km)} كم"
+    dist_ar = "" if distance_km is None else f" - {_km(distance_km, 'ar')} كم"
     return {
         "title_ar": f"⭐ حريفك {client} قدّم طلباً" if client else "⭐ حريفك قدّم طلباً",
         "title_fr": f"⭐ Votre client {client} a passé une commande"
