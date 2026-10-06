@@ -19,7 +19,6 @@ from app.models import (
     HotDeal,
     Message,
     Order,
-    OrderStatusEvent,
     OrderStockCheck,
     PushDelivery,
 )
@@ -193,17 +192,14 @@ async def test_report_parks_the_order_and_alerts_the_customer(client, world):
     assert re.search("[\u0600-\u06ff]", ar) and "Article" not in ar and "د.ت" in ar
 
 
-async def test_report_from_accepted_goes_through_at_shop(client, world):
+async def test_report_refused_before_arrival_at_shop(client, world):
+    """B58: no report (and no « attend au magasin » for the customer) before « Arrivé au magasin »."""
     order = await world.order(status="accepted", courier=world.courier, fee="5")
     r = await report(client, world, order)
-    assert r.status_code == 200, r.text
-    events = await rows(
-        select(OrderStatusEvent.to_status)
-        .where(OrderStatusEvent.order_id == order.id)
-        .order_by(OrderStatusEvent.id)
-    )
-    assert events[-2:] == ["at_shop", "price_confirmation_needed"]
-    assert (await doc(client, world.courier_user, order))["shops"][0]["status"] == "at_shop"
+    assert r.status_code == 409 and "not_reportable" in r.text, r.text
+    assert (await doc(client, world.courier_user, order))["status"] == "accepted"
+    lines = await rows(select(Message.body).where(Message.order_id == order.id))
+    assert lines == []
 
 
 async def test_report_nothing_available(client, world):

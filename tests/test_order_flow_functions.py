@@ -102,7 +102,7 @@ async def test_place_order_builds_the_whitelisted_order_and_dispatches(client, w
     assert order["last_dispatched_at"] is not None
     [note] = await notifications(world.courier_user, "new_order")
     assert note.title_fr == "🎯 Nouvelle commande disponible"
-    assert note.body_fr == "2x Pain\n1x Lait de Monoprix - À 0.0 km"
+    assert note.body_fr == "2x Pain\n1x Lait de Monoprix - À 0,0 km"
     assert note.data["quick_actions"] == ["accept", "decline"] and note.data["recipient_role"] == "courier"
     assert len(await pushes(world.courier_user)) == 1
     assert await notifications(far_user) == []
