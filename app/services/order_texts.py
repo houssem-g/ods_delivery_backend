@@ -106,12 +106,18 @@ def offer_closed_by_customer_cancel(shop_name: str | None) -> Text:
 
 def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool) -> Text:
     if verified_no_response:
-        body_ar = "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي طلبك وسُجّلت حادثة عدم رد."
-        body_fr = (
-            "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : votre commande "
-            "est annulée et un incident de non-réponse est enregistré."
-        )
-    elif hot_deal:
+        # the courier did nothing wrong: the title doesn't blame him (QA 06/10 B30), same title as
+        # after a resale (createHotDeal)
+        return {
+            "title_ar": "❌ تم إلغاء طلبك",
+            "title_fr": "❌ Commande annulée",
+            "body_ar": "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي طلبك وسُجّلت حادثة عدم رد.",
+            "body_fr": (
+                "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : votre commande "
+                "est annulée et un incident de non-réponse est enregistré."
+            ),
+        }
+    if hot_deal:
         body_ar = f"السبب: {reason_text(reason, 'ar')}. تم إلغاء الطلب."
         body_fr = f"Raison : {reason_text(reason, 'fr')}. La commande est annulée."
     else:

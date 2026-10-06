@@ -251,6 +251,12 @@ def _has_case() -> Any:
     return exists().where(cases.c.order_id == orders.c.id)
 
 
+def _case_count() -> Any:
+    """Urgent alerts sent for the order (1 = the alert, 2 = the last one): the customer's alert
+    says « dernière alerte » and the incident wording from it (QA 06/10 N3)."""
+    return select(func.count()).where(cases.c.order_id == orders.c.id).scalar_subquery()
+
+
 # The customer answered, or the courier reached him (triggerEmergencyContact set
 # customer_responded_to_emergency for both).
 ANSWERED = ("customer_confirmed", "courier_reached")
@@ -448,6 +454,8 @@ FIELDS: dict[str, LegacyField] = {
     "no_response_resolution": LegacyField(latest_case.c.resolution, "string"),
     "no_response_case_id": LegacyField(latest_case.c.id, "id"),
     "no_response_channels": LegacyField(latest_case.c.channels, "object"),
+    "no_response_attempts": LegacyField(_case_count(), "integer"),
+    "no_response_incident_counted": LegacyField(latest_case.c.incident_counted, "boolean"),
     "reported_issues": LegacyField(_issues(), "array", **guarded),
     # "Article indisponible" (app/services/stock_checks.py): the latest check and all of them.
     "stock_check": LegacyField(_latest_stock_check(), "object", **guarded),

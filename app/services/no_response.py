@@ -15,8 +15,9 @@ The server owns the procedure; the screens only display it:
                       answer voids the incident.
   courier_resume      courier/admin: "I reached the customer myself" (same effect).
   realert             courier/admin, once the deadline passed: a second and last urgent alert
-                      (new case, new countdown, reminders again). The first case's incident is
-                      voided, the new case carries it; MAX_REPORTS = 2 cases per order.
+                      (new case, new countdown, reminders again). The incident moves from the
+                      first case to the new one and stays counted (withdrawn only if the customer
+                      answers); MAX_REPORTS = 2 cases per order.
   sweep               the 5-minute job (app/jobs/incidents.py), never an HTTP action.
   reminders           while a case waits, the customer's phone rings again every
                       REMINDER_EVERY (push only, Android channel `urgent_alarm`): one alert is
@@ -253,57 +254,99 @@ async def _close(
 
 
 async def _finalize(session: AsyncSession, order: Order, case: NoResponseCase, now: datetime) -> None:
-    """The deadline passed without an answer: incident recorded once, both sides told once."""
+    """The deadline passed without an answer: incident recorded once, both sides told once.
+    After the last alert (the re-alert) the messages say it is over, never a second « Dernière
+    chance » (QA 06/10 N13); every text says what the server really does (N3): the incident is
+    recorded, and withdrawn if the customer still answers before the courier resells or closes."""
     case.status, case.final_at, case.incident_counted = "expired", now, True
     await session.flush()
     _touch(session, case)
     incidents = await mirror_incidents(session, order.customer_id)
+    last_alert = len(await _cases(session, order.id)) >= MAX_REPORTS
     mins = round(WAIT_SECONDS / 60)
     courier_user = await _courier_user(session, order)
     if courier_user is not None:
+        if last_alert:
+            texts = {
+                "title_ar": "❌ لم يردّ الحريف على التنبيه الأخير",
+                "title_fr": "❌ Dernière alerte sans réponse",
+                "body_ar": (
+                    "لا يمكن إرسال تنبيه آخر. يمكنك الآن إعادة البيع (عرض ساخن) أو إرجاع البضاعة إلى "
+                    "المتجر أو الإلغاء دون عقوبة."
+                ),
+                "body_fr": (
+                    "Plus aucune alerte n'est possible. Vous pouvez maintenant revendre (Offre Chaude), "
+                    "rendre la marchandise au magasin ou annuler, sans pénalité."
+                ),
+            }
+        else:
+            texts = {
+                "title_ar": "❌ الحريف لم يردّ",
+                "title_fr": "❌ Le client ne répond toujours pas",
+                "body_ar": (
+                    f"لم يردّ الحريف خلال {minutes_ar(mins)} رغم الإشعار والتنبيه. يمكنك الآن إعادة "
+                    "تنبيهه مرة أخيرة، أو إعادة البيع (عرض ساخن) أو إرجاع البضاعة إلى المتجر أو الإلغاء "
+                    "دون عقوبة."
+                ),
+                "body_fr": (
+                    f"Aucune réponse en {mins} min malgré la notification et l'alarme. Vous pouvez "
+                    "maintenant le relancer une dernière fois, revendre (Offre Chaude), rendre la "
+                    "marchandise au magasin ou annuler, sans pénalité."
+                ),
+            }
         await notify_and_push(
             session,
             user_id=courier_user,
             order_id=order.id,
             type_="customer_no_response_final",
-            title_ar="❌ الحريف لم يردّ",
-            title_fr="❌ Le client ne répond toujours pas",
-            body_ar=(
-                f"لم يردّ الحريف خلال {minutes_ar(mins)} رغم الإشعار والتنبيه. يمكنك الآن إعادة البيع "
-                "(عرض ساخن) أو إرجاع البضاعة إلى المتجر أو الإلغاء دون عقوبة."
-            ),
-            body_fr=(
-                f"Aucune réponse en {mins} min malgré la notification et l'alarme. Vous pouvez "
-                "maintenant revendre (Offre Chaude), rendre la marchandise au magasin ou annuler, "
-                "sans pénalité."
-            ),
+            **texts,
             metadata={
                 "customer_unreachable": True,
                 "can_cancel": True,
                 "can_resell": True,
+                "last_alert": last_alert,
                 "recipient_role": "courier",
                 "case_id": str(case.id),
             },
         )
+    if last_alert:
+        texts = {
+            "title_ar": "❌ لم تردّ على النداء الأخير",
+            "title_fr": "❌ Dernier appel sans réponse",
+            "body_ar": (
+                "سُجّلت حادثة عدم رد. يمكن للمندوب الآن إعادة بيع طلبك أو إرجاعه إلى المتجر. اتصل به "
+                "فوراً إن كنت لا تزال تريده: إن سلّمك الطلب تُسحب الحادثة."
+            ),
+            "body_fr": (
+                "Un incident de non-réponse est enregistré. Le livreur peut maintenant revendre votre "
+                "commande ou la rendre au magasin. Appelez-le tout de suite si vous la voulez encore : "
+                "s'il vous la livre, l'incident est retiré."
+            ),
+        }
+    else:
+        texts = {
+            "title_ar": "⚠️ آخر فرصة: المندوب لا يزال ينتظر",
+            "title_fr": "⚠️ Dernière chance : le livreur attend toujours",
+            "body_ar": (
+                "لم تردّ على المندوب. سُجّلت حادثة عدم رد، ويمكنه الآن إعادة بيع طلبك. اتصل به فوراً "
+                "إن كنت لا تزال تريده: إن سلّمك الطلب تُسحب الحادثة."
+            ),
+            "body_fr": (
+                "Vous n'avez pas répondu au livreur : un incident de non-réponse est enregistré et il "
+                "peut maintenant revendre votre commande. Appelez-le tout de suite si vous la voulez "
+                "encore : s'il vous la livre, l'incident est retiré."
+            ),
+        }
     await notify_and_push(
         session,
         user_id=order.customer_id,
         order_id=order.id,
         type_="emergency_contact",
-        title_ar="⚠️ آخر فرصة: المندوب لا يزال ينتظر",
-        title_fr="⚠️ Dernière chance : le livreur attend toujours",
-        body_ar=(
-            "لم تردّ على المندوب. سُجّلت حادثة عدم رد، ويمكنه الآن إعادة بيع طلبك. "
-            "اتصل به فوراً إن كنت لا تزال تريده."
-        ),
-        body_fr=(
-            "Vous n'avez pas répondu au livreur : un incident de non-réponse est enregistré et il "
-            "peut maintenant revendre votre commande. Appelez-le tout de suite si vous la voulez "
-            "encore."
-        ),
+        **texts,
         metadata={
             "is_emergency": True,
             "stage": "final",
+            "last_alert": last_alert,
             "incidents": incidents,
             "recipient_role": "customer",
             "case_id": str(case.id),
@@ -509,9 +552,15 @@ async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Res
 
 
 async def _open_case(
-    session: AsyncSession, order: Order, actor: CurrentUser, now: datetime, attempt: int
+    session: AsyncSession,
+    order: Order,
+    actor: CurrentUser,
+    now: datetime,
+    attempt: int,
+    counted: bool = False,
 ) -> Result:
-    """A new countdown: the case, the order parked, the customer alerted on every channel."""
+    """A new countdown: the case, the order parked, the customer alerted on every channel.
+    `counted`: the re-alert carries the incident the first deadline recorded (QA 06/10 N3)."""
     deadline = now + timedelta(seconds=WAIT_SECONDS)
     case = NoResponseCase(
         order_id=order.id,
@@ -520,7 +569,7 @@ async def _open_case(
         purchase_amount=order.purchase_amount or 0,
         started_at=now,
         deadline_at=deadline,
-        incident_counted=False,
+        incident_counted=counted,
         channels={"in_app": True, "push_devices": 0, "whatsapp": None, "sms": None},
     )
     session.add(case)
@@ -550,10 +599,16 @@ async def _open_case(
         body_ar=(
             f"المندوب {courier_name} اشترى طلبك بماله ولا يستطيع الوصول إليك. "
             f"اتصل به{phone_part} أو أكّد توفّرك خلال {minutes_ar(mins)}."
+            + (" سُجّلت حادثة عدم رد: تُسحب إن رددت الآن." if counted else "")
         ),
         body_fr=(
             f"Votre livreur {courier_name} a avancé l'argent de vos achats et n'arrive pas à vous "
             f"joindre. Appelez-le{phone_part} ou confirmez votre disponibilité sous {mins} min."
+            + (
+                " Un incident de non-réponse est déjà enregistré : il est retiré si vous répondez."
+                if counted
+                else ""
+            )
         ),
         metadata={
             "is_emergency": True,
@@ -624,12 +679,11 @@ async def realert(session: AsyncSession, order: Order, actor: CurrentUser) -> Re
     if await _live_deal(session, order.id) is not None:
         return 409, {"error": "too_late", "reason": "resold", "status": order.status}
     now = ot.now_utc()
-    # the incident moves to the new case: counted once, when (if) that one runs out too
+    # The incident moves to the new case and stays counted (the customer was told « un incident est
+    # enregistré »; QA 06/10 N3): still one per order, withdrawn if he answers this last alert.
     was_counted = case.incident_counted
     await _close(session, case, "realerted", now, counted=False)
-    if was_counted:
-        await mirror_incidents(session, order.customer_id)
-    return await _open_case(session, order, actor, now, attempt=len(cases) + 1)
+    return await _open_case(session, order, actor, now, attempt=len(cases) + 1, counted=was_counted)
 
 
 async def status(session: AsyncSession, order: Order) -> Result:
