@@ -33,6 +33,7 @@ Order document carries the checks (`stock_check`, `stock_checks`).
 
 import logging
 import math
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -52,6 +53,7 @@ from app.services.notifications import notify
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import OrderRefused, courier_of_user, courier_user_id
+from app.services.text_norm import tokenize
 
 log = logging.getLogger("odsd.stock_checks")
 
@@ -142,6 +144,22 @@ async def has_pending(session: AsyncSession, order_id: uuid.UUID) -> bool:
             .where(OrderStockCheck.order_id == order_id, OrderStockCheck.status == "pending")
         )
     ).scalar_one() > 0
+
+
+_LEADING_QUANTITY = re.compile(r"\d{1,3}x?|x\d{1,3}")
+_TRAILING_QUANTITY = re.compile(r"x\d{1,3}|\d{1,3}x")
+
+
+def item_key(text: str | None) -> str:
+    """The article a report is about, whatever the spelling: case, accents and a quantity in front
+    or behind (« 2x Lait », « 2 x lait », « Lait x2 ») do not matter (same idea as the app's
+    foldText). A bare number behind the name stays (« Article 1 » ≠ « Article 2 »)."""
+    tokens = tokenize(text or "")
+    if len(tokens) > 1 and _LEADING_QUANTITY.fullmatch(tokens[0]):
+        tokens = tokens[2:] if len(tokens) > 2 and tokens[1] == "x" else tokens[1:]
+    if len(tokens) > 1 and _TRAILING_QUANTITY.fullmatch(tokens[-1]):
+        tokens = tokens[:-1]
+    return " ".join(tokens)
 
 
 def _clean(value: Any, limit: int = MAX_TEXT) -> str:
@@ -243,6 +261,19 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
         raise OrderRefused(409, "not_reportable", status=order.status)
     if any(c.status == "pending" for c in checks):
         raise OrderRefused(409, "stock_check_pending", stock_check=view(checks[0]))
+    # One report per article and per order (QA 06/10, R14): once the customer answered — or let
+    # the deadline pass — reporting the same article again would only ring his phone again for a
+    # question already asked. After « rien n'est disponible », no article can be reported any more.
+    earlier = next(
+        (
+            c
+            for c in checks
+            if c.nothing_available or (not nothing and item_key(c.missing_text) == item_key(missing))
+        ),
+        None,
+    )
+    if earlier is not None:
+        raise OrderRefused(409, "item_already_reported", stock_check=view(earlier))
     if len(checks) >= MAX_CHECKS:
         raise OrderRefused(429, "too_many_stock_checks", max=MAX_CHECKS)
 
