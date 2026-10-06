@@ -35,6 +35,7 @@ from app.security.deps import CurrentUser
 from app.services import order_texts, stock_checks
 from app.services import order_transitions as ot
 from app.services.dispatch import dispatch_order
+from app.services.notifications import retire_acceptance_notices
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
 from app.services.orders import OrderRefused, courier_of_user, first_stop, is_test_order, mirror_incidents
@@ -267,6 +268,10 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
         )
 
     await stock_checks.close_pending(session, order)
+    if previous_courier_id is not None:  # R1: no « Offre acceptée » left for an order he lost
+        lost = await session.get(Courier, previous_courier_id)
+        if lost is not None:
+            await retire_acceptance_notices(session, order.id, lost.user_id)
 
     stop = await first_stop(session, order.id)
     shop_name = stop.name if stop else None
@@ -389,6 +394,8 @@ async def release_blocked_courier(session: AsyncSession, user: CurrentUser, payl
         )
     ).scalars():
         emit(session, "OrderOffer", "update", offer_id)
+    # R1: the « 🎉 Offre acceptée » he may not have opened yet is no longer true
+    await retire_acceptance_notices(session, order.id, courier.user_id)
     stop = await first_stop(session, order.id)
     await notify_always_pushed(
         session,

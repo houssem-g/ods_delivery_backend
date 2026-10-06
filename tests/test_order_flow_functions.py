@@ -407,7 +407,7 @@ async def test_accept_offer(client, world, factory):
     # the courier is told by the server, always pushed
     [note] = await notifications(world.courier_user)
     assert note.type == "order_accepted"
-    assert note.body_fr == "Offre acceptée — Monoprix : 2x Pain. Allez au magasin."
+    assert note.body_fr == "Monoprix : 2x Pain. Allez au magasin."  # R24: title not repeated
     again = await call(
         client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": str(loser.id)}
     )

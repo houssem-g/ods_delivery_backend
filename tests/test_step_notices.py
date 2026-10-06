@@ -111,8 +111,8 @@ async def test_order_accepted_is_pushed_on_the_vibrating_channel(client, world):
     assert r.status_code == 200, r.text
     [note] = await notifications(world.courier_user, "order_accepted")
     assert note.title_fr == "🎉 Offre acceptée"
-    assert note.body_fr == "Offre acceptée — Monoprix : Lait, Pain. Allez au magasin."
-    assert note.body_ar == "تم قبول عرضك — Monoprix: Lait, Pain. توجّه إلى المتجر."
+    assert note.body_fr == "Monoprix : Lait, Pain. Allez au magasin."  # R24: title not repeated
+    assert note.body_ar == "Monoprix: Lait, Pain. توجّه إلى المتجر."
     assert note.data["recipient_role"] == "courier" and note.data["offer_id"] == str(offer.id)
     [sent] = await pushes(world.courier_user)
     assert sent.status == "sent"
