@@ -77,6 +77,8 @@ class User(Base):
     referred_by_courier_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="SET NULL", use_alter=True)
     )
+    # Customer's own answer « vous vous faites livrer combien de fois par mois ? » (forecast prior).
+    declared_monthly_orders: Mapped[int | None] = mapped_column(Integer)
     referred_by_code: Mapped[str | None] = mapped_column(Text)
     referred_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     legacy_b44_id: Mapped[str | None] = legacy_id()
@@ -229,6 +231,12 @@ class Courier(Base):
     vehicle_model: Mapped[str | None] = mapped_column(Text)
     vehicle_plate: Mapped[str | None] = mapped_column(Text)
     daily_goal: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    # Self-declared activity (earnings forecast, app/services/forecast.py): what he already does
+    # outside the app. Optimistic by nature: the forecast discounts it and real deliveries replace it.
+    declared_weekly_deliveries: Mapped[int | None] = mapped_column(Integer)
+    declared_active_days: Mapped[int | None] = mapped_column(Integer)
+    declared_regular_clients: Mapped[int | None] = mapped_column(Integer)
+    declared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_location = mapped_column(Point())
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     legacy_b44_id: Mapped[str | None] = legacy_id()

@@ -15,11 +15,14 @@ from app.models.incidents import HotDeal, NoResponseCase
 from app.models.misc import (
     AppSetting,
     AuditLog,
+    CourierClientEstimate,
     CourierLedgerEntry,
     CreditCashier,
     CreditTopup,
+    EarningsForecast,
     CourierStatement,
     File,
+    ForecastFactor,
     TranslationUsage,
 )
 from app.models.notifications import DeviceToken, Notification, OutboundMessage, PushDelivery
@@ -46,9 +49,12 @@ __all__ = [
     "Base",
     "Courier",
     "CourierDocument",
+    "CourierClientEstimate",
     "CourierLedgerEntry",
     "CreditCashier",
     "CreditTopup",
+    "EarningsForecast",
+    "ForecastFactor",
     "CourierStatement",
     "DeviceToken",
     "EmailCode",

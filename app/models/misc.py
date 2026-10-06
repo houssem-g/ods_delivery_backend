@@ -198,3 +198,64 @@ class CreditCashier(Base):
     active: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at: Mapped[datetime] = created_at()
+
+
+class CourierClientEstimate(Base):
+    """The courier's own estimate of how often one of his invited clients orders (per month)."""
+
+    __tablename__ = "courier_client_estimates"
+    __table_args__ = (CheckConstraint("monthly_orders BETWEEN 0 AND 60", name="monthly_orders"),)
+
+    courier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="CASCADE"), primary_key=True
+    )
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    monthly_orders: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[datetime] = updated_at()
+
+
+class EarningsForecast(Base):
+    """A forecast snapshot (app/services/forecast.py). kind 'week' (the next 7 days, written every
+    night) is compared with what really happened once the week is over (actual_*): that comparison
+    is what corrects the next forecasts. kind 'month' is the snapshot shown in the app."""
+
+    __tablename__ = "earnings_forecasts"
+    __table_args__ = (
+        UniqueConstraint("courier_id", "kind", "period_start", "as_of"),
+        CheckConstraint("kind IN ('week','month')", name="kind"),
+        Index("earnings_forecasts_to_evaluate", "period_end", postgresql_where=text("evaluated_at IS NULL")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    courier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    as_of: Mapped[date] = mapped_column(Date, nullable=False)
+    period_start: Mapped[date] = mapped_column(Date, nullable=False)
+    period_end: Mapped[date] = mapped_column(Date, nullable=False)  # inclusive
+    # Gross delivery fees forecast for the period (the part not yet earned), DT.
+    p25: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    p50: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    p75: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    expected_deliveries: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    method: Mapped[str] = mapped_column(Text, nullable=False)
+    details: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    actual_fees: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    actual_deliveries: Mapped[int | None] = mapped_column(Integer)
+    evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+
+
+class ForecastFactor(Base):
+    """What the forecast learned across all couriers (weekday, holiday, Ramadan, rain, overall bias):
+    value = multiplicative factor, weight = how much evidence backs it."""
+
+    __tablename__ = "forecast_factors"
+
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    value: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    weight: Mapped[Decimal] = mapped_column(Numeric(12, 3), nullable=False, server_default="0")
+    updated_at: Mapped[datetime] = updated_at()
