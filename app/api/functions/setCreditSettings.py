@@ -1,4 +1,5 @@
-"""setCreditSettings — admin: the bank details shown to couriers (bank_name, account_holder, rib, instructions_fr, instructions_ar).
+"""setCreditSettings — admin: the bank details shown to couriers (bank_name, account_holder, rib,
+instructions_fr, instructions_ar).
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

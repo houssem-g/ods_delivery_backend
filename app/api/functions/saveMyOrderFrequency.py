@@ -1,4 +1,5 @@
-"""saveMyOrderFrequency — customer: « vous vous faites livrer combien de fois par mois ? ». Body: { monthly_orders (0–60) | null }.
+"""saveMyOrderFrequency — customer: « vous vous faites livrer combien de fois par mois ? ». Body: {
+monthly_orders (0–60) | null }.
 See app/services/forecast.py (courier earnings forecast, self-correcting)."""
 
 from typing import Any

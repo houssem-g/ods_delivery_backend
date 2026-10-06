@@ -16,7 +16,8 @@ Top-ups (no online payment at first, owner's decision):
     (requestCreditTopup) and an admin approves it (reviewCreditTopup) -> credit_topup + credit_bonus;
   - cashier: cash handed to a cashier (the ODS café in Sousse), who credits him at once
     (cashierCreditTopup); an admin later marks that cash as handed over (markCashierRemitted).
-Bonus: none since D-11 (TOPUP_BONUS empty; the mechanism stays for a real, time-limited offer). Primes (fondateur, recrutement) are paid in credit
+Bonus: none since D-11 (TOPUP_BONUS empty; the mechanism stays for a real, time-limited offer).
+Primes (fondateur, recrutement) are paid in credit
 (grantCourierCredit, kind credit_prime). Nothing is refundable in cash.
 
 December 2026 is the "à blanc" month: the launch waives every commission (commission.py), and the
@@ -150,7 +151,9 @@ async def month_deliveries(session: AsyncSession, courier_id: uuid.UUID, now: da
     ).scalar_one()
 
 
-async def offer_allowed(session: AsyncSession, courier: Courier, now: datetime | None = None) -> dict[str, Any] | None:
+async def offer_allowed(
+    session: AsyncSession, courier: Courier, now: datetime | None = None
+) -> dict[str, Any] | None:
     """None when the courier may send an offer; else the refusal details (error `credit_empty`)."""
     now = now or ot.now_utc()
     if not is_enforced(now):
@@ -256,7 +259,9 @@ async def summary(session: AsyncSession, user: CurrentUser) -> dict[str, Any]:
         "would_have_paid": None if enforced else _dt(COMMISSION_PER_DELIVERY_TND * beyond),
         "blocked": blocked,
         "low": enforced and free_left == 0 and covered < LOW_CREDIT_DELIVERIES,
-        "suggested_topups": [{"amount": _dt(a), "bonus": _dt(TOPUP_BONUS.get(a, ZERO))} for a in SUGGESTED_TOPUPS],
+        "suggested_topups": [
+            {"amount": _dt(a), "bonus": _dt(TOPUP_BONUS.get(a, ZERO))} for a in SUGGESTED_TOPUPS
+        ],
         "topup_min": _dt(TOPUP_MIN),
         "topup_max": _dt(TOPUP_MAX),
         "pending_topups": [topup_view(t) for t in pending],
@@ -267,7 +272,9 @@ async def summary(session: AsyncSession, user: CurrentUser) -> dict[str, Any]:
 
 async def _admins(session: AsyncSession) -> list[uuid.UUID]:
     return list(
-        (await session.execute(select(User.id).where(User.role == "admin", User.deleted_at.is_(None)))).scalars()
+        (
+            await session.execute(select(User.id).where(User.role == "admin", User.deleted_at.is_(None)))
+        ).scalars()
     )
 
 
@@ -288,7 +295,9 @@ async def request_topup(session: AsyncSession, user: CurrentUser, payload: dict[
     ):
         raise OrderRefused(400, "invalid_receipt")
     if (
-        await session.execute(select(func.count()).select_from(CreditTopup).where(CreditTopup.receipt_key == raw))
+        await session.execute(
+            select(func.count()).select_from(CreditTopup).where(CreditTopup.receipt_key == raw)
+        )
     ).scalar_one():
         raise OrderRefused(409, "receipt_already_used")
     pending = (
@@ -321,7 +330,9 @@ async def request_topup(session: AsyncSession, user: CurrentUser, payload: dict[
             push=False,
             title_fr="💳 Recharge à valider",
             title_ar="💳 شحن للمراجعة",
-            body_fr=f"{courier.display_name} : versement de {_dt(amount)} DT. À valider dans Admin › Crédits.",
+            body_fr=(
+                f"{courier.display_name} : versement de {_dt(amount)} DT. À valider dans Admin › Crédits."
+            ),
             body_ar=f"{courier.display_name}: إيداع {_dt(amount)} د.ت. للمراجعة في الإدارة › الأرصدة.",
             metadata={"topup_id": str(topup.id), "recipient_role": "admin"},
         )
@@ -333,7 +344,9 @@ async def _credit(
 ) -> None:
     session.add(CourierLedgerEntry(courier_id=courier_id, kind="credit_topup", amount=-amount, created_by=by))
     if bonus > 0:
-        session.add(CourierLedgerEntry(courier_id=courier_id, kind="credit_bonus", amount=-bonus, created_by=by))
+        session.add(
+            CourierLedgerEntry(courier_id=courier_id, kind="credit_bonus", amount=-bonus, created_by=by)
+        )
     await session.flush()
 
 
@@ -373,8 +386,9 @@ async def review_topup(session: AsyncSession, admin: CurrentUser, payload: dict[
         raise OrderRefused(400, "invalid_status")
     note = _note(payload.get("note"))
     topup = (
-        (await session.execute(select(CreditTopup).where(CreditTopup.id == topup_id).with_for_update()))
-        .scalar_one_or_none()
+        (
+            await session.execute(select(CreditTopup).where(CreditTopup.id == topup_id).with_for_update())
+        ).scalar_one_or_none()
         if topup_id
         else None
     )
@@ -384,7 +398,9 @@ async def review_topup(session: AsyncSession, admin: CurrentUser, payload: dict[
         raise OrderRefused(409, "topup_already_reviewed", status=topup.status)
     if status == "approved":
         if payload.get("amount") not in (None, ""):
-            topup.amount = _amount(payload.get("amount"), low=Decimal("0.5"), high=TOPUP_MAX, error="invalid_amount")
+            topup.amount = _amount(
+                payload.get("amount"), low=Decimal("0.5"), high=TOPUP_MAX, error="invalid_amount"
+            )
         topup.bonus = bonus_for(topup.amount)
         await _credit(session, topup.courier_id, topup.amount, topup.bonus, admin.id)
     topup.status, topup.note = status, note
@@ -427,7 +443,9 @@ async def list_topups(session: AsyncSession, admin: CurrentUser, payload: dict[s
                 "courier_name": name,
                 "courier_phone": phone,
                 "cashier_user_id": str(topup.cashier_user_id) if topup.cashier_user_id else None,
-                "receipt_url": s3.presign_get(topup.receipt_key, SIGNED_SECONDS) if topup.receipt_key else None,
+                "receipt_url": s3.presign_get(topup.receipt_key, SIGNED_SECONDS)
+                if topup.receipt_key
+                else None,
                 "url_expires_in": SIGNED_SECONDS if topup.receipt_key else None,
             }
         )
@@ -445,7 +463,11 @@ def _masked(courier: Courier) -> dict[str, Any]:
     parts = (courier.display_name or "").split()
     name = parts[0] + (f" {parts[-1][0]}." if len(parts) > 1 and parts[-1] else "") if parts else "—"
     phone = courier.phone_e164 or ""
-    return {"name": name, "phone_end": phone[-2:] if phone else None, "verified": courier.verification == "verified"}
+    return {
+        "name": name,
+        "phone_end": phone[-2:] if phone else None,
+        "verified": courier.verification == "verified",
+    }
 
 
 async def _courier_by_phone(session: AsyncSession, raw: Any) -> Courier:
@@ -627,12 +649,16 @@ async def grant(session: AsyncSession, admin: CurrentUser, payload: dict[str, An
     kind = payload.get("kind")
     if kind == "prime":
         amount = _amount(payload.get("amount"), low=Decimal("0.5"), high=PRIME_MAX, error="invalid_amount")
-        entry = CourierLedgerEntry(courier_id=courier.id, kind="credit_prime", amount=-amount, created_by=admin.id)
+        entry = CourierLedgerEntry(
+            courier_id=courier.id, kind="credit_prime", amount=-amount, created_by=admin.id
+        )
     elif kind == "adjustment":
         amount = _amount(payload.get("amount"), low=-ADJUST_MAX, high=ADJUST_MAX, error="invalid_amount")
         if amount == 0:
             raise OrderRefused(400, "invalid_amount")
-        entry = CourierLedgerEntry(courier_id=courier.id, kind="adjustment", amount=-amount, created_by=admin.id)
+        entry = CourierLedgerEntry(
+            courier_id=courier.id, kind="adjustment", amount=-amount, created_by=admin.id
+        )
     else:
         raise OrderRefused(400, "invalid_kind", kinds=["prime", "adjustment"])
     session.add(entry)

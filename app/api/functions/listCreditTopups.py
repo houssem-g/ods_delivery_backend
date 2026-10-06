@@ -1,4 +1,5 @@
-"""listCreditTopups — admin: top-ups, newest first, with signed receipt links. Body: { status?, method?, courier_id? }.
+"""listCreditTopups — admin: top-ups, newest first, with signed receipt links. Body: { status?, method?,
+courier_id? }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

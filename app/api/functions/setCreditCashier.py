@@ -1,4 +1,5 @@
-"""setCreditCashier — admin: makes a user (by e-mail) a cashier, renames or deactivates him. Body: { email, label?, address?, active? }.
+"""setCreditCashier — admin: makes a user (by e-mail) a cashier, renames or deactivates him. Body: { email,
+label?, address?, active? }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

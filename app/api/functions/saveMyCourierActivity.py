@@ -1,4 +1,5 @@
-"""saveMyCourierActivity — what the courier already does outside the app. Body: { weekly_deliveries? (0–300), active_days? (0–7), regular_clients? (0–500) }.
+"""saveMyCourierActivity — what the courier already does outside the app. Body: { weekly_deliveries? (0–300),
+active_days? (0–7), regular_clients? (0–500) }.
 See app/services/forecast.py (courier earnings forecast, self-correcting)."""
 
 from typing import Any

@@ -1,4 +1,5 @@
-"""lookupCourierForTopup — cashier: who is this phone number (first name + initial) before taking his cash. Body: { phone }.
+"""lookupCourierForTopup — cashier: who is this phone number (first name + initial) before taking his cash.
+Body: { phone }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

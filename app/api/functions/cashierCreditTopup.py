@@ -1,4 +1,5 @@
-"""cashierCreditTopup — cashier: cash received at the counter, credited at once with the bonus. Body: { phone, amount (5–200, whole DT) }.
+"""cashierCreditTopup — cashier: cash received at the counter, credited at once with the bonus. Body: {
+phone, amount (5–200, whole DT) }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

@@ -1,4 +1,5 @@
-"""getMyEarningsForecast — the courier's month: earned so far + a prudent range for the rest of the month, tips.
+"""getMyEarningsForecast — the courier's month: earned so far + a prudent range for the rest of the month,
+tips.
 See app/services/forecast.py (courier earnings forecast, self-correcting)."""
 
 from typing import Any

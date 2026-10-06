@@ -50,9 +50,15 @@ async def receipt(owner, *, content_type="image/jpeg") -> str:
     key = f"private/generic/{owner.id}/{uuid.uuid4().hex}.jpg"
     async with SessionLocal() as s:
         s.add(
-            File(key=key, owner_id=owner.id, visibility="private", purpose="generic", content_type=content_type,
-                 size_bytes=10)
-        )  # fmt: skip
+            File(
+                key=key,
+                owner_id=owner.id,
+                visibility="private",
+                purpose="generic",
+                content_type=content_type,
+                size_bytes=10,
+            )
+        )
         await s.commit()
     return key
 
@@ -105,7 +111,12 @@ async def test_bank_deposit_topup_reviewed_by_an_admin(client, world):
     bad = await call(client, world.courier_user, "requestCreditTopup", {"amount": 10, "receipt_url": other})
     assert bad.json()["error"] == "invalid_receipt"
 
-    r = await call(client, world.courier_user, "requestCreditTopup", {"amount": 10, "receipt_url": key, "reference": " 12 34 "})
+    r = await call(
+        client,
+        world.courier_user,
+        "requestCreditTopup",
+        {"amount": 10, "receipt_url": key, "reference": " 12 34 "},
+    )
     assert r.status_code == 200, r.text
     topup = r.json()["topup"]
     assert topup["status"] == "pending" and topup["amount"] == "10.000" and topup["reference"] == "12 34"
@@ -117,7 +128,9 @@ async def test_bank_deposit_topup_reviewed_by_an_admin(client, world):
     pending = (await call(client, world.courier_user, "getMyCredit")).json()
     assert pending["credit"] == "0.000" and len(pending["pending_topups"]) == 1
 
-    assert (await call(client, world.courier_user, "reviewCreditTopup", {"id": topup["id"], "status": "approved"})).status_code == 403
+    assert (
+        await call(client, world.courier_user, "reviewCreditTopup", {"id": topup["id"], "status": "approved"})
+    ).status_code == 403
     listed = (await call(client, world.admin, "listCreditTopups", {"status": "pending"})).json()["topups"]
     assert [t["id"] for t in listed] == [topup["id"]] and listed[0]["receipt_url"]
     assert listed[0]["courier_name"] == "Karim Trabelsi"
@@ -135,14 +148,32 @@ async def test_bank_deposit_topup_reviewed_by_an_admin(client, world):
 
 
 async def test_admin_may_correct_the_amount_or_reject(client, world):
-    first = (await call(client, world.courier_user, "requestCreditTopup",
-                        {"amount": 20, "receipt_url": await receipt(world.courier_user)})).json()["topup"]  # fmt: skip
-    r = await call(client, world.admin, "reviewCreditTopup", {"id": first["id"], "status": "approved", "amount": 15})
+    first = (
+        await call(
+            client,
+            world.courier_user,
+            "requestCreditTopup",
+            {"amount": 20, "receipt_url": await receipt(world.courier_user)},
+        )
+    ).json()["topup"]
+    r = await call(
+        client, world.admin, "reviewCreditTopup", {"id": first["id"], "status": "approved", "amount": 15}
+    )
     assert r.json()["topup"]["amount"] == "15.000" and r.json()["topup"]["bonus"] == "0.000"
-    second = (await call(client, world.courier_user, "requestCreditTopup",
-                         {"amount": 10, "receipt_url": await receipt(world.courier_user)})).json()["topup"]  # fmt: skip
-    r = await call(client, world.admin, "reviewCreditTopup",
-                   {"id": second["id"], "status": "rejected", "note": "Reçu illisible"})  # fmt: skip
+    second = (
+        await call(
+            client,
+            world.courier_user,
+            "requestCreditTopup",
+            {"amount": 10, "receipt_url": await receipt(world.courier_user)},
+        )
+    ).json()["topup"]
+    r = await call(
+        client,
+        world.admin,
+        "reviewCreditTopup",
+        {"id": second["id"], "status": "rejected", "note": "Reçu illisible"},
+    )
     assert r.json()["topup"]["status"] == "rejected"
     [told] = await notifications(world.courier_user, "credit_topup_rejected")
     assert "Reçu illisible" in told.body_fr
@@ -151,25 +182,45 @@ async def test_admin_may_correct_the_amount_or_reject(client, world):
 
 async def test_too_many_pending_topups(client, world):
     for _ in range(credit.MAX_PENDING_TOPUPS):
-        r = await call(client, world.courier_user, "requestCreditTopup",
-                       {"amount": 5, "receipt_url": await receipt(world.courier_user)})  # fmt: skip
+        r = await call(
+            client,
+            world.courier_user,
+            "requestCreditTopup",
+            {"amount": 5, "receipt_url": await receipt(world.courier_user)},
+        )
         assert r.status_code == 200, r.text
-    r = await call(client, world.courier_user, "requestCreditTopup",
-                   {"amount": 5, "receipt_url": await receipt(world.courier_user)})  # fmt: skip
+    r = await call(
+        client,
+        world.courier_user,
+        "requestCreditTopup",
+        {"amount": 5, "receipt_url": await receipt(world.courier_user)},
+    )
     assert r.status_code == 429 and r.json()["error"] == "too_many_pending_topups"
 
 
 async def test_cashier_sells_credit_for_cash(client, world, factory):
     cafe = await factory.user(email="cafe@example.test", full_name="Café ODS")
-    assert (await call(client, cafe, "lookupCourierForTopup", {"phone": "55123456"})).json()["error"] == "not_a_cashier"
-    assert (await call(client, world.courier_user, "setCreditCashier", {"email": "cafe@example.test", "label": "X"})).status_code == 403
-    r = await call(client, world.admin, "setCreditCashier",
-                   {"email": "CAFE@example.test", "label": "Café ODS Sousse", "address": "Khezama"})  # fmt: skip
+    assert (await call(client, cafe, "lookupCourierForTopup", {"phone": "55123456"})).json()[
+        "error"
+    ] == "not_a_cashier"
+    assert (
+        await call(
+            client, world.courier_user, "setCreditCashier", {"email": "cafe@example.test", "label": "X"}
+        )
+    ).status_code == 403
+    r = await call(
+        client,
+        world.admin,
+        "setCreditCashier",
+        {"email": "CAFE@example.test", "label": "Café ODS Sousse", "address": "Khezama"},
+    )
     assert r.status_code == 200, r.text
 
     who = await call(client, cafe, "lookupCourierForTopup", {"phone": "55 123 456"})
     assert who.json()["courier"] == {"name": "Karim T.", "phone_end": "56", "verified": True}
-    assert (await call(client, cafe, "lookupCourierForTopup", {"phone": "99999999"})).json()["error"] == "courier_not_found"
+    assert (await call(client, cafe, "lookupCourierForTopup", {"phone": "99999999"})).json()[
+        "error"
+    ] == "courier_not_found"
 
     r = await call(client, cafe, "cashierCreditTopup", {"phone": "+21655123456", "amount": 20})
     assert r.status_code == 200, r.text
@@ -198,14 +249,23 @@ async def test_cashier_cannot_credit_himself(client, world):
 
 
 async def test_primes_and_corrections(client, world):
-    payload = {"courier_id": str(world.courier.id), "kind": "prime", "amount": 30, "reason": "Prime fondateur"}
+    payload = {
+        "courier_id": str(world.courier.id),
+        "kind": "prime",
+        "amount": 30,
+        "reason": "Prime fondateur",
+    }
     assert (await call(client, world.courier_user, "grantCourierCredit", payload)).status_code == 403
     r = await call(client, world.admin, "grantCourierCredit", payload)
     assert r.status_code == 200 and r.json()["credit"] == "30.000", r.text
     [prime] = await notifications(world.courier_user, "credit_topup_approved")
     assert "Prime fondateur" in prime.body_fr
-    r = await call(client, world.admin, "grantCourierCredit",
-                   {"courier_id": str(world.courier.id), "kind": "adjustment", "amount": -2.5, "reason": "Erreur"})  # fmt: skip
+    r = await call(
+        client,
+        world.admin,
+        "grantCourierCredit",
+        {"courier_id": str(world.courier.id), "kind": "adjustment", "amount": -2.5, "reason": "Erreur"},
+    )
     assert r.json()["credit"] == "27.500"
     bad = await call(client, world.admin, "grantCourierCredit", {**payload, "reason": ""})
     assert bad.json()["error"] == "invalid_reason"
@@ -215,11 +275,20 @@ async def test_primes_and_corrections(client, world):
 
 async def test_settings_are_shown_on_my_credit(client, world, factory):
     assert (await call(client, world.courier_user, "setCreditSettings", {"rib": "x"})).status_code == 403
-    r = await call(client, world.admin, "setCreditSettings",
-                   {"bank_name": "Attijari bank", "account_holder": "ODS", "rib": "04 000 0000000000000 00"})  # fmt: skip
+    r = await call(
+        client,
+        world.admin,
+        "setCreditSettings",
+        {"bank_name": "Attijari bank", "account_holder": "ODS", "rib": "04 000 0000000000000 00"},
+    )
     assert r.status_code == 200, r.text
     cafe = await factory.user(email="cafe@example.test", full_name="Café")
-    await call(client, world.admin, "setCreditCashier", {"email": cafe.email, "label": "Café ODS", "address": "Sousse"})
+    await call(
+        client,
+        world.admin,
+        "setCreditCashier",
+        {"email": cafe.email, "label": "Café ODS", "address": "Sousse"},
+    )
     assert (await call(client, world.courier_user, "getCreditSettings")).status_code == 403
     saved = (await call(client, world.admin, "getCreditSettings")).json()["settings"]
     assert saved["bank_name"] == "Attijari bank" and saved["instructions_fr"] is None
@@ -242,7 +311,9 @@ async def test_low_credit_alert_once_when_crossing(world, monkeypatch):
         assert len(await notifications(world.courier_user, "credit_low")) == expected
     async with SessionLocal() as s:
         assert await credit.balance(s, world.courier.id) == Decimal("0")
-        due = (await s.execute(select(CourierLedgerEntry).where(CourierLedgerEntry.kind == "commission_due"))).scalars()
+        due = (
+            await s.execute(select(CourierLedgerEntry).where(CourierLedgerEntry.kind == "commission_due"))
+        ).scalars()
         assert len(list(due)) == 4
     async with SessionLocal() as s:
         assert (await s.execute(select(CreditTopup))).scalars().first() is None

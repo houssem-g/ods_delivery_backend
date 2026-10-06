@@ -27,7 +27,11 @@ async def call(client, user, name: str, payload: dict[str, Any] | None = None):
 
 async def courier_since(world, days: int) -> None:
     async with SessionLocal() as s:
-        await s.execute(update(Courier).where(Courier.id == world.courier.id).values(created_at=now() - timedelta(days=days)))
+        await s.execute(
+            update(Courier)
+            .where(Courier.id == world.courier.id)
+            .values(created_at=now() - timedelta(days=days))
+        )
         await s.commit()
 
 
@@ -36,9 +40,10 @@ async def invited(factory, world, name: str, days_ago: int = 30, **fields) -> Us
     user = await factory.user(full_name=name, **fields)
     async with SessionLocal() as s:
         await s.execute(
-            update(User).where(User.id == user.id)
+            update(User)
+            .where(User.id == user.id)
             .values(referred_by_courier_id=world.courier.id, referred_at=at, profile_created_at=at)
-        )  # fmt: skip
+        )
         await s.commit()
     return user
 
@@ -46,7 +51,9 @@ async def invited(factory, world, name: str, days_ago: int = 30, **fields) -> Us
 async def delivered(world, customer: User, days_ago: float, fee: str = "6") -> Order:
     order = await world.order(customer, status="delivered", courier=world.courier, fee=fee)
     async with SessionLocal() as s:
-        await s.execute(update(Order).where(Order.id == order.id).values(delivered_at=now() - timedelta(days=days_ago)))
+        await s.execute(
+            update(Order).where(Order.id == order.id).values(delivered_at=now() - timedelta(days=days_ago))
+        )
         await s.commit()
     return order
 
@@ -62,14 +69,22 @@ async def test_no_forecast_without_any_data(client, world):
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["available"] is False and body["reason"] == "not_enough_data"
-    assert (await call(client, world.customer, "getMyEarningsForecast")).json()["error"] == "courier_profile_missing"
+    assert (await call(client, world.customer, "getMyEarningsForecast")).json()[
+        "error"
+    ] == "courier_profile_missing"
 
 
 async def test_declarations_alone_give_a_prudent_range(client, world):
-    r = await call(client, world.courier_user, "saveMyCourierActivity",
-                   {"weekly_deliveries": 30, "active_days": 5, "regular_clients": 12})  # fmt: skip
+    r = await call(
+        client,
+        world.courier_user,
+        "saveMyCourierActivity",
+        {"weekly_deliveries": 30, "active_days": 5, "regular_clients": 12},
+    )
     assert r.status_code == 200 and r.json()["active_days"] == 5, r.text
-    assert (await call(client, world.courier_user, "saveMyCourierActivity", {"active_days": 9})).json()["error"] == "invalid_active_days"
+    assert (await call(client, world.courier_user, "saveMyCourierActivity", {"active_days": 9})).json()[
+        "error"
+    ] == "invalid_active_days"
     body = (await call(client, world.courier_user, "getMyEarningsForecast")).json()
     assert body["available"] is True and body["status"] == "starting"
     assert Decimal(body["low"]) <= Decimal(body["mid"]) <= Decimal(body["high"])
@@ -83,11 +98,17 @@ async def test_declarations_alone_give_a_prudent_range(client, world):
 
 async def test_more_declared_activity_means_more_forecast(world):
     async with SessionLocal() as s:
-        await s.execute(update(Courier).where(Courier.id == world.courier.id).values(declared_weekly_deliveries=10, declared_active_days=5))
+        await s.execute(
+            update(Courier)
+            .where(Courier.id == world.courier.id)
+            .values(declared_weekly_deliveries=10, declared_active_days=5)
+        )
         await s.commit()
     small = await month_of(world)
     async with SessionLocal() as s:
-        await s.execute(update(Courier).where(Courier.id == world.courier.id).values(declared_weekly_deliveries=40))
+        await s.execute(
+            update(Courier).where(Courier.id == world.courier.id).values(declared_weekly_deliveries=40)
+        )
         await s.commit()
     big = await month_of(world)
     assert Decimal(big["mid"]) > Decimal(small["mid"])
@@ -95,7 +116,7 @@ async def test_more_declared_activity_means_more_forecast(world):
 
 async def test_invited_clients_and_estimates(client, world, factory):
     ali = await invited(factory, world, "Ali Ben Salah")
-    sonia = await invited(factory, world, "Sonia Trabelsi", declared_monthly_orders=8)
+    await invited(factory, world, "Sonia Trabelsi", declared_monthly_orders=8)
     stranger = await factory.user(full_name="Autre")
     await delivered(world, ali, 20)
     await delivered(world, ali, 5)
@@ -104,11 +125,26 @@ async def test_invited_clients_and_estimates(client, world, factory):
     assert {c["name"] for c in listed} == {"Ali", "Sonia"}
     assert {c["name"]: c["delivered_orders"] for c in listed} == {"Ali": 2, "Sonia": 0}
 
-    ok = await call(client, world.courier_user, "setInvitedClientEstimate", {"client_id": str(ali.id), "monthly_orders": 6})
+    ok = await call(
+        client,
+        world.courier_user,
+        "setInvitedClientEstimate",
+        {"client_id": str(ali.id), "monthly_orders": 6},
+    )
     assert ok.json() == {"success": True, "client_id": str(ali.id), "monthly_orders": 6}
-    nope = await call(client, world.courier_user, "setInvitedClientEstimate", {"client_id": str(stranger.id), "monthly_orders": 6})
+    nope = await call(
+        client,
+        world.courier_user,
+        "setInvitedClientEstimate",
+        {"client_id": str(stranger.id), "monthly_orders": 6},
+    )
     assert nope.status_code == 404
-    bad = await call(client, world.courier_user, "setInvitedClientEstimate", {"client_id": str(ali.id), "monthly_orders": 99})
+    bad = await call(
+        client,
+        world.courier_user,
+        "setInvitedClientEstimate",
+        {"client_id": str(ali.id), "monthly_orders": 99},
+    )
     assert bad.json()["error"] == "invalid_monthly_orders"
 
     body = (await call(client, world.courier_user, "getMyEarningsForecast")).json()
@@ -122,8 +158,12 @@ async def test_customer_answers_how_often(client, world):
     assert r.json() == {"success": True, "monthly_orders": 4}
     async with SessionLocal() as s:
         assert (await s.get(User, world.customer.id)).declared_monthly_orders == 4
-    assert (await call(client, world.customer, "saveMyOrderFrequency", {"monthly_orders": -1})).json()["error"] == "invalid_monthly_orders"
-    assert (await call(client, world.customer, "saveMyOrderFrequency", {"monthly_orders": None})).json()["monthly_orders"] is None
+    assert (await call(client, world.customer, "saveMyOrderFrequency", {"monthly_orders": -1})).json()[
+        "error"
+    ] == "invalid_monthly_orders"
+    assert (await call(client, world.customer, "saveMyOrderFrequency", {"monthly_orders": None})).json()[
+        "monthly_orders"
+    ] is None
 
 
 async def test_a_silent_client_fades_out(world, factory):
@@ -152,7 +192,11 @@ async def test_commission_is_taken_after_the_launch(world, factory, monkeypatch)
 
 async def test_simulation_is_reproducible_and_ordered(world):
     async with SessionLocal() as s:
-        await s.execute(update(Courier).where(Courier.id == world.courier.id).values(declared_weekly_deliveries=20, declared_active_days=4))
+        await s.execute(
+            update(Courier)
+            .where(Courier.id == world.courier.id)
+            .values(declared_weekly_deliveries=20, declared_active_days=4)
+        )
         await s.commit()
         courier = await s.get(Courier, world.courier.id)
         inp = await forecast.gather(s, courier)
@@ -167,7 +211,9 @@ async def test_simulation_is_reproducible_and_ordered(world):
 async def test_self_correction_learns_from_reality(client, world, factory):
     """A forecast that was too optimistic lowers the shared bias and this courier's next forecast."""
     ali = await invited(factory, world, "Ali")
-    await call(client, world.courier_user, "saveMyCourierActivity", {"weekly_deliveries": 40, "active_days": 6})
+    await call(
+        client, world.courier_user, "saveMyCourierActivity", {"weekly_deliveries": 40, "active_days": 6}
+    )
     before = await month_of(world)
 
     today = forecast.tunis_today()
@@ -175,11 +221,21 @@ async def test_self_correction_learns_from_reality(client, world, factory):
         for weeks_ago in (5, 4, 3, 2):
             start = today - timedelta(days=7 * weeks_ago)
             days = {(start + timedelta(days=i)).isoformat(): 5.0 for i in range(7)}
-            s.add(EarningsForecast(
-                courier_id=world.courier.id, kind="week", as_of=start - timedelta(days=1), period_start=start,
-                period_end=start + timedelta(days=6), p25=Decimal("150"), p50=Decimal("200"), p75=Decimal("250"),
-                expected_deliveries=Decimal("35"), method=forecast.METHOD, details={"daily_expected": days},
-            ))  # fmt: skip
+            s.add(
+                EarningsForecast(
+                    courier_id=world.courier.id,
+                    kind="week",
+                    as_of=start - timedelta(days=1),
+                    period_start=start,
+                    period_end=start + timedelta(days=6),
+                    p25=Decimal("150"),
+                    p50=Decimal("200"),
+                    p75=Decimal("250"),
+                    expected_deliveries=Decimal("35"),
+                    method=forecast.METHOD,
+                    details={"daily_expected": days},
+                )
+            )
         await s.commit()
     for weeks_ago in (5, 4, 3, 2):  # reality: 1 delivery of 6 DT per week
         await delivered(world, ali, 7 * weeks_ago - 1)
@@ -190,7 +246,11 @@ async def test_self_correction_learns_from_reality(client, world, factory):
     assert result["evaluated"] == 4 and result["snapshots"] == 1
     async with SessionLocal() as s:
         factors = {f.key: float(f.value) for f in (await s.execute(select(ForecastFactor))).scalars()}
-        snaps = list((await s.execute(select(EarningsForecast).where(EarningsForecast.evaluated_at.is_not(None)))).scalars())
+        snaps = list(
+            (
+                await s.execute(select(EarningsForecast).where(EarningsForecast.evaluated_at.is_not(None)))
+            ).scalars()
+        )
     assert all(sn.actual_deliveries == 1 and sn.actual_fees == Decimal("6.000") for sn in snaps)
     assert factors["bias_global"] < 1.0
     assert factors["coverage_global"] == 0.0

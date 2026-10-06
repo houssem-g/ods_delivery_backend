@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]  # every pushed branch is checked, not only main
   pull_request:
 
 jobs:
@@ -61,7 +61,8 @@ jobs:
       - name: Wait for MinIO
         run: timeout 60 sh -c 'until curl -fsS http://localhost:9110/minio/health/live; do sleep 2; done'
       - name: Tests
-        run: uv run pytest --cov=app --cov-report=term-missing:skip-covered --cov-fail-under=80
+        # 4 workers, one database each (tests/conftest.py creates ods_delivery_test_gw<N>)
+        run: uv run pytest -n 4 --cov=app --cov-report=term-missing:skip-covered --cov-fail-under=80
 
   secrets:
     runs-on: ubuntu-latest

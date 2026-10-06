@@ -1,4 +1,5 @@
-"""requestCreditTopup — the courier declares a cash deposit at a bank counter. Body: { amount (5–200, whole DT), receipt_url (private upload), reference? }.
+"""requestCreditTopup — the courier declares a cash deposit at a bank counter. Body: { amount (5–200, whole
+DT), receipt_url (private upload), reference? }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

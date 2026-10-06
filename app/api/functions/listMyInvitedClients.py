@@ -1,4 +1,5 @@
-"""listMyInvitedClients — the courier's invited clients (first name), their delivered orders and his monthly estimate.
+"""listMyInvitedClients — the courier's invited clients (first name), their delivered orders and his monthly
+estimate.
 See app/services/forecast.py (courier earnings forecast, self-correcting)."""
 
 from typing import Any

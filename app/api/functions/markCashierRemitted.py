@@ -1,4 +1,5 @@
-"""markCashierRemitted — admin: the cashier handed his cash over; his open sales are marked. Body: { cashier_user_id }.
+"""markCashierRemitted — admin: the cashier handed his cash over; his open sales are marked. Body: {
+cashier_user_id }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

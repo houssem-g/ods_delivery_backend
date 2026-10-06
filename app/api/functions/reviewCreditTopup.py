@@ -1,4 +1,5 @@
-"""reviewCreditTopup — admin: approve (optionally the amount read on the receipt) or reject a top-up. Body: { id, status (approved | rejected), amount?, note? }.
+"""reviewCreditTopup — admin: approve (optionally the amount read on the receipt) or reject a top-up. Body: {
+id, status (approved | rejected), amount?, note? }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

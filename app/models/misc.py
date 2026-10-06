@@ -148,8 +148,12 @@ class CreditTopup(Base):
 
     __tablename__ = "credit_topups"
     __table_args__ = (
-        CheckConstraint("method IN (" + ",".join(f"'{m}'" for m in CREDIT_TOPUP_METHODS) + ")", name="method"),
-        CheckConstraint("status IN (" + ",".join(f"'{s}'" for s in CREDIT_TOPUP_STATUSES) + ")", name="status"),
+        CheckConstraint(
+            "method IN (" + ",".join(f"'{m}'" for m in CREDIT_TOPUP_METHODS) + ")", name="method"
+        ),
+        CheckConstraint(
+            "status IN (" + ",".join(f"'{s}'" for s in CREDIT_TOPUP_STATUSES) + ")", name="status"
+        ),
         CheckConstraint("amount > 0 AND amount <= 1000", name="amount"),
         CheckConstraint("bonus >= 0", name="bonus"),
         CheckConstraint("method <> 'cashier' OR cashier_user_id IS NOT NULL", name="cashier"),

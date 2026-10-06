@@ -31,6 +31,7 @@ Self-correction (job `earnings_forecasts`, every night):
     forecast is « en apprentissage » and shows only a wide range.
 """
 
+import contextlib
 import json
 import math
 import random
@@ -57,7 +58,12 @@ from app.models import (
 )
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
-from app.services.commission import COMMISSION_PER_DELIVERY_TND, FREE_DELIVERIES_PER_MONTH, LAUNCH_END_DATE, TUNIS
+from app.services.commission import (
+    COMMISSION_PER_DELIVERY_TND,
+    FREE_DELIVERIES_PER_MONTH,
+    LAUNCH_END_DATE,
+    TUNIS,
+)
 from app.services.orders import OrderRefused, courier_of_user
 from app.services.referral import first_name, signup_attribution
 
@@ -97,10 +103,8 @@ def _load_calendar() -> tuple[set[date], tuple[date, date] | None]:
         rel = data.get("religious_2027_estimated", {})
         for value in rel.values():
             for d in value if isinstance(value, list) else [value]:
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     holidays.add(date.fromisoformat(d))
-                except (TypeError, ValueError):
-                    pass
         start = date.fromisoformat(rel["ramadan_start"])
         fitr = sorted(date.fromisoformat(d) for d in rel["eid_al_fitr"])
         ramadan = (start, fitr[0] - timedelta(days=1))
@@ -192,11 +196,9 @@ async def _rainy_days(session: AsyncSession) -> set[date]:
     days: set[date] = set()
     if row is not None and isinstance(row.value, dict):
         for d, mm in (row.value.get("daily") or {}).items():
-            try:
+            with contextlib.suppress(TypeError, ValueError):
                 if float(mm) >= RAIN_MM:
                     days.add(date.fromisoformat(d))
-            except (TypeError, ValueError):
-                pass
     return days
 
 
@@ -205,7 +207,11 @@ async def _delivered(session: AsyncSession, since: datetime, **where: Any) -> li
         Order.status == "delivered", Order.delivered_at >= since
     )
     for column, value in where.items():
-        stmt = stmt.where(getattr(Order, column).in_(value) if isinstance(value, list | set) else getattr(Order, column) == value)
+        stmt = stmt.where(
+            getattr(Order, column).in_(value)
+            if isinstance(value, list | set)
+            else getattr(Order, column) == value
+        )
     return list((await session.execute(stmt)).all())
 
 
@@ -222,9 +228,9 @@ async def gather(session: AsyncSession, courier: Courier, now: datetime | None =
     clients = list(
         (
             await session.execute(
-                select(User.id, User.full_name, User.declared_monthly_orders, User.referred_at, User.created_at).where(
-                    signup_attribution(courier), User.deleted_at.is_(None)
-                )
+                select(
+                    User.id, User.full_name, User.declared_monthly_orders, User.referred_at, User.created_at
+                ).where(signup_attribution(courier), User.deleted_at.is_(None))
             )
         ).all()
     )
@@ -284,7 +290,9 @@ async def gather(session: AsyncSession, courier: Courier, now: datetime | None =
                 usual = 1.0 / post_mean
             p_alive = 1.0 if gap <= 2 * usual else math.exp(-(gap - 2 * usual) / FADE_DAYS)
             inp.clients.append(
-                ClientPrior(cid, first_name(name), shape, rate, max(0.0, min(1.0, p_alive)), len(rows), source)
+                ClientPrior(
+                    cid, first_name(name), shape, rate, max(0.0, min(1.0, p_alive)), len(rows), source
+                )
             )
 
     # ---- the open market (deliveries for other customers)
@@ -321,7 +329,9 @@ async def gather(session: AsyncSession, courier: Courier, now: datetime | None =
     # ---- learned corrections
     inp.factors = await _factors(session)
     inp.rainy = await _rainy_days(session)
-    inp.bias, inp.spread, inp.evaluations, inp.mean_error = await _calibration(session, courier.id, inp.factors)
+    inp.bias, inp.spread, inp.evaluations, inp.mean_error = await _calibration(
+        session, courier.id, inp.factors
+    )
     if inp.evaluations < MIN_EVALUATIONS_FOR_STATUS:  # never checked against his reality yet: be humble
         inp.spread = max(inp.spread, UNCHECKED_SPREAD)
     return inp
@@ -345,7 +355,9 @@ async def _pooled_client_rate(session: AsyncSession, since: datetime) -> float |
     count = (
         await session.execute(
             select(func.count()).where(
-                Order.status == "delivered", Order.delivered_at >= since, Order.customer_id.in_([c for c, _ in clients])
+                Order.status == "delivered",
+                Order.delivered_at >= since,
+                Order.customer_id.in_([c for c, _ in clients]),
             )
         )
     ).scalar_one()
@@ -376,7 +388,9 @@ async def _calibration(
     own = sum(logs) / (len(logs) + BIAS_PRIOR_COURIER) + math.log(global_bias) * BIAS_PRIOR_COURIER / (
         len(logs) + BIAS_PRIOR_COURIER
     )
-    errors = [abs(float(r.actual_fees) - float(r.p50)) / max(float(r.p50), float(r.actual_fees), 1.0) for r in rows]
+    errors = [
+        abs(float(r.actual_fees) - float(r.p50)) / max(float(r.p50), float(r.actual_fees), 1.0) for r in rows
+    ]
     return math.exp(own), factors.get("spread_global", 1.0), len(rows), sum(errors) / len(errors)
 
 
@@ -403,7 +417,9 @@ def _day_factor(inp: Inputs, day: date) -> float:
     return f
 
 
-def simulate(inp: Inputs, days: list[date], seed: int | None = None, runs: int = SIMULATIONS) -> dict[str, Any]:
+def simulate(
+    inp: Inputs, days: list[date], seed: int | None = None, runs: int = SIMULATIONS
+) -> dict[str, Any]:
     """Gross fees and deliveries over `days`: percentiles + the expected split (clients / others)."""
     rng = random.Random(seed)
     factors = [_day_factor(inp, d) for d in days]
@@ -456,9 +472,11 @@ def simulate(inp: Inputs, days: list[date], seed: int | None = None, runs: int =
         "expected_deliveries": sum(count_out) / runs if runs else 0.0,
         "expected_client_deliveries": client_counts / runs if runs else 0.0,
         "expected_open_deliveries": open_counts / runs if runs else 0.0,
-        "daily_expected": {d.isoformat(): round(f / total_factor * (sum(count_out) / runs), 4) if total_factor else 0
-                           for d, f in zip(days, factors, strict=True)},
-    }  # fmt: skip
+        "daily_expected": {
+            d.isoformat(): round(f / total_factor * (sum(count_out) / runs), 4) if total_factor else 0
+            for d, f in zip(days, factors, strict=True)
+        },
+    }
 
 
 def has_signal(inp: Inputs) -> bool:
@@ -479,26 +497,36 @@ def _tips(inp: Inputs, sim: dict[str, Any], days: list[date]) -> list[dict[str, 
     tips: list[dict[str, str]] = []
     # best weekdays (his own history), when known
     if inp.weekday_ab:
-        best = sorted(inp.weekday_ab.items(), key=lambda kv: kv[1][0] / (kv[1][0] + kv[1][1]), reverse=True)[:2]
+        best = sorted(inp.weekday_ab.items(), key=lambda kv: kv[1][0] / (kv[1][0] + kv[1][1]), reverse=True)[
+            :2
+        ]
         names_fr = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
         names_ar = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
         if inp.open_known and inp.weekday_ab:
-            tips.append({
-                "kind": "days",
-                "fr": "Vos jours les plus actifs : " + " et ".join(names_fr[d] for d, _ in best) + ". Restez en ligne ces jours-là.",
-                "ar": "أكثر أيامك نشاطاً: " + " و".join(names_ar[d] for d, _ in best) + ". ابقَ متصلاً في هذه الأيام.",
-            })  # fmt: skip
+            tips.append(
+                {
+                    "kind": "days",
+                    "fr": "Vos jours les plus actifs : "
+                    + " et ".join(names_fr[d] for d, _ in best)
+                    + ". Restez en ligne ces jours-là.",
+                    "ar": "أكثر أيامك نشاطاً: "
+                    + " و".join(names_ar[d] for d, _ in best)
+                    + ". ابقَ متصلاً في هذه الأيام.",
+                }
+            )
     # value of one more invited client over the rest of the month (from his own clients, else none)
     if inp.clients:
         per_client = sum(c.shape / c.rate * c.p_alive for c in inp.clients) / len(inp.clients)
         win = inp.win_a / (inp.win_a + inp.win_b)
         value = per_client * 30 * win * inp.fee_median * 5 * inp.bias
         if value >= 1:
-            tips.append({
-                "kind": "invite",
-                "fr": f"5 clients invités de plus : environ +{round(value)} DT par mois.",
-                "ar": f"5 حرفاء إضافيون عبر دعوتك: حوالي +{round(value)} د.ت في الشهر.",
-            })  # fmt: skip
+            tips.append(
+                {
+                    "kind": "invite",
+                    "fr": f"5 clients invités de plus : environ +{round(value)} DT par mois.",
+                    "ar": f"5 حرفاء إضافيون عبر دعوتك: حوالي +{round(value)} د.ت في الشهر.",
+                }
+            )
     return tips
 
 
@@ -518,10 +546,14 @@ async def month_forecast(
     first, last = month_bounds_days(inp.today)
     if not has_signal(inp):
         return {
-            "success": True, "available": False, "reason": "not_enough_data", "declared": _declared(courier),
-            "month": first.isoformat()[:7], "earned_so_far": _r3(inp.month_fees),
+            "success": True,
+            "available": False,
+            "reason": "not_enough_data",
+            "declared": _declared(courier),
+            "month": first.isoformat()[:7],
+            "earned_so_far": _r3(inp.month_fees),
             "deliveries_so_far": inp.month_deliveries,
-        }  # fmt: skip
+        }
     days = [inp.today + timedelta(days=i) for i in range((last - inp.today).days + 1)]
     # today is partly done: half of it is still ahead
     sim = simulate(inp, days, seed=seed)
@@ -529,7 +561,11 @@ async def month_forecast(
     expected_total = inp.month_deliveries + sim["expected_deliveries"]
     commission = _commission(inp, expected_total, first)
     learning = inp.evaluations >= MIN_EVALUATIONS_FOR_STATUS and (inp.mean_error or 0) > MAX_ERROR
-    low, mid, high = base + sim["p25"] - commission, base + sim["p50"] - commission, base + sim["p75"] - commission
+    low, mid, high = (
+        base + sim["p25"] - commission,
+        base + sim["p50"] - commission,
+        base + sim["p75"] - commission,
+    )
     if learning:  # not reliable yet for this courier: a wider, honest range
         low, high = base + sim["p25"] * 0.6 - commission, base + sim["p75"] * 1.4 - commission
     return {
@@ -547,15 +583,16 @@ async def month_forecast(
         "from_clients": round(sim["expected_client_deliveries"], 1),
         "from_others": round(sim["expected_open_deliveries"], 1),
         "commission_estimate": _r3(commission),
-        "status": "learning" if learning else ("calibrated" if inp.evaluations >= MIN_EVALUATIONS_FOR_STATUS else "starting"),
+        "status": "learning"
+        if learning
+        else ("calibrated" if inp.evaluations >= MIN_EVALUATIONS_FOR_STATUS else "starting"),
         "evaluations": inp.evaluations,
         "clients_counted": len(inp.clients),
-        "uses_declarations": inp.courier.declared_weekly_deliveries is not None or any(
-            c.source != "pooled" for c in inp.clients
-        ),
+        "uses_declarations": inp.courier.declared_weekly_deliveries is not None
+        or any(c.source != "pooled" for c in inp.clients),
         "tips": _tips(inp, sim, days),
         "declared": _declared(inp.courier),
-    }  # fmt: skip
+    }
 
 
 # ------------------------------------------------------------------------------------- nightly + learn
@@ -572,20 +609,38 @@ async def forecastable_couriers(session: AsyncSession, now: datetime) -> list[Co
     return list((await session.execute(stmt)).scalars())
 
 
-async def snapshot_week(session: AsyncSession, courier: Courier, now: datetime, seed: int | None = None) -> bool:
+async def snapshot_week(
+    session: AsyncSession, courier: Courier, now: datetime, seed: int | None = None
+) -> bool:
     inp = await gather(session, courier, now)
     if not has_signal(inp):
         return False
     start = inp.today + timedelta(days=1)
     days = [start + timedelta(days=i) for i in range(WEEK_DAYS)]
     sim = simulate(inp, days, seed=seed)
-    stmt = insert(EarningsForecast).values(
-        courier_id=courier.id, kind="week", as_of=inp.today, period_start=start, period_end=days[-1],
-        p25=_r3(sim["p25"]), p50=_r3(sim["p50"]), p75=_r3(sim["p75"]),
-        expected_deliveries=_r3(sim["expected_deliveries"]), method=METHOD,
-        details={"daily_expected": sim["daily_expected"], "bias": inp.bias, "spread": inp.spread,
-                 "clients": len(inp.clients), "open_known": inp.open_known},
-    ).on_conflict_do_nothing()  # fmt: skip
+    stmt = (
+        insert(EarningsForecast)
+        .values(
+            courier_id=courier.id,
+            kind="week",
+            as_of=inp.today,
+            period_start=start,
+            period_end=days[-1],
+            p25=_r3(sim["p25"]),
+            p50=_r3(sim["p50"]),
+            p75=_r3(sim["p75"]),
+            expected_deliveries=_r3(sim["expected_deliveries"]),
+            method=METHOD,
+            details={
+                "daily_expected": sim["daily_expected"],
+                "bias": inp.bias,
+                "spread": inp.spread,
+                "clients": len(inp.clients),
+                "open_known": inp.open_known,
+            },
+        )
+        .on_conflict_do_nothing()
+    )
     await session.execute(stmt)
     return True
 
@@ -623,7 +678,8 @@ async def _set_factor(session: AsyncSession, key: str, value: float, weight: flo
     stmt = insert(ForecastFactor).values(key=key, value=_r4(value), weight=_r3(weight))
     await session.execute(
         stmt.on_conflict_do_update(
-            index_elements=["key"], set_={"value": stmt.excluded.value, "weight": stmt.excluded.weight, "updated_at": func.now()}
+            index_elements=["key"],
+            set_={"value": stmt.excluded.value, "weight": stmt.excluded.weight, "updated_at": func.now()},
         )
     )
 
@@ -674,7 +730,20 @@ async def relearn(session: AsyncSession, now: datetime) -> int:
     coverage = inside / len(snaps)
     spread = current.get("spread_global", 1.0)
     if len(snaps) >= 8:
-        spread = min(2.5, max(0.8, spread * (1.15 if coverage < COVERAGE_TARGET - 0.1 else 0.95 if coverage > COVERAGE_TARGET + 0.2 else 1.0)))
+        spread = min(
+            2.5,
+            max(
+                0.8,
+                spread
+                * (
+                    1.15
+                    if coverage < COVERAGE_TARGET - 0.1
+                    else 0.95
+                    if coverage > COVERAGE_TARGET + 0.2
+                    else 1.0
+                ),
+            ),
+        )
     await _set_factor(session, "spread_global", spread, len(snaps))
     await _set_factor(session, "coverage_global", coverage, len(snaps))
     return learned + 3
@@ -756,19 +825,25 @@ async def list_invited(session: AsyncSession, user: CurrentUser) -> dict[str, An
         ).all()
     )
     ids = [c[0] for c in clients]
-    counts = dict(
-        (
-            await session.execute(
-                select(Order.customer_id, func.count())
-                .where(Order.customer_id.in_(ids), Order.status == "delivered")
-                .group_by(Order.customer_id)
-            )
-        ).all()
-    ) if ids else {}  # fmt: skip
+    counts = (
+        dict(
+            (
+                await session.execute(
+                    select(Order.customer_id, func.count())
+                    .where(Order.customer_id.in_(ids), Order.status == "delivered")
+                    .group_by(Order.customer_id)
+                )
+            ).all()
+        )
+        if ids
+        else {}
+    )
     estimates = {
         e.customer_id: e.monthly_orders
         for e in (
-            await session.execute(select(CourierClientEstimate).where(CourierClientEstimate.courier_id == courier.id))
+            await session.execute(
+                select(CourierClientEstimate).where(CourierClientEstimate.courier_id == courier.id)
+            )
         ).scalars()
     }
     return {
@@ -777,7 +852,9 @@ async def list_invited(session: AsyncSession, user: CurrentUser) -> dict[str, An
             {
                 "id": str(cid),
                 "name": first_name(name),
-                "joined": (referred or created).astimezone(TUNIS).date().isoformat() if (referred or created) else None,
+                "joined": (referred or created).astimezone(TUNIS).date().isoformat()
+                if (referred or created)
+                else None,
                 "delivered_orders": counts.get(cid, 0),
                 "monthly_estimate": estimates.get(cid),
             }
@@ -786,7 +863,9 @@ async def list_invited(session: AsyncSession, user: CurrentUser) -> dict[str, An
     }
 
 
-async def set_client_estimate(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
+async def set_client_estimate(
+    session: AsyncSession, user: CurrentUser, payload: dict[str, Any]
+) -> dict[str, Any]:
     """setInvitedClientEstimate: « ce client vous commande combien de fois par mois ? »."""
     courier = await _courier(session, user)
     customer_id = None
@@ -802,7 +881,9 @@ async def set_client_estimate(session: AsyncSession, user: CurrentUser, payload:
     value = _int_in(payload.get("monthly_orders"), 0, 60, "invalid_monthly_orders")
     if value is None:
         raise OrderRefused(400, "invalid_monthly_orders", min=0, max=60)
-    stmt = insert(CourierClientEstimate).values(courier_id=courier.id, customer_id=customer_id, monthly_orders=value)
+    stmt = insert(CourierClientEstimate).values(
+        courier_id=courier.id, customer_id=customer_id, monthly_orders=value
+    )
     await session.execute(
         stmt.on_conflict_do_update(
             index_elements=["courier_id", "customer_id"],
@@ -812,7 +893,9 @@ async def set_client_estimate(session: AsyncSession, user: CurrentUser, payload:
     return {"success": True, "client_id": str(customer_id), "monthly_orders": value}
 
 
-async def save_order_frequency(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
+async def save_order_frequency(
+    session: AsyncSession, user: CurrentUser, payload: dict[str, Any]
+) -> dict[str, Any]:
     """saveMyOrderFrequency (customer): « vous vous faites livrer combien de fois par mois ? »."""
     value = _int_in(payload.get("monthly_orders"), 0, 60, "invalid_monthly_orders")
     row = await session.get(User, user.id, with_for_update=True)

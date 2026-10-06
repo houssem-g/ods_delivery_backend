@@ -1,4 +1,5 @@
-"""setInvitedClientEstimate — « ce client vous commande combien de fois par mois ? ». Body: { client_id, monthly_orders (0–60) }.
+"""setInvitedClientEstimate — « ce client vous commande combien de fois par mois ? ». Body: { client_id,
+monthly_orders (0–60) }.
 See app/services/forecast.py (courier earnings forecast, self-correcting)."""
 
 from typing import Any

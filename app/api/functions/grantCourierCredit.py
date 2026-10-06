@@ -1,4 +1,5 @@
-"""grantCourierCredit — admin: a prime paid in credit or a signed correction. Body: { courier_id, kind (prime | adjustment), amount, reason }.
+"""grantCourierCredit — admin: a prime paid in credit or a signed correction. Body: { courier_id, kind (prime
+| adjustment), amount, reason }.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

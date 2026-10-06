@@ -33,7 +33,7 @@ async def courier_statements() -> dict[str, Any]:
 @job(
     "earnings_forecasts",
     CronTrigger(hour=2, minute=40),
-    "courier earnings forecast: compare last week's forecasts with reality, re-learn, snapshot the next 7 days",
+    "earnings forecast: last weeks vs reality, re-learn, snapshot the next 7 days",
 )
 async def earnings_forecasts() -> dict[str, Any]:
     from app.services import forecast
@@ -42,7 +42,11 @@ async def earnings_forecasts() -> dict[str, Any]:
         return await forecast.nightly(session)
 
 
-@job("weather_sousse", CronTrigger(hour=2, minute=20), "Sousse precipitation forecast (Open-Meteo) for the earnings forecast")
+@job(
+    "weather_sousse",
+    CronTrigger(hour=2, minute=20),
+    "Sousse precipitation forecast (Open-Meteo) for the earnings forecast",
+)
 async def weather_sousse() -> dict[str, Any]:
     from app.services import forecast
 
