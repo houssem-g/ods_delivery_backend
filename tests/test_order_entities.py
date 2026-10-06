@@ -21,7 +21,7 @@ from app.models import (
 from tests.factories import auth, error_of
 from tests.order_helpers import SOUSSE_SHOP, OrderWorld, notifications, now, reload, set_live
 
-ISO_NAIVE = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}$")
+ISO_UTC = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$")  # B18: always zoned
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ async def test_order_legacy_shape_for_the_customer(client, world):
         await s.commit()
     [doc] = await get_orders(client, world.customer)
     assert doc["id"] == str(order.id)
-    assert ISO_NAIVE.match(doc["created_date"]) and ISO_NAIVE.match(doc["updated_date"])
+    assert ISO_UTC.match(doc["created_date"]) and ISO_UTC.match(doc["updated_date"])
     assert doc["customer_id"] == "cust@example.test" and doc["customer_phone"] == "+21622111222"
     assert doc["courier_id"] == str(world.courier.id)
     assert doc["courier_user_id"] == "courier@example.test"

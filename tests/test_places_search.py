@@ -114,7 +114,7 @@ async def test_search_places_radius_ranking_and_shape(client, factory):
     assert first["distance_km"] == pytest.approx(0.5, abs=0.01)
     # 0.45 * 0.5 (no text) + 0.25 * (1 - 0.5 / 8) + 0.2 + 0.1 * 0.8
     assert first["score"] == pytest.approx(0.225 + 0.25 * (1 - 0.5 / 8) + 0.2 + 0.08, abs=0.0015)
-    assert first["created_date"].count("T") == 1 and not first["created_date"].endswith("Z")
+    assert first["created_date"].count("T") == 1 and first["created_date"].endswith("Z")  # B18: zoned
 
 
 async def test_search_places_text_scores_accents_and_arabic(client, factory):
