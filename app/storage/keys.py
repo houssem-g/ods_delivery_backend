@@ -42,8 +42,10 @@ CHAT_AUDIO_MAX_BYTES = 3 * 1024 * 1024
 # signed only by the admin functions.
 PURPOSES = {
     "generic", "receipt", "issue", "hot_deal", "shop", "review", "menu", "courier_id", "chat", "courier_doc",
+    "credit_receipt",
 }  # fmt: skip
-ADMIN_SIGNED_PURPOSES = {"courier_id", "courier_doc"}
+# credit_receipt: the bank-counter receipt of a prepaid-credit top-up (app/services/credit.py).
+ADMIN_SIGNED_PURPOSES = {"courier_id", "courier_doc", "credit_receipt"}
 _PURPOSE_RE = re.compile(r"^[a-z_]{1,32}$")
 
 

@@ -9,8 +9,10 @@ Business model (ods-delivery src/constants/commission.js, src/lib/commission.js)
   calendar month (Africa/Tunis) are waived ('commission_waived_quota',
   'free_quota'), each one beyond owes the commission ('commission_due', 'due').
 Waived entries keep the nominal amount (the ledger says what was offered).
-Nothing is deducted at delivery: the due entries are grouped each Monday
-(04:00 Tunis) into a statement per courier for the previous week(s).
+Since decision D-10 (06/10/2026) the commission is PREPAID: a due entry is taken from the courier's
+credit at delivery (app/services/credit.py, which also blocks offers once the free deliveries are used
+and the credit is empty). The due entries are still grouped each Monday (04:00 Tunis) into a
+statement per courier for the previous week(s), as a record.
 """
 
 import uuid
@@ -23,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, CourierLedgerEntry, CourierStatement, Order
 
-COMMISSION_PER_DELIVERY_TND = Decimal("0.500")
+COMMISSION_PER_DELIVERY_TND = Decimal("0.250")  # 0.250 since 06/10/2026 (owner, decision D-11)
 FREE_DELIVERIES_PER_MONTH = 20
 LAUNCH_FREE = True
 TUNIS = ZoneInfo("Africa/Tunis")
@@ -91,6 +93,9 @@ async def record_delivery(
     )
     session.add(entry)
     await session.flush()
+    from app.services import credit  # credit imports this module
+
+    await credit.after_commission(session, entry)
     return entry
 
 

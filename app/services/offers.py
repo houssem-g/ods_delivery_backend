@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, courier_stats
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
+from app.services import credit, step_notices, text_filter
 from app.services import order_transitions as ot
-from app.services import step_notices, text_filter
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.order_texts import short_name
@@ -293,6 +293,9 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
         raise OrderRefused(409, "order_dropped")  # he cancelled this delivery himself
     if await is_blocked(session, user.id, order.customer_id):
         raise OrderRefused(409, "blocked")
+    refusal = await credit.offer_allowed(session, courier)
+    if refusal is not None:  # free deliveries used up and credit empty (decision D-10)
+        raise OrderRefused(402, "credit_empty", **refusal)
     already = (
         await session.execute(
             select(OrderOffer.id).where(

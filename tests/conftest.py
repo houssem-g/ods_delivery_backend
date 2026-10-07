@@ -48,6 +48,38 @@ os.environ.update(
 if "ods_delivery_test" not in os.environ["DATABASE_URL"]:
     raise RuntimeError("tests only run against a database named ods_delivery_test")
 
+# pytest-xdist (`make test` runs `-n 4`): every worker gets its own database, ods_delivery_test_gw<N>,
+# created on first use with the extensions, so the per-test TRUNCATE never hits another worker.
+if os.environ.get("PYTEST_XDIST_WORKER"):
+
+    def _use_worker_database(worker: str) -> None:
+        import asyncio
+
+        import asyncpg
+
+        base, _, name = os.environ["DATABASE_URL"].rpartition("/")
+        worker_db = f"{name.split('?')[0]}_{worker}"
+        os.environ["DATABASE_URL"] = f"{base}/{worker_db}"
+        dsn = base.replace("postgresql+asyncpg://", "postgresql://")
+
+        async def run() -> None:
+            admin = await asyncpg.connect(f"{dsn}/postgres")
+            try:
+                if not await admin.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", worker_db):
+                    await admin.execute(f'CREATE DATABASE "{worker_db}"')
+            finally:
+                await admin.close()
+            conn = await asyncpg.connect(f"{dsn}/{worker_db}")
+            try:
+                for ext in ("citext", "postgis", "pg_trgm", "pgcrypto"):
+                    await conn.execute(f"CREATE EXTENSION IF NOT EXISTS {ext}")
+            finally:
+                await conn.close()
+
+        asyncio.run(run())
+
+    _use_worker_database(os.environ["PYTEST_XDIST_WORKER"])
+
 import httpx
 import pytest
 from sqlalchemy import text

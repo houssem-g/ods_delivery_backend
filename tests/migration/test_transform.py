@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from app.services.commission import COMMISSION_PER_DELIVERY_TND
 from migrate import transform as tf
 from migrate.common import det_uuid
 from tests.migration import fixtures as fx
@@ -316,7 +317,9 @@ def test_settings_ledger_dropped_and_qa(bundle):
     assert setting["value"] == {"support_phone": "+21620555777", "support_whatsapp": "+21620555777"}
     ledger = bundle.rows("courier_ledger_entries")
     assert [e["order_id"] for e in ledger] == [oid("o1")]  # o3 fee NULLed, o8 fee 0
-    assert ledger[0]["kind"] == "commission_waived_launch" and ledger[0]["amount"] == Decimal("0.500")
+    assert (
+        ledger[0]["kind"] == "commission_waived_launch" and ledger[0]["amount"] == COMMISSION_PER_DELIVERY_TND
+    )
     assert bundle.report.excluded_count("DeliveryTariffs") == 1
     assert bundle.report.excluded_count("MessageLog") == 1
     assert bundle.report.notes["orders placed by QA accounts"] == 2
