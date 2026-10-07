@@ -89,9 +89,9 @@ UNCHECKED_SPREAD = 1.5  # wider band until 3 of his weeks were compared with rea
 WEATHER_KEY = "weather_sousse"
 RAIN_MM = 2.0
 
-_CALENDAR_FILE = Path(__file__).resolve().parents[2] / "data" / "forecast" / "calendar_tn.json"
+_CALENDAR_FILE = Path(__file__).resolve().parent / "data" / "calendar_tn.json"  # shipped in the image (app/)
 # Fixed public holidays (Tunisia) the forecast knows; religious dates are astronomical estimates
-# (data/forecast/calendar_tn.json, sources inside) and are corrected by the learned factors anyway.
+# (app/services/data/calendar_tn.json, sources inside) and are corrected by the learned factors anyway.
 _FIXED = {(1, 1), (3, 20), (4, 9), (5, 1), (7, 25), (8, 13), (10, 15), (12, 17)}
 
 
