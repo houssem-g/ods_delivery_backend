@@ -30,6 +30,7 @@ from app.security.tokens import (
     set_refresh_cookie,
 )
 from app.services import auth as svc
+from app.services import device_keys
 from app.services.email import send_code_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -86,6 +87,19 @@ class ChangePasswordBody(BaseModel):
         default="", max_length=200, validation_alias=AliasChoices("current_password", "currentPassword")
     )
     new_password: str = Field(max_length=200, validation_alias=AliasChoices("new_password", "newPassword"))
+
+
+class DeviceEnrollBody(BaseModel):
+    label: str | None = Field(default=None, max_length=200)
+
+
+class DeviceSignInBody(BaseModel):
+    device_id: str = Field(max_length=64)
+    secret: str = Field(max_length=200)
+
+
+class DeviceRevokeBody(BaseModel):
+    device_id: str = Field(max_length=64)
 
 
 class MePatch(BaseModel):
@@ -224,6 +238,42 @@ async def change_password(
     signed = await svc.sign_in(session, row)  # other sessions are revoked; this one continues
     await session.commit()
     return _signed_in_response(signed)
+
+
+@router.post("/device/enroll", status_code=201)
+@limiter.limit(AUTH_LIMIT, key_func=ip_key)
+async def device_enroll(
+    request: Request,
+    body: DeviceEnrollBody,
+    user: CurrentUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Fingerprint / face sign-in: a secret for the phone's secure storage (shown once)."""
+    key, secret = await device_keys.enroll(session, user.id, body.label)
+    await session.commit()
+    return {"device_id": str(key.id), "secret": secret}
+
+
+@router.post("/device/login")
+@limiter.limit(AUTH_LIMIT, key_func=ip_key)
+async def device_login(
+    request: Request, body: DeviceSignInBody, session: AsyncSession = Depends(get_session)
+) -> JSONResponse:
+    user = await device_keys.sign_in_with_key(session, body.device_id, body.secret)
+    signed = await svc.sign_in(session, user)
+    await session.commit()
+    return _signed_in_response(signed)
+
+
+@router.post("/device/revoke")
+async def device_revoke(
+    body: DeviceRevokeBody,
+    user: CurrentUser = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    revoked = await device_keys.revoke(session, user.id, body.device_id)
+    await session.commit()
+    return {"success": True, "revoked": revoked}
 
 
 @router.post("/refresh")

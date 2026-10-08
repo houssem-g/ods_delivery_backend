@@ -5,6 +5,7 @@ from app.models.catalog import GeocodeCache, Place, Shop, ShopMenuItem, ShopRevi
 from app.models.identity import (
     Courier,
     CourierDocument,
+    DeviceKey,
     EmailCode,
     PhoneVerification,
     RefreshToken,
@@ -54,6 +55,7 @@ __all__ = [
     "CourierStatement",
     "CreditCashier",
     "CreditTopup",
+    "DeviceKey",
     "DeviceToken",
     "EarningsForecast",
     "EmailCode",

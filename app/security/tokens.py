@@ -14,7 +14,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import RefreshToken
+from app.models import DeviceKey, RefreshToken
 
 REFRESH_GRACE_SECONDS = 30
 
@@ -87,9 +87,16 @@ async def revoke_family(session: AsyncSession, family: uuid.UUID) -> None:
 
 
 async def revoke_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> None:
+    """Every session and every fingerprint / face sign-in of the user (new password, disabled
+    or deleted account)."""
     await session.execute(
         update(RefreshToken)
         .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=now_utc())
+    )
+    await session.execute(
+        update(DeviceKey)
+        .where(DeviceKey.user_id == user_id, DeviceKey.revoked_at.is_(None))
         .values(revoked_at=now_utc())
     )
 

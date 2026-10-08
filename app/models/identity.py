@@ -107,6 +107,25 @@ class RefreshToken(Base):
     created_at: Mapped[datetime] = created_at()
 
 
+class DeviceKey(Base):
+    """« Se connecter avec l'empreinte / le visage »: a secret kept by the phone in its secure
+    storage (Android Keystore / iOS Keychain), released only after the phone's biometric check.
+    Only its sha256 is stored. Revoked with the user's sessions (new password, disabled or
+    deleted account), by the user, or when a wrong secret is presented for it."""
+
+    __tablename__ = "device_keys"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    secret_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    label: Mapped[str | None] = mapped_column(Text)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+
+
 class EmailCode(Base):
     __tablename__ = "email_codes"
     __table_args__ = (
