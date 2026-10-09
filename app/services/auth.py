@@ -68,6 +68,8 @@ def serialize_me(user: User) -> dict[str, Any]:
         "language": user.language,
         "has_password": user.password_hash is not None,
         "google_linked": user.google_sub is not None,
+        # « Vous vous faites livrer combien de fois par mois ? » (customer profile), null = not answered
+        "declared_monthly_orders": user.declared_monthly_orders,
         "created_date": legacy_datetime(user.created_at),
         "updated_date": legacy_datetime(user.updated_at),
     }

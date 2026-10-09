@@ -158,6 +158,9 @@ async def test_customer_answers_how_often(client, world):
     assert r.json() == {"success": True, "monthly_orders": 4}
     async with SessionLocal() as s:
         assert (await s.get(User, world.customer.id)).declared_monthly_orders == 4
+    # the profile reads the answer back (auth.me()): the question is not asked again
+    me = await client.get("/api/auth/me", headers=auth(world.customer))
+    assert me.json()["declared_monthly_orders"] == 4
     assert (await call(client, world.customer, "saveMyOrderFrequency", {"monthly_orders": -1})).json()[
         "error"
     ] == "invalid_monthly_orders"
