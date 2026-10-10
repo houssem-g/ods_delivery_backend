@@ -30,7 +30,7 @@ from app.security.tokens import (
     set_refresh_cookie,
 )
 from app.services import auth as svc
-from app.services import device_keys
+from app.services import couriers, device_keys
 from app.services.email import send_code_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -139,6 +139,7 @@ async def login(
     except svc.AuthRefusal as exc:
         return await _refusal(session, exc)
     signed = await svc.sign_in(session, user)
+    await couriers.follow_session(session, user.id, online=True)
     await session.commit()
     return _signed_in_response(signed)
 
@@ -168,6 +169,7 @@ async def verify_otp(
         await session.commit()  # the failed attempt counts
         raise
     signed = await svc.sign_in(session, user)
+    await couriers.follow_session(session, user.id, online=True)
     await session.commit()
     return _signed_in_response(signed)
 
@@ -203,6 +205,7 @@ async def _set_password(
         await session.commit()  # the failed attempt counts
         raise
     signed = await svc.sign_in(session, user)
+    await couriers.follow_session(session, user.id, online=True)
     await session.commit()
     return _signed_in_response(signed)
 
@@ -261,6 +264,7 @@ async def device_login(
 ) -> JSONResponse:
     user = await device_keys.sign_in_with_key(session, body.device_id, body.secret)
     signed = await svc.sign_in(session, user)
+    await couriers.follow_session(session, user.id, online=True)
     await session.commit()
     return _signed_in_response(signed)
 
@@ -307,7 +311,9 @@ def _refresh_refused(error: str, message: str) -> JSONResponse:
 async def logout(request: Request, session: AsyncSession = Depends(get_session)) -> JSONResponse:
     raw = request.cookies.get(settings.REFRESH_COOKIE_NAME)
     if raw:
-        await revoke_refresh_token(session, raw)
+        user_id = await revoke_refresh_token(session, raw)
+        if user_id is not None:
+            await couriers.follow_session(session, user_id, online=False)
         await session.commit()
     response = JSONResponse({"success": True})
     clear_refresh_cookie(response)
@@ -436,6 +442,7 @@ async def google_callback(
     except ApiError as exc:
         return _redirect(_with_query(failure, {"auth_error": exc.error}))
     signed = await svc.sign_in(session, user)
+    await couriers.follow_session(session, user.id, online=True)
     await session.commit()
     target = _safe_next(claims.get("next"))
     response = _redirect(_with_query(target, {"access_token": signed.body["access_token"]}))

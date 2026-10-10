@@ -145,13 +145,16 @@ async def _family_alive(session: AsyncSession, family: uuid.UUID) -> bool:
     return live is not None
 
 
-async def revoke_refresh_token(session: AsyncSession, raw: str) -> None:
-    """Logout: the presented token's family ends (other devices keep their sessions)."""
+async def revoke_refresh_token(session: AsyncSession, raw: str) -> uuid.UUID | None:
+    """Logout: the presented token's family ends (other devices keep their sessions). Returns its
+    user (None for an unknown token)."""
     row = (
         await session.execute(select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
     ).scalar_one_or_none()
-    if row is not None:
-        await revoke_family(session, row.family)
+    if row is None:
+        return None
+    await revoke_family(session, row.family)
+    return row.user_id
 
 
 def set_refresh_cookie(response: Response, issued: IssuedRefresh) -> None:

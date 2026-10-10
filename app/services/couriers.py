@@ -443,6 +443,26 @@ def start_online(courier: Courier, now: datetime) -> None:
         courier.online_since = now
 
 
+async def follow_session(session: AsyncSession, user_id: uuid.UUID, online: bool) -> None:
+    """Owner, 10/10/2026: signing in puts a verified courier online, signing out puts him offline
+    (it used to keep the last state, so a courier who left stayed visible to customers)."""
+    courier = (
+        await session.execute(select(Courier).where(Courier.user_id == user_id).with_for_update())
+    ).scalar_one_or_none()
+    if courier is None or courier.is_online is online:
+        return
+    if online and courier.verification != "verified":
+        return
+    now = ot.now_utc()
+    courier.is_online = online
+    if online:
+        start_online(courier, now)
+        courier.last_seen_at = now
+    else:
+        stop_online(courier, now)
+    emit(session, "CourierProfile", "update", courier.id)
+
+
 def stop_online(courier: Courier, now: datetime, end: datetime | None = None) -> None:
     """Closes the online session at `end` (default now), counted for today (Tunis)."""
     if courier.online_since is None:
