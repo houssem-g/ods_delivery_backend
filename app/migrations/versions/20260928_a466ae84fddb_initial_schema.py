@@ -113,11 +113,11 @@ def upgrade() -> None:
     sa.Column('source_ts', sa.DateTime(timezone=True), nullable=True),
     sa.Column('quality_score', sa.SmallInteger(), nullable=True),
     sa.Column('refreshed_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_places')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_places_legacy_b44_id')),
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_places_old_import_id')),
     sa.UniqueConstraint('osm_id', name=op.f('uq_places_osm_id'))
     )
     op.create_index('places_cat', 'places', ['category'], unique=False)
@@ -146,8 +146,8 @@ def upgrade() -> None:
     sa.Column('referred_by_courier_id', sa.UUID(), nullable=True),
     sa.Column('referred_by_code', sa.Text(), nullable=True),
     sa.Column('referred_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
-    sa.Column('legacy_profile_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
+    sa.Column('old_import_profile_id', sa.Text(), nullable=True),
     sa.Column('disabled_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -157,8 +157,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_users')),
     sa.UniqueConstraint('email', name=op.f('uq_users_email')),
     sa.UniqueConstraint('google_sub', name=op.f('uq_users_google_sub')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_users_legacy_b44_id')),
-    sa.UniqueConstraint('legacy_profile_b44_id', name=op.f('uq_users_legacy_profile_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_users_old_import_id')),
+    sa.UniqueConstraint('old_import_profile_id', name=op.f('uq_users_old_import_profile_id'))
     )
     op.create_index('ix_users_referred_by_courier_id', 'users', ['referred_by_courier_id'], unique=False)
     op.create_index('ix_users_role', 'users', ['role'], unique=False)
@@ -211,7 +211,7 @@ def upgrade() -> None:
     sa.Column('is_online', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('last_location', Geography(geometry_type='POINT', srid=4326, dimension=2, spatial_index=False, from_text='ST_GeogFromText', name='geography'), nullable=True),
     sa.Column('last_seen_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("phone_e164 ~ '^\\+[1-9][0-9]{7,14}$'", name=op.f('ck_couriers_phone_e164')),
@@ -221,7 +221,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_couriers_user_id_users'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['verified_by'], ['users.id'], name=op.f('fk_couriers_verified_by_users')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_couriers')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_couriers_legacy_b44_id')),
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_couriers_old_import_id')),
     sa.UniqueConstraint('referral_code', name=op.f('uq_couriers_referral_code')),
     sa.UniqueConstraint('user_id', name=op.f('uq_couriers_user_id'))
     )
@@ -238,13 +238,13 @@ def upgrade() -> None:
     sa.Column('last_error', sa.Text(), nullable=True),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.Column('last_seen_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("platform IN ('web','android','ios')", name=op.f('ck_device_tokens_platform')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_device_tokens_user_id_users'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_device_tokens')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_device_tokens_legacy_b44_id')),
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_device_tokens_old_import_id')),
     sa.UniqueConstraint('token', name=op.f('uq_device_tokens_token'))
     )
     op.create_index('ix_device_tokens_active_user', 'device_tokens', ['user_id'], unique=False, postgresql_where=sa.text('is_active'))
@@ -316,7 +316,7 @@ def upgrade() -> None:
     sa.Column('proposed_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('reviewed_by', sa.UUID(), nullable=True),
     sa.Column('reviewed_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("review_status IN ('pending','approved','rejected')", name=op.f('ck_shops_review_status')),
@@ -324,7 +324,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['proposed_by'], ['users.id'], name=op.f('fk_shops_proposed_by_users'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['reviewed_by'], ['users.id'], name=op.f('fk_shops_reviewed_by_users')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_shops')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_shops_legacy_b44_id')),
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_shops_old_import_id')),
     sa.UniqueConstraint('osm_id', name=op.f('uq_shops_osm_id'))
     )
     op.create_index('ix_shops_proposed_by', 'shops', ['proposed_by'], unique=False)
@@ -395,7 +395,7 @@ def upgrade() -> None:
     sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('last_dispatched_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('resale_deal_id', sa.UUID(), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("cancelled_by IN ('customer','courier','admin','system')", name=op.f('ck_orders_cancelled_by')),
@@ -413,7 +413,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['customer_id'], ['users.id'], name=op.f('fk_orders_customer_id_users'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['preferred_courier_id'], ['couriers.id'], name=op.f('fk_orders_preferred_courier_id_couriers'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_orders')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_orders_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_orders_old_import_id'))
     )
     op.create_index('ix_orders_preferred_courier_id', 'orders', ['preferred_courier_id'], unique=False)
     op.create_index('orders_active', 'orders', ['status'], unique=False, postgresql_where=sa.text("status NOT IN ('delivered','cancelled')"))
@@ -441,7 +441,7 @@ def upgrade() -> None:
     sa.Column('rating', sa.SmallInteger(), nullable=False),
     sa.Column('comment', sa.Text(), nullable=True),
     sa.Column('photo_keys', postgresql.ARRAY(sa.Text()), server_default='{}', nullable=False),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('(shop_id IS NULL) <> (place_id IS NULL)', name=op.f('ck_shop_reviews_one_target')),
@@ -450,7 +450,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['shop_id'], ['shops.id'], name=op.f('fk_shop_reviews_shop_id_shops'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_shop_reviews_user_id_users'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_shop_reviews')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_shop_reviews_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_shop_reviews_old_import_id'))
     )
     op.create_index('ix_shop_reviews_place_id', 'shop_reviews', ['place_id'], unique=False)
     op.create_index('ix_shop_reviews_shop_id', 'shop_reviews', ['shop_id'], unique=False)
@@ -492,7 +492,7 @@ def upgrade() -> None:
     sa.Column('buyer_id', sa.UUID(), nullable=True),
     sa.Column('reserved_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('buyer_order_id', sa.UUID(), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("status <> 'sold' OR buyer_id IS NOT NULL", name=op.f('ck_hot_deals_sold_has_buyer')),
@@ -505,7 +505,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['courier_id'], ['couriers.id'], name=op.f('fk_hot_deals_courier_id_couriers'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['original_order_id'], ['orders.id'], name=op.f('fk_hot_deals_original_order_id_orders'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_hot_deals')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_hot_deals_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_hot_deals_old_import_id'))
     )
     op.create_index('hot_deals_available', 'hot_deals', ['pickup_location'], unique=False, postgresql_using='gist', postgresql_where=sa.text("status = 'available'"), postgresql_ops={})
     op.create_index('ix_hot_deals_original_order_id', 'hot_deals', ['original_order_id'], unique=False)
@@ -518,7 +518,7 @@ def upgrade() -> None:
     sa.Column('body', sa.Text(), nullable=False),
     sa.Column('is_template', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('read_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("sender_role IN ('customer','courier')", name=op.f('ck_messages_sender_role')),
@@ -527,7 +527,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['recipient_id'], ['users.id'], name=op.f('fk_messages_recipient_id_users'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['sender_id'], ['users.id'], name=op.f('fk_messages_sender_id_users'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_messages')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_messages_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_messages_old_import_id'))
     )
     op.create_index('ix_messages_order_id_created_at', 'messages', ['order_id', 'created_at'], unique=False)
     op.create_index('messages_unread', 'messages', ['recipient_id'], unique=False, postgresql_where=sa.text('read_at IS NULL'))
@@ -546,7 +546,7 @@ def upgrade() -> None:
     sa.Column('customer_answered_late', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('channels', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
     sa.Column('messaging_status', sa.Text(), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("resolution IN ('customer_confirmed','courier_reached','resold','cancelled_kept','returned_to_shop','auto_closed','courier_cancelled_other','delivered','order_cancelled')", name=op.f('ck_no_response_cases_resolution')),
@@ -554,7 +554,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['courier_id'], ['couriers.id'], name=op.f('fk_no_response_cases_courier_id_couriers'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], name=op.f('fk_no_response_cases_order_id_orders'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_no_response_cases')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_no_response_cases_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_no_response_cases_old_import_id'))
     )
     op.create_index('due_cases', 'no_response_cases', ['deadline_at'], unique=False, postgresql_where=sa.text("status = 'waiting'"))
     op.create_index('ix_no_response_cases_order_id', 'no_response_cases', ['order_id'], unique=False)
@@ -570,14 +570,14 @@ def upgrade() -> None:
     sa.Column('body_fr', sa.Text(), nullable=True),
     sa.Column('data', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
     sa.Column('read_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("type IN ('order_accepted','at_shop','purchased','on_the_way','delivered','order_cancelled','delivery_cancelled','delivery_delayed','eta_update','new_order','new_offer','new_message','emergency_contact','customer_responded','customer_no_response_final','order_confirmed','order_preparing','hot_deal_reserved','issue_reported','account_verified','account_rejected')", name=op.f('ck_notifications_type')),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], name=op.f('fk_notifications_order_id_orders'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_notifications_user_id_users'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_notifications')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_notifications_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_notifications_old_import_id'))
     )
     op.create_index('ix_notifications_order_id', 'notifications', ['order_id'], unique=False)
     op.create_index('ix_notifications_user_id_created_at', 'notifications', ['user_id', sa.literal_column('created_at DESC')], unique=False)
@@ -609,7 +609,7 @@ def upgrade() -> None:
     sa.Column('courier_rating_snapshot', sa.Numeric(precision=3, scale=2), nullable=True),
     sa.Column('status', postgresql.ENUM(name='offer_status', create_type=False), server_default='pending', nullable=False),
     sa.Column('decided_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('eta_minutes BETWEEN 0 AND 600', name=op.f('ck_order_offers_eta_minutes')),
@@ -618,7 +618,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['courier_id'], ['couriers.id'], name=op.f('fk_order_offers_courier_id_couriers'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], name=op.f('fk_order_offers_order_id_orders'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_order_offers')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_order_offers_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_order_offers_old_import_id'))
     )
     op.create_index('ix_order_offers_courier_status_created', 'order_offers', ['courier_id', 'status', sa.literal_column('created_at DESC')], unique=False)
     op.create_index('ix_order_offers_order_id', 'order_offers', ['order_id'], unique=False)
@@ -717,7 +717,7 @@ def upgrade() -> None:
     sa.Column('fallback_deadline_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('fallback_status', sa.Text(), nullable=True),
     sa.Column('parent_id', sa.UUID(), nullable=True),
-    sa.Column('legacy_b44_id', sa.Text(), nullable=True),
+    sa.Column('old_import_id', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("channel IN ('whatsapp','sms')", name=op.f('ck_outbound_messages_channel')),
@@ -727,7 +727,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_outbound_messages_user_id_users'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_outbound_messages')),
     sa.UniqueConstraint('idempotency_key', name=op.f('uq_outbound_messages_idempotency_key')),
-    sa.UniqueConstraint('legacy_b44_id', name=op.f('uq_outbound_messages_legacy_b44_id'))
+    sa.UniqueConstraint('old_import_id', name=op.f('uq_outbound_messages_old_import_id'))
     )
     op.create_index('ix_outbound_messages_due', 'outbound_messages', ['next_attempt_at'], unique=False, postgresql_where=sa.text("status IN ('retry_pending','queued')"))
     op.create_index('ix_outbound_messages_order_id', 'outbound_messages', ['order_id'], unique=False)

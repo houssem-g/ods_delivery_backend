@@ -52,7 +52,7 @@ class NoResponseCase(Base):
     # {"in_app": bool, "push_devices": int, "whatsapp": str, "sms": str}
     channels: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     messaging_status: Mapped[str | None] = mapped_column(Text)
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -114,6 +114,6 @@ class HotDeal(Base):
     buyer_order_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL")
     )
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

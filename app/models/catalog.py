@@ -62,7 +62,7 @@ class Place(Base):
     refreshed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -97,7 +97,7 @@ class Shop(Base):
     proposed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reviewed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -157,7 +157,7 @@ class ShopReview(Base):
     rating: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     comment: Mapped[str | None] = mapped_column(Text)
     photo_keys: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 

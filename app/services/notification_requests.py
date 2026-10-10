@@ -71,7 +71,7 @@ async def recipient_email(session: AsyncSession, ref: str) -> str | None:
     except ValueError:
         if not _LEGACY_ID.match(ref):
             return None
-    column = Courier.id == as_uuid if as_uuid else Courier.legacy_b44_id == ref
+    column = Courier.id == as_uuid if as_uuid else Courier.old_import_id == ref
     owner = (await session.execute(select(Courier.user_id).where(column))).scalar_one_or_none()
     return await _email_of(session, owner)
 

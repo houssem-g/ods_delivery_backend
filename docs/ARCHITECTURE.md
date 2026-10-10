@@ -107,7 +107,7 @@ Audit §6.2 is the reference DDL. Rules:
 - Counters are derived (`courier_stats`, `customer_stats` views); the compat
   layer exposes them under the legacy names (`total_deliveries`,
   `total_earnings`, `average_rating`, `total_orders`, `no_response_incidents`…).
-- `legacy_b44_id` on every imported table (unique, nullable).
+- `old_import_id` on every imported table (unique, nullable).
 
 ## 6. API
 

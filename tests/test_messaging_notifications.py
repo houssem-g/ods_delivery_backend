@@ -135,7 +135,7 @@ async def test_courier_profile_id_is_mapped_to_its_user(client, parties):
     assert by_uuid.status_code == 200
     async with SessionLocal() as s:
         courier = await s.get(type(parties.courier), parties.courier.id)
-        courier.legacy_b44_id = "68d1a2b3c4d5e6f7a8b9c0d1"
+        courier.old_import_id = "68d1a2b3c4d5e6f7a8b9c0d1"
         await s.commit()
     by_legacy = await send(client, parties.admin, userId="68d1a2b3c4d5e6f7a8b9c0d1", type="new_order")
     assert by_legacy.status_code == 200

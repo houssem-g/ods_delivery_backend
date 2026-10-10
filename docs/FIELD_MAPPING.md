@@ -17,8 +17,8 @@ Conventions:
   server-made now, so it is dropped.
 - Every user reference (`*_id` holding an e-mail in the legacy shape) becomes a `uuid` FK to
   `users`; the compat layer answers the e-mail again (join `users.email`).
-- Every imported table has `legacy_b44_id` (unique) — `users` has two: the legacy
-  `User` id and the `UserProfile` id (`legacy_profile_b44_id`).
+- Every imported table has `old_import_id` (unique) — `users` has two: the legacy
+  `User` id and the `UserProfile` id (`old_import_profile_id`).
 
 Status of the compat entities: `UserProfile`, `AppSettings`, `Message`, `Notification`,
 `DeviceToken`, `MessageLog`, `Shop`, `ShopReview`, `PlaceIndex`, `Order`, `OrderOffer`,
@@ -29,7 +29,7 @@ mapping (docs/COMPAT_GUIDE.md).
 
 | Field | Used | Target | Notes |
 |---|---|---|---|
-| id | front R | `users.id` | new uuid; legacy id in `users.legacy_b44_id` |
+| id | front R | `users.id` | new uuid; legacy id in `users.old_import_id` |
 | email | front/fn R | `users.email` (citext unique) | |
 | full_name | front R | `users.full_name` | |
 | role | front/fn R | `users.role = 'admin'` → `'admin'`, else `'user'` | `GET /api/auth/me` answers the legacy shape |
@@ -401,8 +401,8 @@ commission_amount, is_active, description — all dropped.
 
 ## Imported rows — what the domain code must expect
 
-- **Ids**: imported rows keep their legacy id in `legacy_b44_id` (users: +
-  `legacy_profile_b44_id`). New rows get `gen_random_uuid()`.
+- **Ids**: imported rows keep their legacy id in `old_import_id` (users: +
+  `old_import_profile_id`). New rows get `gen_random_uuid()`.
 - **users.role**: a courier whose profile says `customer` stays `customer`: decide
   courier-ness on `couriers`, not on `users.role`.
 - **Nullable on imported rows**: `users.phone_e164` (placeholders rejected),

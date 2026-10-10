@@ -60,7 +60,7 @@ class Notification(Base):
     body_fr: Mapped[str | None] = mapped_column(Text)
     data: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -87,7 +87,7 @@ class DeviceToken(Base):
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -169,6 +169,6 @@ class OutboundMessage(Base):
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("outbound_messages.id")
     )
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

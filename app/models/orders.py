@@ -140,7 +140,7 @@ class Order(Base):
     resale_deal_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("hot_deals.id", ondelete="SET NULL", use_alter=True)
     )
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -231,7 +231,7 @@ class OrderOffer(Base):
     courier_rating_snapshot: Mapped[Decimal | None] = mapped_column(Numeric(3, 2))
     status: Mapped[str] = mapped_column(offer_status, nullable=False, server_default="pending")
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
@@ -372,7 +372,7 @@ class Message(Base):
     attachment_type: Mapped[str | None] = mapped_column(Text)
     attachment_duration: Mapped[int | None] = mapped_column(Integer)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    legacy_b44_id: Mapped[str | None] = legacy_id()
+    old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 
