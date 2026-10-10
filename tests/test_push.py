@@ -59,7 +59,7 @@ def test_push_links():
     )
 
 
-def test_multicast_payload_matches_the_deno_function():
+def test_multicast_payload_shape():
     msg = PushMessage(**{**MESSAGE.__dict__, "type": "new_order"})
     built = push.build_multicast(["t1"], "fr", msg)
     assert built.notification.title == "Offre" and built.data["click_action"].startswith(

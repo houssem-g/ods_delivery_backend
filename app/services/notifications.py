@@ -2,7 +2,7 @@
 
 Every domain service notifies through `notify` (or `notify_detailed` to know what
 happened to the push). The in-app row is always written; the user's preferences only
-govern the push (as on Base44). The caller owns the transaction: the row, its
+govern the push. The caller owns the transaction: the row, its
 realtime event, the push log and a WhatsApp fallback row commit together.
 
 WhatsApp instead of push (sendNotificationIfEnabled.whatsappInsteadOfPush): a customer

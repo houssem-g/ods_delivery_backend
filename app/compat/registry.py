@@ -1,4 +1,4 @@
-"""Entity registry of the Base44 compatibility layer.
+"""Entity registry of the compatibility layer.
 
 Each legacy entity (UserProfile, Order, ...) declares how its document shape is
 computed from the normalized tables, who may read which rows and fields, and

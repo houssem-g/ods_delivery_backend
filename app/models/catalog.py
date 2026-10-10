@@ -57,7 +57,7 @@ class Place(Base):
     location = mapped_column(Point(), nullable=False)
     source: Mapped[str] = mapped_column(Text, nullable=False, server_default="osm")
     source_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # Search ranking (searchByBbox sorts on it): percent, 0-100 (Base44 stored 0.5-1.0).
+    # Search ranking (searchByBbox sorts on it): percent, 0-100 (the legacy shape answers 0-1).
     quality_score: Mapped[int | None] = mapped_column(SmallInteger)
     refreshed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")

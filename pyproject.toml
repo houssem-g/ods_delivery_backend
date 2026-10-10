@@ -1,7 +1,7 @@
 [project]
 name = "ods-delivery-backend"
 version = "0.1.0"
-description = "ODS Delivery API (replaces Base44)"
+description = "ODS Delivery API"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.115",

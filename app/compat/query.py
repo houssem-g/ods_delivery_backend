@@ -1,7 +1,7 @@
 """Reading legacy documents: filter translation, sort, pagination, read policy, serialization.
 
 The read policy and field guards are part of the SQL, so LIMIT never applies before
-the policy (a Base44 client-side filter after LIMIT would lose rows).
+the policy (a client-side filter after LIMIT would lose rows).
 """
 
 import json

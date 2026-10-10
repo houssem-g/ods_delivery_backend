@@ -1,6 +1,6 @@
 """ResaleOrder ("Offre chaude"): `hot_deals` in the legacy shape (docs/FIELD_MAPPING.md, ResaleOrder).
 
-Read (base44/entities/ResaleOrder.jsonc): every signed-in user reads the deals still listed
+Read: every signed-in user reads the deals still listed
 (`status = 'available'`), admins read every deal. Field rules (admin only): the courier's phone
 and position, the buyer (e-mail, name, phone) and the delivery address; the buyer gets the
 courier's phone from reserveHotDeal, the listing gets a rounded distance from listHotDeals.

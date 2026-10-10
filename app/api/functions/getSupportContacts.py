@@ -2,7 +2,7 @@
 for everybody, signed in or not (legal pages are shown before login).
 
 Answers only the two numbers, re-validated: an invalid stored value is answered as null.
-Same rules as base44/functions/getSupportContacts and src/lib/supportContacts.js.
+Same rules as src/lib/supportContacts.js.
 """
 
 import re

@@ -1,6 +1,6 @@
 """Shops: user proposals (proposeShop) and helpers shared by the Shop / ShopReview entities.
 
-proposeShop rules (base44/functions/proposeShop): name 2-100, address 3-300, position in
+proposeShop rules: name 2-100, address 3-300, position in
 Tunisia (29.5-38.5 N, 7-12.5 E), Tunisian phone (optional), one known category,
 description ≤ 500, ≤ 30 menu items (name ≤ 100, price 0-10 000, https photos only),
 at most MAX_PER_DAY proposals per user in 24 h (admins exempt), and the same name
@@ -40,7 +40,7 @@ _TN_PREFIX = re.compile(r"^(00)?216(?=\d{8}$)")
 
 
 def clean_text(value: Any, limit: int) -> str:
-    """Deno `text()`: whitespace collapsed, trimmed, cut to `limit` characters."""
+    """`text()`: whitespace collapsed, trimmed, cut to `limit` characters."""
     if value is None:
         return ""
     return re.sub(r"\s+", " ", str(value)).strip()[:limit]
@@ -67,7 +67,7 @@ def key_from_public_url(url: Any) -> str | None:
 
 
 def stored_photo(url: Any) -> str | None:
-    """A menu photo: our upload → its key; another https URL (Base44 files) → kept as is."""
+    """A menu photo: our upload → its key; another https URL → kept as is."""
     key = key_from_public_url(url)
     if key:
         return key
@@ -115,7 +115,7 @@ def _menu(raw: Any) -> list[dict[str, Any]]:
 
 
 def build_shop(body: Any) -> dict[str, Any]:
-    """Validated proposal, or ApiError(400, <code>) — Deno `buildShop`."""
+    """Validated proposal, or ApiError(400, <code>) (`buildShop`)."""
     b = body if isinstance(body, dict) else {}
     name = clean_text(b.get("name"), 100)
     if len(name) < 2:

@@ -1,4 +1,4 @@
-"""/api/entities/{Entity} — the Base44 entity surface, dispatched to the compat registry."""
+"""/api/entities/{Entity} — the legacy entity surface, dispatched to the compat registry."""
 
 from typing import Any
 
@@ -23,7 +23,7 @@ def _entity(name: str) -> EntityDef:
 
 
 def _denied(operation: str, entity: str) -> ApiError:
-    # Base44 wording, which the front's error handling already knows.
+    # Wording the front's error handling already knows.
     return ApiError(403, "permission_denied", f"Permission denied for {operation} operation on {entity}")
 
 
@@ -91,7 +91,7 @@ async def create(
 
 
 @router.patch("/{name}/{doc_id}")
-@router.put("/{name}/{doc_id}")  # the Base44 SDK used PUT
+@router.put("/{name}/{doc_id}")  # the legacy client uses PUT
 async def update(
     name: str,
     doc_id: str,

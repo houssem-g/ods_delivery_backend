@@ -16,7 +16,7 @@ each attachment as a short-lived signed URL (only to callers who see the message
 caller's own messages, `read_at`. The recipient gets a realtime `signal` {kind: "message"} so an
 open chat refreshes at once; signalTyping sends {kind: "typing"} to the other party only.
 
-Every function answers `(status, json)` with the Deno keys and codes.
+Every function answers `(status, json)` with the keys and codes the front expects.
 """
 
 import logging

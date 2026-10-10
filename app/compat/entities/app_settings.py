@@ -1,4 +1,4 @@
-"""AppSettings: one row `key='main'` holding the support numbers (base44/entities/AppSettings.jsonc).
+"""AppSettings: one row `key='main'` holding the support numbers.
 
 Read: any signed-in user (anonymous screens use the getSupportContacts function).
 Create / update / delete: admins. `updated_by` is set by the server, never taken from the body.

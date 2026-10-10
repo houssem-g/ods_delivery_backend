@@ -1,6 +1,6 @@
 """'Article indisponible' (stock check): the courier at the shop cannot find an item the customer
-asked for; the customer decides, the server enforces the deadline. New in the own backend
-(owner's request, 2026-09-29), no Base44 counterpart.
+asked for; the customer decides, the server enforces the deadline. Owner's request,
+2026-09-29.
 
   report   reportUnavailableItems, the assigned courier, before the purchase (accepted / at_shop /
            price_confirmation_needed; never a hot deal: its goods are already bought). Opens a

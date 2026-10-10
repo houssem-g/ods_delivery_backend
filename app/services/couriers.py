@@ -1,8 +1,7 @@
 """Courier profile writes: updateMyCourierProfile, the admin verification, live position
 (trackCourierLocation) and presence expiry.
 
-Base44 references: base44/functions/updateMyCourierProfile, trackCourierLocation;
-pages/AdminDashboard.jsx updateCourierVerification.
+Front reference: pages/AdminDashboard.jsx updateCourierVerification.
 """
 
 import math
@@ -41,7 +40,7 @@ class ProfileRefused(Exception):
         return {"error": self.error, **self.extra}
 
 
-# --- field checks (the Deno pick(): allowed + well-typed, the rest reported) -----------------------
+# --- field checks (allowed + well-typed, the rest reported) ------------------------------------
 
 Check = Any  # (value) -> (ok, clean)
 
@@ -104,7 +103,7 @@ def _country(v: Any) -> tuple[bool, Any]:
     return False, None
 
 
-# Bounds are the table's CHECKs (the Deno function allowed wider ranges nobody uses).
+# Bounds are the table's CHECKs.
 UPDATABLE: dict[str, Check] = {
     "is_online": _bool,
     "current_lat": _num(-90, 90),
@@ -345,7 +344,7 @@ async def set_verification(session: AsyncSession, admin: CurrentUser, courier: C
 
 
 def valid_coordinates(lat: Any, lng: Any) -> str | None:
-    """None when fine, else the reason (GEO_VALIDATION of the Deno function)."""
+    """None when fine, else the reason (GEO_VALIDATION)."""
     numbers = all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (lat, lng))
     if not numbers:
         return "Coordinates must be numbers"
@@ -356,8 +355,8 @@ def valid_coordinates(lat: Any, lng: Any) -> str | None:
         return f"Latitude {lat} outside valid range [{min_lat}, {max_lat}]"
     if not min_lng <= lng <= max_lng:
         return f"Longitude {lng} outside valid range [{min_lng}, {max_lng}]"
-    # No "excessive precision" refusal (ported from the Deno function): real Android
-    # WebViews report full doubles such as 35.825614699999995, which it rejected.
+    # No "excessive precision" refusal: real Android WebViews report full doubles
+    # such as 35.825614699999995.
     # publish_position rounds to 6 decimals (about 10 cm) instead.
     return None
 

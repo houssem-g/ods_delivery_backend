@@ -1,4 +1,4 @@
-"""Ports of the Base44 Deno functions: one module per function, named exactly like the
+"""The legacy functions: one module per function, named exactly like the
 function (`getSupportContacts.py` answers POST /api/functions/getSupportContacts).
 
 A module exposes:
@@ -20,7 +20,7 @@ from app.security.deps import CurrentUser
 
 Handler = Callable[[dict[str, Any], CurrentUser | None, AsyncSession, Request], Awaitable[tuple[int, dict]]]
 
-# Answer 410 like the stubs left on Base44 (DB_AUDIT §4.3): never port them.
+# Retired functions answer 410 (DB_AUDIT §4.3).
 RETIRED = frozenset(
     {
         "calculateAdaptiveRadius", "createOrder", "getActiveTariffs", "getOrderOffers",

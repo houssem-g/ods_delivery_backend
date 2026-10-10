@@ -1,5 +1,5 @@
 """getCustomerReliability — a customer's "client ne répond pas" record of the last 180 days and what it
-implies (base44/functions/getCustomerReliability, src/lib/noResponsePolicy.js).
+implies (same rules as src/lib/noResponsePolicy.js).
 
 Body: { order_id? } — without: the caller's own record; with: the order's customer, for the
 customer, the assigned courier, any verified courier while the order is open, admins. Couriers see

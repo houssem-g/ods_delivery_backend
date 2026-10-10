@@ -1,8 +1,8 @@
 """PlaceIndex: the OSM places cache (`places`), read-only, admins only
-(base44/entities/PlaceIndex.jsonc: every operation admin-only; the app reads it through
+(every operation admin-only; the app reads it through
 searchPlaces / searchByBbox / geocodeAddress, and refreshOsmIndex writes it).
 
-`id` is the bigint key as text; `quality_score` is answered on the Base44 0-1 scale.
+`id` is the bigint key as text; `quality_score` is answered on the legacy 0-1 scale.
 """
 
 from sqlalchemy import Text, cast, false, true

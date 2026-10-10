@@ -1,5 +1,5 @@
 """'Client ne répond pas': the courier bought the goods with his own cash and can't reach the
-customer at the door. Port of base44/functions/triggerEmergencyContact (+ its 2026-09-28 fixes).
+customer at the door. triggerEmergencyContact.
 
 The server owns the procedure; the screens only display it:
   report_no_response  courier/admin. Opens a case (deadline = now + WAIT), order →
@@ -60,7 +60,7 @@ from app.services.push import PushMessage, send_to_user
 
 log = logging.getLogger("odsd.no_response")
 
-# Same values as src/lib/noResponsePolicy.js (base44/tests/no_response_test.ts compares them).
+# Same values as src/lib/noResponsePolicy.js.
 WAIT_SECONDS = 180
 AUTO_CLOSE_HOURS = 3
 MAX_REPORTS = 2  # the alert, then one re-alert after the deadline; never a third
@@ -82,7 +82,7 @@ Result = tuple[int, dict[str, Any]]
 
 
 def js_iso(value: datetime | None) -> str | None:
-    """`new Date(x).toISOString()`: what the Deno function answered."""
+    """`new Date(x).toISOString()`: what the front expects."""
     if value is None:
         return None
     return value.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")

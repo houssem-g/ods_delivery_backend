@@ -57,7 +57,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    # 384m was reached with the imported Base44 data plus several test databases (2026-09-28).
+    # 384m was reached with the imported data plus several test databases (2026-09-28).
     mem_limit: 768m
 
   minio:

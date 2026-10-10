@@ -1,8 +1,8 @@
 """catalog: places.search_norm, shop_reviews.target_key, geocode_cache, nullable courier phone
 
 - places.search_norm (+ trigram index): normalized name/address/city, so the
-  text scores of searchPlaces / searchByBbox / geocodeAddress run in SQL (Base44 scored
-  up to 4 000 rows in memory);
+  text scores of searchPlaces / searchByBbox / geocodeAddress run in SQL
+  instead of scoring up to 4 000 rows in memory;
 - shop_reviews.target_key: the legacy `shop_osm_id` as the front sends it. Some keys
   ('place:<name>@<lat>,<lng>') can't always be resolved to a shop or a place, so the
   one-target check becomes "at most one"; one review per user and key;

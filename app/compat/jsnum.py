@@ -1,4 +1,4 @@
-"""JavaScript number coercions used by the ported Deno functions (`Number(x)`, `parseInt`,
+"""JavaScript number coercions used by the legacy functions (`Number(x)`, `parseInt`,
 `parseFloat`, `x || default`), so the same payloads give the same bounds and defaults."""
 
 import math

@@ -1,9 +1,9 @@
-"""Notification: in-app notifications (base44/entities/Notification.jsonc → `notifications`).
+"""Notification: in-app notifications (`notifications`).
 
 - read: the recipient (`user_id` = his e-mail) and admins;
 - create: an admin, for anyone (AdminDashboard writes `account_verified` /
   `account_rejected` after a courier verification; the row is pushed too), or the
-  recipient himself (Base44 rule; the orderFlow fallback when sendNotificationIfEnabled
+  recipient himself (the orderFlow fallback when sendNotificationIfEnabled
   did not answer a `notification_id` — writing into somebody else's list is refused);
 - update: the recipient only, and only `is_read` (→ `read_at`), as
   roleNotifications.markNotificationsRead does;

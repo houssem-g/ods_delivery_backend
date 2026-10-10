@@ -1,4 +1,4 @@
-"""Users (Base44 User + UserProfile merged), auth tables, addresses, couriers."""
+"""Users (legacy User + UserProfile merged), auth tables, addresses, couriers."""
 
 import uuid
 from datetime import date, datetime, time
@@ -50,7 +50,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     email: Mapped[str] = mapped_column(CITEXT, nullable=False, unique=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # NULL until the user (re)defines a password (accounts migrated from Base44, Google-only accounts).
+    # NULL until the user (re)defines a password (imported accounts, Google-only accounts).
     password_hash: Mapped[str | None] = mapped_column(Text)
     google_sub: Mapped[str | None] = mapped_column(Text, unique=True)
     full_name: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
@@ -58,7 +58,7 @@ class User(Base):
     # When phone_e164 was confirmed by a code sent to it (foreign numbers must be; +216 need not).
     # Cleared by the trigger `trg_users_phone_unverify` whenever phone_e164 changes alone.
     phone_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # 'admin' replaces Base44 User.role; customer/courier mirror the legacy UserProfile.role.
+    # 'admin' replaces the legacy User.role; customer/courier mirror the legacy UserProfile.role.
     role: Mapped[str] = mapped_column(app_role, nullable=False, server_default="customer")
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="ar")
     # Existence of the legacy UserProfile (the front decides the customer side on it).
@@ -217,7 +217,7 @@ class Courier(Base):
     )
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     # NULL once the account is deleted (anonymized, the row stays for the orders), or when the
-    # Base44 profile only had a placeholder (migrate/: rejected phone, re-entered at the next save).
+    # imported profile only had a placeholder (rejected phone, re-entered at the next save).
     phone_e164: Mapped[str | None] = mapped_column(Text)
     id_document_number: Mapped[str] = mapped_column(Text, nullable=False)
     # Object key in the PRIVATE bucket; never serialized to non-admins.

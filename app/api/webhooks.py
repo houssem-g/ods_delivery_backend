@@ -1,4 +1,4 @@
-"""Meta WhatsApp Cloud API webhook (port of base44/functions/whatsappWebhook).
+"""Meta WhatsApp Cloud API webhook (whatsappWebhook).
 
     GET  ?hub.mode=subscribe&hub.verify_token=…&hub.challenge=…
          → echoes hub.challenge when the token equals WHATSAPP_VERIFY_TOKEN (else 403).
@@ -7,7 +7,7 @@
          → updates the outbound_messages row (by provider_message_id); on "failed" the
            SMS fallback for critical rows / numbers without WhatsApp.
 
-Reachable at /api/webhooks/whatsapp and, like the Base44 function URL Meta may still
+Reachable at /api/webhooks/whatsapp and, like the function URL Meta may still
 be configured with, /api/functions/whatsappWebhook. No session needed. Unsigned or
 wrongly signed POSTs are refused (401); without WHATSAPP_APP_SECRET every POST is
 refused (webhook OFF). Valid calls always answer 200 so Meta doesn't retry for 36 h.

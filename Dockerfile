@@ -9,7 +9,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 FROM python:3.12-slim AS runtime
 ARG APP_RELEASE=""
 LABEL org.opencontainers.image.title="ods-delivery-api" \
-      org.opencontainers.image.description="ODS Delivery API (replaces Base44)" \
+      org.opencontainers.image.description="ODS Delivery API" \
       org.opencontainers.image.revision="${APP_RELEASE}"
 # Nothing is written at run time: the root filesystem can be read-only (tmpfs on /tmp for uploads).
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 APP_RELEASE=${APP_RELEASE}

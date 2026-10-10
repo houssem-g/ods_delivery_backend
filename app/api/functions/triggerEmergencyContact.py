@@ -1,5 +1,4 @@
-"""triggerEmergencyContact — "client ne répond pas" (base44/functions/triggerEmergencyContact;
-the procedure is app/services/no_response.py).
+"""triggerEmergencyContact — "client ne répond pas" (the procedure is app/services/no_response.py).
 
 Body: { order_id, action: 'report_no_response' | 'status' | 'check_response' |
 'customer_confirms' | 'courier_resume' | 'realert_no_response' }. Answers: the procedure view

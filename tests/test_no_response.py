@@ -1,5 +1,5 @@
-"""triggerEmergencyContact ("client ne répond pas"): port of base44/tests/no_response_test.ts,
-every guard, the sweep job, the cancelOrder hook, the NoResponseCase entity and the races."""
+"""triggerEmergencyContact ("client ne répond pas"): every guard, the sweep job,
+the cancelOrder hook, the NoResponseCase entity and the races."""
 
 import asyncio
 import uuid

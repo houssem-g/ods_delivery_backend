@@ -1,7 +1,7 @@
 """Order: `orders` + its stops, status events, live position, rating, issues, no-response case
 and commission entry, in the legacy document shape (docs/FIELD_MAPPING.md, Order).
 
-Read (base44/entities/Order.jsonc): the customer, the assigned courier, admins; open orders
+Read: the customer, the assigned courier, admins; open orders
 (pending / offers_received) also to every VERIFIED courier, to bid — except QA orders
 ("QA TEST" / "PW-"), shown to the QA accounts only (src/lib/orderUtils.js). Field rules:
 customer_phone, delivery_details, courier_live_*, reported_issues, has_issues, stock_check(s),

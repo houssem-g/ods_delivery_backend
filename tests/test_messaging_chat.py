@@ -296,7 +296,7 @@ async def test_message_entity_read_policy_and_no_writes(client, parties, factory
         ).json()
         return sorted(r["id"] for r in rows)
 
-    # Base44 rule: the sender (and admins) only; the other party reads through the functions.
+    # Rule: the sender (and admins) only; the other party reads through the functions.
     assert await visible(parties.customer) == [str(msg.id)]
     assert await visible(parties.courier_user) == [str(reply.id)]
     assert await visible(parties.admin) == sorted([str(msg.id), str(reply.id)])

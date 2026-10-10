@@ -1,9 +1,9 @@
-"""trackCourierLocation — the courier's GPS fix (base44/functions/trackCourierLocation).
+"""trackCourierLocation — the courier's GPS fix.
 
 Written onto his orders in progress (order_tracking, read as Order.courier_live_* by the order's
 parties, realtime Order update) except orders idle for 48 h (expire_stale_orders' activity rule),
 and onto his profile (couriers.last_location / last_seen_at, the presence heartbeat).
-The speed check of the Deno function never ran (it called a missing SDK method): not ported.
+There is no speed check.
 
 Body: { courier_id, lat, lng }. Returns { success, message, validation_status, lat, lng,
 updated_at, live_orders }. Errors: missing fields / invalid coordinates (400), Unauthorized (403).

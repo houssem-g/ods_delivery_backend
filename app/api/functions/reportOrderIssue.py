@@ -1,5 +1,5 @@
-"""reportOrderIssue — the assigned courier reports a problem while the delivery runs
-(base44/functions/reportOrderIssue). Kept in order_issues (Base44 lost them: audit §3.4 bis),
+"""reportOrderIssue — the assigned courier reports a problem while the delivery runs.
+Kept in order_issues (audit §3.4 bis),
 at most 5 per order; the customer and every admin get an in-app notice (issue_reported).
 
 Body: { order_id, courier_id, issue_type, description?, photo_url? } — photo_url must be one of

@@ -1,6 +1,6 @@
-"""MessageLog: WhatsApp / SMS journal (base44/entities/MessageLog.jsonc → `outbound_messages`).
+"""MessageLog: WhatsApp / SMS journal (`outbound_messages`).
 
-Admins only, read only (Base44: admin for every operation; nothing in the app writes
+Admins only, read only (nothing in the app writes
 it). Written by app/services/whatsapp.py.
 """
 

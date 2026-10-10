@@ -1,8 +1,7 @@
-"""Shop: approved shops and user proposals (base44/entities/Shop.jsonc).
+"""Shop: approved shops and user proposals.
 
 Read: approved shops for everybody signed in; a proposal (pending / rejected) only for
-its author; admins read everything (Admin → Magasins lists the pending ones). Base44
-let anybody list pending proposals too; the map (searchByBbox) already hid them.
+its author; admins read everything (Admin → Magasins lists the pending ones).
 `proposed_by` (author e-mail) is visible to the author and admins only.
 Create: none from the front (proposals go through proposeShop) → 403.
 Update: admins — review_status ('approved' | 'rejected' | 'pending', + reviewed_by /

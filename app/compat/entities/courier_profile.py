@@ -1,6 +1,6 @@
 """CourierProfile: `couriers` (+ `courier_stats`) in the legacy shape (docs/FIELD_MAPPING.md).
 
-Read (base44/entities/CourierProfile.jsonc): the owner and admins. `id_photo_uri` (the private
+Read: the owner and admins. `id_photo_uri` (the private
 ID document key) is not a field at all: admins get short-lived links from getCourierIdPhotos;
 `has_id_photo` only says whether there is one. `address*` is the account's default address
 (user_addresses, the same row as UserProfile.default_address for a customer+courier account).

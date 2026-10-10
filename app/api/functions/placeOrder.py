@@ -1,4 +1,4 @@
-"""placeOrder — a customer places an order (base44/functions/placeOrder).
+"""placeOrder — a customer places an order.
 
 Body: { order: { items_text, quantity?, notes?, alternatives?, unavailable_policy? (call_me|substitute|
   skip|cancel, default call_me), estimated_price?, package_size?,

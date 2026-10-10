@@ -1,9 +1,9 @@
 """OrderOffer: `order_offers` in the legacy shape (docs/FIELD_MAPPING.md, OrderOffer).
 
-Read (base44/entities/OrderOffer.jsonc): the courier who made it, the order's customer,
+Read: the courier who made it, the order's customer,
 admins. Create / update: none (createOrderOffer, acceptOrderOffer, cancelOrder). Delete:
 the courier's own pending offer = withdrawal (kept as 'withdrawn', which no longer exists
-as an entity row, like a Base44 delete); admins too.
+as an entity row, like a delete); admins too.
 """
 
 import uuid

@@ -1,10 +1,10 @@
-"""DeviceToken: push tokens (base44/entities/DeviceToken.jsonc → `device_tokens`).
+"""DeviceToken: push tokens (`device_tokens`).
 
-Read: the owner and admins (Base44: admins only; the app never reads it, the owner
+Read: the owner and admins (the app never reads it, the owner
 seeing his own devices leaks nothing). No direct write: registerDeviceToken /
 unregisterDeviceToken and the push service maintain the rows.
 
-`endpoint_hash` (Base44's dedupe key, sha256(token) truncated to 32 hex chars) is
+`endpoint_hash` (the legacy dedupe key, sha256(token) truncated to 32 hex chars) is
 derived; `provider` is always `fcm`.
 """
 

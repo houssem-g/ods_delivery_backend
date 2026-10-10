@@ -1,9 +1,9 @@
 """NoResponseCase: `no_response_cases` in the legacy shape (docs/FIELD_MAPPING.md, NoResponseCase).
 
 Read: admins, and the parties of the order (its customer, its courier, the courier who opened
-the case). Base44 kept the entity admin-only because the parties read the copies on Order
-(no_response_*); those copies are derived from this table here, so the parties may read the
-source rows too (nothing in them is private to the other party).
+the case). The parties also read the copies on Order (no_response_*); those copies are
+derived from this table, so the parties may read the source rows too (nothing in them is
+private to the other party).
 Write: none. The procedure is triggerEmergencyContact / createHotDeal / cancelOrder / the sweep.
 """
 

@@ -1,4 +1,4 @@
-"""reserveHotDeal — a customer reserves a hot deal (base44/functions/reserveHotDeal; rules in
+"""reserveHotDeal — a customer reserves a hot deal (rules in
 app/services/hot_deals.py).
 
 Body: { resale_order_id, delivery_address, delivery_lat?, delivery_lng?, phone? }.

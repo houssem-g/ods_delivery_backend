@@ -1,5 +1,5 @@
-"""getOrderCourier — the courier card of one order, for the people on it
-(base44/functions/getOrderCourier). CourierProfile itself is private.
+"""getOrderCourier — the courier card of one order, for the people on it.
+CourierProfile itself is private.
 
 Body: { order_id } (the order's customer, its courier, admins) or { offer_id } (the customer the
 offer was sent to, admins). The phone and full name are given for an assigned courier and for

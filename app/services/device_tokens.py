@@ -1,9 +1,9 @@
 """Push tokens of the signed-in user (ports of registerDeviceToken / unregisterDeviceToken).
 
-One row per token (`device_tokens.token` is unique; Base44 deduped on sha256(token)).
+One row per token (`device_tokens.token` is unique).
 One device, one signed-in account: registering a token another account registered
 (a previous user of the phone who never logged out) moves it to the caller, so that
-account stops receiving pushes here (live Base44 deactivated the other rows).
+account stops receiving pushes here.
 """
 
 import hashlib
@@ -24,7 +24,7 @@ PROVIDERS = ("fcm", "webpush")
 
 
 def endpoint_hash(token: str) -> str:
-    """Base44's DeviceToken.endpoint_hash: sha256(token) as hex, first 32 characters."""
+    """The legacy DeviceToken.endpoint_hash: sha256(token) as hex, first 32 characters."""
     return hashlib.sha256(token.encode()).hexdigest()[:32]
 
 

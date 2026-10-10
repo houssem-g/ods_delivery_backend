@@ -1,5 +1,5 @@
-"""FR / AR texts of the notifications the order functions send, word for word from the Deno
-functions (dispatchOrderToCouriers, cancelOrder, expireStaleOrders, reportOrderIssue)."""
+"""FR / AR texts of the notifications the order functions send
+(dispatchOrderToCouriers, cancelOrder, expireStaleOrders, reportOrderIssue)."""
 
 Text = dict[str, str]
 

@@ -1,6 +1,6 @@
 """Broadcast of a new (or re-opened) order to the couriers around its shop.
 
-Port of base44/functions/dispatchOrderToCouriers:
+dispatchOrderToCouriers:
 1. the customer's own courier (invite link, confirmed by the customer's sign-up
    attribution) first, with "Votre client <prénom> a passé une commande", even
    outside his radius or governorate, when he is online, verified and free;
@@ -8,7 +8,7 @@ Port of base44/functions/dispatchOrderToCouriers:
    last position is within his notification radius (default 10 km) of the shop.
    Couriers of the shop's governorate when there are any online, else all online
    (the legacy filter + fallback). One PostGIS query over the `couriers_dispatch`
-   partial index replaces Base44's per-courier reads (audit §3.4 N+1).
+   partial index, no per-courier reads (audit §3.4 N+1).
 QA orders are never broadcast. The caller holds the order lock.
 """
 
@@ -94,7 +94,7 @@ async def _preferred(
 
 
 async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
-    """Claims the run (last_dispatched_at) and notifies the couriers. Returns the Deno answer."""
+    """Claims the run (last_dispatched_at) and notifies the couriers. Returns the function's answer."""
     order.last_dispatched_at = now_utc()
     await session.flush()
     if is_test_order(order.items_text):

@@ -9,10 +9,6 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
-# Base44 exports and anything derived from them never enter git
-exports/
-migrate/data/
-migrate/**/*.json
 *.dump
 *.sql.gz
 # service-account keys

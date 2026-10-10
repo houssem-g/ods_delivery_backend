@@ -1,8 +1,8 @@
 """UserProfile: the customer profile, stored on `users` (+ default `user_addresses` row).
 
-Base44 rules (base44/entities/UserProfile.jsonc):
+Rules:
 - create: only for oneself (`user_id == user.email`); a second create updates the
-  existing profile instead of making a duplicate (Base44 made 3 duplicates);
+  existing profile instead of making a duplicate;
 - read / update: oneself or an admin; delete: admin (the account stays, only the
   customer profile goes away);
 - field rules: is_active and is_blacklisted are written by admins only; the
@@ -96,7 +96,7 @@ FIELDS: dict[str, LegacyField] = {
         "boolean",
     ),
     "phone_verification_available": LegacyField(_whatsapp_on(), "boolean"),
-    # An admin's app role is 'admin'; his profile keeps the customer side (as in Base44).
+    # An admin's app role is 'admin'; his profile keeps the customer side.
     "role": LegacyField(
         case((users.c.role == "admin", "customer"), else_=cast(users.c.role, Text)), "string"
     ),

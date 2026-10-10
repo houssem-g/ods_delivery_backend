@@ -10,7 +10,7 @@ from app.errors import ApiError
 def coerce_payload(entity: EntityDef, data: Any, allowed: set[str] | frozenset[str]) -> dict[str, Any]:
     """Allowed legacy fields, converted to Python values (Decimal, datetime, UUID...).
 
-    Unknown or non-writable keys are ignored, as Base44 ignored them: the front
+    Unknown or non-writable keys are ignored: the front
     spreads whole objects (id, created_date...) into its updates. A writable field
     with a value of the wrong type is a 400.
     """

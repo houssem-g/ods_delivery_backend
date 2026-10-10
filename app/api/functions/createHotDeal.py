@@ -1,5 +1,5 @@
 """createHotDeal — the courier resells the goods of an order whose customer stopped answering
-(base44/functions/createHotDeal; rules in app/services/hot_deals.py).
+(rules in app/services/hot_deals.py).
 
 Body: { order_id, discount_percentage?, delivery_fee?, photo_url?, lang?, floor_price? (the lowest
 price the deal decays to: ≥ 30 % of the start price, ≤ it; default max(start − 4 × 0.5, 30 %)) }.

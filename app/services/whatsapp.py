@@ -1,25 +1,25 @@
 """WhatsApp template messages (Meta Cloud API) with an SMS fallback (WinSMS).
 
-Port of base44/functions/sendWhatsAppMessage + the status part of whatsappWebhook.
+sendWhatsAppMessage + the status part of whatsappWebhook.
 OFF until the settings exist: without WHATSAPP_TOKEN + WHATSAPP_PHONE_NUMBER_ID
 (WINSMS_API_KEY + WINSMS_SENDER for SMS) nothing leaves the server, an
 `outbound_messages` row with status "disabled" is written and the call succeeds.
 `MESSAGING_DISABLED=true` is the kill switch.
 
 Entry points (all take the caller's session; the caller commits):
-    send_template(...)     the Deno `send` action
+    send_template(...)     the `send` action
     fallback(log_id)       WhatsApp row -> SMS (webhook "failed")
     check_pending(order)   SMS for critical WhatsApp not delivered in time + due retries
     summary(key)           what happened to a message (+ its SMS)
     apply_statuses(events) webhook status callbacks
-They answer `(status_code, json)` exactly like the Deno actions.
+They answer `(status_code, json)` like the function's actions.
 
 Reliability: strict +216 mobile validation (anti SMS/WA pumping); a foreign mobile only when it
 is the user's verified phone (or for the verification code itself, rate-limited upstream),
 per-number and global limits, idempotency key (unique column), retries with backoff
 on transient errors, SMS on immediate failure / webhook "failed" / critical message not
 "delivered" within WHATSAPP_FALLBACK_SECONDS.
-The HTTP calls run inside the caller's transaction (as on Base44); every call has a
+The HTTP calls run inside the caller's transaction; every call has a
 timeout (MESSAGING_HTTP_TIMEOUT_SECONDS) and at most 3 WhatsApp / 2 SMS attempts.
 """
 
@@ -467,7 +467,7 @@ async def send_template(
     critical: bool = False,
     international: bool = False,
 ) -> Result:
-    """The Deno `send` action. `user_id` gives the phone, language and opt-in when `to` is absent.
+    """The `send` action. `user_id` gives the phone, language and opt-in when `to` is absent.
 
     Tunisian mobiles only, except a foreign mobile that is the user's verified phone, or any
     foreign mobile when `international` (the verification code itself)."""

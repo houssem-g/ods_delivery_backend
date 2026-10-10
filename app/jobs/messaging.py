@@ -1,12 +1,11 @@
 """Messaging jobs: WhatsApp/SMS pending checks (5 min) and the hourly test-data purge.
 
-- `whatsapp_check_pending`: port of sendWhatsAppMessage `check_pending` (sweepNoResponse
-  called it every 5 min on Base44): SMS for critical WhatsApp messages not delivered
-  within WHATSAPP_FALLBACK_SECONDS, retries of transient failures.
-- `test_data_purge`: port of sweepExpiredTestData. Its only work on Base44 was on
+- `whatsapp_check_pending`: port of sendWhatsAppMessage `check_pending`: SMS for critical
+  WhatsApp messages not delivered within WHATSAPP_FALLBACK_SECONDS, retries of transient failures.
+- `test_data_purge`: port of sweepExpiredTestData. Its only work is on
   ResaleOrder (expired unsold hot deals, `test:` deals), which the hot-deals port owns:
   it plugs its step in with `@purge_step("hot_deals")` (HOOK below). Each step runs in
-  its own transaction and returns counters merged into the summary (Deno metric names:
+  its own transaction and returns counters merged into the summary (metric names:
   `expired_deals_deleted`, `test_run_deals_deleted`); a failing step is counted in
   `failed_steps` and does not stop the others.
 """

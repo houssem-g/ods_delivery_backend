@@ -57,7 +57,7 @@ class SignedIn:
 
 
 def serialize_me(user: User) -> dict[str, Any]:
-    """Base44-like User object (`auth.me()`): role is 'admin' or 'user'."""
+    """Legacy User object (`auth.me()`): role is 'admin' or 'user'."""
     return {
         "id": str(user.id),
         "email": user.email,

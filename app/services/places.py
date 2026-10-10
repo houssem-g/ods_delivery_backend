@@ -1,20 +1,18 @@
 """Place search over `places` (ex-PlaceIndex) and `shops`: ports of searchPlaces,
 searchByBbox and the places side of geocodeAddress.
 
-Base44 loaded the 1 000-4 000 "best" PlaceIndex rows and filtered them in memory, so
-anything outside that slice was invisible. Here the radius / bounding box is a PostGIS
-query over every place, and the Deno text scores are computed in SQL:
+The radius / bounding box is a PostGIS query over every place (never a
+pre-loaded "best" slice filtered in memory), and the text scores are computed in SQL:
 
 - a query token matches a place when it is a substring of `places.search_norm`
   (normalized name, address, city: `LIKE '%token%'`, trigram index) or of the place's
   normalized category (the category vocabulary is small: matched in Python, then
   `category IN (...)`);
-- scores, filters, rounding and sort keys follow the Deno code, so result order is the same.
+- scores, filters, rounding and sort keys follow the front's expectations, so result order is stable.
 
 Deliberate difference: the governorate / city filters only drop places whose governorate
-/ city is *known and different*. On Base44 they required an exact match although 19 of
-the 10 705 places had a governorate, which emptied most searches (the radius already
-bounds the area).
+/ city is *known and different*: an exact match would empty most searches, since few
+places have a governorate (the radius already bounds the area).
 """
 
 import math
@@ -35,7 +33,7 @@ places = Place.__table__
 shops = Shop.__table__
 
 EARTH_RADIUS_M = 6_371_000.0
-DEFAULT_QUALITY = 0.6  # Deno: Number(place.quality_score || 0.6)
+DEFAULT_QUALITY = 0.6  # Number(place.quality_score || 0.6)
 
 
 def js_round(value: float, digits: int = 0) -> float:
@@ -64,7 +62,7 @@ def point(lat: float, lng: float) -> ColumnElement[Any]:
 
 
 def quality_fraction(column: Any = places.c.quality_score) -> ColumnElement[float]:
-    """quality_score (percent) as the 0-1 number Base44 stored; NULL stays NULL."""
+    """quality_score (percent) as the legacy 0-1 number; NULL stays NULL."""
     return cast(column, Float) / 100.0
 
 
@@ -96,7 +94,7 @@ async def lenient_filter(session: AsyncSession, column: Any, requested: Any) -> 
 
 
 def same_category(place_category: Any, requested: Any) -> bool:
-    """Deno searchPlaces `sameCategory` (an empty place category matches everything)."""
+    """searchPlaces `sameCategory` (an empty place category matches everything)."""
     if not requested:
         return True
     place_norm = text_norm.normalize_text(place_category)
@@ -116,7 +114,7 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
 
 
 def bbox_category_matches(value: Any, requested: Any) -> bool:
-    """Deno searchByBbox `matchesCategory`."""
+    """searchByBbox `matchesCategory`."""
     if not requested:
         return True
     requested_norm = text_norm.fold_trim(requested)
@@ -326,7 +324,7 @@ class Bbox:
 
 
 def validate_bbox(bbox: Bbox) -> str | None:
-    """Deno `validateBbox`: the error message, or None."""
+    """`validateBbox`: the error message, or None."""
     if not (math.isfinite(bbox.min_lat) and math.isfinite(bbox.max_lat)):
         return "Invalid latitude values"
     if not (math.isfinite(bbox.min_lng) and math.isfinite(bbox.max_lng)):
@@ -419,7 +417,7 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
             "category": category,
             "lat": row.lat,
             "lng": row.lng,
-            "rating": 0,  # Shop has no rating / review_count: always 0 on Base44 too
+            "rating": 0,  # Shop has no rating / review_count: always 0
             "review_count": 0,
             "phone": row.phone or "",
             "address": row.address or "",
@@ -509,7 +507,7 @@ GEOCODE_CANDIDATES = 2000
 async def geocode_from_places(
     session: AsyncSession, tokens: list[str], city: str | None, governorate: str | None
 ) -> dict[str, Any] | None:
-    """Deno geocodeAddress: best place by token similarity on name + address + city,
+    """geocodeAddress: best place by token similarity on name + address + city,
     +0.15 when the city matches, + up to 0.1 for quality; accepted from 0.34."""
     if not tokens:
         return None
@@ -556,8 +554,8 @@ async def geocode_from_places(
 
 
 async def backfill_search_norm(session: AsyncSession, batch: int = 1000) -> int:
-    """Computes name_norm / search_norm where they are missing (rows imported from Base44:
-    4 706 had no name_norm, none has search_norm). Returns the number of rows fixed."""
+    """Computes name_norm / search_norm where they are missing (imported
+    rows).  Returns the number of rows fixed."""
     fixed = 0
     while True:
         rows = (

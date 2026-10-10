@@ -1,4 +1,4 @@
-"""acceptOrderOffer — the customer picks one courier's offer (base44/functions/acceptOrderOffer).
+"""acceptOrderOffer — the customer picks one courier's offer.
 
 One transaction under the order lock: the offer accepted, the others rejected, the order
 assigned with the fee of the offer (never a client value), accepted_at set. No customer is refused

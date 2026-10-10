@@ -122,7 +122,7 @@ async def test_login_failures(client, factory):
     assert refused.status_code == 403 and error_of(refused) == "account_disabled"
 
 
-# --- account setup (accounts imported from Base44 without a password) --------------------
+# --- account setup (accounts imported without a password) --------------------
 
 
 async def test_account_setup_flow(client, factory):
@@ -351,7 +351,7 @@ async def test_me_get_and_patch(client, factory):
 # --- rate limiting --------------------------------------------------------------------------------
 
 
-async def test_rate_limit_answers_429_with_the_base44_wording(client):
+async def test_rate_limit_answers_429_with_the_legacy_wording(client):
     responses = [
         await client.post("/api/auth/resend-otp", json={"email": "x@example.test"}) for _ in range(8)
     ]

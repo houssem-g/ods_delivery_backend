@@ -2,8 +2,7 @@
 
 Per category: Tunisia split in 3 x 2 tiles, node + way + relation (`out center`),
 failed tiles retried once, elements deduplicated by `type/id`, unnamed ones skipped,
-then one bulk upsert on `osm_id` (Base44 upserted one row at a time with 429
-back-off). Seven unified FR categories (the UI vocabulary): cafés are merged into
+then one bulk upsert on `osm_id`. Seven unified FR categories (the UI vocabulary): cafés are merged into
 restaurant, ATMs into banque, groceries/markets into supermarché.
 
 The Overpass calls happen before any database write, so no connection is held while
@@ -133,7 +132,7 @@ def governorate_of(tags: dict[str, Any]) -> str:
 
 
 def quality_score(tags: dict[str, Any]) -> int:
-    """Deno qualityScore (0.5 + completeness bonuses, max 1) as a percent."""
+    """qualityScore (0.5 + completeness bonuses, max 1) as a percent."""
     score = 50
     if tags.get("name"):
         score += 10
@@ -158,7 +157,7 @@ def _name(tags: dict[str, Any]) -> str | None:
 
 
 def element_to_place(element: dict[str, Any], category: str, source_ts: datetime) -> dict[str, Any] | None:
-    """Deno elementToPlace → a `places` row (None when unnamed or without coordinates)."""
+    """elementToPlace: a `places` row (None when unnamed or without coordinates)."""
     tags = element.get("tags") or {}
     center = element.get("center") or {}
     lat = element.get("lat", center.get("lat"))

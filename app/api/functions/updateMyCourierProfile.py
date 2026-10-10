@@ -1,5 +1,4 @@
-"""updateMyCourierProfile — the only way a courier writes his own profile
-(base44/functions/updateMyCourierProfile).
+"""updateMyCourierProfile — the only way a courier writes his own profile.
 
 Body:
   { action: 'create', fields }  onboarding: verification 'pending', offline; the ID photo is the

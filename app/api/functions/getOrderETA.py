@@ -1,5 +1,5 @@
-"""getOrderETA — time for the courier to reach the shop (before the purchase) or the customer
-(base44/functions/getOrderETA): OSRM route when reachable (timeout), straight-line estimate at
+"""getOrderETA — time for the courier to reach the shop (before the purchase) or the customer:
+OSRM route when reachable (timeout), straight-line estimate at
 the vehicle's speed otherwise. The order's parties and admins only.
 
 Body: { order_id }. Returns { success, order_id, status, eta_minutes, distance_km, source | reason }.

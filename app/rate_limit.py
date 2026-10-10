@@ -35,7 +35,7 @@ def ip_key(request: Request) -> str:
 
 
 async def rate_limit_exceeded(_: Request, exc: RateLimitExceeded) -> JSONResponse:
-    # "Rate limit exceeded" is the text the front's rateGate matches (Base44 wording).
+    # "Rate limit exceeded" is the text the front's rateGate matches.
     return JSONResponse(
         {
             "error": "rate_limited",

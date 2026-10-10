@@ -1,4 +1,4 @@
-"""expire_stale_orders (scenarios of base44/tests/expire_stale_orders_test.ts), orphan offers,
+"""expire_stale_orders, orphan offers,
 courier presence expiry, and the job registrations."""
 
 import asyncio

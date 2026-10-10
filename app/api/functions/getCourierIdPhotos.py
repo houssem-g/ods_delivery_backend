@@ -1,5 +1,5 @@
-"""getCourierIdPhotos — admin only: 5-minute links to couriers' ID document photos
-(base44/functions/getCourierIdPhotos). The private key itself is never answered.
+"""getCourierIdPhotos — admin only: 5-minute links to couriers' ID document photos.
+The private key itself is never answered.
 
 Body: { courier_ids: string[] } (at most 50). Returns { success, photos: { [courier_id]:
 { url, private: true, expires_at } } } — couriers without a photo are absent.

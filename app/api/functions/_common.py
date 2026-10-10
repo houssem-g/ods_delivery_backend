@@ -19,7 +19,7 @@ Handler = Callable[[dict[str, Any], CurrentUser, AsyncSession, Request], Awaitab
 
 
 def answers_refusals(handler: Handler) -> Handler:
-    """A business refusal raised by a service becomes the Deno answer `{error, ...}`."""
+    """A business refusal raised by a service becomes the answer `{error, ...}`."""
 
     @functools.wraps(handler)
     async def wrapped(
@@ -43,7 +43,7 @@ def as_uuid(value: Any) -> uuid.UUID | None:
 async def document(
     session: AsyncSession, entity: str, user: CurrentUser, doc_id: Any
 ) -> dict[str, Any] | None:
-    """The legacy document as `user` may read it (what the Deno function returned)."""
+    """The legacy document as `user` may read it (what the function answers)."""
     definition = get_entity(entity)
     assert definition is not None
     return await get_document(session, definition, user, str(doc_id))

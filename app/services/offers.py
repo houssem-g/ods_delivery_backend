@@ -26,9 +26,7 @@ from app.services.order_texts import short_name
 from app.services.orders import OrderRefused, courier_of_user, dropped_by
 from app.services.safety import is_blocked
 
-MAX_FEE_TND = Decimal(
-    "200"
-)  # order_offers / orders CHECK (the Deno function allowed 500; none above 200 exist)
+MAX_FEE_TND = Decimal("200")  # order_offers / orders CHECK
 MESSAGE_MAX = 300
 MAX_EDITS = 10  # price changes of one offer (updateOrderOffer)
 EDIT_PUSH_EVERY = timedelta(minutes=2)  # at most one push to the customer per offer in this window

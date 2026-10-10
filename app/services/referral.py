@@ -69,7 +69,7 @@ async def resolve_code(session: AsyncSession, raw_code: Any, caller: CurrentUser
         "code": code,
         "courier_id": str(courier.id),
         "first_name": first_name(courier.display_name),
-        # never rated: no rating shown (Base44 showed the default 5 once a delivery existed)
+        # never rated: no rating shown (not a default 5)
         "rating": rating,
         "total_deliveries": deliveries,
         "vehicle_type": courier.vehicle or None,
@@ -101,7 +101,7 @@ async def ensure_code(session: AsyncSession, courier: Courier) -> str:
 
 
 def signup_attribution(courier: Courier) -> Any:
-    """SQL: customers attributed to this courier at sign-up (Deno isSignupAttribution)."""
+    """SQL: customers attributed to this courier at sign-up (isSignupAttribution)."""
     return and_(
         User.referred_by_courier_id == courier.id,
         User.id != courier.user_id,

@@ -129,7 +129,7 @@ async def pause(seconds: float) -> None:
 
 
 async def overpass_query(query: str) -> dict[str, Any]:
-    """Runs an Overpass QL query on the first endpoint that answers (Deno `overpassFetch`)."""
+    """Runs an Overpass QL query on the first endpoint that answers."""
     last_error: Exception | None = None
     for endpoint in settings.OVERPASS_URLS:
         try:

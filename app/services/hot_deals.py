@@ -1,5 +1,5 @@
 """Hot deals ("Revente - Offre Chaude"): a courier resells the goods of an order whose customer
-stopped answering; another customer reserves them. Ports of base44/functions/createHotDeal,
+stopped answering; another customer reserves them. createHotDeal,
 reserveHotDeal, listHotDeals and the ResaleOrder part of sweepExpiredTestData.
 
 createHotDeal (courier of the order): only goods already bought (purchased / on_the_way /

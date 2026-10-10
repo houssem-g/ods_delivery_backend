@@ -1,5 +1,5 @@
-"""getCancellationPolicy — what cancelling would mean now, for the order's customer or courier
-(base44/functions/getCancellationPolicy). Parties and admins only.
+"""getCancellationPolicy — what cancelling would mean now, for the order's customer or courier.
+Parties and admins only.
 
 Body: { order_id, actor?: 'customer'|'courier' }. Returns { success, actor, order_id, status, policy }.
 """

@@ -1,7 +1,7 @@
-"""POST /api/functions/{name} — the Base44 `functions.invoke(name, payload)` surface.
+"""POST /api/functions/{name} — the legacy `functions.invoke(name, payload)` surface.
 
 The body is the payload the front sends today; the answer is the JSON (and status)
-the Deno function returned. The handler's writes are committed when it answers
+the front expects. The handler's writes are committed when it answers
 < 400, rolled back otherwise.
 """
 

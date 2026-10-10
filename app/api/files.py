@@ -1,7 +1,7 @@
-"""Uploads and signed URLs: back Base44 `integrations.Core.UploadFile` ({file_url}),
+"""Uploads and signed URLs: back the legacy `integrations.Core.UploadFile` ({file_url}),
 `UploadPrivateFile` ({file_uri}) and `CreateFileSignedUrl` ({signed_url}).
 
-Unlike Base44 (any signed-in user could sign any private URI he knew), a private
+A private
 file is signed only for its owner or an admin, and courier ID documents are never
 signed here: only the admin function (getCourierIdPhotos) does.
 """

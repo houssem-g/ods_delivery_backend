@@ -1,6 +1,6 @@
 """sendNotificationIfEnabled called from the front: who may notify whom.
 
-Port of base44/functions/sendNotificationIfEnabled (the internal-key path is gone:
+sendNotificationIfEnabled (no internal-key path:
 our own services call `notifications.notify` directly). Callers allowed:
   - an admin, or the user himself;
   - a party of `order_id` notifying the OTHER party with a type that side may send
@@ -62,7 +62,7 @@ async def _email_of(session: AsyncSession, user_id: uuid.UUID | None) -> str | N
 
 
 async def recipient_email(session: AsyncSession, ref: str) -> str | None:
-    """An e-mail as is; a courier profile id (uuid, or its Base44 id) → its owner's e-mail."""
+    """An e-mail as is; a courier profile id (uuid, or its legacy id) → its owner's e-mail."""
     if "@" in ref:
         return ref
     as_uuid = None

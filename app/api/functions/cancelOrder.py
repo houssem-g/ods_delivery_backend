@@ -1,5 +1,4 @@
-"""cancelOrder — the customer or the assigned courier cancels (base44/functions/cancelOrder;
-rules in app/services/cancellation.py).
+"""cancelOrder — the customer or the assigned courier cancels (rules in app/services/cancellation.py).
 
 Body: { order_id, reason, cancelled_by: 'customer'|'courier', courier_id? }.
 Returns { success, message }. Errors: 'Missing required fields' / 'Invalid cancelled_by' /

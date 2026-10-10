@@ -1,4 +1,4 @@
-"""WhatsApp (Meta) + SMS (WinSMS): the Deno messaging_test.ts cases against the real database,
+"""WhatsApp (Meta) + SMS (WinSMS): messaging cases against the real database,
 the webhook route (signature, challenge), the admin function and the messaging jobs.
 Every HTTP call goes to an httpx.MockTransport (fixture `http`)."""
 

@@ -1,4 +1,4 @@
-"""ShopReview: reviews of a shop or a place (base44/entities/ShopReview.jsonc, ShopDetails).
+"""ShopReview: reviews of a shop or a place (ShopDetails).
 
 The front keys a review by `shop_osm_id`, which is 'shop:<Shop id>' (map), an OSM id,
 or 'place:<name>@<lat>,<lng>' (search lists without an id). The key is stored as sent
@@ -6,10 +6,10 @@ or 'place:<name>@<lat>,<lng>' (search lists without an id). The key is stored as
 (`shop_id` / `place_id`) so the name follows the catalogue.
 
 Read: everybody signed in. Create: any signed-in user, for himself (`user_id` = the
-caller's User id when sent — Base44 rule), rating 1-5, photos = our public uploads,
+caller's User id when sent), rating 1-5, photos = our public uploads,
 one review per user and key (409 already_reviewed). `user_name` / `shop_name` are
 derived (author / shop), not taken from the body. Delete: the author or an admin.
-Update: nobody from the front (Base44: admins; unused) → 403.
+Update: nobody from the front (unused) → 403.
 """
 
 import re

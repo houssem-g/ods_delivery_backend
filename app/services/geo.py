@@ -1,4 +1,4 @@
-"""Small geographic helpers shared by the order services (same formulas as the Deno functions)."""
+"""Small geographic helpers shared by the order services."""
 
 import math
 from typing import Any

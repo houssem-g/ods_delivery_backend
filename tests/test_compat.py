@@ -104,7 +104,7 @@ async def test_filter_by_id_and_dates(client, people):
     assert emails(await listing(client, people["admin"], q={"id": str(ali.id)})) == ["ali@example.test"]
     future = (datetime.now(UTC) + timedelta(days=1)).isoformat()
     assert emails(await listing(client, people["admin"], q={"created_date": {"$gt": future}})) == []
-    past = "2000-01-01T00:00:00.000000"  # naive = UTC, as Base44 writes it
+    past = "2000-01-01T00:00:00.000000"  # naive = UTC, as legacy clients write it
     assert len(emails(await listing(client, people["admin"], q={"created_date": {"$gte": past}}))) == 3
 
 
@@ -490,7 +490,7 @@ async def test_app_settings_admin_writes_everyone_reads(client, factory):
     assert (await client.delete("/api/entities/AppSettings/main", headers=auth(admin))).status_code == 404
 
 
-async def test_non_object_body_is_ignored_like_base44(client, factory):
+async def test_non_object_body_is_ignored(client, factory):
     admin = await factory.user(role="admin")
     response = await client.post("/api/entities/AppSettings", json=["key"], headers=auth(admin))
     assert response.status_code == 400  # no key

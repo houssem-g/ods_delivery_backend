@@ -1,8 +1,8 @@
 # ODS Delivery API
 
-Backend replacing Base44 for the ODS Delivery app (FastAPI, PostgreSQL 17 + PostGIS,
-SQLAlchemy 2 async, Alembic). Design: `docs/ARCHITECTURE.md`. Field mapping from the
-Base44 entities: `docs/FIELD_MAPPING.md`. How to add entities / functions / events /
+Backend of the ODS Delivery app (FastAPI, PostgreSQL 17 + PostGIS, SQLAlchemy 2 async,
+Alembic). Design: `docs/ARCHITECTURE.md`. Field mapping of the legacy entities:
+`docs/FIELD_MAPPING.md`. How to add entities / functions / events /
 jobs: `docs/COMPAT_GUIDE.md`.
 
 ## Quickstart (local only)
@@ -35,7 +35,7 @@ set one via account-setup) and the Playwright QA accounts, whose passwords are r
 at run time from `../ods-delivery/tests/helpers/constants.ts` (or `TEST_*` env vars).
 
 Production-like stack (API image without reload on 8111, front image on 5191):
-`make up-full`. Every command, backups, reset, Base44 import, Playwright against the
+`make up-full`. Every command, backups, reset, Playwright against the
 local stack, troubleshooting and what the cloud will need: `docs/RUNBOOK_LOCAL.md`.
 
 ## Everyday commands
@@ -50,13 +50,13 @@ make down          # stop the stack (volumes kept)
 ```
 
 Tests need `make deps` running; the file tests are skipped when MinIO is down.
-Nothing here talks to Base44, staging or production.
+Nothing here talks to staging or production.
 
 ## Layout
 
 ```
 app/api        routers (auth, entities, functions, files, ws, admin, health)
-app/api/functions  one module per Base44 function (file name = function name)
+app/api/functions  one module per function (file name = function name)
 app/compat     legacy document shapes: registry, filter translator, entities
 app/models     SQLAlchemy models (mirror the migrations; `alembic check` is clean)
 app/migrations Alembic

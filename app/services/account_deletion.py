@@ -1,8 +1,7 @@
 """deleteMyAccount: erase the caller's personal data (Google Play account deletion, GDPR).
 
-Base44 deleted the customer's orders and profiles. Here (audit §6.2) the account is
-**anonymized** instead: orders are accounting records and every foreign key to users /
-couriers is RESTRICT.
+The account is **anonymized** (audit §6.2), not deleted: orders are accounting
+records and every foreign key to users / couriers is RESTRICT.
 
 - Refused (409 order_in_progress + ids) while an order is not terminal, as customer or
   as courier (client_no_response included: the courier is at the door with goods).
@@ -169,7 +168,7 @@ async def _anonymize_customer_orders(session: AsyncSession, user: User, counts: 
         )
     ).scalars()
     ids = list(orders)
-    counts["customer_orders"] = 0  # Base44 deleted them; they are kept (anonymized) now
+    counts["customer_orders"] = 0  # kept (anonymized), never deleted
     counts["customer_orders_anonymised"] = len(ids)
     for order_id in ids:
         emit(session, "Order", "update", order_id)

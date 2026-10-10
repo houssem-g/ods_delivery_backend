@@ -1,6 +1,6 @@
 # Runbook — local stack
 
-Everything here is **local**: nothing talks to Base44, staging or production. The cloud
+Everything here is **local**: nothing talks to staging or production. The cloud
 deployment (repository `ods-iac`, namespace `delivery`) comes later; the last section
 lists what it will need.
 
@@ -8,8 +8,8 @@ Two repositories side by side:
 
 | Path | What |
 |---|---|
-| `ods_delivery_backend/` (this repo) | API, compose stack, DB tooling, Base44 import |
-| `ods-delivery-own-backend/` | front, worktree of `ods-delivery` on branch **`feat/own-backend`** (never `main`: Base44 publishes `main`) |
+| `ods_delivery_backend/` (this repo) | API, compose stack, DB tooling |
+| `ods-delivery-own-backend/` | front, worktree of `ods-delivery` on branch **`feat/own-backend`** |
 
 ## 1. Ports
 
@@ -57,7 +57,7 @@ cd ../ods-delivery-own-backend && npm ci && npm run dev:ods     # http://localho
 | `make precommit` | pre-commit hooks on every file (ruff, end-of-file, private keys, gitleaks) |
 | `make audit` | pip-audit of `uv.lock` (`AUDIT_ARGS="--ignore-vuln ID"`) |
 | `make shell-db` | psql on `ods_delivery` |
-| `make backup` / `restore` / `db-counts` / `reset-local` / `import-local` | §5, §6 |
+| `make backup` / `restore` / `db-counts` / `reset-local` | §5 |
 
 `make up` and `make run` both use port 8110: use one or the other. `make up-full` does not
 start the dev `api`, so it coexists with `make run` + `npm run dev:ods` (5190 → 8110 and
@@ -132,27 +132,7 @@ docker compose exec db psql -U ods_delivery -d postgres -c 'DROP DATABASE ods_de
 After a `reset-local` or a `restore FORCE=1` of the database a running API uses, the API
 reconnects by itself (the job leader retries every 30 s); restart it to be sure.
 
-## 6. Importing the Base44 data
-
-The export is taken beforehand (docs/MIGRATION.md §1; `migrate/export.mjs`) into
-`~/ODS-backups/migration/<YYYY-MM-DD>/` (mode 600, never in git).
-
-```bash
-make reset-local                    # optional: start from an empty, migrated, seeded database
-make import-local                   # latest export dir, --files, into ods_delivery
-make import-local ARGS="--dry-run"  # transform + import in a rolled-back transaction
-make import-local DB=other EXPORT_DIR=~/ODS-backups/migration/2026-09-28 ARGS=""
-```
-
-`import-local` picks the directory with the latest name under `EXPORT_ROOT`
-(default `~/ODS-backups/migration`) that contains entity JSON files, and runs
-`python -m migrate.pipeline` (transform → idempotent import → verify → report). Default
-`ARGS="--files"`: the exported files are uploaded to the bucket of `S3_ENDPOINT_URL`
-(the local MinIO). Exit code ≠ 0 when verify is red; the report is written to
-`<export dir>/_report.md`. A rerun on the same export changes nothing. The general form
-(any database URL) stays `make import-base44 EXPORT_DIR=… DATABASE_URL=…`.
-
-## 7. Playwright suites of the front against the local stack
+## 6. Playwright suites of the front against the local stack
 
 In the front worktree (`../ods-delivery-own-backend`), with the backend seeded (the QA
 accounts come from `tests/helpers/constants.ts`):
@@ -161,7 +141,7 @@ accounts come from `tests/helpers/constants.ts`):
 # client unit tests + ods Welcome smoke (mocked API, no backend needed)
 npm run test:ods-client
 
-# dev server (start it first: the default config would otherwise start the Base44 dev server)
+# dev server (start it first)
 npm run dev:ods &                                   # 5190 -> API 8110 (make run or make up)
 BASE_URL=http://127.0.0.1:5190 npx playwright test tests/auth.spec.ts --project=chromium
 
@@ -171,12 +151,11 @@ BASE_URL=http://127.0.0.1:5191 npx playwright test tests/customer.spec.ts --proj
 ```
 
 `playwright.config.ts` reuses a server already listening on `BASE_URL` (outside CI); it
-never has to start one when you run against 5190 or 5191. Suites that only make sense on
-Base44 (rate budget, RLS JSON evaluation, published-app audits) are expected to fail here.
+never has to start one when you run against 5190 or 5191.
 Use `localhost` rather than `127.0.0.1` when you sign in by hand: the refresh cookie is set
 for the API host, and `localhost` / `127.0.0.1` are different sites for the browser.
 
-## 8. Troubleshooting
+## 7. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -192,7 +171,7 @@ for the API host, and `localhost` / `127.0.0.1` are different sites for the brow
 | tests fail with "tests only run against a database named ods_delivery_test" | `TEST_DATABASE_URL` must point to a database whose name contains `ods_delivery_test` |
 | `make audit` fails on `ecdsa` (PYSEC-2026-1325, no fix) | transitive dependency of `python-jose`; tokens are HS256, the ECDSA code is never used. Track it; replacing `python-jose` by `PyJWT` removes it |
 
-## 9. Cloud later (what `ods-iac` will need)
+## 8. Cloud later (what `ods-iac` will need)
 
 Not done here. Checklist for the namespace `delivery`:
 
@@ -238,8 +217,7 @@ provider's PITR plus a periodic `pg_dump --format=custom` like `make backup`.
 **Object storage**: a DO Spaces bucket (private) with the `public/` prefix anonymously
 readable (bucket policy, or a CDN in front with `S3_PUBLIC_BASE_URL`); presigned GETs are
 signed for `S3_PUBLIC_ENDPOINT_URL`. The files origin goes into the front's CSP
-(`FILES_ORIGIN`). The Base44 files are uploaded by `make import-base44 … ARGS="--files"`
-pointed at the Spaces endpoint during the cutover.
+(`FILES_ORIGIN`).
 
 **Domains and TLS**: one host for the front and one for the API (or one host with `/api`
 routed to the API: then `VITE_API_URL` is that origin). TLS at Traefik / the load

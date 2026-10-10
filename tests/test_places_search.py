@@ -136,7 +136,7 @@ async def test_search_places_text_scores_accents_and_arabic(client, factory):
     assert await top("مَطْعَم") == "مَطْعَم السلام"
     # the category is part of the text haystack
     assert await top("boulangerie") == "Boulangerie El Hana"
-    # partial token (substring of a word), as the Deno `includes`
+    # partial token (substring of a word), as JS `includes`
     assert await top("pizz") == "Pizzeria Roma"
 
 

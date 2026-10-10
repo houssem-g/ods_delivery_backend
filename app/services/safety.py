@@ -10,7 +10,7 @@ An order already running goes on (the delivery is not dropped), only the chat st
 A report is kept in user_reports and every admin gets an in-app notice (user_reported); the
 admin resolves it (and may disable the account from the Utilisateurs tab).
 
-Every function answers `(status, json)` like the Deno functions.
+Every function answers `(status, json)` like the other functions.
 """
 
 import uuid

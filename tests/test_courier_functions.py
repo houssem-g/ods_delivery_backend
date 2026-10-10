@@ -309,7 +309,7 @@ async def test_courier_address_is_the_accounts_default_address(client, world, fa
     assert customer["default_address"] == "7 rue de Tunis" and customer["city"] == "Sousse"
 
 
-# --- trackCourierLocation (base44/tests/live_position_test.ts) ----------------------------------------
+# --- trackCourierLocation -------------------------------------------------------------------------------
 
 
 async def track(client, world, lat=35.83, lng=10.61, user=None, courier_id=None):

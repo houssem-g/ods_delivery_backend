@@ -1,6 +1,6 @@
 """searchByBbox — shops and places inside the map viewport (ShopsMap).
 
-Parameters from the query string or the JSON body (query string first), as on Base44:
+Parameters from the query string or the JSON body (query string first):
 minLat, maxLat, minLng, maxLng (required, Tunisia), category?, search_query?,
 min_rating?, limit (1-100, default 50), cursor? (an offset).
 Answers { success, data: { results, total_count, bbox, cursor_next } }; 400 { error }

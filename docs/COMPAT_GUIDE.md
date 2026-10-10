@@ -1,6 +1,6 @@
 # Compat layer guide: adding an entity, a function, an event, a job
 
-The front keeps calling a Base44-shaped client (`ods-delivery/src/api/odsClient.js`,
+The front calls a legacy-shaped client (`ods-delivery/src/api/odsClient.js`,
 contract in `ods-delivery-own-backend/docs/OWN_BACKEND_CLIENT.md` §5-7). This backend
 answers it from normalized tables. Worked examples to copy:
 `app/compat/entities/user_profile.py`, `app/compat/entities/app_settings.py`,
@@ -19,7 +19,7 @@ answers it from normalized tables. Worked examples to copy:
   `403 {error:"permission_denied", message:"Permission denied for <op> operation on E"}`.
 - After a successful hook it emits the realtime event (`create`/`update`/`delete`) and
   commits, then answers the document as the caller may read it.
-- Every route needs a signed-in user (401 otherwise, like Base44's `auth_required`).
+- Every route needs a signed-in user (401 otherwise, `auth_required`).
 
 The read policy and the field guards are **SQL**: they are applied before
 `LIMIT`, in filters and sorts too, so a hidden value can't be probed.
@@ -39,7 +39,7 @@ def _parties(user):                                         # a reusable guard
 
 ENTITY = register(
     EntityDef(
-        name="Order",                                       # the Base44 entity name
+        name="Order",                                       # the legacy entity name
         source=orders.join(customer, customer.c.id == orders.c.customer_id)
                      .outerjoin(...),                       # FROM clause (joins for joined fields)
         id_expr=orders.c.id, id_type="uuid",                # "text" when the id is a key (AppSettings)
@@ -69,16 +69,15 @@ ENTITY = register(
   non-uuid filter value simply matches nothing), `object`, `array` (only `$exists` /
   `null` in filters).
 - `read_guard(user) -> SQL bool`: the value is `NULL` for users where it is false
-  (Base44 field-level read rules: `customer_phone`, `delivery_details`,
+  (field-level read rules: `customer_phone`, `delivery_details`,
   `courier_live_*`, `reported_issues`, `has_issues`, `proposed_by`, ResaleOrder private
   fields...).
 - A field that must never leave the server (e.g. `id_photo_uri`) is simply **not
   declared**: it can't be read, filtered or sorted (unknown field → 400).
 
-`read_policy(user) -> SQL bool` is the row-level rule (translate the entity's
-`rls.read` from `base44/entities/<E>.jsonc`; `{{user.email}}` comparisons become
-uuid comparisons on the FK). Return `false()` for "nobody" (lists come back empty,
-`GET /id` answers 404 — the same as Base44 RLS). Admin = `user.is_admin`.
+`read_policy(user) -> SQL bool` is the row-level rule (e-mail
+comparisons become uuid comparisons on the FK). Return `false()` for "nobody" (lists come back empty,
+`GET /id` answers 404). Admin = `user.is_admin`.
 
 ### Write hooks
 ```python
@@ -120,10 +119,10 @@ AUTH = "user"          # default; "optional" for anonymous callers (getSupportCo
 
 async def handle(payload: dict, user: CurrentUser | None, session: AsyncSession, request: Request) -> tuple[int, dict]:
     ...
-    return 200, {"success": True, ...}      # same keys and status codes as the Deno function
+    return 200, {"success": True, ...}      # the keys and status codes the front expects
 ```
 - The body is the payload the front sends (`{}` when empty or not an object).
-- Answer with the Deno function's JSON and status (400/401/403/404/409/410/429...).
+- Answer with the JSON and status the front expects (400/401/403/404/409/410/429...).
   Business refusals keep their snake_case codes; never put "rate limit" in a message
   that is not the generic limiter (the front would pause its polls).
 - A refusal (status >= 400) is logged at INFO by the router: `function <name> refused <status>
@@ -205,7 +204,7 @@ async def sweep_5min() -> dict:
   (checks no preference itself; `notify` decides).
 - WhatsApp / SMS: `app.services.whatsapp.send_template(session, template_key=, params=,
   idempotency_key=, to= | user_id=, order_id=, critical=)`, `summary(session, key)`,
-  `check_pending(session, order_id)` — `(status, json)` like the Deno actions; OFF (rows
+  `check_pending(session, order_id)` — `(status, json)` like the functions; OFF (rows
   `disabled`) until WHATSAPP_* / WINSMS_* are set. Templates: `customer_no_response`
   (critical, SMS fallback), `courier_on_the_way`, `new_offer`, `verification_code`.
 - Chat: `app.services.messages` (`chat_role`, `courier_user_id`, `load_order`).
@@ -318,7 +317,7 @@ Notifications of the order steps are sent by the server (`app/services/step_noti
 pushed). The installed apps still send them through `sendNotificationIfEnabled` after the call:
 a notice of the same (recipient, order, type) — for `new_offer`, of the same `metadata.offer_id` —
 written in the last 120 s is skipped (`{success, skipped: "duplicate", notification_id}`;
-`notifications.recent_duplicate`). The server also sends what the Deno functions sent themselves:
+`notifications.recent_duplicate`). The server also sends these itself:
 `new_order` (dispatch), `order_cancelled` (cancelOrder, expiry; always pushed), `issue_reported`
 (in-app only), and the price change of an offer (updateOrderOffer: type `new_offer`,
 `data.kind = "offer_updated"`, pushed at most once per offer every 2 min; the app sends nothing

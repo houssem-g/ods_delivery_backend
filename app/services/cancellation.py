@@ -1,4 +1,4 @@
-"""cancelOrder and getCancellationPolicy (base44/functions/cancelOrder, getCancellationPolicy).
+"""cancelOrder and getCancellationPolicy.
 
 Rules kept from the live function:
 - customer: only his order, only while pending / offers_received / accepted;
@@ -262,7 +262,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
         await session.flush()
     else:
         # A customer cancellation keeps the courier on the order: he can still open it and see
-        # that it was cancelled (Base44 kept courier_user_id for that).
+        # that it was cancelled.
         await ot.transition(
             session, order, "cancelled", user, "cancelOrder", reason, cancelled_by=cancelled_by
         )

@@ -223,7 +223,7 @@ async def reset_password(
 async def account_setup(
     request: Request, body: AccountSetupBody, session: AsyncSession = Depends(get_session)
 ) -> JSONResponse:
-    """First sign-in after the migration from Base44: e-mailed 'migrate' code + new password."""
+    """First sign-in of an account without a password: e-mailed 'migrate' code + new password."""
     return await _set_password(session, body.email, body.code, body.new_password, "migrate")
 
 
@@ -417,7 +417,7 @@ async def google_callback(
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Links the Google account and sends the browser back to `next` with `access_token=`
-    (read by the front's app-params, as after Base44's hosted login) + the refresh cookie."""
+    (read by the front's app-params) + the refresh cookie."""
     if (disabled := _google_disabled()) is not None:
         return disabled
     failure = f"{settings.PUBLIC_APP_URL.rstrip('/')}/Welcome"

@@ -11,7 +11,7 @@ case "$DB" in ods_delivery_test*) die "'$DB' is a pytest database (pytest resets
 
 if [[ "${YES:-0}" != "1" ]]; then
   [[ -t 0 ]] || die "not a terminal: add YES=1 to confirm"
-  echo "This DROPS database '$DB' (every row, imported Base44 data included) and recreates it empty."
+  echo "This DROPS database '$DB' (every row) and recreates it empty."
   db_exists "$DB" && echo "Backup first? make backup DB=$DB"
   read -r -p "Type the database name to confirm: " answer
   [[ "$answer" == "$DB" ]] || die "not confirmed"

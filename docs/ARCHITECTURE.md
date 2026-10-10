@@ -1,4 +1,4 @@
-# ODS Delivery — own backend (replaces Base44)
+# ODS Delivery — backend
 
 Source of truth for the design. Written 2026-09-28 from the database audit
 (`ods-delivery/docs/DB_AUDIT.md`, sections 4-6). Everything runs **locally**
@@ -7,27 +7,23 @@ comes after.
 
 ## 1. Goals and non-goals
 
-- Replace every Base44 service the app uses: database, row-level security,
+- Provide every service the app uses: database, row-level security,
   auth (password, e-mail OTP, reset, Google), realtime subscriptions, backend
   functions, scheduled jobs, file uploads (public and private), push (FCM),
   WhatsApp/SMS, OSM places/geocoding.
-- **Front changes stay small**: the app keeps calling one `base44` object
-  (`src/api/base44Client.js`). In the `ods` build that object is our own client
-  (`src/api/odsClient.js`) with the same surface:
+- **Stable client surface**: the app calls one client object
+  (`src/api/odsClient.js`) with this surface:
   `entities.X.filter/list/get/create/update/delete/subscribe`,
   `functions.invoke(name, payload)`, `auth.*`, `integrations.Core.*`,
-  `appLogs.logUserInApp`. The existing Playwright suites (which drive
-  `window.__base44`) are replayed unchanged against the local stack.
+  `appLogs.logUserInApp`. The Playwright suites run against the local stack.
 - **The database is normalized** (audit §6.2): real FKs, uuid keys, numeric
   money, PostGIS, derived counters, append-only status events. The legacy
   document shape exists only at the API edge (`app/compat/`).
 - **No generic write path**: an entity write coming from the front is accepted
   only through an explicit per-entity policy (whitelisted fields, owner checks,
   status transition matrix) that calls the same domain services as the
-  functions. What Base44 left "still open" (courier writing status and amounts
-  directly) is closed here.
-- Non-goals now: cloud manifests, the cutover itself (scripts are built and
-  rehearsed locally), iOS native.
+  functions. A courier never writes status or amounts directly.
+- Non-goals now: iOS native.
 
 ## 2. Stack
 
@@ -42,9 +38,9 @@ comes after.
 | Files | S3 API (MinIO locally, DO Spaces in the cloud): private bucket, presigned PUT/GET; `public/` prefix for shop/hot-deal photos |
 | Push | firebase-admin (FCM HTTP v1); provider `log` when no credentials (writes `push_deliveries`, used by tests) |
 | E-mail | SMTP (Mailpit locally); `EMAIL_PROVIDER=log` in unit tests |
-| WhatsApp / SMS | Meta Cloud API + WinSMS ports of the Deno code, **off** unless configured (same as today) |
+| WhatsApp / SMS | Meta Cloud API + WinSMS, **off** unless configured (same as today) |
 | Maps | Nominatim (geocode), Overpass (OSM refresh), OSRM (ETA), all with timeouts + fallbacks; `places` in PostGIS with trigram search |
-| Rate limiting | slowapi per user/IP (generous; Base44's 150 ops/min limit disappears) |
+| Rate limiting | slowapi per user/IP (generous) |
 | Quality | ruff, pytest (+pytest-asyncio, httpx), real Postgres in tests, coverage ≥ 80 % on services |
 
 ## 3. Local stack (docker compose, project name `odsdlv`)
@@ -60,8 +56,8 @@ comes after.
 | `front` (profile `full`) | 5191 | `Dockerfile.ods` of the front worktree (nginx), talks to 8111 |
 
 Ports avoid the ODS main stack (8000, 5441, 1337, 3000/3001) and 3033/3034.
-`make up`, `make down`, `make migrate`, `make seed`, `make test`, `make lint`,
-`make import-base44` (see §9); `make up-full`, backups, reset and import: `docs/RUNBOOK_LOCAL.md`.
+`make up`, `make down`, `make migrate`, `make seed`, `make test`, `make lint`;
+`make up-full`, backups and reset: `docs/RUNBOOK_LOCAL.md`.
 
 ## 4. Repository layout
 
@@ -83,9 +79,8 @@ app/
   storage/           S3 presign, key conventions, public/private
   integrations/      http clients: nominatim, overpass, osrm, fcm, meta whatsapp, winsms, smtp
 tests/               pytest: unit (services), api (httpx against the app + real db), realtime, jobs
-migrate/             export (Base44 → JSON), transform, import (idempotent), verify
 scripts/             seed_local.py (QA accounts), check_single_head.py
-docs/                this file, API.md, MIGRATION.md, RUNBOOK_LOCAL.md
+docs/                this file, FIELD_MAPPING.md, COMPAT_GUIDE.md, RUNBOOK_LOCAL.md
 docker-compose.yml, Dockerfile, Makefile, .env.example, pyproject.toml, .github/workflows/ci.yml
 ```
 
@@ -94,7 +89,7 @@ docker-compose.yml, Dockerfile, Makefile, .env.example, pyproject.toml, .github/
 Audit §6.2 is the reference DDL. Rules:
 - uuid PKs (bigint identity for append-only logs), every reference a real FK
   with an explicit `ON DELETE`.
-- `users` = Base44 `User` + `UserProfile` merged; `couriers` 1:1 optional.
+- `users` = legacy `User` + `UserProfile` merged; `couriers` 1:1 optional.
   E-mail is `citext UNIQUE`, never a FK.
 - Money `numeric(10,3)`; timestamps `timestamptz`; geo `geography(Point,4326)`.
 - `orders` + `order_stops` + `order_status_events` + `order_offers` +
@@ -112,14 +107,14 @@ Audit §6.2 is the reference DDL. Rules:
 - Counters are derived (`courier_stats`, `customer_stats` views); the compat
   layer exposes them under the legacy names (`total_deliveries`,
   `total_earnings`, `average_rating`, `total_orders`, `no_response_incidents`…).
-- `legacy_b44_id` on every migrated table (unique, nullable).
+- `legacy_b44_id` on every imported table (unique, nullable).
 
 ## 6. API
 
 ### 6.1 Compat surface (what the front uses)
 
 All under `/api`. JSON. `Authorization: Bearer <access>` (the client keeps the
-access token in `localStorage.base44_access_token`, like today; the refresh
+access token in `localStorage`; the refresh
 token is an HttpOnly cookie `odsd_refresh`, path `/api/auth`).
 
 - `GET  /api/entities/{Entity}?q=<json>&sort=<-field>&limit=&skip=` — filter
@@ -130,9 +125,9 @@ token is an HttpOnly cookie `odsd_refresh`, path `/api/auth`).
 - `GET  /api/entities/{Entity}/{id}`
 - `POST /api/entities/{Entity}`, `PATCH /api/entities/{Entity}/{id}`,
   `DELETE /api/entities/{Entity}/{id}` — only where a write policy exists;
-  otherwise 403 with the same error shape as Base44 ("Permission denied…").
+  otherwise 403 ("Permission denied…").
 - `POST /api/functions/{name}` — body = the payload the front sends today;
-  response = the JSON the Deno function returned (same keys, same status
+  response = the JSON the front expects (fixed keys, status
   codes: 400/401/403/404/409/410/429). One module per function name in
   `app/api/compat_functions/`, thin: validate → call services.
 - `POST /api/files/upload` (multipart, public or private) and
@@ -143,11 +138,11 @@ token is an HttpOnly cookie `odsd_refresh`, path `/api/auth`).
 - `/api/auth/*`: `login`, `register`, `verify-otp`, `resend-otp`,
   `reset-password-request`, `reset-password`, `change-password`, `refresh`,
   `logout`, `me` (GET/PATCH), `google/start`, `google/callback`,
-  `account-setup` (first login after migration, §9).
+  `account-setup` (first login of an account without a password, §9).
 
 Record shape returned for entities: `{ id, created_date, updated_date,
-created_by, ...legacy fields }` — dates as naive ISO UTC like Base44
-(`2026-09-28T08:31:58.996000`), because the front appends `Z`.
+created_by, ...legacy fields }` — dates as ISO-8601 UTC with an explicit
+`Z` (`2026-09-28T08:31:58.996000Z`); naive dates sent by the front are read as UTC.
 
 ### 6.2 Clean API
 
@@ -159,7 +154,7 @@ logic — both call the same services.
 ### 6.3 Errors
 
 `{ "error": "<code>", "message": "<human text>" }` with the status code. The
-client raises an error object shaped like the Base44 SDK's axios error:
+client raises an error object shaped like an axios error:
 `err.status`, `err.response.status`, `err.response.data`, `err.message`, so the
 front's existing handling keeps working.
 
@@ -182,7 +177,7 @@ front's existing handling keeps working.
 
 ## 8. Jobs (leader only)
 
-| Every | Job | Port of |
+| Every | Job | Function |
 |---|---|---|
 | 5 min | no-response sweep, WhatsApp/SMS pending checks, stale order expiry (24 h open / 48 h running), courier presence expiry (online without heartbeat 15 min → offline) | sweepNoResponse, triggerEmergencyContact sweep, sendWhatsAppMessage check_pending, expireStaleOrders |
 | (orders) | jobs `expire_stale_orders` (5 min), `courier_presence_expiry` (5 min), `expire_orphan_offers` (1 h) in `app/jobs/orders.py` | expireStaleOrders (+ its hourly `offers` pass) |
@@ -193,42 +188,17 @@ front's existing handling keeps working.
 
 Jobs are idempotent; each also has an admin endpoint to run it by hand.
 
-## 9. Migration from Base44
+## 9. Accounts without a password
 
-`migrate/export.mjs` (admin, paced ≤ 60 ops/min, from the editor preview frame
-like the audit) → encrypted JSON outside the repo
-(`~/ODS-backups/migration/<date>/`, mode 600) → `transform.py` (ids,
-e-mail → user, profile ids found in user fields → user, phones → E.164,
-`shops[]` → stops, history → events, dedupe profiles, categories) →
-`import.py` (idempotent upsert on `legacy_b44_id`, FK order) → `verify.py`
-(counts per table/status, money sums, samples). Files: referenced images
-downloaded and re-uploaded to the private bucket. Rules, exclusions, cutover
-and rollback: `docs/MIGRATION.md` (`make import-base44`).
-
-Passwords: Base44 does not export hashes. `users.password_hash` is NULL after
-import; login answers `409 {error:"account_setup_required"}` and the Welcome
+`users.password_hash` may be NULL (imported accounts, Google-only accounts);
+login then answers `409 {error:"account_setup_required"}` and the Welcome
 screen switches to "we sent you a 6-digit code" → new password
 (`/api/auth/account-setup`). Google users sign in with Google (linked by
 verified e-mail).
 
-## 10. Front (`ods-delivery`, branch `feat/own-backend`)
+## 10. Security rules
 
-- **Never merged to `main` before the cutover**: Base44 syncs `main` and
-  publishes from it.
-- `src/api/base44Client.js` chooses the client at build time:
-  `VITE_BACKEND=ods` → `createOdsClient()`; anything else → Base44 SDK
-  (unchanged). The existing wrappers (me cache, shared reads, rate gate) stay
-  around whichever client is active.
-- Welcome screen: account-setup step (§9); Google button goes to
-  `/api/auth/google/start`.
-- Uploads, signed URLs, realtime: through the client, no page changes.
-- `AuthContext`: drop the `@base44/sdk/dist/utils/axios-client` import in ods
-  mode.
-
-## 11. Security rules (ported from the Base44 RLS and functions)
-
-- Read policies per entity = the RLS in `base44/entities/*.jsonc` as published
-  on 2026-09-28 (customer/courier/admin, field-level hides such as
+- Read policies per entity (customer/courier/admin, field-level hides such as
   `customer_phone` on open orders, `id_photo_uri` never exposed,
   `courier_live_*` only to the order's parties).
 - Every function keeps its own checks (party of the order, verified courier,
@@ -238,14 +208,12 @@ verified e-mail).
   (`CRON_SECRET`) protects the manual job endpoints.
 - Secrets only in `.env` (git-ignored); `.env.example` has placeholders.
 
-## 12. Definition of done (local)
+## 11. Definition of done (local)
 
 1. `make up && make migrate && make seed` on a clean machine → stack healthy.
 2. `make test`: all pytest green, coverage ≥ 80 % on `app/services`.
-3. Base44 export imported locally, `verify.py` green.
-4. Front `dev:ods` on 5190: customer and courier journeys by hand (order →
+3. Front `dev:ods` on 5190: customer and courier journeys by hand (order →
    offer → accept → shop → purchase → deliver, chat, notifications, map,
    hot deal, no-response, cancellation, referral, admin verification).
-5. The Playwright suites run against the local stack (`BASE_URL=http://127.0.0.1:5190`,
-   `ODS_BACKEND=local`) and pass, apart from tests that only make sense on
-   Base44 (rate budget, RLS JSON evaluation), listed in `docs/TEST_MATRIX.md`.
+4. The Playwright suites run against the local stack (`BASE_URL=http://127.0.0.1:5190`,
+   `ODS_BACKEND=local`) and pass (see `docs/TEST_MATRIX.md`).

@@ -1,5 +1,5 @@
-"""createOrderOffer — a verified courier sends a price for an open order
-(base44/functions/createOrderOffer). The offer is built from his own profile.
+"""createOrderOffer — a verified courier sends a price for an open order.
+The offer is built from his own profile.
 
 Body: { order_id, fee, eta_minutes?, distance_km?, message? }.
 Returns { success, offer, rank, total, cheapest, tied } (where the price stands, getOfferRank).

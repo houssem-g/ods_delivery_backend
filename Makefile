@@ -6,7 +6,7 @@ TEST_WORKERS ?= 4
 TEST_DATABASE_URL ?= postgresql+asyncpg://ods_delivery:ods_delivery_local@localhost:5451/ods_delivery_test
 
 .PHONY: help up up-full deps down logs logs-full run migrate revision seed test lint fmt shell-db check-heads \
-	import-base44 backup restore db-counts reset-local import-local audit precommit
+	backup restore db-counts reset-local audit precommit
 
 help: ## list targets
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -42,7 +42,7 @@ seed: ## local admin + QA accounts + default settings (idempotent)
 	$(RUN) python -m scripts.seed_local
 
 test: ## pytest against the ods_delivery_test database
-	DATABASE_URL=$(TEST_DATABASE_URL) $(RUN) pytest -n $(TEST_WORKERS) --cov=app --cov=migrate --cov-report=term-missing:skip-covered $(ARGS)
+	DATABASE_URL=$(TEST_DATABASE_URL) $(RUN) pytest -n $(TEST_WORKERS) --cov=app --cov-report=term-missing:skip-covered $(ARGS)
 
 lint: ## ruff check + format check
 	$(RUN) ruff check .
@@ -58,11 +58,6 @@ shell-db: ## psql on the local database
 check-heads: ## fail unless alembic has a single head
 	$(RUN) python scripts/check_single_head.py
 
-import-base44: ## Base44 export -> db: make import-base44 EXPORT_DIR=… DATABASE_URL=… [ARGS="--files --dry-run"]
-	@test -n "$(EXPORT_DIR)" || { echo "EXPORT_DIR=… is required"; exit 2; }
-	@test "$(origin DATABASE_URL)" = "command line" || { echo "DATABASE_URL=… is required on the command line"; exit 2; }
-	$(RUN) python -m migrate.pipeline "$(EXPORT_DIR)" --database-url "$(DATABASE_URL)" $(ARGS)
-
 backup: ## pg_dump (custom format) into backups/: make backup [DB=ods_delivery]
 	@scripts/db_backup.sh
 
@@ -74,9 +69,6 @@ db-counts: ## row count per table: make db-counts DB=name
 
 reset-local: ## drop + recreate + migrate + seed ods_delivery (asks; YES=1 to skip) [DB=name]
 	@scripts/reset_local.sh
-
-import-local: ## Base44 import of the latest ~/ODS-backups/migration/<date>/ [DB=… ARGS="--files"]
-	@scripts/import_local.sh
 
 audit: ## pip-audit of the locked dependencies [AUDIT_ARGS="--ignore-vuln ID"]
 	@req=$$(mktemp) && trap 'rm -f "$$req"' EXIT && \

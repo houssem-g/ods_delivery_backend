@@ -1,4 +1,4 @@
-"""Phone numbers to E.164 (Tunisia by default, like the Deno functions)."""
+"""Phone numbers to E.164 (Tunisia by default)."""
 
 import phonenumbers
 

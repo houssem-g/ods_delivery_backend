@@ -4,7 +4,7 @@ Providers:
 - `fcm`: firebase-admin, one `send_each_for_multicast` per locale (in a thread, with a timeout);
 - `log`: sends nothing (tests, machines without credentials).
 Both write one `push_deliveries` row per device. Payload shape, Android channel and web
-link are those of base44/functions/sendPushToTokens. Token upkeep is the same too: dead
+link are those of sendPushToTokens. Token upkeep: dead
 tokens (UNREGISTERED / INVALID_ARGUMENT / NOT_FOUND) are deactivated at once, other
 failures after 5 in a row. Preference checks (push_enabled...) belong to the caller.
 """

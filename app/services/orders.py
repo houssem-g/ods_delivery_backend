@@ -1,6 +1,6 @@
 """Order helpers shared by the order functions, plus placeOrder.
 
-Base44 references (base44/functions): placeOrder, getCustomerReliability, _shared/authz.
+Functions: placeOrder, getCustomerReliability.
 """
 
 import re
@@ -42,7 +42,7 @@ MAX_OPEN_ORDERS = 5
 SIGNUP_WINDOW = timedelta(hours=24)
 PACKAGE_SIZES = ("petit", "moyen", "grand")
 MAX_STOPS = 5
-MAX_QUANTITY = 100  # orders.quantity CHECK (Base44 took up to 999; nothing above 100 exists)
+MAX_QUANTITY = 100  # orders.quantity CHECK
 MAX_BUDGET = Decimal("2000")  # orders.budget_max CHECK
 
 

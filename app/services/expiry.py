@@ -1,4 +1,4 @@
-"""Closing orders nobody moves any more (port of base44/functions/expireStaleOrders).
+"""Closing orders nobody moves any more (expireStaleOrders).
 
 - pending / offers_received without activity for 24 h → cancelled by 'system', reason
   'expired_no_offer' (no offer ever) or 'expired'; its pending offers → expired; the

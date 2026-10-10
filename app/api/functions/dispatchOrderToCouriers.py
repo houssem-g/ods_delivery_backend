@@ -1,5 +1,5 @@
 """dispatchOrderToCouriers — the customer (or an admin) broadcasts his open order again
-(base44/functions/dispatchOrderToCouriers; our own flows call app.services.dispatch directly).
+(our own flows call app.services.dispatch directly).
 
 Body: { order_id }. At most once every 5 minutes (429 too_soon, retry_after_s); only an open
 order (409 order_not_open). Returns { success, order_id, dispatched, skipped, candidates_total,

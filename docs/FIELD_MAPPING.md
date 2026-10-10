@@ -1,9 +1,7 @@
-# Field mapping: Base44 entities → PostgreSQL
+# Field mapping: legacy entities → PostgreSQL
 
-Every field of the 15 Base44 entities (`ods-delivery/base44/entities/*.jsonc`), where it
-lives now, and whether the front (`src/`) or a live Deno function (`base44/functions`,
-the 16 retired ones excluded) uses it. Usage comes from a grep census of both trees on
-2026-09-28 (R = read, W = write, W\* = sent to a function that writes it, R\* = read
+Every field of the 15 legacy entities the front uses, where it lives, and whether the
+front (`src/`) or a function uses it. Usage comes from a grep census on 2026-09-28 (R = read, W = write, W\* = sent to a function that writes it, R\* = read
 from a function's answer). A field is **dropped** only when nothing reads it; the
 reason is given.
 
@@ -14,12 +12,12 @@ Conventions:
 - Every entity also returns the built-ins: `id` (uuid as text; `AppSettings` uses its
   key), `created_date` / `updated_date` (naive ISO UTC with microseconds, from
   `created_at` / `updated_at`), `created_by` (creator e-mail where it is meaningful,
-  else `null`; Base44 no longer returned it and nothing reads it). `created_by_id` is
+  else `null`; nothing reads it). `created_by_id` is
   read only by `getOrderCourier` (to trust offers made by the server); every offer is
   server-made now, so it is dropped.
-- Every user reference (`*_id` holding an e-mail in Base44) becomes a `uuid` FK to
+- Every user reference (`*_id` holding an e-mail in the legacy shape) becomes a `uuid` FK to
   `users`; the compat layer answers the e-mail again (join `users.email`).
-- Every migrated table has `legacy_b44_id` (unique) — `users` has two: the Base44
+- Every imported table has `legacy_b44_id` (unique) — `users` has two: the legacy
   `User` id and the `UserProfile` id (`legacy_profile_b44_id`).
 
 Status of the compat entities: `UserProfile`, `AppSettings`, `Message`, `Notification`,
@@ -31,13 +29,13 @@ mapping (docs/COMPAT_GUIDE.md).
 
 | Field | Used | Target | Notes |
 |---|---|---|---|
-| id | front R | `users.id` | new uuid; Base44 id in `users.legacy_b44_id` |
+| id | front R | `users.id` | new uuid; legacy id in `users.legacy_b44_id` |
 | email | front/fn R | `users.email` (citext unique) | |
 | full_name | front R | `users.full_name` | |
-| role | front/fn R | `users.role = 'admin'` → `'admin'`, else `'user'` | `GET /api/auth/me` answers the Base44 shape |
-| is_verified | – | `users.email_verified_at IS NOT NULL` | answered by `/api/auth/me`; import: the account's creation date (Base44 keeps no verification date) |
+| role | front/fn R | `users.role = 'admin'` → `'admin'`, else `'user'` | `GET /api/auth/me` answers the legacy shape |
+| is_verified | – | `users.email_verified_at IS NOT NULL` | answered by `/api/auth/me`; imported accounts: the account's creation date |
 | disabled | – | `users.disabled_at IS NOT NULL` | |
-| force_password_reset, is_service, collaborator_role, _app_role, app_id | – | dropped | Base44 internals, unused |
+| force_password_reset, is_service, collaborator_role, _app_role, app_id | – | dropped | platform internals, unused |
 | (password) | – | `users.password_hash` | not exportable: NULL after import → account-setup flow |
 | (account deletion) | fn W | `users.deleted_at` (+ `disabled_at`) | deleteMyAccount anonymizes instead of deleting: e-mail → `deleted+<id>@deleted.invalid`, name → 'Utilisateur supprimé', phone / password / Google link cleared; orders kept (contact snapshot anonymized), courier row anonymized (`app/services/account_deletion.py`) |
 
@@ -56,10 +54,10 @@ customer side on its existence). Compat id = `users.id`.
 | role | front R/W | `users.role` (`admin` reads `customer`) | customer/courier; an admin stays admin |
 | language | front R/W, fn R | `users.language` | ar / fr |
 | default_address | front R/W | `user_addresses.address` (is_default) | |
-| country | front R/W | `user_addresses.country` | was silently dropped by Base44 before 2026-09-28 |
+| country | front R/W | `user_addresses.country` | |
 | default_lat, default_lng | front R/W, fn R | `user_addresses.location` (ST_Y / ST_X) | |
 | governorate, city | front R/W | `user_addresses.governorate / city` | |
-| is_active | front R/W (admin) | *derived* `users.disabled_at IS NULL` | admin only; disabling now blocks sign-in and revokes sessions (Base44 enforced nothing) |
+| is_active | front R/W (admin) | *derived* `users.disabled_at IS NULL` | admin only; disabling now blocks sign-in and revokes sessions |
 | total_orders | – | *derived* `customer_stats.total_orders` | was never maintained (0 everywhere) |
 | no_response_incidents | front R, fn W | *derived* `customer_stats.no_response_incidents` | incidents with `incident_counted`, dated `coalesce(final_at, started_at)` within 180 days (getCustomerReliability rule) |
 | is_blacklisted | fn W | `users.is_blacklisted` | admin only; never read by the app |
@@ -82,7 +80,7 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | user_id | front R, fn R/W | join `users.email` via `couriers.user_id` (unique) | |
 | full_name | front R/W\*, fn R/W | `couriers.display_name` | |
-| phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164; NULL for a deleted (anonymized) account, or a migrated courier whose Base44 phone was a placeholder (4 of 7 in the 2026-09-28 export) |
+| phone | front R/W\*, fn R/W | `couriers.phone_e164` | E.164; NULL for a deleted (anonymized) account, or an imported courier whose phone was a placeholder |
 | cin_passport | front R/W\*, fn W | `couriers.id_document_number` | owner + admin only; '' after account deletion |
 | photo_url | front R (CourierCard) | dropped | legacy public ID photo URL; the migration moves the file to the private bucket (`id_document_key`) and the field reads `null` |
 | has_id_photo | front R (AdminDashboard) | *derived* `couriers.id_document_key IS NOT NULL` | new: tells the admin screen which couriers to ask getCourierIdPhotos for; the key itself never leaves |
@@ -94,7 +92,7 @@ customer side on its existence). Compat id = `users.id`.
 | current_lat, current_lng | front R/W\*, fn R/W | `couriers.last_location` (ST_Y / ST_X) | `last_seen_at` set with it; a fix outside Tunisia (`ORDER_BOUNDS`) is dropped (`ignored`) for a courier serving TN — the app publishes his address instead |
 | address, address_city, address_governorate, address_lat, address_lng | front R/W\* | the account's default `user_addresses` row (address / city / governorate / location) | new: the courier's own address, the same row as UserProfile.default_address; written without creating the customer profile; the app shows it instead of a GPS fix taken abroad |
 | notification_radius_km | front R/W\*, fn R | `couriers.notification_radius_km` | |
-| verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason`; the only field an admin writes through the entity (the courier's notice is AdminDashboard's own Notification.create); migrated couriers: `verified_at` NULL (Base44 kept none) |
+| verification_status | front R/W (admin) | `couriers.verification` (enum) | + `verified_at`, `verified_by`, `rejection_reason`; the only field an admin writes through the entity (the courier's notice is AdminDashboard's own Notification.create); imported couriers: `verified_at` NULL |
 | total_deliveries | front R, fn R/W | *derived* `courier_stats.total_deliveries` | stored value was wrong for 7/9 couriers |
 | total_earnings | front R, fn W | *derived* `courier_stats.gross_fees` | sum of delivery fees of delivered orders |
 | average_rating | front R, fn R/W | *derived* `coalesce(courier_stats.average_rating, 5)` | 5 without ratings, as the front expects |
@@ -116,7 +114,7 @@ customer side on its existence). Compat id = `users.id`.
 | customer_id | front R, fn R/W | join `users.email` via `orders.customer_id` | filter key |
 | customer_name | front R, fn R/W | `orders.contact_name` | snapshot at placement |
 | customer_phone | front R/W\*, fn R/W | `orders.contact_phone_e164` | guard: customer, assigned courier, admin |
-| courier_id | front R, fn R/W | `orders.courier_id` → `couriers` | filter key; kept when the customer cancels (Base44 kept `courier_user_id` so the courier could still open the order), cleared when the courier drops it or the order is abandoned |
+| courier_id | front R, fn R/W | `orders.courier_id` → `couriers` | filter key; kept when the customer cancels (so the courier can still open the order), cleared when the courier drops it or the order is abandoned |
 | courier_user_id | front R, fn R/W | join `users.email` via `couriers.user_id` | orders keeping an e-mail without `courier_id` (20 in the 2026-09-28 export, all cancelled after acceptance): the import restores `courier_id` from the e-mail (the app keeps the courier on a customer cancellation), except when `cancelled_by = courier` |
 | courier_name | front R, fn R/W | join `couriers.display_name` | copy dropped (0 drift measured) |
 | courier_phone | front R, fn R/W | join `couriers.phone_e164` | |
@@ -165,10 +163,10 @@ customer side on its existence). Compat id = `users.id`.
 | customer_responded_at | fn R/W | *derived* latest case `resolved_at` for those resolutions | |
 | no_response_deadline_at, no_response_final_at, no_response_resolution, no_response_case_id | front R / fn R/W | *derived* latest case `deadline_at / final_at / resolution / id` | were copies of NoResponseCase |
 | no_response_channels (in_app, push_devices, whatsapp, sms) | front R, fn R/W | *derived* latest case `channels` (jsonb) | |
-| reported_issues[] (type, description, photo_url, reported_at, reported_by, courier_id) | fn R/W | `order_issues` (`issue_type, description, photo_key, created_at, reporter_id`) | aggregated as a JSON array; guard: parties + admin; lost on Base44 before 2026-09-28 |
+| reported_issues[] (type, description, photo_url, reported_at, reported_by, courier_id) | fn R/W | `order_issues` (`issue_type, description, photo_key, created_at, reporter_id`) | aggregated as a JSON array; guard: parties + admin |
 | has_issues | fn W | *derived* exists `order_issues` | |
 | stock_check, stock_checks[] (id, status, missing_text, substitute_text, substitute_price, photo_url, nothing_available, decided_by, created_at, deadline_at, decided_at) | front R | `order_stock_checks` | new 2026-09-29 ("article indisponible", `app/services/stock_checks.py`): the latest check / all of them; guard: parties + admin |
-| status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason` (Base44 wrote a `cancelled` then a `pending` entry). Import: `source` absent → `legacy`; synthetic events have `source = 'migration'` (no history: `pending` + final; last item ≠ status: final) |
+| status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason`. Import: `source` absent → `legacy`; synthetic events have `source = 'migration'` (no history: `pending` + final; last item ≠ status: final) |
 | preferred_courier_id | front R, fn R/W | `orders.preferred_courier_id` → `couriers` | |
 | courier_stats_recorded_at | fn R/W | *derived* `orders.delivered_at` | counters are views: nothing to record |
 | last_dispatched_at | fn R/W | `orders.last_dispatched_at` | |
@@ -204,17 +202,17 @@ customer side on its existence). Compat id = `users.id`.
 |---|---|---|---|
 | order_id | front R, fn R/W | `messages.order_id` | |
 | sender_id | front R, fn R/W | join `users.email` via `messages.sender_id` | a CourierProfile id is mapped to the courier's user at import (28 at the audit, 0 left on 2026-09-28); unknown sender → NULL |
-| recipient_id | front R, fn R/W | join `users.email` via `messages.recipient_id`, `''` when NULL | NULL = a customer's message on an open order (no single recipient), answered `''` like Base44. Import of old rows without it: courier message → the customer; customer message → the courier's user when sent after `accepted_at`, else NULL |
+| recipient_id | front R, fn R/W | join `users.email` via `messages.recipient_id`, `''` when NULL | NULL = a customer's message on an open order (no single recipient), answered `''`. Import of old rows without it: courier message → the customer; customer message → the courier's user when sent after `accepted_at`, else NULL |
 | sender_role | front R, fn R/W | `messages.sender_role` | |
 | content | front R/W\*, fn R/W | `messages.body` | |
 | is_template | fn W | `messages.is_template` | always false; kept (audit DDL) |
 | is_read | front R, fn R/W | *derived* `messages.read_at IS NOT NULL` | |
 | (fn only) attachment_url, attachment_type, attachment_duration, read_at | front R (getOrderMessages) | `messages.attachment_key` (signed 10 min) / `attachment_type` / `attachment_duration` / `read_at` | new (Aurora): not entity fields; read_at only on the caller's own messages |
 
-Policies: read = sender or admin (the Base44 rule; the app reads the chat through the
+Policies: read = sender or admin (the app reads the chat through the
 functions only); no
-direct write (create is sendOrderMessage's legacy fallback → 403; the sender's update
-right of Base44 let him rewrite `recipient_id`, gone).
+direct write (create is sendOrderMessage's legacy fallback → 403; the sender cannot
+rewrite `recipient_id`).
 
 ## Notification → `notifications`
 
@@ -248,7 +246,7 @@ recipient, `is_read` only; delete = the recipient (Aurora).
 | last_seen_at, last_error, failure_count, is_active | fn R/W | same-name columns | deactivated after 5 failures or a dead-token answer |
 | (new) push log | – | `push_deliveries` | one row per device and send |
 
-Policies: read = owner, admin (Base44: admin); no direct write (registerDeviceToken /
+Policies: read = owner, admin; no direct write (registerDeviceToken /
 unregisterDeviceToken; a token registered by another account moves to the caller).
 
 ## ResaleOrder → `hot_deals`
@@ -264,7 +262,7 @@ unregisterDeviceToken; a token registered by another account moves to the caller
 | current_price, start_price, floor_price | front R | *derived* `max(floor_price, start_price − ⌊minutes / drop_every_min⌋ × drop_step)`; columns | new (Aurora): `discounted_price` is the current (decayed) price since; legacy deals start = floor = price |
 | shop_address | fn R | `hot_deals.shop_address` | never written today |
 | courier_lat, courier_lng | fn R/W | `hot_deals.pickup_location` | admin-only in the entity |
-| photo_url | front R\*/W\* | `hot_deals.photo_key` (public upload) | createHotDeal keeps only the courier's own public upload (Base44 took any https URL); a legacy https URL is answered as is |
+| photo_url | front R\*/W\* | `hot_deals.photo_key` (public upload) | createHotDeal keeps only the courier's own public upload ; a legacy https URL is answered as is |
 | status, expires_at | front R\*, fn R/W | same-name columns | |
 | buyer_id | fn R/W | join `users.email` via `hot_deals.buyer_id` | |
 | buyer_name, buyer_phone, delivery_address | fn W | *derived* from the buyer's order (`orders.contact_name / contact_phone_e164 / delivery_address` via `buyer_order_id`) | write-only today |
@@ -272,14 +270,14 @@ unregisterDeviceToken; a token registered by another account moves to the caller
 | (new) reserved_at, buyer_order_id | – | columns | `buyer_order_id` replaces `Order.resale_order_id` in the other direction. Import: `reserved_at` = update date of sold deals; `buyer_order_id` = the buyer's order pointing at the deal |
 
 Policies: read = deals still listed (`status = 'available'`) for every signed-in user, every
-deal for admins (base44/entities/ResaleOrder.jsonc); `courier_phone`, `courier_lat/lng`,
+deal for admins; `courier_phone`, `courier_lat/lng`,
 `buyer_id`, `buyer_name`, `buyer_phone`, `delivery_address` admin only. No direct write (403):
 createHotDeal, reserveHotDeal, cancelOrder, the hourly jobs. listHotDeals answers only the
 public fields + `distance_km`. A deal leaving the listing is announced as a realtime `delete`.
 
 The buyer's order (reserveHotDeal): `purchase_amount` = the deal's current (decayed) price (what
-the buyer reimburses; Base44 stored the original amount and a separate `total_amount` =
-discounted price + fee, which is what the derived `total_amount` answers now), `delivery_fee`
+the buyer reimburses; the derived `total_amount` answers
+discounted price + fee), `delivery_fee`
 = the deal's fee, `resale_deal_id` = the deal, one stop (the deal's shop, already
 `purchased`) when the deal has a shop name, status history `accepted` / `reserveHotDeal`.
 
@@ -297,8 +295,8 @@ discounted price + fee, which is what the derived `total_amount` answers now), `
 | messaging_status | fn R/W | `no_response_cases.messaging_status` | `whatsapp_<status>[/sms_<status>]`, or `legacy` for a case adopted from an order parked before the procedure (never counts an incident) |
 | (whatsapp, sms, in_app of the Order copy) | fn R/W | `no_response_cases.channels` (jsonb) | Order.no_response_channels |
 
-Policies: read = admins and the order's parties (customer, courier; Base44: admin only — the
-parties read the Order copies, which are derived from this table here); no direct write (403):
+Policies: read = admins and the order's parties (customer, courier — the
+parties also read the Order copies, which are derived from this table); no direct write (403):
 triggerEmergencyContact, createHotDeal, cancelOrder, expire_stale_orders and the sweep own it.
 No schema change for the incidents port.
 
@@ -316,13 +314,12 @@ No schema change for the incidents port.
 Policies: admin read only. `status` values: queued, retry_pending, sent, delivered, read,
 failed, disabled, skipped_opt_out, invalid_number, rate_limited; `fallback_status`: none,
 pending, sent, failed, disabled, skipped. The idempotency key is claimed by the unique
-column (INSERT … ON CONFLICT DO NOTHING); the Deno `duplicate` rows no longer exist.
+column (INSERT … ON CONFLICT DO NOTHING); there are no `duplicate` rows.
 
 ## Shop → `shops` (+ `shop_menu_items`)
 
 Read: approved shops for every signed-in user, a proposal (pending / rejected) for its
-author only, everything for admins (Base44 let anybody list pending proposals; the map
-already hid them). Update / delete: admins (an update of `review_status` sets
+author only, everything for admins. Update / delete: admins (an update of `review_status` sets
 `reviewed_by` / `reviewed_at`). Create: proposeShop only (403 on the entity).
 
 | Field | Used | Target | Notes |
@@ -336,7 +333,7 @@ already hid them). Update / delete: admins (an update of `review_status` sets
 | city | fn R | `shops.city` | |
 | menu_items[] (name, price, photo_url, description) | front W\*, fn W | `shop_menu_items` (`name, price, photo_key, description, position`) | aggregated in `position` order; `photo_key` = our public upload key, or a legacy https URL kept as is |
 | proposed_by | front R, fn R/W | join `users.email` via `shops.proposed_by` | guard: author + admin |
-| (searchByBbox reads shop_type, rating, review_count) | fn R | not in the schema | always undefined on Base44: answered 0 / `categories[0]` |
+| (searchByBbox reads shop_type, rating, review_count) | fn R | not in the schema | answered 0 / `categories[0]` |
 | (new) reviewed_by, reviewed_at | – | columns | set by the admin review |
 
 ## ShopReview → `shop_reviews`
@@ -353,7 +350,7 @@ key, and per resolved shop / place (409 `already_reviewed`).
 |---|---|---|---|
 | shop_osm_id | front R/W | `shop_reviews.target_key` | filter key of ShopDetails |
 | shop_name | front W | *derived* join `shops.name` / `places.name` | NULL for an unresolved key; the body's value is ignored |
-| user_id | front W | `shop_reviews.user_id` (the User **id**, as in Base44) | must be the caller when sent (403), forced otherwise |
+| user_id | front W | `shop_reviews.user_id` (the User **id**) | must be the caller when sent (403), forced otherwise |
 | user_name | front R/W | *derived* join `users.full_name` | the body's value is ignored ('Utilisateur supprimé' after account deletion) |
 | rating, comment | front R/W | same-name columns | rating 1-5 |
 | photo_urls | front R/W | `shop_reviews.photo_keys` (public URLs rebuilt in order) | only our public uploads are accepted |
@@ -366,10 +363,10 @@ searchPlaces / searchByBbox / geocodeAddress, refreshOsmIndex writes them.
 | Field | Used | Target | Notes |
 |---|---|---|---|
 | osm_id, name, address, city, governorate, category, phone, opening_hours, source, source_ts | fn R/W | same-name columns | category vocabulary unified (FR) at import: restaurant, pharmacie, supermarché, boulangerie, banque, carburant, hôpital; '' → NULL for the optional texts |
-| name_norm | fn W | `places.name_norm` | `app.services.text_norm.normalize_text(name)`: lower, accents and Arabic harakat/tatweel removed, letters/digits runs joined by one space (Arabic kept; the Deno import emptied it) |
+| name_norm | fn W | `places.name_norm` | `app.services.text_norm.normalize_text(name)`: lower, accents and Arabic harakat/tatweel removed, letters/digits runs joined by one space (Arabic kept) |
 | (new) search_norm | – | `places.search_norm` (trigram index) | `text_norm.search_text(name, address, city)`: haystack of the text scores. **The import must fill it** with that function (or leave `''`: refreshOsmIndex / the osm_refresh job backfill every `''` row with name_norm) |
 | lat, lng | fn R/W | `places.location` | |
-| quality_score | fn R/W (sort key) | `places.quality_score` smallint, **percent 0-100** | Base44 stored 0.5-1.0 (description said 0-100): import `round(value * 100)`; answered on the 0-1 scale everywhere (entity, searchPlaces, searchByBbox `rating`) |
+| quality_score | fn R/W (sort key) | `places.quality_score` smallint, **percent 0-100** | imported 0.5-1.0 values became `round(value * 100)`; answered on the 0-1 scale everywhere (entity, searchPlaces, searchByBbox `rating`) |
 
 `geocode_cache` (new, no legacy entity): Nominatim answers per normalized
 `address|city|governorate` (hits 30 days, misses 24 h), as its usage policy asks.
@@ -402,37 +399,20 @@ commission_amount, is_active, description — all dropped.
 | anybody else | `Order.create / update / delete` | 403 (the §7 fallbacks of OWN_BACKEND_CLIENT.md) |
 | functions | createOrderOffer, acceptOrderOffer, cancelOrder, expire_stale_orders, … | through `app/services/order_transitions.transition` |
 
-## Migration (`migrate/`, docs/MIGRATION.md) — what the domain code must expect
+## Imported rows — what the domain code must expect
 
-Decisions of the Base44 import that shape the migrated rows (rehearsed on the 2026-09-28
-export; aggregates in the report next to the export):
-
-- **Ids**: every migrated row has `uuid5(namespace, "<Entity>:<legacy id>")` and its Base44 id
-  in `legacy_b44_id` (users: + `legacy_profile_b44_id`). New rows keep `gen_random_uuid()`.
-- **users.role**: `admin` from `User.role`; else the (most recent) profile's role; else
-  `courier` when a CourierProfile exists; else `customer`. So a courier whose profile says
-  `customer` stays `customer` (8 of 9 at the audit): decide courier-ness on `couriers`, not
-  on `users.role`.
-- **Nullable where Base44 was empty**: `users.phone_e164` (placeholders rejected),
+- **Ids**: imported rows keep their legacy id in `legacy_b44_id` (users: +
+  `legacy_profile_b44_id`). New rows get `gen_random_uuid()`.
+- **users.role**: a courier whose profile says `customer` stays `customer`: decide
+  courier-ness on `couriers`, not on `users.role`.
+- **Nullable on imported rows**: `users.phone_e164` (placeholders rejected),
   `couriers.phone_e164`, `couriers.verified_at`, `orders.contact_phone_e164`,
   `orders.delivery_fee` / `purchase_amount` (also NULL when outside the CHECK bounds: the
-  original is in `audit_log`, action `b44_migration.adjust`), `messages.sender_id` /
-  `recipient_id`, `notifications.order_id` (deleted / test orders: 208).
-- **QA data is kept** (no test flag column): 2 QA accounts placed 520 of 547 orders and
-  receive 1 726 of 1 925 notifications. Statistics and dashboards must not assume real
-  traffic; a later `is_test` flag would need a schema change.
-- **Status history**: every migrated order has ≥ 1 event and its last event is its status;
+  original is in `audit_log`), `messages.sender_id` / `recipient_id`,
+  `notifications.order_id`.
+- **QA data is kept** (no test flag column): statistics and dashboards must not assume
+  real traffic; a later `is_test` flag would need a schema change.
+- **Status history**: every imported order has ≥ 1 event and its last event is its status;
   `source = 'migration'` marks synthetic events, `'legacy'` items without a source.
-- **Ledger**: one entry (0.500) per delivered order with a courier and a fee > 0, kind by
-  `app.services.commission` (all `commission_waived_launch` today; nothing due). `courier_stats` recomputes deliveries / ratings /
-  fees from the orders (the stored Base44 counters are not migrated).
-- **Presence**: all migrated couriers are offline until their next heartbeat.
-- **Files**: courier ID photos → `private/courier_id/<user uuid>/<uuid>.<ext>` (`files`
-  rows, purpose `courier_id`); the exported menu photo → `public/menu/<yyyy>/<mm>/…`;
-  photos not in the export keep their legacy https URL (shops / menu) or are dropped
-  (receipts, issues, reviews, hot deals: none exported).
-- **Not migrated**: `DeliveryTariffs`, `MessageLog` (empty), the Base44 counters
-  (`total_*`, `average_rating`, `no_response_incidents`), `payment_status`,
-  `geocode_status`, `courier_photo`, `CourierProfile.photo_url`, and the excluded rows
-  listed in docs/MIGRATION.md §3 (dangling references, deleted accounts, fees above the
-  offer CHECK, duplicate tokens).
+- **Counters**: `courier_stats` recomputes deliveries / ratings / fees from the orders.
+- **Files**: photos that were not re-uploaded keep their legacy https URL (shops / menu).

@@ -1,4 +1,4 @@
-"""Text normalization of the place search, ported from the Deno functions.
+"""Text normalization of the place search.
 
 One tokenizer for every search path (searchPlaces, searchByBbox, geocodeAddress) and for
 the precomputed `places.name_norm` / `places.search_norm` columns, so a query token and
@@ -7,7 +7,7 @@ the stored text are always normalized the same way:
     lower case → NFD → combining accents (U+0300–U+036F) removed → split on anything
     that is not a Unicode letter or digit (JS `/[^\\p{L}\\p{N}]+/u`).
 
-Arabic stays searchable (the Deno import used ASCII `\\w` and emptied Arabic names);
+Arabic stays searchable (no ASCII-only `\\w`, which would empty Arabic names);
 Arabic short vowels (harakat, U+064B–U+065F, U+0670) and the tatweel (U+0640) are also
 removed so a vocalized spelling matches a bare one.
 """
@@ -28,7 +28,7 @@ def _is_word_char(char: str) -> bool:
 
 
 def tokenize(*values: object) -> list[str]:
-    """Letters/digits runs of the folded text of every value (Deno `tokenize`)."""
+    """Letters/digits runs of the folded text of every value (`tokenize`)."""
     tokens: list[str] = []
     for value in values:
         current: list[str] = []
@@ -44,7 +44,7 @@ def tokenize(*values: object) -> list[str]:
 
 
 def normalize_text(*values: object) -> str:
-    """Tokens joined by one space (Deno searchPlaces `normalizeText`)."""
+    """Tokens joined by one space (searchPlaces `normalizeText`)."""
     return " ".join(tokenize(*values))
 
 
@@ -62,8 +62,8 @@ def search_text(name: object, address: object, city: object) -> str:
     """`places.search_norm`: the normalized name, address and city of a place.
 
     A query token (letters/digits only) is a substring of a haystack token exactly when
-    it is a substring of this space-joined string, so `LIKE '%token%'` computes the Deno
+    it is a substring of this space-joined string, so `LIKE '%token%'` computes
     `haystack.some(h => h.includes(token))` in SQL. The category, the other part of the
-    Deno haystacks, is matched on the (small) category vocabulary instead.
+    haystacks, is matched on the (small) category vocabulary instead.
     """
     return normalize_text(name, address, city)

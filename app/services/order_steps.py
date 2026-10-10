@@ -235,7 +235,7 @@ async def courier_step(
             shops_changed = await _apply_shops(session, user, stops, data["shops"])
     if to_status == from_status:
         if not shops_changed and not picked_changed:
-            return  # nothing the courier may change (a repeated tap): a no-op, like Base44
+            return  # nothing the courier may change (a repeated tap): a no-op
         if shops_changed and from_status not in ("at_shop", "price_confirmation_needed"):
             raise denied("The shops can only change while shopping")
 

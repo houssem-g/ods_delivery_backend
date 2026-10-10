@@ -1,4 +1,4 @@
-"""rateCourier — the customer rates his delivered order (base44/functions/rateCourier).
+"""rateCourier — the customer rates his delivered order.
 
 One order_ratings row per order (a new rating replaces it); the courier's average is the
 courier_stats view over all his ratings. The live position leaves the order.

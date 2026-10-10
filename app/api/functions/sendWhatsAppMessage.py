@@ -1,6 +1,6 @@
 """sendWhatsAppMessage — WhatsApp template (Meta) with SMS fallback (WinSMS), by hand.
 
-On Base44 it was internal only (INTERNAL_FN_KEY in the body); our services call
+Our services call
 app/services/whatsapp.py directly, so over HTTP it is **admin only** (the setup guide's
 manual checks: a test send, `check_pending`, `summary`). Everyone else: 403 Forbidden.
 

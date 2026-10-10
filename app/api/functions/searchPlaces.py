@@ -3,7 +3,7 @@
 Payload: { query?, category?, governorate?, city?, lat, lng, radius_km = 8, limit = 20 }.
 Answers { success, places, total } — each place in the PlaceIndex record shape plus
 `distance_km` and `score`, best first. 400 { error: 'Location required' } without a
-numeric lat / lng. Bounds as on Base44: radius 0.1-100 km, 1-200 results, 12 query
+numeric lat / lng. Bounds: radius 0.1-100 km, 1-200 results, 12 query
 tokens of the first 200 characters. See app/services/places.py for the scoring.
 """
 

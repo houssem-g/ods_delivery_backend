@@ -1,14 +1,13 @@
-"""Message: order chat (base44/entities/Message.jsonc → `messages`).
+"""Message: order chat (`messages`).
 
-Read: the sender and admins, exactly the Base44 rule (`data.sender_id == user.email` or
+Read: the sender and admins (`data.sender_id == user.email` or
 admin). The app never reads this entity: the chat goes through getOrderMessages /
 listMyUnreadMessages, which check the order's parties themselves. A wider rule (recipient,
 parties) would hand the other party's rows to any REST or realtime subscriber for nothing
 (security-published / realtime-rules specs).
 
-No direct write: Message create was admin-only on Base44 since 2026-09-27 and the
-front's `Message.create` is the legacy fallback of `sendOrderMessage` (refused, 403);
-Base44's "sender may update his row" allowed rewriting `recipient_id`, it is gone.
+No direct write: the
+front's `Message.create` is the legacy fallback of `sendOrderMessage` (refused, 403).
 Messages are written by app/services/messages.py only.
 """
 
@@ -34,7 +33,7 @@ def _read_policy(user: CurrentUser) -> Any:
 FIELDS: dict[str, LegacyField] = {
     "order_id": LegacyField(messages.c.order_id, "id"),
     "sender_id": LegacyField(sender.c.email, "string"),
-    # Base44 wrote '' when a customer's message had no single recipient (open order).
+    # '' when a customer's message had no single recipient (open order).
     "recipient_id": LegacyField(func.coalesce(recipient.c.email, ""), "string"),
     "sender_role": LegacyField(messages.c.sender_role, "string"),
     "content": LegacyField(messages.c.body, "string"),

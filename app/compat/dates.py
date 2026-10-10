@@ -1,6 +1,6 @@
 """Server date format: ISO-8601 UTC with microseconds and an explicit « Z ».
 
-Base44 sent naive UTC strings; read as local time by a phone set to Tunis (UTC+1), a fresh
+Naive UTC strings, read as local time by a phone set to Tunis (UTC+1), a fresh
 notification looked one hour old and was dropped (QA 06/10, B18). Every date the API returns
 now carries its zone, so any parser reads the same instant.
 """
@@ -17,7 +17,7 @@ def legacy_datetime(value: datetime | None) -> str | None:
 
 
 def parse_legacy_datetime(value: str) -> datetime:
-    """Accepts '...Z', '+hh:mm' offsets and naive strings (taken as UTC, like Base44)."""
+    """Accepts '...Z', '+hh:mm' offsets and naive strings (taken as UTC)."""
     text = value.strip()
     if text.endswith(("Z", "z")):
         text = text[:-1] + "+00:00"
