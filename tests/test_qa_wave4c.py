@@ -47,11 +47,10 @@ def test_rules_are_the_server_thresholds():
         "visible_to_couriers_at": 1,  # owner, 2026-09-29: couriers see it from the 1st incident
         "warning_at": 2,
         "limited_at": 3,
-        "suspended_at": order_rules.SUSPENDED_AT,
         "limited_max_advance_tnd": 30,
         "window_days": 180,
     }
-    assert order_rules.LEVEL_THRESHOLDS["suspended"] == order_rules.SUSPENDED_AT == 5
+    assert "suspended" not in order_rules.LEVEL_THRESHOLDS  # owner, 10/10/2026
     assert order_rules.reliability_from_count(1)["visible_to_couriers"] is True
 
 
@@ -62,25 +61,14 @@ async def test_reliability_returns_the_rules_and_no_end_date_when_not_suspended(
     assert own["suspended"] is False and own["suspended_until"] is None
 
 
-async def test_suspended_customer_knows_until_when(client, world):
-    # 6 incidents: the suspension lasts while 5 stay in the window, i.e. until the 5th most
-    # recent (40 days ago) is 180 days old → in 140 days.
+async def test_many_incidents_never_suspend(client, world):
+    # Owner, 10/10/2026: 6 incidents, still free to order; couriers see the badge instead.
     await add_incidents(world, [1, 2, 10, 20, 40, 100])
     own = (await call(client, world.customer, "getCustomerReliability")).json()
-    assert own["suspended"] is True and own["incidents"] == 6
-    expected = (datetime.now(UTC) + timedelta(days=140)).date().isoformat()
-    assert own["suspended_until"].startswith(expected) and own["suspended_until"].endswith("Z")
-    order = await world.order()
-    seen = (
-        await call(client, world.courier_user, "getCustomerReliability", {"order_id": str(order.id)})
-    ).json()
-    assert seen["suspended"] is True and seen["suspended_until"] is None  # his business only
-    admin = (await call(client, world.admin, "getCustomerReliability", {"order_id": str(order.id)})).json()
-    assert admin["suspended_until"].startswith(expected)
-    refused = await call(client, world.customer, "placeOrder", {"order": order_form()})
-    assert refused.status_code == 403
-    assert refused.json()["error"] == "customer_suspended"
-    assert refused.json()["suspended_until"].startswith(expected)
+    assert own["suspended"] is False and own["suspended_until"] is None and own["incidents"] == 6
+    assert own["level"] == "limited"
+    placed = await call(client, world.customer, "placeOrder", {"order": order_form()})
+    assert placed.status_code == 200
 
 
 # ─────────────────────────── R14 ───────────────────────────

@@ -3,6 +3,8 @@
 Business model (ods-delivery src/constants/commission.js, src/lib/commission.js):
 - a delivered order with a delivery fee carries the nominal commission
   (COMMISSION_PER_DELIVERY_TND); no fee, no commission and no quota used;
+- a resold order (Offre Chaude) carries it only when the buyer paid the goods at their full price
+  (no discount, no price drop): otherwise ODS takes nothing and no quota is used (owner, 10/10/2026);
 - delivered before LAUNCH_END_DATE (midnight 1 January 2027, Tunis): waived
   ('commission_waived_launch', legacy status 'offered_launch');
 - afterwards the first FREE_DELIVERIES_PER_MONTH deliveries of the courier's
@@ -23,7 +25,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, CourierLedgerEntry, CourierStatement, Order
+from app.models import Courier, CourierLedgerEntry, CourierStatement, HotDeal, Order
 
 COMMISSION_PER_DELIVERY_TND = Decimal("0.250")  # 0.250 since 06/10/2026 (owner, decision D-11)
 FREE_DELIVERIES_PER_MONTH = 20
@@ -59,6 +61,8 @@ async def record_delivery(
     The courier row is locked so two deliveries of the same courier rank one after the other.
     """
     if order.courier_id is None or not (order.delivery_fee and order.delivery_fee > 0):
+        return None
+    if not await _resale_at_full_price(session, order):
         return None
     existing = (
         await session.execute(
@@ -97,6 +101,17 @@ async def record_delivery(
 
     await credit.after_commission(session, entry)
     return entry
+
+
+async def _resale_at_full_price(session: AsyncSession, order: Order) -> bool:
+    """True for a regular order; for a resold one, whether its buyer paid at least what the goods
+    cost the courier (a discount or a price drop means the courier already lost money)."""
+    if order.resale_deal_id is None:
+        return True
+    deal = await session.get(HotDeal, order.resale_deal_id)
+    if deal is None:
+        return False
+    return (order.purchase_amount or Decimal(0)) >= deal.purchase_amount
 
 
 def week_start(moment: datetime) -> date:

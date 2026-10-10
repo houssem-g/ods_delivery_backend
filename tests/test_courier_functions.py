@@ -645,7 +645,9 @@ async def test_reliability(client, world, factory):
         await call(client, world.customer, "getCustomerReliability", {"order_id": "x"})
     ).status_code == 404
     await incidents(world, 2)
-    assert (await call(client, world.customer, "getCustomerReliability")).json()["suspended"] is True
+    # nobody is suspended any more (owner, 10/10/2026)
+    five = (await call(client, world.customer, "getCustomerReliability")).json()
+    assert five["incidents"] == 5 and five["level"] == "limited" and five["suspended"] is False
 
 
 # --- getCourierIdPhotos ------------------------------------------------------------------------------

@@ -23,7 +23,7 @@ from app.services import order_transitions as ot
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.order_texts import short_name
-from app.services.orders import SUSPENDED_AT, OrderRefused, active_incidents, courier_of_user, dropped_by
+from app.services.orders import OrderRefused, courier_of_user, dropped_by
 from app.services.safety import is_blocked
 
 MAX_FEE_TND = Decimal(
@@ -357,10 +357,6 @@ async def accept_offer(
         raise OrderRefused(403, "Forbidden")
     if order.status not in ot.OPEN_STATUSES:
         raise OrderRefused(409, "order_not_open", status=order.status)
-    if not user.is_admin:
-        incidents = await active_incidents(session, order.customer_id)
-        if incidents >= SUSPENDED_AT:
-            raise OrderRefused(403, "customer_suspended", incidents=incidents)
     try:
         offer_uuid = uuid.UUID(str(offer_id))
     except ValueError:

@@ -631,20 +631,22 @@ async def test_a_case_left_open_is_closed_before_a_new_report(client, world):
     assert second.status == "waiting"
 
 
-async def test_suspension_is_mirrored(client, world):
+async def test_no_suspension_any_more(client, world):
+    """Owner, 10/10/2026: never suspended; the old automatic flag is cleared at the next change."""
+    async with SessionLocal() as s:
+        (await s.get(User, world.customer.id)).is_blacklisted = True
+        await s.commit()
     for _ in range(5):
         order = await on_the_way(world)
         await call(client, world.courier_user, "report_no_response", order)
         await rewind(order, 200)
         await call(client, world.courier_user, "status", order)
     assert await incidents(world.customer) == 5
-    assert (await reload(User, world.customer.id)).is_blacklisted is True
+    assert (await reload(User, world.customer.id)).is_blacklisted is False
     profile = (
         await client.get(f"/api/entities/UserProfile/{world.customer.id}", headers=auth(world.customer))
     ).json()
-    assert profile["no_response_incidents"] == 5 and profile["is_blacklisted"] is True
-    await call(client, world.customer, "customer_confirms", order)
-    assert (await reload(User, world.customer.id)).is_blacklisted is False
+    assert profile["no_response_incidents"] == 5 and profile["is_blacklisted"] is False
 
 
 # --- cancelOrder hook -----------------------------------------------------------------------------

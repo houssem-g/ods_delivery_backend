@@ -13,7 +13,7 @@ Returns { success, order, dispatched }. Errors: invalid_items, invalid_shop, inv
 invalid_delivery_address, invalid_delivery_location, invalid_budget (+ max), phone_required,
 phone_unverified (400: the profile's foreign number was not confirmed by the WhatsApp code, see
 requestPhoneVerification),
-customer_suspended (403), too_many_open_orders (429, max). QA orders are not broadcast.
+too_many_open_orders (429, max). QA orders are not broadcast.
 """
 
 import logging

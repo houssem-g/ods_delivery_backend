@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -37,7 +37,8 @@ TEST_ORDER_RE = re.compile(r"QA TEST|\bPW-", re.IGNORECASE)
 TEST_ORDER_SQL = r"QA TEST|\mPW-"
 
 MAX_OPEN_ORDERS = 5
-SUSPENDED_AT = 5  # no-response incidents in INCIDENT_WINDOW_DAYS (customer_stats)
+# Owner, 10/10/2026: a customer is never suspended for not answering (it was 5 incidents); couriers
+# see a badge « n'a pas payé X fois sur ses Y dernières commandes » instead (reliability_extras).
 SIGNUP_WINDOW = timedelta(hours=24)
 PACKAGE_SIZES = ("petit", "moyen", "grand")
 MAX_STOPS = 5
@@ -92,14 +93,14 @@ async def active_incidents(session: AsyncSession, customer_id: uuid.UUID) -> int
 
 
 async def mirror_incidents(session: AsyncSession, customer_id: uuid.UUID) -> int:
-    """After a case counted / voided an incident: the count is derived (customer_stats), the
-    suspension flag is mirrored like the Deno functions did on every profile of the customer
-    (`is_blacklisted = incidents >= 5`), and the customer's UserProfile row changes."""
+    """After a case counted / voided an incident: the count is derived (customer_stats) and the
+    customer's UserProfile row changes. No suspension any more (owner, 10/10/2026): the flag
+    this function used to set at 5 incidents is cleared."""
     await session.flush()
     count = await active_incidents(session, customer_id)
     user = await session.get(User, customer_id, with_for_update=True)
     if user is not None:
-        user.is_blacklisted = count >= SUSPENDED_AT
+        user.is_blacklisted = False
         await session.flush()
         emit(session, "UserProfile", "update", user.id)
     return count
@@ -138,7 +139,7 @@ async def stop_coordinates(session: AsyncSession, stop: OrderStop | None) -> tup
 
 # --- reliability (getCustomerReliability, src/lib/noResponsePolicy.js) -----------------------------
 
-LEVEL_THRESHOLDS = {"warning": 2, "limited": 3, "suspended": SUSPENDED_AT}
+LEVEL_THRESHOLDS = {"warning": 2, "limited": 3}
 # Couriers are warned from the first "client ne répond pas" (owner, 2026-09-29; it was 2).
 VISIBLE_TO_COURIERS_AT = 1
 LIMITED_MAX_ADVANCE_TND = 30
@@ -152,7 +153,6 @@ INCIDENT_RULES: dict[str, int] = {
     "visible_to_couriers_at": VISIBLE_TO_COURIERS_AT,
     "warning_at": LEVEL_THRESHOLDS["warning"],
     "limited_at": LEVEL_THRESHOLDS["limited"],
-    "suspended_at": LEVEL_THRESHOLDS["suspended"],
     "limited_max_advance_tnd": LIMITED_MAX_ADVANCE_TND,
     "window_days": INCIDENT_WINDOW_DAYS,
 }
@@ -161,58 +161,36 @@ INCIDENT_RULES: dict[str, int] = {
 def reliability_from_count(count: int) -> dict[str, Any]:
     incidents = max(0, int(count or 0))
     level = "ok"
-    if incidents >= LEVEL_THRESHOLDS["suspended"]:
-        level = "suspended"
-    elif incidents >= LEVEL_THRESHOLDS["limited"]:
+    if incidents >= LEVEL_THRESHOLDS["limited"]:
         level = "limited"
     elif incidents >= LEVEL_THRESHOLDS["warning"]:
         level = "warning"
     elif incidents >= 1:
         level = "notice"
-    limited = level in ("limited", "suspended")
+    limited = level == "limited"
     return {
         "incidents": incidents,
         "level": level,
         "visible_to_couriers": incidents >= VISIBLE_TO_COURIERS_AT,
         "max_advance_tnd": LIMITED_MAX_ADVANCE_TND if limited else None,
         "phone_confirmation_required": limited,
-        "suspended": level == "suspended",
+        "suspended": False,  # never since 10/10/2026, kept for the app versions that read it
         "window_days": INCIDENT_WINDOW_DAYS,
         "rules": dict(INCIDENT_RULES),
     }
 
 
-async def suspended_until(session: AsyncSession, customer_id: uuid.UUID) -> datetime | None:
-    """When a suspended customer can order again (QA 06/10, R11/R12): the suspension is not a
-    sentence of fixed length, it lasts while SUSPENDED_AT incidents sit in the window — it ends
-    when the SUSPENDED_AT-th most recent one leaves it (unless a new incident comes in). None when
-    not suspended. Same incident definition as the customer_stats view."""
-    when = func.coalesce(NoResponseCase.final_at, NoResponseCase.started_at)
-    nth = (
-        await session.execute(
-            select(when)
-            .join(Order, Order.id == NoResponseCase.order_id)
-            .where(
-                Order.customer_id == customer_id,
-                NoResponseCase.incident_counted.is_(True),
-                when >= func.now() - timedelta(days=INCIDENT_WINDOW_DAYS),
-            )
-            .order_by(when.desc())
-            .offset(SUSPENDED_AT - 1)
-            .limit(1)
-        )
-    ).scalar_one_or_none()
-    return nth + timedelta(days=INCIDENT_WINDOW_DAYS) if nth is not None else None
-
-
 RELIABILITY_REPLY_DAYS = 90
 RELIABILITY_REPLY_MIN_SAMPLES = 3
+RECENT_ORDERS = 10  # the courier's badge: « n'a pas payé X fois sur ses Y dernières commandes »
 
 
 async def reliability_extras(session: AsyncSession, customer_id: uuid.UUID, incidents: int) -> dict[str, Any]:
     """delivered_orders (all time), reliability_pct (100 × delivered / (delivered + incidents of the
     window), 100 without any), avg_reply_seconds (median seconds from a courier's message to the
-    customer's next one in the same chat, last 90 days; null under 3 samples)."""
+    customer's next one in the same chat, last 90 days; null under 3 samples), recent_orders /
+    recent_unpaid (the customer's last RECENT_ORDERS finished orders — delivered, or left with a
+    no-response incident — and how many of them he did not pay, at any date)."""
     delivered = int(
         (
             await session.execute(
@@ -222,8 +200,24 @@ async def reliability_extras(session: AsyncSession, customer_id: uuid.UUID, inci
     )
     total = delivered + max(0, incidents)
     pct = round(100 * delivered / total) if total else 100
+    counted = (
+        select(NoResponseCase.id)
+        .where(NoResponseCase.order_id == Order.id, NoResponseCase.incident_counted.is_(True))
+        .exists()
+    )
+    recent = [
+        bool(unpaid)
+        for (unpaid,) in await session.execute(
+            select(counted)
+            .where(Order.customer_id == customer_id, or_(Order.status == "delivered", counted))
+            .order_by(Order.created_at.desc(), Order.id.desc())
+            .limit(RECENT_ORDERS)
+        )
+    ]
     return {
         "delivered_orders": delivered,
+        "recent_orders": len(recent),
+        "recent_unpaid": sum(recent),
         "reliability_pct": pct,
         "avg_reply_seconds": await _median_reply_seconds(session, customer_id),
     }
@@ -509,13 +503,6 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     user = (await session.execute(select(User).where(User.id == user_id).with_for_update())).scalar_one()
     address, default_point = await default_address(session, user.id)
     built = build_order(raw, user, address, default_point)
-    if await active_incidents(session, user.id) >= SUSPENDED_AT:
-        until = await suspended_until(session, user.id)
-        raise OrderRefused(
-            403,
-            "customer_suspended",
-            suspended_until=until.isoformat().replace("+00:00", "Z") if until else None,
-        )
     open_count = (
         await session.execute(
             select(func.count())

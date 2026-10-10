@@ -188,12 +188,9 @@ async def test_place_order_limits(client, world):
                 )
             )
         await s.commit()
-    suspended = await call(client, world.customer, "placeOrder", {"order": order_form()})
-    assert suspended.status_code == 403 and suspended.json()["error"] == "customer_suspended"
-    # when he can order again: the 5th most recent incident leaves the 180-day window (QA R11)
-    assert suspended.json()["suspended_until"].startswith(
-        (datetime.now(UTC) + timedelta(days=180)).date().isoformat()
-    )
+    # 5 incidents no longer suspend (owner, 10/10/2026): still the open-order cap, nothing else
+    again = await call(client, world.customer, "placeOrder", {"order": order_form()})
+    assert again.status_code == 429 and again.json()["error"] == "too_many_open_orders"
     assert (await client.post("/api/functions/placeOrder", json={})).status_code == 401
 
 
@@ -452,7 +449,7 @@ async def test_accept_offer_guards(client, world, factory):
     assert r.status_code == 409 and r.json() == {"error": "courier_unavailable"}
 
 
-async def test_suspended_customer_cannot_accept_but_admin_can(client, world):
+async def test_customer_with_incidents_can_still_accept(client, world):
     order = await world.order(status="offers_received")
     offer = await world.offer(order)
     async with SessionLocal() as s:
@@ -469,9 +466,7 @@ async def test_suspended_customer_cannot_accept_but_admin_can(client, world):
             )
         await s.commit()
     payload = {"order_id": str(order.id), "offer_id": str(offer.id)}
-    r = await call(client, world.customer, "acceptOrderOffer", payload)
-    assert r.status_code == 403 and r.json() == {"error": "customer_suspended", "incidents": 5}
-    assert (await call(client, world.admin, "acceptOrderOffer", payload)).status_code == 200
+    assert (await call(client, world.customer, "acceptOrderOffer", payload)).status_code == 200
 
 
 async def test_two_accepts_at_once_one_wins(client, world, factory):

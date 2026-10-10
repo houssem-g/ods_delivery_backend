@@ -1,11 +1,11 @@
 """acceptOrderOffer — the customer picks one courier's offer (base44/functions/acceptOrderOffer).
 
 One transaction under the order lock: the offer accepted, the others rejected, the order
-assigned with the fee of the offer (never a client value), accepted_at set. Suspended customers
-(5 no-response incidents in 180 days) are refused. The courier is notified here (order_accepted).
+assigned with the fee of the offer (never a client value), accepted_at set. No customer is refused
+for no-response incidents any more (owner, 10/10/2026). The courier is notified here (order_accepted).
 
 Body: { order_id, offer_id }. Returns { success, courier_user_id, offer }.
-Errors: order_not_found / offer_not_found (404), Forbidden / customer_suspended (403),
+Errors: order_not_found / offer_not_found (404), Forbidden (403),
 order_not_open / offer_not_pending / courier_unavailable (409).
 """
 
