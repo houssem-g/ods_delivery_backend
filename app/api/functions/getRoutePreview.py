@@ -8,7 +8,9 @@ Readable orders only (the Order entity's read rules: an open order a verified co
 his own deliveries, admins). Answers are kept SHORT_TTL in memory (positions rounded to ~100 m),
 so a courier moving the list around does not call OSRM each time.
 
-Returns { success: true, source: "osrm", to_shop: {distance_km, duration_min, path} | null,
+Times are the courier's vehicle's (leg_minutes), not a car's.
+
+Returns { success: true, source: "osrm", vehicle, to_shop: {distance_km, duration_min, path} | null,
 delivery: {distance_km, duration_min, path}, distance_km, drive_minutes, eta_minutes (drive +
 SHOPPING_MINUTES) } or { success: false, reason: "unavailable" | "no_location" } (the app keeps
 its straight-line estimate). Errors: order_id missing (400), order not found or not readable (404).
@@ -28,6 +30,8 @@ from app.integrations import osrm
 from app.models import OrderStop
 from app.security.deps import CurrentUser
 from app.services.geo import ORDER_BOUNDS, as_float, lat_of, lng_of, within
+from app.services.orders import courier_of_user
+from app.services.tracking import speed_kmh
 
 SHOPPING_MINUTES = 15  # same as src/lib/orderFlow.js offerEtaMinutes
 SHORT_TTL = 15 * 60
@@ -54,10 +58,17 @@ async def _trip(points: list[tuple[float, float]]) -> osrm.Trip | None:
     return found
 
 
-def _leg(leg: osrm.Leg, path: list[list[float]]) -> dict[str, Any]:
+def leg_minutes(leg: osrm.Leg, vehicle: str | None) -> float:
+    """The courier's time on this stretch: OSRM times a car with free roads, so the road km at the
+    vehicle's average city speed (scooter 25 km/h, car 30, walking 5 — the live tracking's speeds)
+    wins when it is slower (owner, 10/10/2026: « estimation pour livreur en scooter »)."""
+    return max(leg.duration_s / 60, leg.distance_m / 1000 / speed_kmh(vehicle) * 60)
+
+
+def _leg(leg: osrm.Leg, path: list[list[float]], vehicle: str | None) -> dict[str, Any]:
     return {
         "distance_km": round(leg.distance_m / 1000, 2),
-        "duration_min": round(leg.duration_s / 60, 1),
+        "duration_min": round(leg_minutes(leg, vehicle), 1),
         "path": [[round(lat, 5), round(lng, 5)] for lat, lng in path],
     }
 
@@ -98,11 +109,14 @@ async def handle(
     found = await _trip(points)
     if found is None:
         return 200, {"success": False, "reason": "unavailable"}
-    legs = [_leg(leg, path) for leg, path in zip(found.legs, found.leg_coords, strict=True)]
-    drive = sum(leg.duration_s for leg in found.legs) / 60
+    courier = await courier_of_user(session, user.id)
+    vehicle = courier.vehicle if courier is not None else None
+    legs = [_leg(leg, path, vehicle) for leg, path in zip(found.legs, found.leg_coords, strict=True)]
+    drive = sum(leg_minutes(leg, vehicle) for leg in found.legs)
     return 200, {
         "success": True,
         "source": "osrm",
+        "vehicle": vehicle or "scooter",
         "to_shop": legs[0] if with_courier else None,
         "delivery": legs[-1],
         "distance_km": round(sum(leg.distance_m for leg in found.legs) / 1000, 2),

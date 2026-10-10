@@ -62,10 +62,12 @@ async def test_courier_gets_the_road_route_and_it_is_cached(client, world, osrm_
     assert r.status_code == 200
     body = r.json()
     assert body["success"] is True and body["source"] == "osrm"
-    assert body["to_shop"]["distance_km"] == 5.2 and body["to_shop"]["duration_min"] == 10
-    assert body["delivery"]["distance_km"] == 3.1 and body["delivery"]["duration_min"] == 7
+    # a scooter: the road km at 25 km/h is slower than OSRM's car (10 and 7 min)
+    assert body["vehicle"] == "scooter"
+    assert body["to_shop"]["distance_km"] == 5.2 and body["to_shop"]["duration_min"] == 12.5
+    assert body["delivery"]["distance_km"] == 3.1 and body["delivery"]["duration_min"] == 7.4
     assert body["to_shop"]["path"][0] == [35.82, 10.6] and len(body["delivery"]["path"]) == 3
-    assert body["distance_km"] == 8.3 and body["drive_minutes"] == 17 and body["eta_minutes"] == 32
+    assert body["distance_km"] == 8.3 and body["drive_minutes"] == 20 and body["eta_minutes"] == 35
     # a few metres further: same answer from memory, no second OSRM call
     again = await ask(client, world.courier_user, order.id, (SOUSSE_ME[0] + 0.0001, SOUSSE_ME[1]))
     assert again.json() == body and len(osrm_ok) == 1
@@ -100,3 +102,19 @@ async def test_only_readers_of_the_order(client, world, factory, osrm_ok):
         "success": False,
         "reason": "no_location",
     }
+
+
+async def test_a_car_keeps_osrm_time_when_slower(client, world, osrm_ok):
+    from sqlalchemy import update
+
+    from app.db import SessionLocal
+    from app.models import Courier
+
+    async with SessionLocal() as s:
+        await s.execute(update(Courier).where(Courier.id == world.courier.id).values(vehicle="car"))
+        await s.commit()
+    order = await world.order()
+    body = (await ask(client, world.courier_user, order.id, SOUSSE_ME)).json()
+    # car 30 km/h: 5.2 km → 10.4 min > OSRM 10; 3.1 km → 6.2 min < OSRM 7
+    assert body["vehicle"] == "car"
+    assert body["to_shop"]["duration_min"] == 10.4 and body["delivery"]["duration_min"] == 7
