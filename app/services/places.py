@@ -137,6 +137,16 @@ async def _token_matchers(
             categories, lambda c, t=token: t in text_norm.normalize_text(c or empty_category_as)
         )
         text_match = places.c.search_norm.contains(token, autoescape=True)
+        sound = text_norm.query_skeleton(token)
+        if sound:  # « monoprix » also finds « مونوبري » and the other way round (B3)
+            sk, exact = sound
+            col = places.c.search_norm
+            sound_match = (
+                or_(col.contains(f" {sk} ", autoescape=True), col.endswith(f" {sk}", autoescape=True))
+                if exact
+                else col.contains(f" {sk}", autoescape=True)
+            )
+            text_match = or_(text_match, sound_match)
         matchers.append(or_(text_match, places.c.category.in_(in_category)) if in_category else text_match)
     return matchers
 
@@ -406,6 +416,7 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
         )
     ).all()
     tokens = text_norm.tokenize(q.search_query)
+    heard = {token: text_norm.query_skeleton(token) for token in tokens}  # Latin ↔ Arabic (B3)
     items = []
     for row in rows:
         category = (row.categories[0] if row.categories else None) or "restaurant"
@@ -428,7 +439,11 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
         if q.min_rating:
             continue  # rating 0 never passes a minimum
         haystack = text_norm.fold_trim(" ".join([item["name"], item["address"], item["city"], category]))
-        if all(token in haystack for token in tokens):
+        sounds = " ".join(text_norm.skeletons(item["name"], item["address"], item["city"]))
+        if all(
+            token in haystack or (heard[token] is not None and text_norm.skeleton_in(heard[token], sounds))
+            for token in tokens
+        ):
             items.append(item)
     return items
 

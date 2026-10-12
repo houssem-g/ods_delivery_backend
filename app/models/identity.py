@@ -107,6 +107,16 @@ class RefreshToken(Base):
     created_at: Mapped[datetime] = created_at()
 
 
+class RevokedAccessToken(Base):
+    """An access token given back by « Se déconnecter » before it expires (QA 08/10): the jti is
+    refused until the token's own expiry, then the row is useless and is cleaned up."""
+
+    __tablename__ = "revoked_access_tokens"
+
+    jti: Mapped[str] = mapped_column(Text, primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+
 class DeviceKey(Base):
     """« Se connecter avec l'empreinte / le visage »: a secret kept by the phone in its secure
     storage (Android Keystore / iOS Keychain), released only after the phone's biometric check.

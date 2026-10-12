@@ -9,6 +9,7 @@ from app.models.identity import (
     EmailCode,
     PhoneVerification,
     RefreshToken,
+    RevokedAccessToken,
     User,
     UserAddress,
 )
@@ -82,6 +83,7 @@ __all__ = [
     "Place",
     "PushDelivery",
     "RefreshToken",
+    "RevokedAccessToken",
     "Shop",
     "ShopMenuItem",
     "ShopReview",

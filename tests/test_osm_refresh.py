@@ -87,7 +87,8 @@ def test_element_to_place_and_quality():
     assert first["osm_id"] == "node/1" and first["name"] == "Pharmacie Pasteur"
     assert first["address"] == "12, Rue de Rome, Tunis" and first["city"] == "Tunis"
     assert first["name_norm"] == "pharmacie pasteur"
-    assert first["search_norm"] == "pharmacie pasteur 12 rue de rome tunis tunis"  # address + city
+    # address + city, then the Latin ↔ Arabic sound skeletons (B3)
+    assert first["search_norm"] == "pharmacie pasteur 12 rue de rome tunis tunis ~frms ~bstr ~rm ~tn"
     assert first["quality_score"] == 85 and first["phone"] == "+216 71 000 000"
     assert first["location"] == "SRID=4326;POINT(10.18 36.8)"
     arabic = element_to_place(ELEMENTS[1], "pharmacie", TS)
@@ -205,5 +206,6 @@ async def test_job_backfills_imported_rows(overpass, monkeypatch):
     assert outcome["result"]["backfilled"] == 1
     async with SessionLocal() as s:
         place = await s.get(Place, imported.id)
-    assert place.name_norm == "cafe bir lahjar" and place.search_norm == "cafe bir lahjar rue du pacha"
+    assert place.name_norm == "cafe bir lahjar"
+    assert place.search_norm == "cafe bir lahjar rue du pacha ~kf ~br ~ljr ~bS"
     assert JOBS["osm_refresh"].enabled is False  # OSM_REFRESH_ENABLED defaults to false

@@ -320,6 +320,25 @@ async def test_refresh_without_cookie_and_logout(client, factory):
     assert again.status_code == 401
 
 
+async def test_logout_ends_the_access_token_at_once(client, factory):
+    """QA 08/10: after « Se déconnecter » the old access token no longer works (it used to
+    until its expiry, up to 1 h); another phone of the same account stays signed in."""
+    user = await factory.user()
+    phone_a = (await login(client, user.email)).json()["access_token"]
+    phone_b = (await login(client, user.email)).json()["access_token"]
+    assert (await client.get("/api/auth/me", headers=auth_token(phone_a))).status_code == 200
+    out = await client.post("/api/auth/logout", headers=auth_token(phone_a))
+    assert out.status_code == 200
+    assert (await client.get("/api/auth/me", headers=auth_token(phone_a))).status_code == 401
+    assert (await client.get("/api/auth/me", headers=auth_token(phone_b))).status_code == 200
+    # signing out twice with the same token is harmless
+    assert (await client.post("/api/auth/logout", headers=auth_token(phone_a))).status_code == 200
+
+
+def auth_token(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
 async def test_refresh_refused_for_disabled_user(client, factory):
     user = await factory.user()
     await login(client, user.email)

@@ -2,7 +2,7 @@
 HttpOnly cookie `odsd_refresh` (path /api/auth)."""
 
 import secrets
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -11,20 +11,23 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from jwt import PyJWTError as JWTError
 from pydantic import AliasChoices, BaseModel, Field
+from sqlalchemy import delete
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import get_session
 from app.errors import ApiError
 from app.integrations import google_oauth
-from app.models import User
+from app.models import RevokedAccessToken, User
 from app.rate_limit import ip_key, limiter
-from app.security.deps import CurrentUser, current_user
+from app.security.deps import CurrentUser, bearer_token, current_user
 from app.security.tokens import (
     InvalidToken,
     RefreshReused,
     clear_refresh_cookie,
     consume_refresh_token,
+    decode_access_token,
     now_utc,
     revoke_refresh_token,
     set_refresh_cookie,
@@ -307,6 +310,26 @@ def _refresh_refused(error: str, message: str) -> JSONResponse:
     return response
 
 
+async def _revoke_access_token(session: AsyncSession, token: str | None) -> None:
+    """The access token of this sign-out stops working now, not at its expiry (QA 08/10): its
+    jti is refused until then. Expired rows are dropped on the way (the table stays tiny)."""
+    if not token:
+        return
+    try:
+        claims = decode_access_token(token)
+    except InvalidToken:
+        return
+    if not claims.get("jti"):
+        return
+    now = datetime.now(UTC)
+    await session.execute(delete(RevokedAccessToken).where(RevokedAccessToken.expires_at < now))
+    await session.execute(
+        pg_insert(RevokedAccessToken)
+        .values(jti=claims["jti"], expires_at=datetime.fromtimestamp(int(claims["exp"]), UTC))
+        .on_conflict_do_nothing(index_elements=["jti"])
+    )
+
+
 @router.post("/logout")
 async def logout(request: Request, session: AsyncSession = Depends(get_session)) -> JSONResponse:
     raw = request.cookies.get(settings.REFRESH_COOKIE_NAME)
@@ -314,7 +337,8 @@ async def logout(request: Request, session: AsyncSession = Depends(get_session))
         user_id = await revoke_refresh_token(session, raw)
         if user_id is not None:
             await couriers.follow_session(session, user_id, online=False)
-        await session.commit()
+    await _revoke_access_token(session, bearer_token(request))
+    await session.commit()
     response = JSONResponse({"success": True})
     clear_refresh_cookie(response)
     return response

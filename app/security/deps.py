@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.errors import ApiError
-from app.models import User
+from app.models import RevokedAccessToken, User
 from app.security.tokens import InvalidToken, decode_access_token
 
 
@@ -50,6 +50,8 @@ async def user_from_token(session: AsyncSession, token: str) -> CurrentUser | No
         claims = decode_access_token(token)
     except InvalidToken:
         return None
+    if claims.get("jti") and await session.get(RevokedAccessToken, claims["jti"]) is not None:
+        return None  # signed out with this token
     user = await load_active_user(session, claims["sub"])
     return to_current_user(user) if user else None
 

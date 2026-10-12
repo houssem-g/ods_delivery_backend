@@ -49,7 +49,31 @@ def test_normalization_helpers():
     assert text_norm.normalize_text("Pâtisserie", "  Tunis ") == "patisserie tunis"
     assert text_norm.compact("Chez  Ali - Café") == "chezalicafe"
     assert text_norm.fold_trim("  Hôpital Charles-Nicolle ") == "hopital charles-nicolle"
-    assert text_norm.search_text("Pharmacie", None, "La Marsa") == "pharmacie la marsa"
+    assert text_norm.search_text("Pharmacie", None, "La Marsa") == "pharmacie la marsa ~frms ~mrs"
+
+
+@pytest.mark.parametrize(
+    ("latin", "arabic"),
+    [
+        ("monoprix", "مونوبري"),
+        ("carrefour", "كارفور"),
+        ("pharmacie", "فارماسي"),
+        ("magasin", "ماغازين"),
+        ("general", "جنرال"),
+        ("aziza", "عزيزة"),
+        ("sahloul", "سهلول"),
+        ("geant", "الجيان"),
+    ],
+)
+def test_latin_and_arabic_spellings_share_one_skeleton(latin, arabic):
+    """QA 08/10 B3: the same shop written in Latin or Arabic letters sounds the same."""
+    assert text_norm.skeleton(latin) == text_norm.skeleton(text_norm.tokenize(arabic)[0])
+
+
+def test_short_words_get_no_sound_match():
+    assert text_norm.query_skeleton("pain") is None  # « bn » would match far too many places
+    assert text_norm.query_skeleton("monop") == ("~mnb", False)  # typing: a prefix is enough
+    assert text_norm.query_skeleton("aziza") == ("~zz", True)  # 2 letters: the whole skeleton only
 
 
 def test_js_number_coercions():
@@ -138,6 +162,43 @@ async def test_search_places_text_scores_accents_and_arabic(client, factory):
     assert await top("boulangerie") == "Boulangerie El Hana"
     # partial token (substring of a word), as JS `includes`
     assert await top("pizz") == "Pizzeria Roma"
+
+
+async def test_search_places_latin_finds_arabic_and_back(client, factory):
+    """QA 08/10 B3: « monoprix » finds « مونوبري », « كارفور » finds « Carrefour »."""
+    user = await factory.user()
+    await add_place("مونوبري", *north(1.0), category="supermarché")
+    await add_place("Carrefour Market", *north(2.0), category="supermarché")
+    await add_place("Pizzeria Roma", *north(0.3))
+    await add_place("Pain Chaud", *north(0.5), category="boulangerie")
+
+    async def names(query: str) -> list[str]:
+        r = await client.post(
+            "/api/functions/searchPlaces", json={"lat": LAT, "lng": LNG, "query": query}, headers=auth(user)
+        )
+        return [p["name"] for p in r.json()["places"]]
+
+    assert await names("monoprix") == ["مونوبري"]
+    assert await names("Monop") == ["مونوبري"]
+    assert await names("كارفور") == ["Carrefour Market"]
+    assert await names("carrefour") == ["Carrefour Market"]
+    assert await names("roma") == ["Pizzeria Roma"]  # no sound noise on a normal search
+    assert "Pain Chaud" not in await names("bon")  # short words: letters only, no sound match
+
+
+async def test_search_by_bbox_latin_finds_arabic_places_and_shops(client, factory):
+    user = await factory.user()
+    await add_place("مونوبري سهلول", LAT + 0.01, LNG)
+    await add_shop("Carrefour Express", LAT, LNG + 0.01, categories=["supermarche"])
+    box = {"minLat": LAT - 0.05, "maxLat": LAT + 0.05, "minLng": LNG - 0.05, "maxLng": LNG + 0.05}
+
+    async def names(query: str) -> list[str]:
+        body = {**box, "search_query": query}
+        r = await client.post("/api/functions/searchByBbox", json=body, headers=auth(user))
+        return [row["name"] for row in r.json()["data"]["results"]]
+
+    assert await names("monoprix") == ["مونوبري سهلول"]
+    assert await names("كارفور") == ["Carrefour Express"]
 
 
 async def test_search_places_filters_bounds_and_dedupe(client, factory):
@@ -322,8 +383,10 @@ async def test_search_places_typed_name_ignores_category_and_drops_unrelated(cli
     assert await names(query="monoprix", limit=15) == ["Monoprix Lafayette", "Monoprix Menzah"]
     # two words: places with both words only, when some exist
     assert await names(query="monoprix menzah") == ["Monoprix Menzah"]
-    # a typo in one word still finds the place by the other word
-    assert await names(query="monoprix menzhaa") == ["Monoprix Lafayette", "Monoprix Menzah"]
+    # a typo in one word: « menzhaa » sounds like « menzah » (B3 sound match), so only that one
+    assert await names(query="monoprix menzhaa") == ["Monoprix Menzah"]
+    # a word unrelated to every place still finds the places by the other word
+    assert await names(query="monoprix xyzzy") == ["Monoprix Lafayette", "Monoprix Menzah"]
     # the chosen category still lifts its places when several match
     assert (await names(query="monoprix", category="supermarket"))[0] == "Monoprix Menzah"
     # no text: the category is still a filter (browsing « Top supermarchés »)
