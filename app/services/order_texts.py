@@ -36,12 +36,15 @@ def hours_ar(n: int) -> str:
 # --- dispatchOrderToCouriers ----------------------------------------------------------------------
 
 
-def new_order(items: str, shop_name: str | None, distance_km: float) -> Text:
+def new_order(items: str, shop_name: str | None, distance_km: float | None) -> Text:
+    """distance_km None: a courier whose position is unknown (launch mode, app never opened)."""
+    dist_fr = "" if distance_km is None else f" - À {_km(distance_km)} km"
+    dist_ar = "" if distance_km is None else f" - {_km(distance_km, 'ar')} كم"
     return {
         "title_ar": "🎯 طلب جديد متاح",
         "title_fr": "🎯 Nouvelle commande disponible",
-        "body_ar": f"{items} من {shop_name} - {_km(distance_km, 'ar')} كم",
-        "body_fr": f"{items} de {shop_name} - À {_km(distance_km)} km",
+        "body_ar": f"{items} من {shop_name}{dist_ar}",
+        "body_fr": f"{items} de {shop_name}{dist_fr}",
     }
 
 

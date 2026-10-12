@@ -9,6 +9,10 @@ dispatchOrderToCouriers:
    Couriers of the shop's governorate when there are any online, else all online
    (the legacy filter + fallback). One PostGIS query over the `couriers_dispatch`
    partial index, no per-courier reads (audit §3.4 N+1).
+Launch mode (app/services/launch_mode.py, owner 13/10/2026, on by default): « online » is not
+required — a courier « Hors ligne » or signed out is notified too (his last known position within
+his radius, or no position yet but serving the shop's governorate). Switched off in Admin →
+Paramètres once there are enough couriers.
 QA orders are never broadcast. The caller holds the order lock.
 """
 
@@ -18,11 +22,11 @@ from datetime import datetime
 from typing import Any
 
 from geoalchemy2 import Geography
-from sqlalchemy import cast, exists, func, select
+from sqlalchemy import and_, cast, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, Order, OrderStop, User
-from app.services import order_texts
+from app.services import launch_mode, order_texts
 from app.services.notifications import notify
 from app.services.order_transitions import now_utc
 from app.services.orders import dropped_by, first_stop, is_test_order, signup_attribution, stop_coordinates
@@ -63,7 +67,11 @@ async def _push_wanted(session: AsyncSession, user_id: uuid.UUID) -> bool:
 
 
 async def _preferred(
-    session: AsyncSession, order: Order, stop: OrderStop | None, shop: tuple[float, float] | None
+    session: AsyncSession,
+    order: Order,
+    stop: OrderStop | None,
+    shop: tuple[float, float] | None,
+    offline_too: bool = False,
 ) -> tuple[Courier | None, str | None, float | None]:
     """(courier, skip reason, distance km) for the invite-link courier."""
     customer = await session.get(User, order.customer_id)
@@ -72,7 +80,7 @@ async def _preferred(
         return None, "not_attributed", None
     if courier.user_id == order.customer_id:
         return None, "self", None
-    if not courier.is_online:
+    if not courier.is_online and not offline_too:
         return None, "offline", None
     if courier.verification != "verified":
         return None, "not_verified", None
@@ -109,9 +117,10 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     preferred_notified = False
     dropped = await dropped_by(session, order.id)  # couriers who gave it up: never offered again
     dropped |= await blocked_with(session, order.customer_id)  # a block either way: never offered
+    offline_too = await launch_mode.notify_offline_couriers(session)
 
     if order.preferred_courier_id is not None:
-        courier, reason, distance = await _preferred(session, order, stop, shop)
+        courier, reason, distance = await _preferred(session, order, stop, shop, offline_too)
         if courier is not None and courier.user_id in dropped:
             courier, reason = None, "dropped"
         if courier is None:
@@ -147,7 +156,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
         }
 
     shop_point = cast(func.ST_MakePoint(shop[1], shop[0]), Geography(srid=4326))
-    online = [Courier.is_online.is_(True)]
+    online = [] if offline_too else [Courier.is_online.is_(True)]
     governorate = stop.governorate if stop else None
     if governorate:
         in_governorate = (
@@ -162,14 +171,26 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     candidates_total = (
         await session.execute(select(func.count()).select_from(Courier).where(*online))
     ).scalar_one()
+    if offline_too:
+        candidates_total = (
+            await session.execute(
+                select(func.count()).select_from(Courier).where(*online, Courier.verification == "verified")
+            )
+        ).scalar_one()
 
     radius_m = func.coalesce(func.nullif(Courier.notification_radius_km, 0), DEFAULT_RADIUS_KM) * 1000
     distance_m = func.ST_Distance(Courier.last_location, shop_point)
+    near = func.ST_DWithin(Courier.last_location, shop_point, radius_m)
+    if offline_too and governorate:
+        # launch mode: a courier who never shared a position yet, but serves this governorate
+        no_position_here = and_(Courier.last_location.is_(None), Courier.service_governorate == governorate)
+        where_near = or_(near, no_position_here)
+    else:
+        where_near = and_(Courier.last_location.is_not(None), near)
     conditions = [
         *online,
         Courier.verification == "verified",
-        Courier.last_location.is_not(None),
-        func.ST_DWithin(Courier.last_location, shop_point, radius_m),
+        where_near,
         ~_busy(Courier.id),
         # a dual account is never offered his own order (createOrderOffer refuses it anyway)
         Courier.user_id != order.customer_id,
@@ -190,18 +211,18 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
             )
             .join(User, User.id == Courier.user_id)
             .where(*conditions)
-            .order_by(distance_m)
+            .order_by(distance_m.asc().nulls_last())
             .limit(MAX_FAN_OUT)
         )
     ).all()
     for courier_id, user_id, dist_m, push_enabled, wants_new_orders in eligible:
-        distance = float(dist_m) / 1000
+        distance = float(dist_m) / 1000 if dist_m is not None else None
         await notify(
             session,
             user_id=user_id,
             type_="new_order",
             order_id=order.id,
-            metadata=_metadata(order, stop, {"distance_km": round(distance, 1)}),
+            metadata=_metadata(order, stop, {} if distance is None else {"distance_km": round(distance, 1)}),
             **order_texts.new_order(items, stop.name if stop else None, distance),
         )
         if push_enabled and wants_new_orders:

@@ -22,12 +22,13 @@ from typing import Any, Literal, Protocol
 import firebase_admin
 from firebase_admin import credentials, messaging
 from firebase_admin import exceptions as fb_exceptions
-from sqlalchemy import select
+from sqlalchemy import select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import DeviceToken, PushDelivery
 from app.security.tokens import now_utc
+from app.services import launch_mode
 
 log = logging.getLogger("odsd.push")
 FAILURE_THRESHOLD = 5
@@ -286,11 +287,16 @@ async def send_to_user(
     session: AsyncSession, user_id: uuid.UUID, msg: PushMessage, provider: PushProvider | None = None
 ) -> dict[str, Any]:
     """Pushes `msg` to the user's active devices and records each attempt. The caller commits."""
+    # A phone signed out in launch mode (DeviceToken.signed_out_at) only gets the new orders, and
+    # only while the launch mode is still on.
+    signed_in = DeviceToken.signed_out_at.is_(None)
+    if msg.type == "new_order" and await launch_mode.notify_offline_couriers(session):
+        signed_in = true()
     tokens = list(
         (
             await session.execute(
                 select(DeviceToken)
-                .where(DeviceToken.user_id == user_id, DeviceToken.is_active)
+                .where(DeviceToken.user_id == user_id, DeviceToken.is_active, signed_in)
                 .order_by(DeviceToken.last_seen_at.desc())
                 .limit(MAX_TOKENS_PER_USER)
             )

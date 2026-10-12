@@ -21,6 +21,7 @@ from app.models import (
 )
 from app.services import cancellation
 from tests.factories import auth
+from tests.launch_helpers import set_launch_mode
 from tests.order_helpers import (
     SOUSSE_HOME,
     SOUSSE_SHOP,
@@ -220,6 +221,8 @@ async def test_invite_link_courier_is_told_first(client, world, factory):
 
 
 async def test_dispatch_eligibility(client, world, factory):
+    await set_launch_mode(False)  # the normal rule: only the couriers « En ligne »
+
     async def courier(email, **fields):
         user = await factory.user(email=email, profile=False)
         await world.make_courier(user, **fields)
@@ -286,6 +289,7 @@ async def test_dispatch_respects_push_preferences(client, world):
 
 
 async def test_preferred_courier_skip_reasons(client, world, factory):
+    await set_launch_mode(False)
     referrer_user = await factory.user(email="ref@example.test", profile=False)
     referrer = await world.make_courier(referrer_user, is_online=False)
     order = await world.order(preferred_courier_id=referrer.id)

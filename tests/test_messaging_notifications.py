@@ -436,7 +436,7 @@ async def test_unregister_device_token(client, parties):
     missing = await client.post(url, json={}, headers=auth(me))
     assert (missing.status_code, missing.json()) == (400, {"error": "Missing token or endpoint_hash"})
     by_token = await client.post(url, json={"token": "fcm-a"}, headers=auth(me))
-    assert by_token.json() == {"success": True, "deactivated": 1}
+    assert by_token.json() == {"success": True, "deactivated": 1, "new_orders_kept": False}
     by_hash = await client.post(
         url, json={"endpoint_hash": device_tokens.endpoint_hash("fcm-b")}, headers=auth(me)
     )

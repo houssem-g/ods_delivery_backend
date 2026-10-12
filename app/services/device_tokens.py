@@ -9,14 +9,15 @@ account stops receiving pushes here.
 import hashlib
 from typing import Any
 
-from sqlalchemy import func, literal_column, update
+from sqlalchemy import func, literal_column, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.entities.device_token import ENDPOINT_HASH
-from app.models import DeviceToken
+from app.models import Courier, DeviceToken
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
+from app.services import launch_mode
 
 Result = tuple[int, dict[str, Any]]
 PLATFORMS = ("web", "android", "ios")
@@ -66,6 +67,7 @@ async def register(
         "last_seen_at": func.now(),
         "last_error": None,
         "failure_count": 0,
+        "signed_out_at": None,
     }
     stmt = pg_insert(DeviceToken).values(**values)
     stmt = stmt.on_conflict_do_update(
@@ -83,16 +85,28 @@ async def unregister(session: AsyncSession, user: CurrentUser, payload: dict[str
         wanted = endpoint_hash(token)
     if not wanted:
         return 400, {"error": "Missing token or endpoint_hash"}
+    # Launch mode: a verified courier who signs out keeps hearing about new orders on this phone
+    # (owner, 13/10/2026); everything else stops. Off: the token is simply deactivated.
+    keep_new_orders = (
+        await launch_mode.notify_offline_couriers(session)
+        and (
+            await session.execute(
+                select(Courier.id).where(Courier.user_id == user.id, Courier.verification == "verified")
+            )
+        ).first()
+        is not None
+    )
+    values: dict[str, Any] = {"signed_out_at": func.now()} if keep_new_orders else {"is_active": False}
     ids = list(
         (
             await session.execute(
                 update(DeviceToken)
                 .where(DeviceToken.user_id == user.id, wanted == ENDPOINT_HASH)
-                .values(is_active=False)
+                .values(**values)
                 .returning(DeviceToken.id)
             )
         ).scalars()
     )
     for token_id in ids:
         emit(session, "DeviceToken", "update", token_id)
-    return 200, {"success": True, "deactivated": len(ids)}
+    return 200, {"success": True, "deactivated": len(ids), "new_orders_kept": keep_new_orders}

@@ -84,6 +84,9 @@ class DeviceToken(Base):
     failure_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     last_error: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    # Signed out of the app while the launch mode was on (app/services/launch_mode.py): a courier's
+    # phone keeps receiving the new orders only, nothing else; cleared by the next sign-in.
+    signed_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
