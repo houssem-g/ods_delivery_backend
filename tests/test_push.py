@@ -41,7 +41,7 @@ def test_recipient_role(type_, metadata, expected):
 
 
 def test_push_links():
-    assert push_link("new_order", "o1", {}) == "/CourierOrderDetail?id=o1&as=courier"
+    assert push_link("new_order", "o1", {}) == "/CourierDashboard?order=o1&as=courier"
     assert push_link("customer_responded", "o1", {}) == "/CourierOrderActive?id=o1&as=courier"
     assert push_link("new_order", None, {}) == "/CourierHome?as=courier"
     assert push_link("new_offer", "o1", {}) == "/OrderOffers?id=o1&as=customer"
@@ -63,7 +63,7 @@ def test_multicast_payload_shape():
     msg = PushMessage(**{**MESSAGE.__dict__, "type": "new_order"})
     built = push.build_multicast(["t1"], "fr", msg)
     assert built.notification.title == "Offre" and built.data["click_action"].startswith(
-        "/CourierOrderDetail"
+        "/CourierDashboard?order="
     )
     assert built.android.notification.channel_id == "new_orders" and built.android.collapse_key == "order_o-1"
     assert built.webpush.notification.require_interaction is True

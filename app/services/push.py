@@ -112,7 +112,8 @@ def push_link(type_: str, order_id: str | None, metadata: dict[str, Any]) -> str
         if not order_id:
             path = "/CourierHome"
         elif type_ == "new_order":
-            path = f"/CourierOrderDetail?id={order_id}"
+            # « Commandes » with the order in its offer card: no detail page any more (owner, 16/10/2026)
+            path = f"/CourierDashboard?order={order_id}"
         elif type_ == "order_cancelled" and metadata.get("reason") == "blocked_by_customer":
             # « Commande retirée »: the page says why instead of « introuvable » (QA 06/10, B56)
             path = f"/CourierOrderActive?id={order_id}&retired=1"
