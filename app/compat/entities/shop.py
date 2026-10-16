@@ -12,22 +12,24 @@ decision, so none is sent. Delete: admins.
 import uuid
 from typing import Any
 
-from sqlalchemy import Text, case, func, literal, or_, select, text, true
+from sqlalchemy import Text, and_, case, func, literal, or_, select, text, true
 from sqlalchemy.dialects.postgresql import JSONB, aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.payload import coerce_payload
 from app.compat.registry import EntityDef, LegacyField, register
 from app.errors import ApiError
-from app.models import Shop, ShopMenuItem, User
+from app.models import Shop, ShopMenuItem, User, Vitrine
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
+from app.services import vitrine as vitrine_service
 from app.services.places import lat_expr, lng_expr
 from app.services.shops import public_prefix
 
 shops = Shop.__table__
 menu = ShopMenuItem.__table__
 proposer = User.__table__.alias("shop_proposer")
+vitrines = Vitrine.__table__
 
 REVIEW_STATUSES = ("pending", "approved", "rejected")
 TEXT_FIELDS = {
@@ -65,7 +67,26 @@ def _author_or_admin(user: CurrentUser) -> Any:
 def _read_policy(user: CurrentUser) -> Any:
     if user.is_admin:
         return true()
-    return or_(shops.c.review_status == "approved", shops.c.proposed_by == user.id)
+    # Vitrine (16/10/2026): a shop with a Vitrine follows its visibility (app/services/vitrine.py).
+    return and_(
+        or_(shops.c.review_status == "approved", shops.c.proposed_by == user.id),
+        vitrine_service.shop_visible_sql(user),
+    )
+
+
+def _vitrine() -> Any:
+    """{slug, source, status, test} of the shop's Vitrine when it is active (admins: any status)."""
+    test = or_(shops.c.visibility != "public", vitrines.c.catalog_test, ~vitrine_service.public_allowed_sql())
+    return (
+        select(
+            func.jsonb_build_object(
+                "slug", shops.c.slug, "source", vitrines.c.source, "status", vitrines.c.status, "test", test,
+                type_=JSONB,
+            )
+        )
+        .where(vitrines.c.shop_id == shops.c.id)
+        .scalar_subquery()
+    )  # fmt: skip
 
 
 FIELDS: dict[str, LegacyField] = {
@@ -85,6 +106,8 @@ FIELDS: dict[str, LegacyField] = {
     "review_status": LegacyField(shops.c.review_status, "string"),
     "proposed_by": LegacyField(proposer.c.email, "string", read_guard=_author_or_admin),
     "proposed_at": LegacyField(shops.c.proposed_at, "datetime"),
+    "visibility": LegacyField(shops.c.visibility, "string"),
+    "vitrine": LegacyField(_vitrine(), "object"),
 }
 
 
@@ -128,6 +151,8 @@ async def update(session: AsyncSession, actor: CurrentUser, doc_id: str, data: d
 async def delete(session: AsyncSession, actor: CurrentUser, doc_id: str) -> list[Any]:
     _require_admin(actor, "delete")
     shop = await _load(session, doc_id)
+    if await session.get(Vitrine, shop.id) is not None:
+        raise ApiError(409, "vitrine_exists", "A shop with a Vitrine is archived, never deleted")
     audience = [actor.id] + ([shop.proposed_by] if shop.proposed_by else [])
     await session.delete(shop)
     await session.flush()

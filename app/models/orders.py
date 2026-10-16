@@ -91,7 +91,15 @@ class Order(Base):
         Index("ix_orders_preferred_courier_id", "preferred_courier_id"),
         # Partner orders (app/services/partner_orders.py): idempotence per partner, the public
         # tracking token, the per-phone badge over partner orders.
-        CheckConstraint("source IN ('app','partner')", name="source"),
+        CheckConstraint("source IN ('app','partner','vitrine')", name="source"),
+        CheckConstraint("(source = 'vitrine') = (vitrine_shop_id IS NOT NULL)", name="vitrine_shop"),
+        CheckConstraint("cart IS NULL OR jsonb_typeof(cart) = 'object'", name="cart"),
+        Index(
+            "orders_vitrine_shop",
+            "vitrine_shop_id",
+            "created_at",
+            postgresql_where=text("vitrine_shop_id IS NOT NULL"),
+        ),
         CheckConstraint(
             "partner_return_outcome IN ('accepted','refused','shop_closed')", name="partner_return_outcome"
         ),
@@ -171,6 +179,13 @@ class Order(Base):
     tracking_token: Mapped[str | None] = mapped_column(Text, unique=True)
     # D4/D5 (owner, 16/10/2026): what happened when the courier brought the meal back.
     partner_return_outcome: Mapped[str | None] = mapped_column(Text)
+    # Vitrine orders (source 'vitrine', app/services/vitrine_orders.py): the shop, the cart snapshot
+    # (lines, unit prices, ODS ids: what ODS honours) and the poster code the customer came from.
+    vitrine_shop_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("shops.id", ondelete="RESTRICT")
+    )
+    cart: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
+    vitrine_src: Mapped[str | None] = mapped_column(Text)
     old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
@@ -341,6 +356,8 @@ class OrderStockCheck(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     photo_key: Mapped[str | None] = mapped_column(Text)
     nothing_available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # Vitrine: the ODS dishes the restaurant reported missing (POST …/vitrine-orders/{ref}/missing-items).
+    ods_menu_ids: Mapped[list | None] = mapped_column(JSONB(none_as_null=True))
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
     decided_by: Mapped[str | None] = mapped_column(Text)
     deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

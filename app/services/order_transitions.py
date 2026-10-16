@@ -43,9 +43,11 @@ ALLOWED: dict[str | None, frozenset[str]] = {
     "pending": frozenset({"offers_received", "accepted", "cancelled"}),
     "offers_received": frozenset({"pending", "accepted", "cancelled"}),
     # courier steps; 'pending' = the courier drops the delivery (back to the pool)
-    "accepted": frozenset({"at_shop", "on_the_way"}) | _BACK_TO_POOL_OR_CANCEL,
+    # price_confirmation_needed from accepted: a Vitrine restaurant reports a missing dish before the
+    # courier arrives (app/services/vitrine_orders.py); the order goes back to accepted afterwards.
+    "accepted": frozenset({"at_shop", "on_the_way", "price_confirmation_needed"}) | _BACK_TO_POOL_OR_CANCEL,
     "at_shop": frozenset({"price_confirmation_needed", "purchased"}) | _BACK_TO_POOL_OR_CANCEL,
-    "price_confirmation_needed": frozenset({"at_shop", "purchased"}) | _BACK_TO_POOL_OR_CANCEL,
+    "price_confirmation_needed": frozenset({"at_shop", "purchased", "accepted"}) | _BACK_TO_POOL_OR_CANCEL,
     # client_no_response: triggerEmergencyContact reports once the goods are bought (REPORTABLE)
     "purchased": frozenset({"on_the_way", "client_no_response"}) | _BACK_TO_POOL_OR_CANCEL,
     "on_the_way": frozenset({"delivered", "client_no_response"}) | _BACK_TO_POOL_OR_CANCEL,
@@ -162,7 +164,8 @@ async def transition(
     at = now_utc()
     order.status = to_status
     if to_status == "accepted":
-        order.accepted_at = at
+        if from_status != "price_confirmation_needed":  # not a return after a stock check
+            order.accepted_at = at
     elif to_status == "delivered":
         order.delivered_at = at
     elif to_status == "cancelled":
@@ -184,4 +187,15 @@ async def transition(
                 )
         except Exception:  # a webhook never fails the delivery step itself
             log.exception("partner webhook not queued: order %s %s -> %s", order.id, from_status, to_status)
+    elif order.source == "vitrine":
+        # A Vitrine order of a shop linked to an ODS restaurant: the kitchen hears about it.
+        from app.services import vitrine_orders
+
+        try:
+            async with session.begin_nested():
+                await vitrine_orders.on_transition(
+                    session, order, from_status, to_status, reason, cancelled_by
+                )
+        except Exception:
+            log.exception("vitrine webhook not queued: order %s %s -> %s", order.id, from_status, to_status)
     return event

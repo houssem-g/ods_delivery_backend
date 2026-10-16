@@ -45,6 +45,15 @@ from app.models.orders import (
 from app.models.partners import Partner, PartnerCustomerStat, PartnerWebhookDelivery
 from app.models.safety import UserBlock, UserReport
 from app.models.views import courier_stats, customer_stats
+from app.models.vitrine import (
+    PartnerCatalog,
+    Vitrine,
+    VitrineCategory,
+    VitrinePoster,
+    VitrineProduct,
+    VitrineStatDaily,
+    VitrineVisit,
+)
 
 __all__ = [
     "AppSetting",
@@ -81,6 +90,7 @@ __all__ = [
     "OrderTracking",
     "OutboundMessage",
     "Partner",
+    "PartnerCatalog",
     "PartnerCustomerStat",
     "PartnerWebhookDelivery",
     "PhoneVerification",
@@ -96,6 +106,12 @@ __all__ = [
     "UserAddress",
     "UserBlock",
     "UserReport",
+    "Vitrine",
+    "VitrineCategory",
+    "VitrinePoster",
+    "VitrineProduct",
+    "VitrineStatDaily",
+    "VitrineVisit",
     "courier_stats",
     "customer_stats",
 ]

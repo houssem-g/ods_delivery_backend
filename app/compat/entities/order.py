@@ -27,6 +27,7 @@ from sqlalchemy import (
     false,
     func,
     literal,
+    literal_column,
     not_,
     null,
     or_,
@@ -56,6 +57,7 @@ from app.models import (
     OrderTracking,
     Partner,
     User,
+    Vitrine,
     courier_stats,
 )
 from app.security.deps import CurrentUser
@@ -394,6 +396,27 @@ def _partner_text(value: str) -> Any:
 partner_recent_orders, partner_recent_unpaid = _partner_recent()
 
 
+def _vitrine_cart() -> Any:
+    return literal_column(
+        "(CASE WHEN orders.cart IS NULL THEN NULL ELSE ("
+        "SELECT jsonb_build_object('items_total', orders.cart->'items_total', 'test', orders.cart->'test', "
+        "'source', orders.cart->'source', 'lines', "
+        "COALESCE(jsonb_agg(l.value - 'ods_menu_id' ORDER BY l.n), '[]'::jsonb)) "
+        "FROM jsonb_array_elements(orders.cart->'lines') WITH ORDINALITY AS l(value, n)) END)",
+        JSONB,
+    )
+
+
+def _vitrine_ods() -> Any:
+    vitrines = Vitrine.__table__
+    linked = (
+        select(vitrines.c.source == "ods")
+        .where(vitrines.c.shop_id == orders.c.vitrine_shop_id)
+        .scalar_subquery()
+    )
+    return case((orders.c.vitrine_shop_id.is_(None), false()), else_=func.coalesce(linked, false()))
+
+
 delivered = orders.c.status == "delivered"
 purchase_plus_fee = orders.c.purchase_amount + func.coalesce(orders.c.delivery_fee, 0)
 guarded = {"read_guard": party_or_admin}
@@ -536,6 +559,11 @@ FIELDS: dict[str, LegacyField] = {
     "partner_return_outcome": LegacyField(orders.c.partner_return_outcome, "string"),
     "partner_note_fr": LegacyField(_partner_text(COURIER_NOTE_FR), "string"),
     "partner_note_ar": LegacyField(_partner_text(COURIER_NOTE_AR), "string"),
+    # Vitrine orders (source « vitrine »): the shop, the cart lines with their prices (what the
+    # couriers bid on; the ODS ids are left out) and whether the restaurant gets it in ODS.
+    "vitrine_shop_id": LegacyField(orders.c.vitrine_shop_id, "id"),
+    "vitrine_cart": LegacyField(_vitrine_cart(), "object"),
+    "vitrine_ods": LegacyField(_vitrine_ods(), "boolean"),
 }
 ORDER_FIELDS = set(FIELDS) | {"geocode_status"}
 

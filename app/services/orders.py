@@ -511,7 +511,15 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     # The user row lock serializes a customer's concurrent placements (open-order cap).
     user = (await session.execute(select(User).where(User.id == user_id).with_for_update())).scalar_one()
     address, default_point = await default_address(session, user.id)
+    vitrine_extras = None
+    if isinstance(raw, dict) and raw.get("vitrine") is not None:
+        # A Vitrine cart (app/services/vitrine_orders.py): items, prices and shop rebuilt server side.
+        from app.services import vitrine_orders
+
+        raw, vitrine_extras = await vitrine_orders.prepare(session, user, raw)
     built = build_order(raw, user, address, default_point)
+    if vitrine_extras is not None:
+        vitrine_orders.apply_extras(built.order, built.stops, vitrine_extras)
     open_count = (
         await session.execute(
             select(func.count())

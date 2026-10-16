@@ -366,13 +366,22 @@ async def _apply(
     await session.flush()
     source = SOURCE_ANSWER if decided_by == "customer" else SOURCE_TIMEOUT
     if status in ("substitute_accepted", "item_skipped") and order.status == WAITING:
-        await ot.transition(session, order, "at_shop", actor, source, status)
+        back = "at_shop"
+        if order.source == "vitrine":  # a restaurant's report may come before the courier arrives
+            from app.services import vitrine_orders
+
+            back = await vitrine_orders.resume_status(session, order)
+        await ot.transition(session, order, back, actor, source, status)
     elif status == "order_cancelled" and order.status not in ot.TERMINAL_STATUSES:
         by = "customer" if decided_by == "customer" else "system"
         order.cancelled_by, order.cancel_reason = by, REASON
         await ot.transition(session, order, "cancelled", actor, source, REASON, cancelled_by=by)
         await close_pending_offers(session, OrderOffer.order_id == order.id, "rejected")
     _touch(session, check)
+    if check.ods_menu_ids and order.source == "vitrine":
+        from app.services import vitrine_orders
+
+        await vitrine_orders.on_missing_items_decision(session, order, check)
 
     courier_user = await courier_user_id(session, order.courier_id)
     if decided_by == "customer" and status in order_texts.DECISION_CHAT:

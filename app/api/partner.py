@@ -12,8 +12,12 @@ ods-audit/livraison-1610/lot2/2A-CONTRAT.md.
     POST /orders/{id}/cancel {reason}          free until accepted; then 409 cancel_not_allowed
     GET  /track/{token}                        public, no key (300/h per IP): no phone, no address
     POST /ping, POST /webhook-test
+    PUT  /catalog                              Vitrine: the restaurant's full menu snapshot (idempotent)
+    POST /vitrine-orders/{ref}/missing-items   Vitrine: a dish is missing → the customer is asked
+(Vitrine contract: ods-audit/livraison-1610/vitrine/CONTRAT-A.md §6–§7.)
 """
 
+import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, Query, Request
@@ -29,7 +33,7 @@ from app.errors import ApiError
 from app.models import Order, OrderOffer
 from app.rate_limit import allow
 from app.security.partner import PartnerContext, current_partner
-from app.services import partner_orders, partners
+from app.services import partner_orders, partners, vitrine_catalog, vitrine_orders
 from app.services.partner_orders import PartnerOrderIn
 
 router = APIRouter(prefix="/api/partner/v1", tags=["partner"])
@@ -178,5 +182,38 @@ async def webhook_test(
     ctx: PartnerContext = Depends(current_partner), session: AsyncSession = Depends(get_session)
 ) -> dict[str, Any]:
     answer = await partners.send_ping(session, ctx.partner)
+    await session.commit()
+    return answer
+
+
+async def _json_body(request: Request) -> object:
+    raw = await request.body()
+    if len(raw) > 2_000_000:
+        raise ApiError(413, "payload_too_large", "Body too large")
+    try:
+        return json.loads(raw) if raw else None
+    except ValueError:
+        raise ApiError(400, "validation_error", "Invalid JSON") from None
+
+
+@router.put("/catalog")
+async def put_catalog(
+    request: Request,
+    ctx: PartnerContext = Depends(current_partner),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    answer = await vitrine_catalog.receive(session, ctx.partner, await _json_body(request))
+    await session.commit()
+    return answer
+
+
+@router.post("/vitrine-orders/{vitrine_ref}/missing-items")
+async def missing_items(
+    vitrine_ref: str,
+    request: Request,
+    ctx: PartnerContext = Depends(current_partner),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    answer = await vitrine_orders.report_missing(session, ctx.partner, vitrine_ref, await _json_body(request))
     await session.commit()
     return answer

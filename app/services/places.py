@@ -374,6 +374,8 @@ def _bbox_result(bbox: Bbox, item: dict[str, Any]) -> dict[str, Any]:
     result = {"id": item["id"]}
     if item.get("shop_id") is not None:
         result["shop_id"] = item["shop_id"]
+        if item.get("vitrine") is not None:  # only on a Vitrine row (the other rows keep their shape)
+            result["vitrine"] = item["vitrine"]
     result.update(
         {
             "source": item["source"],
@@ -393,14 +395,25 @@ def _bbox_result(bbox: Bbox, item: dict[str, Any]) -> dict[str, Any]:
 
 
 def _shop_visible(viewer: CurrentUser) -> ColumnElement[bool]:
-    """Proposals are shown to their author only until approved; rejected ones never."""
-    return or_(
-        shops.c.review_status == "approved",
-        and_(shops.c.review_status == "pending", shops.c.proposed_by == viewer.id),
+    """Proposals are shown to their author only until approved; rejected ones never. A shop with a
+    Vitrine follows its visibility (app/services/vitrine.py: QA / admins while it is a test)."""
+    from app.services import vitrine as vitrine_service
+
+    return and_(
+        or_(
+            shops.c.review_status == "approved",
+            and_(shops.c.review_status == "pending", shops.c.proposed_by == viewer.id),
+        ),
+        vitrine_service.shop_visible_sql(viewer),
     )
 
 
 async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) -> list[dict[str, Any]]:
+    from app.models import Vitrine
+    from app.services import vitrine as vitrine_service
+
+    vitrines = Vitrine.__table__
+    allowed = await vitrine_service.public_allowed(session)
     rows = (
         await session.execute(
             select(
@@ -412,7 +425,14 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
                 shops.c.city,
                 lat_expr(shops.c.location).label("lat"),
                 lng_expr(shops.c.location).label("lng"),
-            ).where(_shop_visible(viewer), *_in_bbox_where(shops.c.location, q.bbox))
+                shops.c.slug,
+                shops.c.visibility,
+                vitrines.c.status.label("vitrine_status"),
+                vitrines.c.source.label("vitrine_source"),
+                vitrines.c.catalog_test,
+            )
+            .select_from(shops.outerjoin(vitrines, vitrines.c.shop_id == shops.c.id))
+            .where(_shop_visible(viewer), *_in_bbox_where(shops.c.location, q.bbox))
         )
     ).all()
     tokens = text_norm.tokenize(q.search_query)
@@ -433,6 +453,14 @@ async def _bbox_shops(session: AsyncSession, q: BboxQuery, viewer: CurrentUser) 
             "phone": row.phone or "",
             "address": row.address or "",
             "city": row.city or "",
+            # Vitrine (« Carte et prix »): only an active one is flagged (the row is visible already)
+            "vitrine": {
+                "slug": row.slug,
+                "source": row.vitrine_source,
+                "test": row.visibility != "public" or bool(row.catalog_test) or not allowed,
+            }
+            if row.vitrine_status == "active"
+            else None,
         }
         if not tokens and not bbox_category_matches(category, q.category):
             continue  # a typed name is searched in every category (B1)
@@ -502,7 +530,10 @@ async def search_by_bbox(session: AsyncSession, q: BboxQuery, viewer: CurrentUse
         for row in rows
     ]
     merged = [_bbox_result(q.bbox, item) for item in shop_items + place_items]
-    merged.sort(key=lambda r: (-r["rating"], -r["review_count"], r["distance_meters"]))
+    # the Vitrines (« Avec carte et prix ») first, then best rated, then nearest
+    merged.sort(
+        key=lambda r: (r.get("vitrine") is None, -r["rating"], -r["review_count"], r["distance_meters"])
+    )
     total = len(shop_items) + place_total
     page = merged[q.offset : wanted]
     return {

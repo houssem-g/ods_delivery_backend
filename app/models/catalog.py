@@ -71,6 +71,8 @@ class Shop(Base):
     __tablename__ = "shops"
     __table_args__ = (
         CheckConstraint("review_status IN ('pending','approved','rejected')", name="review_status"),
+        CheckConstraint("visibility IN ('public','qa')", name="visibility"),
+        CheckConstraint("slug ~ '^[a-z0-9-]{3,80}$'", name="slug"),
         Index("shops_geo", "location", postgresql_using="gist"),
         Index("ix_shops_review_status", "review_status"),
         Index("ix_shops_proposed_by", "proposed_by"),
@@ -97,6 +99,10 @@ class Shop(Base):
     proposed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reviewed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Vitrine (16/10/2026): 'qa' = seen by the QA accounts and admins only (app/services/vitrine.py);
+    # slug = the short address of the Vitrine page (/v/<slug>).
+    visibility: Mapped[str] = mapped_column(Text, nullable=False, server_default="public")
+    slug: Mapped[str | None] = mapped_column(Text, unique=True)
     old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

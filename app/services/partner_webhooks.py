@@ -258,7 +258,12 @@ async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, clien
     data = dict(payload.get("data") or {})
     if delivery.order_id is not None:
         order = await session.get(Order, delivery.order_id)
-        data["order"] = await partner_orders.order_view(session, order) if order is not None else None
+        if delivery.event.startswith("vitrine."):
+            from app.services import vitrine_orders  # no customer data in a Vitrine event
+
+            data["order"] = await vitrine_orders.order_view(session, order) if order is not None else None
+        else:
+            data["order"] = await partner_orders.order_view(session, order) if order is not None else None
     payload["data"] = data
     body = dumps(payload)
     timestamp = int(now.timestamp())
