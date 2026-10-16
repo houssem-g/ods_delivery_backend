@@ -88,6 +88,44 @@ def test_hours_osm_text_and_open_state():
     late = vitrine_service.clean_hours({"weekly": [{"days": [6], "open": "22:00", "close": "02:00"}]})
     assert vitrine_service.open_state(late, datetime(2026, 10, 18, 0, 0, tzinfo=UTC))["open_now"] is True
     assert vitrine_service.open_state(None) == {"open_now": None, "opens_at": None, "closes_at": None}
+    # integration 17/10: a shop open all day every day never « closes at 00:00 »; a range ending at
+    # 24:00 followed by one starting at 00:00 closes at the end of the second one
+    assert vitrine_service.open_state(ALWAYS_OPEN, friday_10) == {
+        "open_now": True,
+        "opens_at": None,
+        "closes_at": None,
+    }
+    assert (
+        vitrine_service.open_state(ALWAYS_OPEN, datetime(2026, 10, 18, 22, 59, tzinfo=UTC))["closes_at"]
+        is None
+    )
+    chained = vitrine_service.clean_hours(
+        {
+            "weekly": [
+                {"days": [5], "open": "20:00", "close": "24:00"},
+                {"days": [6], "open": "00:00", "close": "02:00"},
+            ]
+        }
+    )
+    assert (
+        vitrine_service.open_state(chained, datetime(2026, 10, 16, 21, 0, tzinfo=UTC))["closes_at"] == "02:00"
+    )
+    sunday_night = vitrine_service.clean_hours(
+        {
+            "weekly": [
+                {"days": [7], "open": "22:00", "close": "24:00"},
+                {"days": [1], "open": "00:00", "close": "03:00"},
+            ]
+        }
+    )
+    assert (
+        vitrine_service.open_state(sunday_night, datetime(2026, 10, 18, 22, 0, tzinfo=UTC))["closes_at"]
+        == "03:00"
+    )
+    assert (
+        vitrine_service.open_state(sunday_night, datetime(2026, 10, 19, 0, 30, tzinfo=UTC))["closes_at"]
+        == "03:00"
+    )
     with pytest.raises(ApiError):
         vitrine_service.clean_hours({"weekly": [{"days": [8], "open": "08:00", "close": "09:00"}]})
 

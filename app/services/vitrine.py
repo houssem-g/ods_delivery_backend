@@ -302,6 +302,25 @@ def osm_opening_hours(hours: dict[str, Any] | None) -> str | None:
     return "; ".join(parts)[:300] or None
 
 
+def _week_stretches(by_day: dict[int, list[tuple[int, int]]]) -> list[tuple[int, int]]:
+    """The week's open ranges in minutes from Monday 00:00, touching / overlapping ranges merged, the
+    Sunday → Monday wrap included (a stretch may end after 7 × 1440; one of 7 × 1440 = always open)."""
+    week = 7 * 1440
+    ranges = sorted(
+        (base + s, base + e) for d in range(1, 8) for s, e in by_day[d] for base in [(d - 1) * 1440]
+    )
+    merged: list[list[int]] = []
+    for start, end in ranges:
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    if len(merged) > 1 and merged[-1][1] >= week + merged[0][0]:  # Sunday night runs into Monday
+        last = merged.pop()
+        merged[0] = [last[0], max(last[1], week + merged[0][1])]
+    return [(a, min(b, a + week)) for a, b in merged]
+
+
 def open_state(hours: dict[str, Any] | None, now: datetime | None = None) -> dict[str, Any]:
     """{open_now, opens_at, closes_at} in Tunisia time; open_now None when the hours are unknown."""
     if not hours or not hours.get("weekly"):
@@ -314,13 +333,17 @@ def open_state(hours: dict[str, Any] | None, now: datetime | None = None) -> dic
         minutes %= 1440
         return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
-    for start, end in by_day[day]:
-        if start <= minute < end:
-            return {"open_now": True, "opens_at": None, "closes_at": hhmm(end)}
-    yesterday = 7 if day == 1 else day - 1
-    for _start, end in by_day[yesterday]:
-        if end > 1440 and minute < end - 1440:
-            return {"open_now": True, "opens_at": None, "closes_at": hhmm(end)}
+    # Open now: the closing time is the end of the CONTINUOUS stretch (a « 00:00–24:00 » every day, or
+    # 22:00–24:00 followed by 00:00–02:00, never closes at midnight); open all week → closes_at None.
+    week = 7 * 1440
+    now_w = (day - 1) * 1440 + minute
+    for start, end in _week_stretches(by_day):
+        if start <= now_w < end or start <= now_w + week < end:
+            return {
+                "open_now": True,
+                "opens_at": None,
+                "closes_at": None if end - start >= week else hhmm(end),
+            }
     for offset in range(0, 8):
         d = (day - 1 + offset) % 7 + 1
         for start, _end in by_day[d]:
