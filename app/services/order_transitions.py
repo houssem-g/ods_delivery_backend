@@ -13,6 +13,7 @@ matrix is the union of every legitimate flow; callers restrict it further for
 their actor (e.g. `order_steps.COURIER_STEPS` for the courier's own writes).
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -22,7 +23,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Order, OrderStatusEvent, OrderTracking
 from app.realtime.events import emit
-from app.services import commission
+from app.services import commission, partner_webhooks
+
+log = logging.getLogger("odsd.order_transitions")
 
 OPEN_STATUSES = ("pending", "offers_received")
 # Statuses of a delivery in progress (trackCourierLocation LIVE_STATUSES, getOrderCourier tracking).
@@ -172,4 +175,13 @@ async def transition(
     if to_status == "delivered":
         await commission.record_delivery(session, order, at)
     emit(session, "Order", "update", order.id)
+    if order.partner_id is not None:
+        # A restaurant ODS order (Lot 2): the partner hears about it (queued, sent by the job).
+        try:
+            async with session.begin_nested():
+                await partner_webhooks.on_transition(
+                    session, order, from_status, to_status, reason, cancelled_by
+                )
+        except Exception:  # a webhook never fails the delivery step itself
+            log.exception("partner webhook not queued: order %s %s -> %s", order.id, from_status, to_status)
     return event

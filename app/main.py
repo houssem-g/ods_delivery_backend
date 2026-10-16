@@ -11,7 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIASGIMiddleware
 from sqlalchemy import text
 
-from app.api import admin, auth, compat_entities, compat_functions, files, health, webhooks, ws
+from app.api import admin, auth, compat_entities, compat_functions, files, health, partner, webhooks, ws
 from app.compat import entities as _registered_entities  # noqa: F401 - import registers them
 from app.config import settings
 from app.db import engine
@@ -19,6 +19,7 @@ from app.errors import install_error_handlers
 from app.jobs import incidents as _incident_jobs  # noqa: F401 - import registers them
 from app.jobs import messaging as _messaging_jobs  # noqa: F401 - import registers them
 from app.jobs import orders as _order_jobs  # noqa: F401 - import registers them
+from app.jobs import partners as _partner_jobs  # noqa: F401 - import registers them
 from app.jobs import periodic as _periodic_jobs  # noqa: F401 - import registers them
 from app.jobs.scheduler import LeaderScheduler
 from app.observability import metrics
@@ -86,7 +87,15 @@ def create_app() -> FastAPI:
         allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept", "x-cron-token", REQUEST_ID_HEADER],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "x-cron-token",
+            "X-Partner-Key",
+            "Idempotency-Key",
+            REQUEST_ID_HEADER,
+        ],
         expose_headers=[REQUEST_ID_HEADER],
     )
     # Outermost: request id, access log and HTTP metrics cover CORS answers and 429s too.
@@ -98,6 +107,7 @@ def create_app() -> FastAPI:
         compat_entities.router,
         webhooks.router,  # before compat_functions: it owns /api/functions/whatsappWebhook
         compat_functions.router,
+        partner.router,
         admin.router,
         ws.router,
         metrics.router,

@@ -24,6 +24,7 @@ from app.api.functions._common import as_uuid
 from app.models import Order
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
+from app.services import partner_stats
 from app.services.orders import (
     active_incidents,
     courier_of_user,
@@ -36,6 +37,7 @@ async def handle(
     payload: dict[str, Any], user: CurrentUser, session: AsyncSession, request: Request
 ) -> tuple[int, dict[str, Any]]:
     customer_id = user.id
+    partner_phone: str | None = None
     raw_id = str(payload.get("order_id") or "")
     if raw_id:
         oid = as_uuid(raw_id)
@@ -52,9 +54,17 @@ async def handle(
         if not allowed:
             return 403, {"error": "Forbidden"}
         customer_id = order.customer_id
-    incidents = await active_incidents(session, customer_id)
-    result = reliability_from_count(incidents)
-    extras = await reliability_extras(session, customer_id, incidents)
+        if order.source == "partner":
+            partner_phone = order.contact_phone_e164
+    if partner_phone:
+        # A restaurant ODS order (Lot 2): the record is the phone number's, not the technical user's.
+        extras = await partner_stats.reliability(session, partner_phone)
+        incidents = extras.pop("incidents")
+        result = reliability_from_count(incidents)
+    else:
+        incidents = await active_incidents(session, customer_id)
+        result = reliability_from_count(incidents)
+        extras = await reliability_extras(session, customer_id, incidents)
     # An unpaid order among the last ones shows the badge even once its incident left the window.
     result["visible_to_couriers"] = result["visible_to_couriers"] or extras["recent_unpaid"] > 0
     if customer_id != user.id and not user.is_admin and not result["visible_to_couriers"]:

@@ -81,6 +81,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEMAND_PULSE: str = "30/minute"
     # translateOrderMessage per user (cached answers count too)
     RATE_LIMIT_TRANSLATE: str = "40/minute"
+    # /api/partner/v1 per partner key, and the public /track/{token} per IP (Lot 2, 2A/2B)
+    RATE_LIMIT_PARTNER: str = "120/minute"
+    RATE_LIMIT_PARTNER_TRACK: str = "300/hour"
 
     # --- e-mail ---------------------------------------------------------------
     EMAIL_PROVIDER: Literal["smtp", "log"] = "smtp"
@@ -204,6 +207,10 @@ class Settings(BaseSettings):
     # Route ETA (getOrderETA); empty = straight-line fallback only.
     OSRM_URL: str = "https://router.project-osrm.org"
     OSRM_TIMEOUT_SECONDS: float = 4.0
+
+    # --- partners (restaurants ODS, /api/partner/v1) ------------------------------
+    # Outgoing webhook call timeout; the job retries 1 → 16 min (app/services/partner_webhooks.py).
+    PARTNER_WEBHOOK_TIMEOUT_SECONDS: float = 8.0
 
     @model_validator(mode="before")
     @classmethod

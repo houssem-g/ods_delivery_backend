@@ -42,6 +42,7 @@ from app.models.orders import (
     OrderStop,
     OrderTracking,
 )
+from app.models.partners import Partner, PartnerCustomerStat, PartnerWebhookDelivery
 from app.models.safety import UserBlock, UserReport
 from app.models.views import courier_stats, customer_stats
 
@@ -79,6 +80,9 @@ __all__ = [
     "OrderStop",
     "OrderTracking",
     "OutboundMessage",
+    "Partner",
+    "PartnerCustomerStat",
+    "PartnerWebhookDelivery",
     "PhoneVerification",
     "Place",
     "PushDelivery",

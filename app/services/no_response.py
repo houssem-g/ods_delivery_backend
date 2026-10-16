@@ -51,7 +51,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, HotDeal, NoResponseCase, Order, OrderStatusEvent, OrderTracking, User
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
-from app.services import cancellation, whatsapp
+from app.services import cancellation, prayer_times, whatsapp
 from app.services import order_transitions as ot
 from app.services.order_notices import notify_and_push
 from app.services.order_texts import minutes_ar, short_name
@@ -263,7 +263,7 @@ async def _finalize(session: AsyncSession, order: Order, case: NoResponseCase, n
     _touch(session, case)
     incidents = await mirror_incidents(session, order.customer_id)
     last_alert = len(await _cases(session, order.id)) >= MAX_REPORTS
-    mins = round(WAIT_SECONDS / 60)
+    mins = round((case.deadline_at - case.started_at).total_seconds() / 60)
     courier_user = await _courier_user(session, order)
     if courier_user is not None:
         if last_alert:
@@ -560,8 +560,11 @@ async def _open_case(
     counted: bool = False,
 ) -> Result:
     """A new countdown: the case, the order parked, the customer alerted on every channel.
-    `counted`: the re-alert carries the incident the first deadline recorded (QA 06/10 N3)."""
-    deadline = now + timedelta(seconds=WAIT_SECONDS)
+    `counted`: the re-alert carries the incident the first deadline recorded (QA 06/10 N3).
+    D3 (owner, 16/10/2026): a restaurant ODS order reported around a prayer, at the iftar or on a
+    Ramadan night waits 10 min instead of 3 (app/services/prayer_times.py)."""
+    wait_seconds = prayer_times.wait_seconds(order.source, now)
+    deadline = now + timedelta(seconds=wait_seconds)
     case = NoResponseCase(
         order_id=order.id,
         courier_id=order.courier_id,
@@ -582,7 +585,7 @@ async def _open_case(
     courier_name = short_name(courier.display_name) if courier is not None else ""
     courier_phone = (courier.phone_e164 if courier is not None else None) or ""
     phone_part = f" ({courier_phone})" if courier_phone else ""
-    mins = round(WAIT_SECONDS / 60)
+    mins = round(wait_seconds / 60)
     _row, push_devices = await notify_and_push(
         session,
         user_id=order.customer_id,
@@ -663,7 +666,7 @@ async def _open_case(
     return 200, {
         "success": True,
         "message": "Emergency contact initiated",
-        "timeout_seconds": WAIT_SECONDS,
+        "timeout_seconds": wait_seconds,
         **build_view(order, case, ot.now_utc(), attempt),
     }
 

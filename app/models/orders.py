@@ -89,6 +89,26 @@ class Order(Base):
         ),
         Index("orders_active", "status", postgresql_where=text("status NOT IN ('delivered','cancelled')")),
         Index("ix_orders_preferred_courier_id", "preferred_courier_id"),
+        # Partner orders (app/services/partner_orders.py): idempotence per partner, the public
+        # tracking token, the per-phone badge over partner orders.
+        CheckConstraint("source IN ('app','partner')", name="source"),
+        CheckConstraint(
+            "partner_return_outcome IN ('accepted','refused','shop_closed')", name="partner_return_outcome"
+        ),
+        CheckConstraint("(partner_id IS NULL) = (partner_ref IS NULL)", name="partner_ref_with_partner"),
+        Index(
+            "orders_partner_ref",
+            "partner_id",
+            "partner_ref",
+            unique=True,
+            postgresql_where=text("partner_id IS NOT NULL"),
+        ),
+        Index(
+            "orders_partner_phone",
+            "contact_phone_e164",
+            text("created_at DESC"),
+            postgresql_where=text("source = 'partner'"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -140,6 +160,17 @@ class Order(Base):
     resale_deal_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("hot_deals.id", ondelete="SET NULL", use_alter=True)
     )
+    # 'app' = placed in the app; 'partner' = created by a restaurant ODS through /api/partner/v1.
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default="app")
+    partner_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL", use_alter=True), index=True
+    )
+    partner_ref: Mapped[str | None] = mapped_column(Text)
+    # sha256 of the request body behind partner_ref: same ref + other body → 409 idempotency_conflict.
+    partner_request_hash: Mapped[str | None] = mapped_column(Text)
+    tracking_token: Mapped[str | None] = mapped_column(Text, unique=True)
+    # D4/D5 (owner, 16/10/2026): what happened when the courier brought the meal back.
+    partner_return_outcome: Mapped[str | None] = mapped_column(Text)
     old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

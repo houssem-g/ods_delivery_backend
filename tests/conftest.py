@@ -90,6 +90,7 @@ from app.main import app as fastapi_app
 from app.models import Base
 from app.rate_limit import limiter
 from app.services import email as email_service
+from app.services import partner_webhooks
 from tests.factories import Factory
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,8 +127,10 @@ def no_osm_network():
     """Nominatim / Overpass are never called for real: tests install a MockTransport."""
     osm.set_transport(httpx.MockTransport(_refuse_network))
     osm.nominatim_throttle.reset()
+    partner_webhooks.set_transport(httpx.MockTransport(_refuse_network))
     yield
     osm.set_transport(httpx.MockTransport(_refuse_network))
+    partner_webhooks.set_transport(httpx.MockTransport(_refuse_network))
 
 
 @pytest.fixture

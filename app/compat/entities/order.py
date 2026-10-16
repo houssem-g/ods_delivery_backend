@@ -54,6 +54,7 @@ from app.models import (
     OrderStockCheck,
     OrderStop,
     OrderTracking,
+    Partner,
     User,
     courier_stats,
 )
@@ -63,7 +64,8 @@ from app.services import order_transitions as ot
 from app.services.commission import COMMISSION_KINDS, LEGACY_STATUS
 from app.services.geo import lat_of, lng_of
 from app.services.offer_intents import INTENT_TTL
-from app.services.orders import TEST_ORDER_SQL, is_qa_account
+from app.services.orders import RECENT_ORDERS, TEST_ORDER_SQL, is_qa_account
+from app.services.partner_orders import COURIER_NOTE_AR, COURIER_NOTE_FR
 from app.services.safety import blocked_pair
 
 orders = Order.__table__
@@ -73,6 +75,7 @@ courier_user = User.__table__.alias("order_courier_user")
 stop0 = OrderStop.__table__.alias("order_stop0")
 live = OrderTracking.__table__.alias("order_live")
 rating = OrderRating.__table__.alias("order_rating")
+partner = Partner.__table__.alias("order_partner")
 couriers = Courier.__table__
 users = User.__table__
 events = OrderStatusEvent.__table__
@@ -357,6 +360,40 @@ def _courier_ratings() -> Any:
     )
 
 
+def _partner_recent() -> tuple[Any, Any]:
+    """A restaurant ODS order (Lot 2): the badge « n'a pas payé X fois sur ses Y dernières commandes »
+    counted PER PHONE NUMBER over the partner orders (app/services/partner_stats.py), for the
+    couriers before they offer. (NULL, NULL) on an app order."""
+    recent_orders = orders.alias("partner_recent_orders")
+    recent_cases = cases.alias("partner_recent_cases")
+    counted = exists().where(
+        recent_cases.c.order_id == recent_orders.c.id, recent_cases.c.incident_counted.is_(True)
+    )
+    recent = (
+        select(counted.label("unpaid"))
+        .where(
+            recent_orders.c.source == "partner",
+            recent_orders.c.contact_phone_e164 == orders.c.contact_phone_e164,
+            or_(recent_orders.c.status == "delivered", counted),
+        )
+        .order_by(recent_orders.c.created_at.desc(), recent_orders.c.id.desc())
+        .limit(RECENT_ORDERS)
+        .correlate(orders)
+        .subquery("partner_recent")
+    )
+    total = select(func.count()).select_from(recent).scalar_subquery()
+    unpaid = select(func.count()).select_from(recent).where(recent.c.unpaid).scalar_subquery()
+    is_partner = orders.c.source == "partner"
+    return case((is_partner, total), else_=null()), case((is_partner, unpaid), else_=null())
+
+
+def _partner_text(value: str) -> Any:
+    return case((orders.c.source == "partner", literal(value)), else_=null())
+
+
+partner_recent_orders, partner_recent_unpaid = _partner_recent()
+
+
 delivered = orders.c.status == "delivered"
 purchase_plus_fee = orders.c.purchase_amount + func.coalesce(orders.c.delivery_fee, 0)
 guarded = {"read_guard": party_or_admin}
@@ -487,6 +524,18 @@ FIELDS: dict[str, LegacyField] = {
     "free_cancel_until": LegacyField(_free_cancel_until(), "datetime", read_guard=customer_or_admin),
     # "Un livreur prépare une offre…" (signalOfferIntent), for the customer and admins.
     "preparing_offers": LegacyField(_preparing_offers(), "integer", read_guard=customer_or_admin),
+    # Restaurant ODS orders (Lot 2, 2A): the label « Commande restaurant », the badge per phone
+    # number, the D4/D5 record of the restaurant and the owner's reminder before paying.
+    "source": LegacyField(orders.c.source, "string"),
+    "partner_name": LegacyField(partner.c.name, "string"),
+    "partner_ref": LegacyField(orders.c.partner_ref, "string", **guarded),
+    "partner_customer_recent_orders": LegacyField(partner_recent_orders, "integer"),
+    "partner_customer_recent_unpaid": LegacyField(partner_recent_unpaid, "integer"),
+    "partner_returns_refused": LegacyField(partner.c.returns_refused, "integer"),
+    "partner_debt_amount": LegacyField(partner.c.debt_amount, "number"),
+    "partner_return_outcome": LegacyField(orders.c.partner_return_outcome, "string"),
+    "partner_note_fr": LegacyField(_partner_text(COURIER_NOTE_FR), "string"),
+    "partner_note_ar": LegacyField(_partner_text(COURIER_NOTE_AR), "string"),
 }
 ORDER_FIELDS = set(FIELDS) | {"geocode_status"}
 
@@ -517,6 +566,7 @@ ENTITY = register(
         .outerjoin(stop0, and_(stop0.c.order_id == orders.c.id, stop0.c.seq == 0))
         .outerjoin(live, live.c.order_id == orders.c.id)
         .outerjoin(rating, rating.c.order_id == orders.c.id)
+        .outerjoin(partner, partner.c.id == orders.c.partner_id)
         .outerjoin(latest_case, true())
         .outerjoin(commission, true()),
         id_expr=orders.c.id,

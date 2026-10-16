@@ -46,8 +46,25 @@ def _busy(courier_id: Any) -> Any:
     return exists().where(Order.courier_id == courier_id, Order.status.in_(BUSY_STATUSES))
 
 
+def _partner_extra(order: Order, stop: OrderStop | None) -> dict[str, Any]:
+    """A restaurant ODS order (Lot 2): the label, the price known in advance and the owner's reminder
+    (16/10/2026, guard-rail 2) travel with the notification."""
+    if order.source != "partner":
+        return {}
+    from app.services.partner_orders import COURIER_NOTE_AR, COURIER_NOTE_FR
+
+    return {
+        "source": "partner",
+        "partner_name": stop.name if stop else None,
+        "items_total": float(order.estimated_price) if order.estimated_price is not None else None,
+        "courier_note_fr": COURIER_NOTE_FR,
+        "courier_note_ar": COURIER_NOTE_AR,
+    }
+
+
 def _metadata(order: Order, stop: OrderStop | None, extra: dict[str, Any]) -> dict[str, Any]:
     return {
+        **_partner_extra(order, stop),
         "shop_name": stop.name if stop else None,
         "shop_address": stop.address if stop else None,
         "delivery_governorate": order.delivery_governorate,

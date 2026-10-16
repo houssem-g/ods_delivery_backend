@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, courier_stats
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
-from app.services import credit, step_notices, text_filter
+from app.services import credit, partner_webhooks, step_notices, text_filter
 from app.services import order_transitions as ot
 from app.services.geo import as_float
 from app.services.notifications import notify
@@ -264,6 +264,7 @@ async def update_offer(
         },
         push=not pushed_lately,
     )
+    await partner_webhooks.on_offer(session, order, offer, "updated", previous_fee)
     return offer, await offer_rank(session, order.id, courier.id, fee)
 
 
@@ -339,6 +340,7 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     if order.status == "pending":
         await ot.transition(session, order, "offers_received", user, "createOrderOffer")
     await step_notices.offer_created(session, order, offer, courier)
+    await partner_webhooks.on_offer(session, order, offer, "received")
     return offer
 
 
@@ -436,6 +438,7 @@ async def withdraw_offer(session: AsyncSession, user: CurrentUser, offer_id: str
         )
     offer.status, offer.decided_at = "withdrawn", ot.now_utc()
     await session.flush()
+    await partner_webhooks.on_offer(session, order, offer, "withdrawn")
     await demote_if_no_pending_offer(session, order.id, user, "offer_withdrawn")
     return [uid for uid in (courier.user_id if courier else None, order.customer_id) if uid is not None]
 
