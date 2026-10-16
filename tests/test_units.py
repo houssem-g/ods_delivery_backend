@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from cryptography.fernet import Fernet
 from starlette.requests import Request
 
 from app.compat.dates import legacy_datetime, parse_legacy_datetime
@@ -32,14 +33,22 @@ def test_production_refuses_local_secrets():
         Settings(ENVIRONMENT="production")
     with pytest.raises(ValueError, match="PARTNER_PHONE_HASH_SECRET"):  # the phone-hash key too
         Settings(ENVIRONMENT="production", JWT_SECRET="x" * 40, COOKIE_SECURE=True)
+    prod = {"JWT_SECRET": "x" * 40, "COOKIE_SECURE": True, "PARTNER_PHONE_HASH_SECRET": "y" * 40}
+    with pytest.raises(ValueError, match="PARTNER_SECRET_KEY"):  # the webhook-secret key too
+        Settings(ENVIRONMENT="production", **prod)
+    with pytest.raises(ValueError, match="PARTNER_SECRET_KEY"):  # empty in .env = the local key
+        Settings(ENVIRONMENT="production", PARTNER_SECRET_KEY="", **prod)
+    with pytest.raises(ValueError, match="PARTNER_SECRET_KEY"):
+        Settings(ENVIRONMENT="production", PARTNER_SECRET_KEY="not-a-fernet-key", **prod)
+    key = Fernet.generate_key().decode()
     ok = Settings(
-        ENVIRONMENT="production",
-        JWT_SECRET="x" * 40,
-        COOKIE_SECURE=True,
-        CORS_ORIGINS="https://a,https://b",
-        PARTNER_PHONE_HASH_SECRET="y" * 40,
+        ENVIRONMENT="production", CORS_ORIGINS="https://a,https://b", PARTNER_SECRET_KEY=key, **prod
     )
     assert ok.CORS_ORIGINS == ["https://a", "https://b"] and not ok.is_local
+    rotating = Settings(
+        ENVIRONMENT="production", PARTNER_SECRET_KEY=f"{Fernet.generate_key().decode()},{key}", **prod
+    )
+    assert len(rotating.PARTNER_SECRET_KEY.split(",")) == 2
 
 
 def _request(headers: dict[str, str]) -> Request:

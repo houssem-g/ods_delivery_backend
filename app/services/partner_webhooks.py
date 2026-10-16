@@ -9,7 +9,8 @@ the receiver deduplicates on `X-ODSD-Delivery-Id`.
 Request: POST webhook_url, JSON `{id, event, partner_ref, order_id, created_at, data}` with
 `data.order` = the partner's view of the order at send time (app/services/partner_orders.py);
 headers `X-ODSD-Event`, `X-ODSD-Delivery-Id`, `X-ODSD-Timestamp` (unix seconds) and
-`X-ODSD-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>` — the timestamp is
+`X-ODSD-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>` (secret decrypted from
+`partners.webhook_secret`, app/security/secret_box.py) — the timestamp is
 inside the signature (replay window ± 5 min on the receiver's side). HTTPS only outside local.
 The HTTP transport can be replaced (tests): `set_transport(httpx.MockTransport(...))`.
 """
@@ -28,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import NoResponseCase, Order, OrderOffer, Partner, PartnerWebhookDelivery
+from app.security import secret_box
 
 log = logging.getLogger("odsd.partner_webhooks")
 
@@ -260,19 +262,24 @@ async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, clien
     payload["data"] = data
     body = dumps(payload)
     timestamp = int(now.timestamp())
+    status: int | None = None
+    error: str | None = None
+    try:
+        secret = secret_box.decrypt(partner.webhook_secret) or ""
+    except secret_box.SecretKeyError as exc:
+        log.error("partner %s: webhook secret unreadable: %s", partner.id, exc)
+        secret, error = "", "secret_unreadable"
     headers = {
         "Content-Type": "application/json",
         EVENT_HEADER: delivery.event,
         DELIVERY_HEADER: str(delivery.id),
         TIMESTAMP_HEADER: str(timestamp),
-        SIGNATURE_HEADER: sign(partner.webhook_secret, timestamp, body),
+        SIGNATURE_HEADER: sign(secret, timestamp, body),
         "User-Agent": "ODS-Delivery-Webhooks/1.0",
     }
-    status: int | None = None
-    error: str | None = None
-    if not _url_allowed(partner.webhook_url):
+    if error is None and not _url_allowed(partner.webhook_url):
         error = "https_required"
-    else:
+    if error is None:
         try:
             response = await client.post(partner.webhook_url, content=body, headers=headers)
             status = response.status_code

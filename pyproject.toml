@@ -25,6 +25,7 @@ dependencies = [
     "phonenumbers>=8.13",
     "prometheus-client>=0.20",
     "sentry-sdk[fastapi]>=2.10",
+    "cryptography>=43",  # Fernet: partner webhook secrets at rest (app/security/secrets_box.py)
 ]
 
 [dependency-groups]

@@ -7,11 +7,19 @@ secret defaults to a clearly-local placeholder and is refused outside `local`/`t
 from functools import lru_cache
 from typing import Annotated, Literal
 
+from cryptography.fernet import Fernet
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 LOCAL_JWT_SECRET = "local-dev-only-jwt-secret-change-me"
 LOCAL_PHONE_HASH_SECRET = "local-dev-only-phone-hash-secret-change-me"
+# base64url("local-dev-only-partner-key-32by!"): a valid Fernet key, refused outside local/test.
+LOCAL_PARTNER_SECRET_KEY = "bG9jYWwtZGV2LW9ubHktcGFydG5lci1rZXktMzJieSE="
+
+
+def partner_secret_keys(raw: str) -> list[str]:
+    """PARTNER_SECRET_KEY = one Fernet key, or `new,old` while rotating it."""
+    return [k.strip() for k in raw.split(",") if k.strip()]
 
 
 class Settings(BaseSettings):
@@ -215,6 +223,9 @@ class Settings(BaseSettings):
     # Key of the HMAC that pseudonymises the customers' numbers in partner_customer_stats
     # (app/services/partner_stats.py). Rotating it orphans the snapshot rows (rebuilt from orders).
     PARTNER_PHONE_HASH_SECRET: str = LOCAL_PHONE_HASH_SECRET
+    # Fernet key(s) encrypting partners.webhook_secret at rest (app/security/secret_box.py):
+    # `new,old` during a key rotation (the first encrypts, any decrypts).
+    PARTNER_SECRET_KEY: str = LOCAL_PARTNER_SECRET_KEY
 
     @model_validator(mode="before")
     @classmethod
@@ -223,6 +234,8 @@ class Settings(BaseSettings):
             raw = data.get(name) if isinstance(data, dict) else None
             if isinstance(raw, str):
                 data[name] = [o.strip() for o in raw.split(",") if o.strip()]
+        if isinstance(data, dict) and not str(data.get("PARTNER_SECRET_KEY", "x")).strip():
+            data.pop("PARTNER_SECRET_KEY")  # empty in .env = the local key (refused outside local)
         qa = data.get("QA_ACCOUNTS") if isinstance(data, dict) else None
         if isinstance(qa, str):
             data["QA_ACCOUNTS"] = [e.strip().lower() for e in qa.split(",") if e.strip()]
@@ -240,6 +253,14 @@ class Settings(BaseSettings):
                 or len(self.PARTNER_PHONE_HASH_SECRET) < 32
             ):
                 raise ValueError("PARTNER_PHONE_HASH_SECRET must be set (>= 32 chars) outside local/test")
+            keys = partner_secret_keys(self.PARTNER_SECRET_KEY)
+            if not keys or LOCAL_PARTNER_SECRET_KEY in keys:
+                raise ValueError("PARTNER_SECRET_KEY must be set (Fernet key) outside local/test")
+        try:
+            for key in partner_secret_keys(self.PARTNER_SECRET_KEY):
+                Fernet(key.encode())
+        except ValueError as exc:
+            raise ValueError("PARTNER_SECRET_KEY: not a Fernet key (Fernet.generate_key())") from exc
         return self
 
     @property

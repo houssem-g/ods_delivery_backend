@@ -3,7 +3,8 @@
 Admin only (same guard as app/services/launch_mode.py): createPartner, listPartners,
 updatePartner, revokePartner, rotatePartnerKey, rotatePartnerWebhookSecret, testPartnerWebhook,
 settlePartnerDebt, listPartnerWebhookDeliveries. The key and the webhook secret are answered ONCE,
-at creation / rotation; the key is kept as sha256 only.
+at creation / rotation; the key is kept as sha256 only, the secret encrypted
+(app/security/secret_box.py: the server needs it in clear to sign).
 reportPartnerReturn (the order's courier or an admin): the restaurant refused the returned meal
 (D5 counter) or was closed (D4 debt = advance + delivery fee; no new order until settled).
 """
@@ -22,6 +23,7 @@ from app.errors import ApiError
 from app.models import Order, Partner, PartnerWebhookDelivery, User
 from app.models.partners import MAX_OPEN_ORDERS_LIMIT
 from app.realtime.events import emit
+from app.security import secret_box
 from app.security.deps import CurrentUser
 from app.security.partner import generate_key, generate_secret, hash_key, key_prefix
 from app.services import order_transitions as ot
@@ -166,7 +168,7 @@ async def create_partner(
         key_hash=hash_key(key),
         technical_user_id=technical.id,
         webhook_url=webhook_url,
-        webhook_secret=secret,
+        webhook_secret=secret_box.encrypt(secret),  # signing secret, encrypted at rest
         max_open_orders=max_open,
         active=True,
         created_by=admin.id,
@@ -236,7 +238,7 @@ async def rotate_webhook_secret(
     _admin(admin)
     partner = await _partner(session, payload.get("partner_id"), lock=True)
     secret = generate_secret()
-    partner.webhook_secret = secret
+    partner.webhook_secret = secret_box.encrypt(secret)
     await session.flush()
     return {"success": True, "partner": await partner_json(session, partner), "webhook_secret": secret}
 
