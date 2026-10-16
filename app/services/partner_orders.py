@@ -7,7 +7,7 @@ same whitelist as placeOrder), the order belongs to the partner's technical user
   budget_max = items_total (the courier knows exactly what he advances at the counter);
 - unavailable_policy call_me, payment cash, contact_name = the customer's first name only;
 - the partner's `max_open_orders` (default 50) replaces the customer cap of 5;
-- `test: true` → « QA TEST » prefix: never broadcast to the couriers;
+- `test: true` → « QA TEST » prefix: the classic QA path — offered to the QA accounts only;
 - D4: a partner with an unpaid debt gets 409 restaurant_debt_unpaid;
 - the answer carries the per-phone badge (app/services/partner_stats.py).
 Acceptance and cancellation delegate to offers.accept_offer / cancellation.cancel_order as the
@@ -157,6 +157,21 @@ def new_tracking_token() -> str:
     return secrets.token_urlsafe(TRACKING_TOKEN_BYTES)
 
 
+RESALE_LABEL_FR = "Plat vendu en l'état par le livreur"
+
+
+def resale_items_text(items_text: str | None) -> str:
+    """The dishes of a restaurant order as an Offre Chaude shows them: never the restaurant's name
+    (decision 10, hygiene — the courier answers for a resold dish, the restaurant does not).
+    The « [Restaurant ODS] <nom> » line goes, the QA TEST marker stays."""
+    text = items_text or ""
+    prefix = ""
+    if text.startswith(TEST_PREFIX):
+        prefix, text = TEST_PREFIX, text[len(TEST_PREFIX) :]
+    lines = [line for line in text.splitlines() if not line.strip().startswith(LABEL)]
+    return prefix + "\n".join(lines).strip()
+
+
 # --- creation -------------------------------------------------------------------------------------
 
 
@@ -268,7 +283,9 @@ async def create_order(
         raw["preferred_time"] = "scheduled"
         raw["scheduled_time"] = body.scheduled_for.isoformat()
     try:
-        built = build_order(raw, user, None, None)
+        # The customer's phone is the one the restaurant sent, whatever the technical user's
+        # profile holds (order_contact_phone would prefer a Tunisian profile number).
+        built = build_order(raw, user, None, None, contact_phone=phone)
     except OrderRefused as exc:
         raise _refused(exc) from exc
     order = built.order
@@ -284,13 +301,14 @@ async def create_order(
     session.add_all(built.stops)
     await ot.start(session, order, user.id, "partner_api")
     dispatched: int | None = 0
-    if not is_test_order(order.items_text):
-        try:  # the order exists: a failed broadcast never fails it
-            async with session.begin_nested():
-                dispatched = (await dispatch_order(session, order)).get("dispatched")
-        except Exception:
-            log.exception("partner order %s: dispatch failed", order.id)
-            dispatched = None
+    # test: true → « QA TEST »: the very path of a classic QA order — offered to the QA accounts only
+    # (settings.QA_ACCOUNTS), notifications included; test: false → every courier around.
+    try:  # the order exists: a failed broadcast never fails it
+        async with session.begin_nested():
+            dispatched = (await dispatch_order(session, order)).get("dispatched")
+    except Exception:
+        log.exception("partner order %s: dispatch failed", order.id)
+        dispatched = None
     return 201, await _created_body(session, order, dispatched=dispatched, replayed=False)
 
 
@@ -325,9 +343,11 @@ async def partner_order(session: AsyncSession, ctx: PartnerContext, order_id: st
     return order
 
 
-async def _courier(
+async def courier_card(
     session: AsyncSession, courier_id: uuid.UUID | None, *, contact: bool
 ) -> dict[str, Any] | None:
+    """The contract's `courier` object: first name, rating, deliveries, vehicle (+ phone for the
+    restaurant when `contact`). None without a courier."""
     if courier_id is None:
         return None
     courier = await session.get(Courier, courier_id)
@@ -345,6 +365,9 @@ async def _courier(
     return out
 
 
+_courier = courier_card
+
+
 async def _no_response(session: AsyncSession, order: Order) -> dict[str, Any] | None:
     if order.status != "client_no_response":
         return None
@@ -357,11 +380,15 @@ async def _no_response(session: AsyncSession, order: Order) -> dict[str, Any] | 
         )
     ).scalar_one_or_none()
     if case is None:
-        return {"stage": "waiting", "deadline_at": None, "wait_seconds": None}
+        return {"stage": "waiting", "deadline_at": None, "wait_seconds": None, "return_deadline_at": None}
+    from app.services import no_response
+
     return {
         "stage": case.status,
         "deadline_at": iso(case.deadline_at),
         "wait_seconds": int((case.deadline_at - case.started_at).total_seconds()),
+        # D2 (owner, 16/10/2026): the meal must be back at the counter before this time
+        "return_deadline_at": iso(await no_response.return_deadline(session, order, case, datetime.now(UTC))),
     }
 
 

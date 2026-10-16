@@ -193,6 +193,15 @@ async def test_every_step_of_the_delivery_reaches_the_partner(client, world, pw,
     assert updated.payload["data"]["previous_fee"] == 5 and updated.payload["data"]["offer"]["fee"] == 4.5
     accepted = next(d for d in await deliveries() if d.event == "order.accepted")
     assert accepted.payload["data"]["delivery_fee"] == 4.5
+    # the contract's `courier` object (2A-CONTRAT §2), never the internal courier id
+    assert "courier_id" not in accepted.payload["data"]
+    assert accepted.payload["data"]["courier"] == {
+        "first_name": "Karim",
+        "rating": 5,
+        "total_deliveries": 0,
+        "vehicle": "scooter",
+        "phone": "+21655123456",
+    }
     assert await run_job() == {"due": 7, "delivered": 7, "failed": 0}
     assert server.events() == events
     assert all(server.verify(c, pw.webhook_secret) for c in server.calls)
@@ -395,5 +404,10 @@ async def test_partner_customer_stats_snapshot_is_refreshed_on_terminal_statuses
     await step(client, world, order_id, {"status": "delivered"})
     [stat] = await rows(select(PartnerCustomerStat))
     assert stat.phone_hash == phone_hash("+21622111222")
+    # keyed hash (HMAC with the server secret): not the bare sha256 an 8-digit number is brute-forced from
+    import hashlib
+
+    assert stat.phone_hash != hashlib.sha256(b"+21622111222").hexdigest()
+    assert phone_hash("+21622111222", secret="other") != stat.phone_hash
     assert (stat.total_orders, stat.delivered_orders, stat.recent_orders, stat.recent_unpaid) == (1, 1, 1, 0)
     assert order_body()["customer"]["phone"] == "22 111 222"

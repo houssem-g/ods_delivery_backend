@@ -35,6 +35,7 @@ import contextlib
 import json
 import math
 import random
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
@@ -95,25 +96,40 @@ _CALENDAR_FILE = Path(__file__).resolve().parent / "data" / "calendar_tn.json"  
 _FIXED = {(1, 1), (3, 20), (4, 9), (5, 1), (7, 25), (8, 13), (10, 15), (12, 17)}
 
 
-def _load_calendar() -> tuple[set[date], tuple[date, date] | None]:
+_RELIGIOUS_KEY = re.compile(r"^religious_(\d{4})_estimated$")
+
+
+def _load_calendar() -> tuple[set[date], list[tuple[date, date]]]:
+    """Every `religious_<year>_estimated` block of calendar_tn.json: the religious holidays and one
+    Ramadan range per year (start → the day before Aïd el-Fitr). Years are estimates to confirm at
+    the official announcement; a missing year silently switches D3 (10-minute wait) off — the
+    file says so and must be completed every year."""
     holidays: set[date] = set()
-    ramadan = None
+    ramadans: list[tuple[date, date]] = []
     try:
         data = json.loads(_CALENDAR_FILE.read_text(encoding="utf-8"))
-        rel = data.get("religious_2027_estimated", {})
-        for value in rel.values():
+    except (OSError, ValueError):
+        return holidays, ramadans
+    for key, rel in data.items():
+        if not _RELIGIOUS_KEY.match(key) or not isinstance(rel, dict):
+            continue
+        for name, value in rel.items():
+            if name == "estimated":
+                continue
             for d in value if isinstance(value, list) else [value]:
                 with contextlib.suppress(TypeError, ValueError):
                     holidays.add(date.fromisoformat(d))
-        start = date.fromisoformat(rel["ramadan_start"])
-        fitr = sorted(date.fromisoformat(d) for d in rel["eid_al_fitr"])
-        ramadan = (start, fitr[0] - timedelta(days=1))
-    except (OSError, ValueError, KeyError, TypeError):
-        pass
-    return holidays, ramadan
+        try:
+            start = date.fromisoformat(rel["ramadan_start"])
+            fitr = sorted(date.fromisoformat(d) for d in rel["eid_al_fitr"])
+            ramadans.append((start, fitr[0] - timedelta(days=1)))
+        except (ValueError, KeyError, TypeError):
+            continue
+    return holidays, sorted(ramadans)
 
 
-_RELIGIOUS, _RAMADAN = _load_calendar()
+_RELIGIOUS, _RAMADANS = _load_calendar()
+_RAMADAN = _RAMADANS[0] if _RAMADANS else None  # the first known range (kept for callers)
 
 
 def is_holiday(day: date) -> bool:
@@ -121,7 +137,12 @@ def is_holiday(day: date) -> bool:
 
 
 def is_ramadan(day: date) -> bool:
-    return _RAMADAN is not None and _RAMADAN[0] <= day <= _RAMADAN[1]
+    return any(start <= day <= end for start, end in _RAMADANS)
+
+
+def ramadan_known_until() -> date | None:
+    """The last day covered by the calendar's Ramadan ranges (None without any)."""
+    return _RAMADANS[-1][1] if _RAMADANS else None
 
 
 def day_kinds(day: date, rainy: set[date]) -> list[str]:

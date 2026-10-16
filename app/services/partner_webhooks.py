@@ -182,12 +182,25 @@ async def on_transition(
                 )
             ).scalar_one_or_none()
             if case is not None:
+                from app.services import no_response
+
                 data = {
                     "deadline_at": iso(case.deadline_at),
                     "wait_seconds": int((case.deadline_at - case.started_at).total_seconds()),
+                    # D2: when the meal must be back at the restaurant (30 / 45 min, ≤ 60 after payment)
+                    "return_deadline_at": iso(
+                        await no_response.return_deadline(session, order, case, datetime.now(UTC))
+                    ),
                 }
         elif event == "order.accepted":
-            data = {"delivery_fee": order.delivery_fee, "courier_id": order.courier_id}
+            from app.services import partner_orders
+
+            # the contract's `courier` object (first name, rating, deliveries, vehicle, phone for the
+            # restaurant), never the internal courier id
+            data = {
+                "delivery_fee": order.delivery_fee,
+                "courier": await partner_orders.courier_card(session, order.courier_id, contact=True),
+            }
         elif event == "order.returned_to_shop":
             data = {"purchase_amount": order.purchase_amount, "delivery_fee": order.delivery_fee}
             if order.partner_return_outcome is None:

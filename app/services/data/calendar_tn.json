@@ -1,7 +1,8 @@
 {
   "source_notes": {
     "holidays": "publicholidays.africa/tunisia + La Presse (lapresse.tn) ; Ramadan/Aïd = estimations astronomiques, à confirmer à l'annonce officielle",
-    "ramadan_2027": "allafrica.com 08/09/2026, tuniscope.com 08/09/2026"
+    "ramadan_2027": "allafrica.com 08/09/2026, tuniscope.com 08/09/2026",
+    "ramadan_2028": "ESTIMATION astronomique (calcul, 16/10/2026) : Ramadan 1449 ≈ 28/01/2028 → 25/02/2028, Aïd el-Fitr ≈ 26-27/02/2028, Aïd el-Idha ≈ 05-06/05/2028 ; à confirmer à l'annonce officielle (le mufti) ; ajouter 2029 avant fin 2028 sinon D3 (10 min) s'éteint en silence"
   },
   "fixed_holidays_2027": {
     "2027-01-01": "Jour de l'An",
@@ -26,5 +27,17 @@
     "ras_el_am_el_hijri": "2027-06-06",
     "mouled": "2027-08-14"
   },
-  "university_exams_sousse": "À COMPLÉTER : calendrier 2026-2027 de l'Université de Sousse introuvable en ligne le 06/10/2026 (ne pas inventer)"
+  "university_exams_sousse": "À COMPLÉTER : calendrier 2026-2027 de l'Université de Sousse introuvable en ligne le 06/10/2026 (ne pas inventer)",
+  "religious_2028_estimated": {
+    "ramadan_start": "2028-01-28",
+    "eid_al_fitr": [
+      "2028-02-26",
+      "2028-02-27"
+    ],
+    "eid_al_adha": [
+      "2028-05-05",
+      "2028-05-06"
+    ],
+    "estimated": true
+  }
 }

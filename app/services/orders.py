@@ -359,9 +359,18 @@ def _parse_scheduled(value: Any) -> datetime | None:
 
 
 def build_order(
-    raw: Any, user: User, address: UserAddress | None, default_point: tuple[float, float] | None
+    raw: Any,
+    user: User,
+    address: UserAddress | None,
+    default_point: tuple[float, float] | None,
+    *,
+    contact_phone: str | None = None,
 ) -> BuiltOrder:
-    """The whitelisted, bounded order (placeOrder.buildOrder). Raises OrderRefused(400)."""
+    """The whitelisted, bounded order (placeOrder.buildOrder). Raises OrderRefused(400).
+
+    `contact_phone`: an E.164 number already validated by the caller that replaces the
+    `order_contact_phone` rule — a partner (restaurant ODS) order is placed by the restaurant's
+    technical user, and the couriers must call the restaurant's CUSTOMER, never that account."""
     o = raw if isinstance(raw, dict) else {}
     items_text = _text(o.get("items_text"), 2000)
     if not items_text:
@@ -384,7 +393,7 @@ def build_order(
     delivery_lat, delivery_lng = as_float(d_lat_raw), as_float(d_lng_raw)
     if not within(delivery_lat, delivery_lng, ORDER_BOUNDS):
         raise OrderRefused(400, "invalid_delivery_location")
-    phone = order_contact_phone(user, o.get("customer_phone"))
+    phone = contact_phone or order_contact_phone(user, o.get("customer_phone"))
     assert shop_lat is not None and shop_lng is not None
     assert delivery_lat is not None and delivery_lng is not None
 

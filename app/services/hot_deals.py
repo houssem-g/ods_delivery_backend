@@ -96,7 +96,7 @@ LIST_LIMIT_MAX = 50
 PUBLIC_FIELDS = (
     "id", "items_text", "shop_name", "purchase_amount", "discount_percentage", "discounted_price",
     "include_delivery", "delivery_fee", "photo_url", "expires_at", "status", "courier_name",
-    "created_date",
+    "created_date", "sold_by_courier",
     # Aurora (price decay, trust signals)
     "original_price", "current_price", "start_price", "floor_price", "next_price", "next_drop_at",
     "discount_pct_now", "courier_rating", "courier_deliveries", "receipt_verified", "sealed",
@@ -256,12 +256,21 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         }
     now = ot.now_utc()
     stop = await first_stop(session, order.id)
+    # A restaurant ODS dish is resold by the courier, never under the restaurant's name (decision 10,
+    # hygiene: the courier answers for it) — no shop name / address, the « [Restaurant ODS] » line gone.
+    partner = order.source == "partner"
+    if partner:
+        from app.services.partner_orders import resale_items_text
+
+        items_text = resale_items_text(order.items_text)
+    else:
+        items_text = order.items_text
     deal = HotDeal(
         original_order_id=order.id,
         courier_id=courier.id,
-        items_text=order.items_text,
-        shop_name=stop.name if stop else None,
-        shop_address=stop.address if stop else None,
+        items_text=items_text,
+        shop_name=None if partner else (stop.name if stop else None),
+        shop_address=None if partner else (stop.address if stop else None),
         purchase_amount=purchase,
         discount_percentage=_money(discount),
         price=start,
@@ -626,6 +635,7 @@ async def list_deals(
     original_customer = (
         select(Order.customer_id).where(Order.id == HotDeal.original_order_id).scalar_subquery()
     )
+    original_source = select(Order.source).where(Order.id == HotDeal.original_order_id).scalar_subquery()
     stmt = (
         select(
             HotDeal,
@@ -637,6 +647,7 @@ async def list_deals(
             func.coalesce(courier_stats.c.total_deliveries, 0),
             original_customer.label("original_customer_id"),
             Courier.user_id,
+            original_source.label("original_source"),
         )
         .join(Courier, Courier.id == HotDeal.courier_id)
         .outerjoin(courier_stats, courier_stats.c.courier_id == HotDeal.courier_id)
@@ -670,8 +681,8 @@ async def list_deals(
     deals = []
     for row in rows[:take]:
         deal, courier_name, bought_at, reported_at, has_receipt, rating, deliveries = row[:7]
-        customer_of_original, courier_user_id = row[7], row[8]
-        km = row[9] if has_point else None
+        customer_of_original, courier_user_id, original_source = row[7], row[8], row[9]
+        km = row[10] if has_point else None
         price, next_price, next_drop_at = price_schedule(deal, now)
         original = deal.purchase_amount
         deals.append(
@@ -679,6 +690,8 @@ async def list_deals(
                 "id": str(deal.id),
                 "items_text": deal.items_text,
                 "shop_name": deal.shop_name,
+                # a restaurant dish resold by the courier (decision 10): the screens say so instead of a shop
+                "sold_by_courier": original_source == "partner",
                 "purchase_amount": _number(original),
                 "original_price": _number(original),
                 "discount_percentage": _number(deal.discount_percentage),

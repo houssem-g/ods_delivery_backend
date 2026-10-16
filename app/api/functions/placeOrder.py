@@ -26,7 +26,7 @@ from app.api.functions._common import answers_refusals, document
 from app.security.deps import CurrentUser
 from app.services import order_drafts
 from app.services.dispatch import dispatch_order
-from app.services.orders import is_test_order, place_order
+from app.services.orders import place_order
 
 log = logging.getLogger("odsd.functions")
 
@@ -39,12 +39,12 @@ async def handle(
     # The draft this order came from goes with it (same transaction: kept if the order fails).
     await order_drafts.remove(session, user.id, payload.get("draft_id"))
     dispatched = None
-    if not is_test_order(order.items_text):
-        try:  # the order exists: a failed broadcast never fails it (couriers also list open orders)
-            async with session.begin_nested():
-                dispatched = (await dispatch_order(session, order)).get("dispatched")
-        except Exception:
-            log.exception("placeOrder: dispatch failed for %s", order.id)
+    try:  # the order exists: a failed broadcast never fails it (couriers also list open orders)
+        # (a QA order reaches the QA couriers only: app/services/dispatch.py)
+        async with session.begin_nested():
+            dispatched = (await dispatch_order(session, order)).get("dispatched")
+    except Exception:
+        log.exception("placeOrder: dispatch failed for %s", order.id)
     return 200, {
         "success": True,
         "order": await document(session, "Order", user, order.id),

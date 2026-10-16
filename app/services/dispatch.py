@@ -13,7 +13,9 @@ Launch mode (app/services/launch_mode.py, owner 13/10/2026, on by default): « o
 required — a courier « Hors ligne » or signed out is notified too (his last known position within
 his radius, or no position yet but serving the shop's governorate). Switched off in Admin →
 Paramètres once there are enough couriers.
-QA orders are never broadcast. The caller holds the order lock.
+QA orders (« QA TEST » / « PW- » in the items, settings.QA_ACCOUNTS) reach the QA couriers only:
+same path, same notifications, nobody else (owner, 16/10/2026 — the ODS staging tests use it).
+The caller holds the order lock.
 """
 
 import math
@@ -25,11 +27,19 @@ from geoalchemy2 import Geography
 from sqlalchemy import and_, cast, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models import Courier, Order, OrderStop, User
 from app.services import launch_mode, order_texts
 from app.services.notifications import notify
 from app.services.order_transitions import now_utc
-from app.services.orders import dropped_by, first_stop, is_test_order, signup_attribution, stop_coordinates
+from app.services.orders import (
+    dropped_by,
+    first_stop,
+    is_qa_account,
+    is_test_order,
+    signup_attribution,
+    stop_coordinates,
+)
 from app.services.safety import blocked_with
 
 BUSY_STATUSES = ("accepted", "at_shop", "purchased", "on_the_way")
@@ -89,6 +99,7 @@ async def _preferred(
     stop: OrderStop | None,
     shop: tuple[float, float] | None,
     offline_too: bool = False,
+    qa_only: bool = False,
 ) -> tuple[Courier | None, str | None, float | None]:
     """(courier, skip reason, distance km) for the invite-link courier."""
     customer = await session.get(User, order.customer_id)
@@ -97,6 +108,10 @@ async def _preferred(
         return None, "not_attributed", None
     if courier.user_id == order.customer_id:
         return None, "self", None
+    if qa_only:
+        courier_user = await session.get(User, courier.user_id)
+        if courier_user is None or not is_qa_account(courier_user.email):
+            return None, "not_qa", None
     if not courier.is_online and not offline_too:
         return None, "offline", None
     if courier.verification != "verified":
@@ -122,8 +137,11 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     """Claims the run (last_dispatched_at) and notifies the couriers. Returns the function's answer."""
     order.last_dispatched_at = now_utc()
     await session.flush()
-    if is_test_order(order.items_text):
-        return {"success": True, "dispatched": 0, "reason": "test_order"}
+    # a QA order (« QA TEST » / « PW- ») is offered to the QA accounts only (settings.QA_ACCOUNTS)
+    qa_only = is_test_order(order.items_text)
+    qa_emails = [e.lower() for e in settings.QA_ACCOUNTS]
+    if qa_only and not qa_emails:
+        return {"success": True, "dispatched": 0, "reason": "test_order", "qa_only": True}
 
     stop = await first_stop(session, order.id)
     shop = await stop_coordinates(session, stop)
@@ -137,7 +155,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     offline_too = await launch_mode.notify_offline_couriers(session)
 
     if order.preferred_courier_id is not None:
-        courier, reason, distance = await _preferred(session, order, stop, shop, offline_too)
+        courier, reason, distance = await _preferred(session, order, stop, shop, offline_too, qa_only)
         if courier is not None and courier.user_id in dropped:
             courier, reason = None, "dropped"
         if courier is None:
@@ -217,6 +235,8 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
         conditions.append(Courier.id != preferred_id)
     if dropped:
         conditions.append(Courier.user_id.not_in(dropped))
+    if qa_only:
+        conditions.append(func.lower(User.email).in_(qa_emails))
     eligible = (
         await session.execute(
             select(
@@ -251,6 +271,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
         "success": True,
         "order_id": str(order.id),
         "dispatched": dispatched,
+        "qa_only": qa_only,
         "skipped": len(skipped) + not_eligible,
         "candidates_total": candidates_total,
         "preferred_notified": preferred_notified,

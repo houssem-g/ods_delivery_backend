@@ -30,8 +30,14 @@ def test_pool_is_clamped_to_the_connection_budget():
 def test_production_refuses_local_secrets():
     with pytest.raises(ValueError):
         Settings(ENVIRONMENT="production")
+    with pytest.raises(ValueError, match="PARTNER_PHONE_HASH_SECRET"):  # the phone-hash key too
+        Settings(ENVIRONMENT="production", JWT_SECRET="x" * 40, COOKIE_SECURE=True)
     ok = Settings(
-        ENVIRONMENT="production", JWT_SECRET="x" * 40, COOKIE_SECURE=True, CORS_ORIGINS="https://a,https://b"
+        ENVIRONMENT="production",
+        JWT_SECRET="x" * 40,
+        COOKIE_SECURE=True,
+        CORS_ORIGINS="https://a,https://b",
+        PARTNER_PHONE_HASH_SECRET="y" * 40,
     )
     assert ok.CORS_ORIGINS == ["https://a", "https://b"] and not ok.is_local
 

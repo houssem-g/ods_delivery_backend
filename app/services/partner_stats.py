@@ -7,11 +7,14 @@ the last RECENT_ORDERS finished orders (delivered, or left with a counted « cli
 incident) and how many of them were not paid — wording of 10/10: « n'a pas payé X fois sur ses Y
 dernières commandes », never a suspension.
 
-Live values are read from `orders`; `partner_customer_stats` (sha256 of the number) is refreshed
-on every terminal status so the badge survives the anonymisation of old orders (30-day job, later).
+Live values are read from `orders`; `partner_customer_stats` is refreshed on every terminal status
+so the badge survives the anonymisation of old orders (30-day job, later). Its key is an HMAC-SHA256
+of the number with a server secret (PARTNER_PHONE_HASH_SECRET): a bare sha256 of an 8-digit number
+is reversed in seconds (manager review, 16/10/2026).
 """
 
 import hashlib
+import hmac
 from datetime import timedelta
 from typing import Any
 
@@ -19,12 +22,15 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models import NoResponseCase, Order, PartnerCustomerStat
 from app.services.orders import INCIDENT_WINDOW_DAYS, RECENT_ORDERS
 
 
-def phone_hash(phone_e164: str) -> str:
-    return hashlib.sha256(phone_e164.strip().encode()).hexdigest()
+def phone_hash(phone_e164: str, secret: str | None = None) -> str:
+    """Keyed hash of an E.164 number (HMAC-SHA256, server secret): pseudonymous, not brute-forceable."""
+    key = (secret or settings.PARTNER_PHONE_HASH_SECRET).encode()
+    return hmac.new(key, phone_e164.strip().encode(), hashlib.sha256).hexdigest()
 
 
 def _counted() -> Any:

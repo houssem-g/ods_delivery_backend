@@ -11,6 +11,7 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 LOCAL_JWT_SECRET = "local-dev-only-jwt-secret-change-me"
+LOCAL_PHONE_HASH_SECRET = "local-dev-only-phone-hash-secret-change-me"
 
 
 class Settings(BaseSettings):
@@ -211,6 +212,9 @@ class Settings(BaseSettings):
     # --- partners (restaurants ODS, /api/partner/v1) ------------------------------
     # Outgoing webhook call timeout; the job retries 1 → 16 min (app/services/partner_webhooks.py).
     PARTNER_WEBHOOK_TIMEOUT_SECONDS: float = 8.0
+    # Key of the HMAC that pseudonymises the customers' numbers in partner_customer_stats
+    # (app/services/partner_stats.py). Rotating it orphans the snapshot rows (rebuilt from orders).
+    PARTNER_PHONE_HASH_SECRET: str = LOCAL_PHONE_HASH_SECRET
 
     @model_validator(mode="before")
     @classmethod
@@ -231,6 +235,11 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET must be set (>= 32 chars) outside local/test")
             if not self.COOKIE_SECURE:
                 raise ValueError("COOKIE_SECURE must be true outside local/test")
+            if (
+                self.PARTNER_PHONE_HASH_SECRET == LOCAL_PHONE_HASH_SECRET
+                or len(self.PARTNER_PHONE_HASH_SECRET) < 32
+            ):
+                raise ValueError("PARTNER_PHONE_HASH_SECRET must be set (>= 32 chars) outside local/test")
         return self
 
     @property

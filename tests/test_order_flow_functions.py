@@ -162,12 +162,21 @@ async def test_a_failed_broadcast_never_fails_the_order(client, world, monkeypat
     assert len(await rows(select(Order))) == 1
 
 
-async def test_qa_orders_are_not_broadcast(client, world):
+async def test_qa_orders_reach_the_qa_couriers_only(client, world, factory, monkeypatch):
+    """A « QA TEST » order is offered to the QA accounts (settings.QA_ACCOUNTS) and to nobody else
+    (owner, 16/10/2026: the ODS staging tests use this path, there is no test Delivery environment)."""
+    from app.config import settings
+
+    qa_user = await factory.user(email="qa-courier@example.test", full_name="QA Livreur", profile=False)
+    await world.make_courier(qa_user, display_name="QA Livreur", phone_e164="+21655999888")
+    monkeypatch.setattr(settings, "QA_ACCOUNTS", ["qa-courier@example.test"])
     response = await call(
         client, world.customer, "placeOrder", {"order": order_form(items_text="QA TEST pain")}
     )
-    assert response.status_code == 200 and response.json()["dispatched"] is None
+    assert response.status_code == 200 and response.json()["dispatched"] == 1
     assert await notifications(world.courier_user) == []
+    [note] = await notifications(qa_user, "new_order")
+    assert note.title_fr.startswith("🛵") or note.type == "new_order"
 
 
 async def test_place_order_limits(client, world):
@@ -271,7 +280,7 @@ async def test_dispatch_governorate_fallback_and_guards(client, world, factory):
     assert closed.status_code == 409 and closed.json() == {"error": "order_not_open", "status": "accepted"}
     test_order = await world.order(items="PW-12 pain")
     qa = await call(client, world.customer, "dispatchOrderToCouriers", {"order_id": str(test_order.id)})
-    assert qa.json() == {"success": True, "dispatched": 0, "reason": "test_order"}
+    assert qa.json()["dispatched"] == 0 and qa.json()["qa_only"] is True  # no QA courier in this world
     no_shop = await world.order(shop=None)
     coords = await call(client, world.customer, "dispatchOrderToCouriers", {"order_id": str(no_shop.id)})
     assert coords.json()["reason"] == "shop_coords_missing"

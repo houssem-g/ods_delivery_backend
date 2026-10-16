@@ -1,19 +1,29 @@
 """/api/partner/v1 (Lot 2, 2A): keys, idempotence, orders, offers, cancel, tracking, availability,
 the per-phone badge, D3 (10-minute wait), D4/D5 (returns), and the admin functions."""
 
-from datetime import UTC, datetime, timedelta
+import json
+import uuid
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.db import SessionLocal
-from app.models import NoResponseCase, Order, Partner, PartnerWebhookDelivery, User
+from app.models import HotDeal, NoResponseCase, Order, Partner, PartnerWebhookDelivery, User
 from app.services import prayer_times
 from tests.factories import auth
 from tests.launch_helpers import set_launch_mode
 from tests.order_helpers import SOUSSE_HOME, TUNIS, OrderWorld, notifications, reload, rows, set_live
-from tests.partner_helpers import PARTNER_API, incident, make_partner, order_body, partner_order, post_order
+from tests.partner_helpers import (
+    PARTNER_API,
+    WEBHOOK_URL,
+    incident,
+    make_partner,
+    order_body,
+    partner_order,
+    post_order,
+)
 
 pytestmark = pytest.mark.usefixtures("client")
 
@@ -169,6 +179,27 @@ async def test_create_order_builds_the_order_as_place_order_and_dispatches(clien
     assert doc["partner_customer_recent_orders"] is None
 
 
+async def test_customer_phone_is_the_restaurants_even_when_the_technical_user_has_a_number(client, world, pw):
+    """order_contact_phone prefers a Tunisian profile number: the technical user must never win
+    over the customer's number the restaurant sent (integration review, 16/10/2026)."""
+    async with SessionLocal() as s, s.begin():
+        tech = await s.get(User, pw.technical_user_id)
+        tech.phone_e164 = "+21699999999"
+    r = await post_order(client, pw, order_body(customer={"phone": "00216 55 444 333"}))
+    assert r.status_code == 201, r.text
+    order = await reload(Order, r.json()["order_id"])
+    assert order.contact_phone_e164 == "+21655444333"
+    assert str(order.customer_id) == pw.technical_user_id
+    doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.admin))).json()
+    assert doc["customer_phone"] == "+21655444333"
+    # the badge follows the customer's number, not the technical account's
+    other = await partner_order(world, pw, phone="+21655444333", status="delivered", courier=world.courier)
+    await incident(other)
+    view = (await client.get(f"{PARTNER_API}/orders/{order.id}", headers=pw.headers)).json()
+    assert view["customer_reliability"]["recent_unpaid"] == 1
+    assert view["customer_reliability"]["visible"] is True
+
+
 async def test_same_idempotency_key_gives_the_same_order_and_one_broadcast(client, world, pw):
     body = order_body()
     body.pop("partner_ref")
@@ -198,15 +229,50 @@ async def test_same_idempotency_key_gives_the_same_order_and_one_broadcast(clien
     assert await count(Order) == 2
 
 
-async def test_a_test_order_is_never_broadcast(client, world, pw):
+async def test_a_test_order_reaches_the_qa_couriers_only(client, world, factory, monkeypatch):
+    """Owner, 16/10/2026: no test Delivery environment — `test: true` is the classic QA order path:
+    « QA TEST » prefix, seen and offered to the QA accounts only (notifications included), invisible
+    to the other couriers; `test: false` reaches everybody around."""
+    from app.config import settings
+
+    pw = await make_partner(client, world.admin, webhook_url=WEBHOOK_URL)
+    qa_user = await factory.user(email="qa-courier@example.test", full_name="QA Livreur", profile=False)
+    await world.make_courier(qa_user, display_name="QA Livreur", phone_e164="+21655999888")
+    monkeypatch.setattr(settings, "QA_ACCOUNTS", ["qa-courier@example.test"])
+
     r = await post_order(client, pw, order_body(test=True))
-    assert r.status_code == 201 and r.json()["dispatched"] == 0 and r.json()["order"]["test"] is True
+    assert r.status_code == 201, r.text
+    assert r.json()["dispatched"] == 1 and r.json()["order"]["test"] is True
     order = await reload(Order, r.json()["order_id"])
     assert order.items_text.startswith("QA TEST [Restaurant ODS] Coffee and Tea")
+    [note] = await notifications(qa_user, "new_order")
+    assert note.order_id == order.id and note.data["source"] == "partner"
+    assert await notifications(world.courier_user, "new_order") == []  # the ordinary courier: nothing
+    # seen by the QA courier, not by the other one
+    assert (await client.get(f"/api/entities/Order/{order.id}", headers=auth(qa_user))).status_code == 200
+    assert (
+        await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.courier_user))
+    ).status_code == 404
+    # a re-dispatch by hand keeps its 5-minute rule and, when it runs, the same QA-only filter
+    again = await fn(client, world.admin, "dispatchOrderToCouriers", {"order_id": str(order.id)})
+    assert again.status_code == 429 and again.json()["error"] == "too_soon"
     assert await notifications(world.courier_user, "new_order") == []
-    # a re-dispatch by hand stays silent too
-    await fn(client, world.admin, "dispatchOrderToCouriers", {"order_id": str(order.id)})
-    assert await notifications(world.courier_user, "new_order") == []
+    # the QA courier works the order like any other: his offer reaches the restaurant's webhook
+    offer = await fn(client, qa_user, "createOrderOffer", {"order_id": str(order.id), "fee": 4})
+    assert offer.status_code == 200, offer.text
+    events = [
+        d.event
+        for d in await rows(select(PartnerWebhookDelivery).where(PartnerWebhookDelivery.order_id == order.id))
+    ]
+    assert events == ["order.offer_received"]
+    # test: false → every courier around (both here)
+    real = await post_order(client, pw, order_body(partner_ref="ods-1-real"))
+    assert real.status_code == 201 and real.json()["dispatched"] == 2
+    real_id = real.json()["order_id"]
+    assert [n.order_id for n in await notifications(world.courier_user, "new_order")] == [uuid.UUID(real_id)]
+    assert (
+        await client.get(f"/api/entities/Order/{real_id}", headers=auth(world.courier_user))
+    ).status_code == 200
 
 
 @pytest.mark.parametrize(
@@ -346,8 +412,10 @@ async def test_track_answers_without_account_and_without_the_courier_phone(clien
     assert live["courier"] == {"first_name": "Karim", "rating": 5, "vehicle": "scooter"}
     assert live["position"]["lat"] == pytest.approx(35.829) and live["position"]["updated_at"]
     assert live["eta_minutes"] is None or live["eta_minutes"] >= 1
-    text = waiting.text + (await client.get(f"{PARTNER_API}/track/{token}")).text
-    assert "+216" not in text and "Trabelsi" not in text and "plage" not in text and "8.8" not in text
+    # (the position's timestamp is left out: its digits could contain « 8.8 » by chance)
+    redacted = json.dumps([waiting.json(), {k: v for k, v in live.items() if k != "position"}])
+    assert "+216" not in redacted and "Trabelsi" not in redacted and "plage" not in redacted
+    assert "8.8" not in redacted and "purchase_amount" not in redacted
 
 
 async def test_track_is_rate_limited_per_ip(client, pw, monkeypatch):
@@ -644,3 +712,150 @@ async def test_the_courier_returning_the_meal_marks_the_order_accepted_back(clie
     assert order.status == "cancelled" and order.partner_return_outcome == "accepted"
     view = (await client.get(f"{PARTNER_API}/orders/{order.id}", headers=pw.headers)).json()
     assert view["return_outcome"] == "accepted" and view["cancel_reason"] == "goods_returned_to_shop"
+
+
+# --- D2: the return deadline (30 / 45 min, never > 60 min after the payment) -------------------------
+
+
+def test_return_deadline_rule():
+    from app.services.no_response import return_deadline_from
+
+    end = datetime(2026, 10, 16, 18, 0, tzinfo=UTC)
+    assert return_deadline_from(end, far=False, slow=False, paid_at=None) == end + timedelta(minutes=30)
+    assert return_deadline_from(end, far=True, slow=False, paid_at=None) == end + timedelta(minutes=45)
+    assert return_deadline_from(end, far=False, slow=True, paid_at=None) == end + timedelta(minutes=45)
+    paid = end - timedelta(minutes=40)  # the courier paid 40 min before the procedure ended
+    assert return_deadline_from(end, far=True, slow=True, paid_at=paid) == paid + timedelta(minutes=60)
+    assert return_deadline_from(
+        end, far=False, slow=False, paid_at=end - timedelta(minutes=5)
+    ) == end + timedelta(minutes=30)
+
+
+async def test_return_deadline_is_sent_to_the_courier_and_the_restaurant(client, world, monkeypatch):
+    monkeypatch.setattr(prayer_times, "slow_slot", lambda now, where=None: None)
+    pw = await make_partner(client, world.admin, webhook_url=WEBHOOK_URL)  # with a webhook to receive it
+    partner = await partner_order(
+        world, pw, status="on_the_way", courier=world.courier, fee="4", purchase="20", at_door=True
+    )
+    r = await fn(
+        client,
+        world.courier_user,
+        "triggerEmergencyContact",
+        {"order_id": str(partner.id), "action": "report_no_response"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    deadline = datetime.fromisoformat(body["deadline_at"].replace("Z", "+00:00"))
+    back = datetime.fromisoformat(body["return_deadline_at"].replace("Z", "+00:00"))
+    assert back - deadline == timedelta(minutes=30)  # shop → door ≈ 1 km, no counter payment event
+    status = await fn(
+        client,
+        world.courier_user,
+        "triggerEmergencyContact",
+        {"order_id": str(partner.id), "action": "status"},
+    )
+    assert status.json()["return_deadline_at"] == body["return_deadline_at"]
+    view = (await client.get(f"{PARTNER_API}/orders/{partner.id}", headers=pw.headers)).json()
+    assert view["no_response"]["return_deadline_at"] == body["return_deadline_at"]
+    [delivery] = await rows(
+        select(PartnerWebhookDelivery).where(PartnerWebhookDelivery.event == "order.no_response")
+    )
+    assert delivery.payload["data"]["return_deadline_at"] == body["return_deadline_at"]
+    # once the procedure ended, the 30 minutes run from its real end
+    async with SessionLocal() as s, s.begin():
+        await s.execute(
+            update(NoResponseCase)
+            .where(NoResponseCase.order_id == partner.id)
+            .values(
+                started_at=datetime.now(UTC) - timedelta(minutes=4),
+                deadline_at=datetime.now(UTC) - timedelta(seconds=1),
+            )
+        )
+    expired = await fn(
+        client,
+        world.courier_user,
+        "triggerEmergencyContact",
+        {"order_id": str(partner.id), "action": "status"},
+    )
+    assert expired.json()["stage"] == "expired"
+    final = datetime.fromisoformat(expired.json()["return_deadline_at"].replace("Z", "+00:00"))
+    assert timedelta(minutes=29, seconds=50) <= final - datetime.now(UTC) <= timedelta(minutes=30)
+    # an app order never carries a return deadline (the courier is busy: an admin reports)
+    app_order = await world.order(
+        status="on_the_way", courier=world.courier, fee="4", purchase="20", at_door=True
+    )
+    r = await fn(
+        client,
+        world.admin,
+        "triggerEmergencyContact",
+        {"order_id": str(app_order.id), "action": "report_no_response"},
+    )
+    assert r.status_code == 200 and r.json()["return_deadline_at"] is None
+
+
+# --- decision 10: a resold restaurant dish never shows the restaurant's name -------------------------
+
+
+def test_resale_items_text_drops_the_restaurant_line():
+    from app.services.partner_orders import resale_items_text
+
+    text = "[Restaurant ODS] Coffee and Tea\n2× Café crème — 3.500 DT\nTotal repas : 8.800 DT"
+    assert resale_items_text(text) == "2× Café crème — 3.500 DT\nTotal repas : 8.800 DT"
+    assert resale_items_text("QA TEST " + text) == "QA TEST 2× Café crème — 3.500 DT\nTotal repas : 8.800 DT"
+    assert resale_items_text("Pain") == "Pain" and resale_items_text(None) == ""
+
+
+async def test_a_resold_restaurant_dish_never_shows_the_restaurant_name(client, world, pw, monkeypatch):
+    monkeypatch.setattr(prayer_times, "slow_slot", lambda now, where=None: None)
+    partner = await partner_order(
+        world, pw, status="on_the_way", courier=world.courier, fee="4", purchase="20", at_door=True
+    )
+    r = await fn(
+        client,
+        world.courier_user,
+        "triggerEmergencyContact",
+        {"order_id": str(partner.id), "action": "report_no_response"},
+    )
+    assert r.status_code == 200, r.text
+    async with SessionLocal() as s, s.begin():
+        await s.execute(
+            update(NoResponseCase)
+            .where(NoResponseCase.order_id == partner.id)
+            .values(
+                started_at=datetime.now(UTC) - timedelta(minutes=4),
+                deadline_at=datetime.now(UTC) - timedelta(seconds=1),
+            )
+        )
+    deal = await fn(
+        client, world.courier_user, "createHotDeal", {"order_id": str(partner.id), "discount_percentage": 20}
+    )
+    assert deal.status_code == 200, deal.text
+    [row] = await rows(select(HotDeal).where(HotDeal.original_order_id == partner.id))
+    assert row.shop_name is None and row.shop_address is None
+    assert "[Restaurant ODS]" not in row.items_text and "Coffee and Tea" not in row.items_text
+    assert row.items_text == "1× Café — 3.500 DT"
+    listed = await fn(
+        client, world.admin, "listHotDeals", {"lat": SOUSSE_HOME[0], "lng": SOUSSE_HOME[1], "radius_km": 50}
+    )
+    assert listed.status_code == 200, listed.text
+    [shown] = [d for d in listed.json()["deals"] if d["id"] == str(row.id)]
+    assert shown["shop_name"] is None and shown["sold_by_courier"] is True
+    assert "Coffee and Tea" not in json.dumps(shown, ensure_ascii=False)
+
+
+# --- Ramadan calendar: 2027 and 2028 (estimated) ------------------------------------------------------
+
+
+def test_ramadan_2028_is_known_and_marked_estimated():
+    from pathlib import Path
+
+    from app.services import forecast
+
+    assert forecast.is_ramadan(date(2027, 2, 20)) and forecast.is_ramadan(date(2028, 2, 10))
+    assert not forecast.is_ramadan(date(2028, 2, 27)) and not forecast.is_ramadan(date(2026, 10, 16))
+    assert forecast.ramadan_known_until() == date(2028, 2, 25)
+    data = json.loads(
+        (Path(forecast.__file__).resolve().parent / "data" / "calendar_tn.json").read_text(encoding="utf-8")
+    )
+    assert data["religious_2028_estimated"]["estimated"] is True
+    assert "2028" in data["source_notes"]["ramadan_2028"]

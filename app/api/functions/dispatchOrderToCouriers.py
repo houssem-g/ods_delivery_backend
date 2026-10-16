@@ -3,7 +3,7 @@
 
 Body: { order_id }. At most once every 5 minutes (429 too_soon, retry_after_s); only an open
 order (409 order_not_open). Returns { success, order_id, dispatched, skipped, candidates_total,
-preferred_notified, sample_skips } (or { success, dispatched: 0, reason: 'test_order' }).
+preferred_notified, sample_skips, qa_only } (a QA order reaches the QA accounts only).
 """
 
 from typing import Any

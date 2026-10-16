@@ -266,18 +266,28 @@ async def _finalize(session: AsyncSession, order: Order, case: NoResponseCase, n
     mins = round((case.deadline_at - case.started_at).total_seconds() / 60)
     courier_user = await _courier_user(session, order)
     if courier_user is not None:
+        if order.source == "partner":
+            # restaurant order (owner, 16/10/2026): the dish goes back to the restaurant within
+            # 30 min, deposit refunded and ride paid; no « marchandise », no « pénalité »
+            options_fr = (
+                "revendre (Offre Chaude), rapporter le plat fermé au restaurant dans les 30 minutes "
+                "(avance rendue en entier, course payée) ou annuler. Rien ne vous est retenu."
+            )
+            options_ar = (
+                "إعادة البيع (عرض ساخن)، أو إعادة الطبق مغلقاً إلى المطعم خلال 30 دقيقة "
+                "(يُردّ لك ما دفعته كاملاً وتُدفع أجرتك)، أو الإلغاء. لا شيء يُخصم منك."
+            )
+        else:
+            options_fr = (
+                "revendre (Offre Chaude), rendre la marchandise au magasin ou annuler, sans pénalité."
+            )
+            options_ar = "إعادة البيع (عرض ساخن) أو إرجاع البضاعة إلى المتجر أو الإلغاء دون عقوبة."
         if last_alert:
             texts = {
                 "title_ar": "❌ لم يردّ الحريف على التنبيه الأخير",
                 "title_fr": "❌ Dernière alerte sans réponse",
-                "body_ar": (
-                    "لا يمكن إرسال تنبيه آخر. يمكنك الآن إعادة البيع (عرض ساخن) أو إرجاع البضاعة إلى "
-                    "المتجر أو الإلغاء دون عقوبة."
-                ),
-                "body_fr": (
-                    "Plus aucune alerte n'est possible. Vous pouvez maintenant revendre (Offre Chaude), "
-                    "rendre la marchandise au magasin ou annuler, sans pénalité."
-                ),
+                "body_ar": f"لا يمكن إرسال تنبيه آخر. يمكنك الآن {options_ar}",
+                "body_fr": f"Plus aucune alerte n'est possible. Vous pouvez maintenant {options_fr}",
             }
         else:
             texts = {
@@ -285,13 +295,11 @@ async def _finalize(session: AsyncSession, order: Order, case: NoResponseCase, n
                 "title_fr": "❌ Le client ne répond toujours pas",
                 "body_ar": (
                     f"لم يردّ الحريف خلال {minutes_ar(mins)} رغم الإشعار والتنبيه. يمكنك الآن إعادة "
-                    "تنبيهه مرة أخيرة، أو إعادة البيع (عرض ساخن) أو إرجاع البضاعة إلى المتجر أو الإلغاء "
-                    "دون عقوبة."
+                    f"تنبيهه مرة أخيرة، أو {options_ar}"
                 ),
                 "body_fr": (
                     f"Aucune réponse en {mins} min malgré la notification et l'alarme. Vous pouvez "
-                    "maintenant le relancer une dernière fois, revendre (Offre Chaude), rendre la "
-                    "marchandise au magasin ou annuler, sans pénalité."
+                    f"maintenant le relancer une dernière fois, {options_fr}"
                 ),
             }
         await notify_and_push(
@@ -527,12 +535,85 @@ async def _courier_distance_m(session: AsyncSession, order: Order) -> float | No
     return float(value) if value is not None else None
 
 
+# --- D2 (owner, 16/10/2026): when the meal must be back at the restaurant -------------------------
+RETURN_MINUTES = 30
+RETURN_MINUTES_FAR = 45  # beyond 5 km, at the iftar / on Ramadan nights (rain: no data source yet)
+RETURN_FAR_KM = 5.0
+RETURN_MAX_AFTER_PAYMENT = timedelta(minutes=60)
+RETURN_SLOW_SLOTS = ("iftar", "ramadan_night")
+
+
+def return_deadline_from(end: datetime, *, far: bool, slow: bool, paid_at: datetime | None) -> datetime:
+    """Pure rule: 30 min after the end of the procedure, 45 beyond 5 km or at the iftar / Ramadan
+    nights, never more than 60 min after the payment at the counter."""
+    deadline = end + timedelta(minutes=RETURN_MINUTES_FAR if (far or slow) else RETURN_MINUTES)
+    if paid_at is not None:
+        deadline = min(deadline, paid_at + RETURN_MAX_AFTER_PAYMENT)
+    return deadline
+
+
+async def _shop_to_door_km(session: AsyncSession, order: Order) -> float | None:
+    if order.delivery_location is None:
+        return None
+    stop = await first_stop(session, order.id)
+    if stop is None or stop.location is None:
+        return None
+    meters = (
+        await session.execute(select(func.ST_Distance(stop.location, order.delivery_location)))
+    ).scalar()
+    return float(meters) / 1000 if meters is not None else None
+
+
+async def paid_at(session: AsyncSession, order: Order) -> datetime | None:
+    """When the courier paid at the counter (first `purchased` status event)."""
+    return (
+        await session.execute(
+            select(func.min(OrderStatusEvent.created_at)).where(
+                OrderStatusEvent.order_id == order.id, OrderStatusEvent.to_status == "purchased"
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def return_deadline(
+    session: AsyncSession, order: Order, case: NoResponseCase | None, now: datetime
+) -> datetime | None:
+    """A restaurant ODS order only (`source = partner`): the time before which the courier brings
+    the closed dish back for the deposit and the ride to be paid (decision 2). The procedure ends
+    at `final_at` once the case expired, else at its deadline; None for app orders."""
+    if order.source != "partner" or case is None:
+        return None
+    end = case.final_at if case.status == "expired" and case.final_at is not None else case.deadline_at
+    if end is None:
+        return None
+    km = await _shop_to_door_km(session, order)
+    return return_deadline_from(
+        end,
+        far=km is not None and km > RETURN_FAR_KM,
+        slow=prayer_times.slow_slot(end) in RETURN_SLOW_SLOTS,
+        paid_at=await paid_at(session, order),
+    )
+
+
+async def view(
+    session: AsyncSession,
+    order: Order,
+    case: NoResponseCase | None,
+    now: datetime,
+    reports: int | None = None,
+) -> dict[str, Any]:
+    """build_view + `return_deadline_at` for the restaurant orders (NoResponsePanel reads it)."""
+    out = build_view(order, case, now, reports)
+    out["return_deadline_at"] = js_iso(await return_deadline(session, order, case, now))
+    return out
+
+
 async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Result:
     cases = await _cases(session, order.id)
     open_case = next((c for c in cases if c.status != "resolved"), None)
     if open_case is not None and order.status == "client_no_response":
         case = await advance(session, order, open_case)
-        return 200, {"success": True, "already_open": True, **build_view(order, case, ot.now_utc())}
+        return 200, {"success": True, "already_open": True, **await view(session, order, case, ot.now_utc())}
     if order.status not in REPORTABLE:
         return 409, {"error": "not_reportable", "status": order.status}
     if len(cases) >= MAX_REPORTS:
@@ -667,7 +748,7 @@ async def _open_case(
         "success": True,
         "message": "Emergency contact initiated",
         "timeout_seconds": wait_seconds,
-        **build_view(order, case, ot.now_utc(), attempt),
+        **await view(session, order, case, ot.now_utc(), attempt),
     }
 
 
@@ -692,7 +773,7 @@ async def realert(session: AsyncSession, order: Order, actor: CurrentUser) -> Re
 async def status(session: AsyncSession, order: Order) -> Result:
     case = await advance(session, order, await _current_case(session, order))
     reports = len(await _cases(session, order.id))
-    return 200, {"success": True, **build_view(order, case, ot.now_utc(), reports)}
+    return 200, {"success": True, **await view(session, order, case, ot.now_utc(), reports)}
 
 
 async def _live_deal(session: AsyncSession, order_id: uuid.UUID) -> HotDeal | None:
@@ -727,7 +808,7 @@ async def answered(session: AsyncSession, order: Order, how: str, actor: Current
             "success": True,
             "already": True,
             "message": "Customer confirmed availability",
-            **build_view(order, case, now),
+            **await view(session, order, case, now),
         }
     if case is None or case.status == "resolved":
         return 409, {"error": "no_open_case", "status": order.status}
@@ -775,7 +856,7 @@ async def answered(session: AsyncSession, order: Order, how: str, actor: Current
     return 200, {
         "success": True,
         "message": "Customer confirmed availability",
-        **build_view(order, case, ot.now_utc()),
+        **await view(session, order, case, ot.now_utc()),
     }
 
 

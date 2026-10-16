@@ -38,7 +38,7 @@ from app.services.dispatch import dispatch_order
 from app.services.notifications import retire_acceptance_notices
 from app.services.offers import close_pending_offers
 from app.services.order_notices import notify_always_pushed
-from app.services.orders import OrderRefused, courier_of_user, first_stop, is_test_order, mirror_incidents
+from app.services.orders import OrderRefused, courier_of_user, first_stop, mirror_incidents
 from app.services.safety import is_blocked
 
 log = logging.getLogger("odsd.cancellation")
@@ -336,7 +336,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     ).scalars()
     for offer_id in offer_ids:
         emit(session, "OrderOffer", "update", offer_id)
-    if back_to_pool and not is_test_order(order.items_text):
+    if back_to_pool:  # (a QA order goes back to the QA couriers only: dispatch.py)
         try:  # the cancellation is done: a failed re-broadcast must not undo it
             async with session.begin_nested():
                 await dispatch_order(session, order)
@@ -405,12 +405,11 @@ async def release_blocked_courier(session: AsyncSession, user: CurrentUser, payl
         metadata={"reason": RELEASE_REASON, "cancelled_by": "customer", "recipient_role": "courier"},
         **order_texts.released_after_block(stop.name if stop else None),
     )
-    if not is_test_order(order.items_text):
-        try:  # the release is done: a failed broadcast must not undo it
-            async with session.begin_nested():
-                await dispatch_order(session, order)
-        except Exception:
-            log.exception("releaseBlockedCourier: dispatch failed for %s", order.id)
+    try:  # the release is done: a failed broadcast must not undo it (QA order → QA couriers only)
+        async with session.begin_nested():
+            await dispatch_order(session, order)
+    except Exception:
+        log.exception("releaseBlockedCourier: dispatch failed for %s", order.id)
     return {"success": True, "status": order.status}
 
 
