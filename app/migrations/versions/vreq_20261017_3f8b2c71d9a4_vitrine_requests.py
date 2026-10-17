@@ -3,7 +3,8 @@
 - vitrine_requests: name, phone, address (+ optional position), kind, « Utilisez-vous ODS ? », an
   optional private photo of the menu, a message; source app | public (no account) | ods (sent by
   the ODS backend, with its restaurant id); pending → accepted (points to the shop) | refused (reason).
-  One open request per phone number and per ODS restaurant (partial unique indexes).
+  One open request per phone number and per proven ODS restaurant (partial unique indexes); ods_verified (the
+  ODS call carried the restaurant's own partner key); duplicate_attempts (other tries with that number).
 - notifications.type accepts 'vitrine_request' (the requester is told of the decision).
 Additive only; downgrade drops the table and the notifications of that type.
 
@@ -52,6 +53,7 @@ def upgrade() -> None:
         sa.Column("kind", sa.Text(), server_default="restaurant", nullable=False),
         sa.Column("uses_ods", sa.Boolean(), nullable=True),
         sa.Column("ods_restaurant_id", sa.BigInteger(), nullable=True),
+        sa.Column("ods_verified", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column("menu_photo_key", sa.Text(), nullable=True),
         sa.Column("message", sa.Text(), nullable=True),
         sa.Column("test", sa.Boolean(), server_default=sa.text("false"), nullable=False),
@@ -59,6 +61,8 @@ def upgrade() -> None:
         sa.Column("follow_token_hash", sa.Text(), nullable=True),
         sa.Column("client_hash", sa.Text(), nullable=True),
         sa.Column("refuse_reason", sa.Text(), nullable=True),
+        sa.Column("duplicate_attempts", sa.Integer(), server_default="0", nullable=False),
+        sa.Column("last_duplicate_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("decided_by", sa.UUID(), nullable=True),
         sa.Column("decided_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("shop_id", sa.UUID(), nullable=True),
@@ -75,6 +79,7 @@ def upgrade() -> None:
         sa.CheckConstraint("length(message) <= 500", name=op.f("ck_vitrine_requests_message")),
         sa.CheckConstraint("length(refuse_reason) <= 300", name=op.f("ck_vitrine_requests_refuse_reason")),
         sa.CheckConstraint("(lat IS NULL) = (lng IS NULL)", name=op.f("ck_vitrine_requests_position")),
+        sa.CheckConstraint("duplicate_attempts >= 0", name=op.f("ck_vitrine_requests_duplicate_attempts")),
         sa.CheckConstraint(
             "status <> 'refused' OR refuse_reason IS NOT NULL", name=op.f("ck_vitrine_requests_refused_has_reason")
         ),
@@ -102,7 +107,7 @@ def upgrade() -> None:
         "vitrine_requests",
         ["ods_restaurant_id"],
         unique=True,
-        postgresql_where=sa.text("status = 'pending' AND ods_restaurant_id IS NOT NULL"),
+        postgresql_where=sa.text("status = 'pending' AND ods_restaurant_id IS NOT NULL AND ods_verified"),
     )
     op.create_index(
         "ix_vitrine_requests_status_created_at", "vitrine_requests", ["status", "created_at"], unique=False
@@ -128,7 +133,7 @@ def downgrade() -> None:
     op.drop_index(
         "vitrine_requests_open_ods",
         table_name="vitrine_requests",
-        postgresql_where=sa.text("status = 'pending' AND ods_restaurant_id IS NOT NULL"),
+        postgresql_where=sa.text("status = 'pending' AND ods_restaurant_id IS NOT NULL AND ods_verified"),
     )
     op.drop_index(
         "vitrine_requests_open_phone",

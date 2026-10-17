@@ -6,14 +6,17 @@ A restaurant asks; ONLY an admin creates the Vitrine (app/services/vitrine.py, c
   decision);
 - `public`: the shareable page without an account (`/ma-carte`); the device keeps the follow token;
 - `ods`: the ODS backend, for one of its restaurants (« Mettre ma carte sur ODS Delivery », owner
-  only on the ODS side): `ods_restaurant_id`, `test` from ODS staging. Self-declared: the admin
-  checks by phone before creating anything (the request only fills the creation form).
+  only on the ODS side): `ods_restaurant_id`, `test` from ODS staging. PROVEN only when the call
+  carries that restaurant's own partner key (`X-Partner-Key`, a linked restaurant): then
+  `ods_verified`, its own limits (5/day per restaurant, 200/hour in all) and the admin sees the
+  partner. Without the key it is a claim: public limits, « non vérifié » for the admin, never merged
+  into another request. The admin calls before creating anything either way.
 
-Abuse: a hidden field (`website`) filled → a silent fake success, nothing stored; per address 5/hour
+Abuse: a hidden field (`website`) filled → a decoy success, nothing stored; per address 5/hour
 (limiter) and 10/day (database, salted hash — the address itself is never stored); per account
-5/day; per phone 3 per 30 days and ONE open request at a time (a second one answers the same
-success, without saying that the number is already known); the ODS path is limited per restaurant
-(5/day) and globally (200/hour). Free text is cut to its limits and filtered (text_filter).
+5/day; per phone 3 per 30 days (then a silent decoy) and ONE open request at a time: a second one
+gets the decoy answer — exactly the shape of a real one — and only counts one more attempt on the
+open request, for the admin. Free text is cut to its limits and filtered (text_filter).
 
 Privacy: the requester's name, phone, address, photo and message are read by the admins only; the
 requester reads his own request (account, or the follow token answered once at creation, stored as
@@ -145,7 +148,7 @@ def _photo_url(key: str | None) -> str | None:
 
 async def admin_json(session: AsyncSession, row: VitrineRequest) -> dict[str, Any]:
     partner = None
-    if row.ods_restaurant_id is not None:
+    if row.ods_restaurant_id is not None and row.ods_verified:
         found = (
             await session.execute(
                 select(Partner)
@@ -178,6 +181,9 @@ async def admin_json(session: AsyncSession, row: VitrineRequest) -> dict[str, An
         "kind": row.kind,
         "uses_ods": row.uses_ods,
         "ods_restaurant_id": row.ods_restaurant_id,
+        "ods_verified": row.ods_verified,
+        "duplicate_attempts": row.duplicate_attempts,
+        "last_duplicate_at": _iso(row.last_duplicate_at),
         "message": row.message,
         "test": row.test,
         "lang": row.lang,
@@ -219,21 +225,63 @@ async def _photo_key(session: AsyncSession, user: CurrentUser | None, raw: Any) 
     return key
 
 
+def _decoy(source: str, name: str) -> dict[str, Any]:
+    """The answer of a request that is NOT stored (hidden field filled, a number already asking, too many
+    requests for a number): exactly the shape of a real one, so nothing tells a number is known. Its
+    token is never stored: a later status read answers « not found » and the device forgets it."""
+    return {
+        "success": True,
+        "request": {
+            "id": str(uuid.uuid4()),
+            "status": "pending",
+            "source": source,
+            "shop_name": name,
+            "created_at": _iso(_now()),
+            "decided_at": None,
+            "refuse_reason": None,
+            "shop": None,
+        },
+        "follow_token": secrets.token_urlsafe(32),
+    }
+
+
+async def _verified_ods(session: AsyncSession, partner_key: str | None, ods_rid: int | None) -> bool:
+    """A request « from ODS » is trusted only with the restaurant's own partner key (Lot 2/3 access):
+    the key must belong to an active ODS-restaurant partner whose restaurant id is the one sent."""
+    if not partner_key or ods_rid is None:
+        return False
+    from app.security.partner import partner_by_key
+
+    partner = await partner_by_key(session, partner_key)
+    return bool(
+        partner is not None
+        and partner.active
+        and partner.revoked_at is None
+        and partner.kind == "ods_restaurant"
+        and partner.ods_restaurant_id == ods_rid
+    )
+
+
 async def submit(
-    session: AsyncSession, user: CurrentUser | None, payload: dict[str, Any], address: str
+    session: AsyncSession,
+    user: CurrentUser | None,
+    payload: dict[str, Any],
+    address: str,
+    partner_key: str | None = None,
 ) -> dict[str, Any]:
-    """submitVitrineRequest (account optional) → { success, request, follow_token? }."""
-    if clean_text(payload.get(HONEYPOT), 200):
-        # a robot filled the hidden field: the same answer as a success, nothing stored
-        return {"success": True, "request": {"status": "pending"}}
+    """submitVitrineRequest (account optional) → { success, request, follow_token }."""
     from_ods = payload.get("source") == "ods"
     source = "ods" if from_ods else ("app" if user is not None else "public")
+    typed_name = _text(payload.get("shop_name") or payload.get("name"), NAME_MAX)
+    if clean_text(payload.get(HONEYPOT), 200):
+        return _decoy(source, typed_name)  # a robot filled the hidden field: nothing stored
     ods_rid = _positive_int(payload.get("ods_restaurant_id")) if from_ods else None
     if from_ods and ods_rid is None:
         raise ApiError(400, "validation_error", "ods_restaurant_id: a positive integer")
+    verified = await _verified_ods(session, partner_key, ods_rid) if from_ods else False
 
-    # the cheap limits first (no database read)
-    if from_ods:
+    # the cheap limits first (no database read); a claimed but unproven « ODS » counts like the public
+    if verified:
         if not allow("vitrine_request_ods", str(ods_rid), ODS_PER_RESTAURANT) or not allow(
             "vitrine_request_ods_all", "all", ODS_GLOBAL
         ):
@@ -241,7 +289,7 @@ async def submit(
     elif not allow("vitrine_request_ip", address, IP_RATE):
         raise _limited()
 
-    name = _text(payload.get("shop_name") or payload.get("name"), NAME_MAX)
+    name = typed_name
     if len(name) < 2:
         raise ApiError(400, "invalid_name", "The restaurant's name")
     phone = _phone(payload.get("phone"))
@@ -259,24 +307,27 @@ async def submit(
     message = _text(payload.get("message"), MESSAGE_MAX) or None
     lang = "ar" if payload.get("lang") == "ar" else "fr"
     photo = await _photo_key(session, user, payload.get("menu_photo_key")) if not from_ods else None
+    # ODS staging says « test »; a QA account's request is a test too (it only lowers the trust)
     test = (payload.get("test") is True) if from_ods else (user is not None and is_qa_account(user.email))
 
     now = _now()
-    hashed_client = client_hash(address)
+    # the ODS backend proven by its key calls for all its restaurants from one address: not counted there
+    hashed_client = None if verified else client_hash(address)
     day_ago = now - timedelta(days=1)
-    per_ip = await _count(
-        session, VitrineRequest.client_hash == hashed_client, VitrineRequest.created_at >= day_ago
-    )
-    if per_ip >= (ODS_IP_PER_DAY if from_ods else IP_PER_DAY):
-        raise _limited()
+    if hashed_client is not None:
+        per_ip = await _count(
+            session, VitrineRequest.client_hash == hashed_client, VitrineRequest.created_at >= day_ago
+        )
+        if per_ip >= IP_PER_DAY:
+            raise _limited()
     if user is not None and not from_ods:
         mine = await _count(session, VitrineRequest.user_id == user.id, VitrineRequest.created_at >= day_ago)
         if mine >= USER_PER_DAY:
             raise _limited()
 
-    # one open request per phone (and per ODS restaurant): never a second one
+    # one open request per phone (and per proven ODS restaurant): never a second one
     same = [VitrineRequest.phone == phone]
-    if ods_rid is not None:
+    if verified:
         same.append(VitrineRequest.ods_restaurant_id == ods_rid)
     open_rows = (
         (await session.execute(select(VitrineRequest).where(VitrineRequest.status == "pending", or_(*same))))
@@ -284,12 +335,12 @@ async def submit(
         .all()
     )
     if open_rows:
-        return await _already_open(session, user, open_rows[0], ods_rid)
+        return await _already_open(session, user, open_rows[0], ods_rid if verified else None, source, name)
     recent = await _count(
         session, VitrineRequest.phone == phone, VitrineRequest.created_at >= now - timedelta(days=30)
     )
     if recent >= PHONE_PER_30_DAYS:
-        raise _limited()
+        return _decoy(source, name)  # silent: a 429 would tell this number has asked before
 
     token = secrets.token_urlsafe(32)
     row = VitrineRequest(
@@ -304,6 +355,7 @@ async def submit(
         kind=kind,
         uses_ods=uses_ods,
         ods_restaurant_id=ods_rid,
+        ods_verified=verified,
         menu_photo_key=photo,
         message=message,
         test=test,
@@ -330,29 +382,38 @@ async def submit(
         )
         if winner is None:
             raise
-        return await _already_open(session, user, winner, ods_rid)
+        return await _already_open(session, user, winner, ods_rid if verified else None, source, name)
     await session.refresh(row)
     return {"success": True, "request": await mine_json(session, row), "follow_token": token}
 
 
 async def _already_open(
-    session: AsyncSession, user: CurrentUser | None, row: VitrineRequest, ods_rid: int | None
+    session: AsyncSession,
+    user: CurrentUser | None,
+    row: VitrineRequest,
+    verified_rid: int | None,
+    source: str,
+    name: str,
 ) -> dict[str, Any]:
-    """A second request while one is open: the requester's own one when it is his, else the same
-    generic success (never « this number is already known »)."""
-    if ods_rid is not None:
-        if row.ods_restaurant_id is None:
-            row.ods_restaurant_id, row.uses_ods = ods_rid, True
-            row.updated_at = _now()
-        return {"success": True, "already_pending": True, "request": {"status": "pending"}}
+    """A second request while one is open. Its own author (same account) gets it back; the restaurant
+    proven by its ODS key gets ITS request back with a fresh follow token; anybody else gets the decoy
+    answer (never « this number is already known ») and the admin sees one more attempt on the request."""
     if user is not None and row.user_id == user.id:
         return {"success": True, "already_pending": True, "request": await mine_json(session, row)}
-    if user is not None and row.user_id is None and row.source == "public":
-        # sent without an account, then signed in with the same number: he follows it from now on
-        row.user_id = user.id
+    if verified_rid is not None and row.ods_restaurant_id in (None, verified_rid):
+        answer: dict[str, Any] = {"success": True, "already_pending": True}
+        if row.ods_restaurant_id == verified_rid:
+            token = secrets.token_urlsafe(32)  # the restaurant itself: it follows its request again
+            row.follow_token_hash = token_hash(token)
+            answer["follow_token"] = token
+        else:
+            row.ods_restaurant_id, row.ods_verified, row.uses_ods = verified_rid, True, True
         row.updated_at = _now()
-        return {"success": True, "already_pending": True, "request": await mine_json(session, row)}
-    return {"success": True, "request": {"status": "pending"}}
+        answer["request"] = await mine_json(session, row)
+        return answer
+    row.duplicate_attempts = (row.duplicate_attempts or 0) + 1
+    row.last_duplicate_at = _now()
+    return _decoy(source, name)
 
 
 # --- the requester's reads --------------------------------------------------------------------------

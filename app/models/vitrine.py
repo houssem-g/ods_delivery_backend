@@ -234,6 +234,7 @@ class VitrineRequest(Base):
         CheckConstraint("length(message) <= 500", name="message"),
         CheckConstraint("length(refuse_reason) <= 300", name="refuse_reason"),
         CheckConstraint("(lat IS NULL) = (lng IS NULL)", name="position"),
+        CheckConstraint("duplicate_attempts >= 0", name="duplicate_attempts"),
         CheckConstraint("status <> 'refused' OR refuse_reason IS NOT NULL", name="refused_has_reason"),
         Index(
             "vitrine_requests_open_phone", "phone", unique=True, postgresql_where=text("status = 'pending'")
@@ -242,7 +243,7 @@ class VitrineRequest(Base):
             "vitrine_requests_open_ods",
             "ods_restaurant_id",
             unique=True,
-            postgresql_where=text("status = 'pending' AND ods_restaurant_id IS NOT NULL"),
+            postgresql_where=text("status = 'pending' AND ods_restaurant_id IS NOT NULL AND ods_verified"),
         ),
         Index("ix_vitrine_requests_status_created_at", "status", "created_at"),
         Index("ix_vitrine_requests_user_id", "user_id"),
@@ -263,6 +264,8 @@ class VitrineRequest(Base):
     kind: Mapped[str] = mapped_column(Text, nullable=False, server_default="restaurant")
     uses_ods: Mapped[bool | None] = mapped_column(Boolean)
     ods_restaurant_id: Mapped[int | None] = mapped_column(BigInteger)
+    # True only when the ODS call carried that restaurant's own partner key (else a claim)
+    ods_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     # A PRIVATE upload of the requester (purpose « menu »): signed for the admins only.
     menu_photo_key: Mapped[str | None] = mapped_column(Text)
     message: Mapped[str | None] = mapped_column(Text)
@@ -272,6 +275,9 @@ class VitrineRequest(Base):
     # sha256(JWT_SECRET + address): counts the requests of one connection, never the address itself.
     client_hash: Mapped[str | None] = mapped_column(Text)
     refuse_reason: Mapped[str | None] = mapped_column(Text)
+    # Other submissions with this number while it was open (answered the decoy, not stored)
+    duplicate_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    last_duplicate_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     decided_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )

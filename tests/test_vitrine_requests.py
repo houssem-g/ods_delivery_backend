@@ -92,8 +92,11 @@ async def test_public_request_without_account_then_followed_with_its_token(clien
 
 async def test_honeypot_and_validation(client, world):
     fake = await ok(client, None, "submitVitrineRequest", request_body(website="http://spam.example"))
-    assert fake == {"success": True, "request": {"status": "pending"}}
+    # the decoy: exactly the shape of a real answer, nothing stored, its token unknown to the server
+    assert fake["request"]["status"] == "pending" and fake["request"]["id"] and fake["follow_token"]
     assert await count_requests() == 0
+    r = await fn(client, None, "getVitrineRequestStatus", {"token": fake["follow_token"]})
+    assert r.status_code == 404
     for bad, code in (
         ({"phone": "123"}, "invalid_phone"),
         ({"phone": "+33612345678"}, "invalid_phone"),
@@ -115,17 +118,38 @@ async def test_one_open_request_per_phone_without_revealing_it(client, world, fa
     # the same person again: his own request, no second one
     again = await ok(client, world.customer, "submitVitrineRequest", request_body(shop_name="Autre nom"))
     assert again["already_pending"] is True and again["request"]["id"] == mine["request"]["id"]
-    # somebody else (or nobody) with the same number: the same generic success, nothing revealed
+    # somebody else (or nobody) with the same number: the decoy — the same keys as a new request,
+    # never « already pending » nor his request — and one more attempt counted for the admin
     other = await factory.user(email="other@example.test")
     for user in (other, None):
-        body = await ok(client, user, "submitVitrineRequest", request_body())
-        assert body == {"success": True, "request": {"status": "pending"}}
+        body = await ok(client, user, "submitVitrineRequest", request_body(shop_name="Usurpateur"))
+        assert set(body) == set(mine) - {"already_pending"} == {"success", "request", "follow_token"}
+        assert set(body["request"]) == set(mine["request"])
+        assert body["request"]["id"] != mine["request"]["id"] and body["request"]["shop_name"] == "Usurpateur"
+        r = await fn(client, None, "getVitrineRequestStatus", {"token": body["follow_token"]})
+        assert r.status_code == 404
     assert await count_requests() == 1
+    row = (await rows(select(VitrineRequest)))[0]
+    assert row.duplicate_attempts == 2 and row.last_duplicate_at is not None
+    assert row.user_id == world.customer.id  # never handed to another account
+    seen = (await ok(client, world.admin, "listVitrineRequests", {}))["requests"][0]
+    assert seen["duplicate_attempts"] == 2
     # the requester sees his request in « Ma carte »
     listed = await ok(client, world.customer, "listMyVitrineRequests", {})
     assert [r["id"] for r in listed["requests"]] == [mine["request"]["id"]]
     assert "phone" not in listed["requests"][0]
     assert (await ok(client, other, "listMyVitrineRequests", {}))["requests"] == []
+
+
+async def test_a_number_asking_too_often_gets_a_silent_decoy(client, world):
+    for i in range(3):
+        sent = await ok(client, None, "submitVitrineRequest", request_body())
+        rid = sent["request"]["id"]
+        await ok(client, world.admin, "refuseVitrineRequest", {"request_id": rid, "reason": f"essai {i}"})
+    limiter.reset()
+    body = await ok(client, None, "submitVitrineRequest", request_body())
+    assert body["request"]["status"] == "pending" and body["follow_token"]  # no 429: nothing told
+    assert await count_requests() == 3
 
 
 async def test_limits_per_address(client, world):
@@ -232,16 +256,38 @@ async def test_request_sent_by_ods_and_linked_to_an_existing_vitrine(client, wor
         "lng": SOUSSE_SHOP[1],
         "kind": "cafe",
     }
-    sent = await ok(client, None, "submitVitrineRequest", body)
+    key = {"X-Partner-Key": pw.api_key}
+
+    async def from_ods(payload, headers=key):
+        r = await client.post("/api/functions/submitVitrineRequest", json=payload, headers=headers)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    sent = await from_ods(body)
     assert sent["request"]["source"] == "ods" and sent["follow_token"]
-    twice = await ok(client, None, "submitVitrineRequest", {**body, "phone": "73123457"})
-    assert twice["already_pending"] is True and "follow_token" not in twice
+    # the same restaurant again (another phone): ITS request back, followed with a fresh token
+    twice = await from_ods({**body, "phone": "73123457"})
+    assert twice["already_pending"] is True and twice["request"]["id"] == sent["request"]["id"]
+    old = await fn(client, None, "getVitrineRequestStatus", {"token": sent["follow_token"]})
+    assert old.status_code == 404
+    sent["follow_token"] = twice["follow_token"]
     r = await fn(client, None, "submitVitrineRequest", {**body, "ods_restaurant_id": "abc"})
     assert r.status_code == 400
     row = (await rows(select(VitrineRequest)))[0]
     assert row.test is True and row.uses_ods is True and row.ods_restaurant_id == 1 and row.user_id is None
-    seen = (await ok(client, world.admin, "listVitrineRequests", {}))["requests"][0]
+    assert row.ods_verified is True and row.client_hash is None  # not counted in the address limits
+    # somebody claiming to be ODS for restaurant 1 without its key: no merge, a decoy, nothing learnt
+    claim = await from_ods({**body, "phone": "73999888", "shop_name": "Faux"}, headers={})
+    assert "already_pending" not in claim and claim["request"]["id"] != sent["request"]["id"]
+    wrong_key = {"X-Partner-Key": "odsd_live_wrong"}
+    fake = await from_ods({**body, "ods_restaurant_id": 1, "phone": "22999888"}, headers=wrong_key)
+    claims = await rows(select(VitrineRequest).where(VitrineRequest.ods_verified.is_(False)))
+    assert len(claims) == 2 and all(c.ods_restaurant_id == 1 and c.client_hash for c in claims)
+    assert fake["request"]["status"] == "pending"
+    inbox = (await ok(client, world.admin, "listVitrineRequests", {}))["requests"]
+    seen = next(r for r in inbox if r["ods_verified"])
     assert seen["partner"]["id"] == str(pw.partner.id) and seen["partner"]["vitrine_shop_id"] is None
+    assert all(r["partner"] is None for r in inbox if not r["ods_verified"])  # a claim shows no partner
     shop_id, _ = await manual_vitrine(client, world.admin, name="Coffee and Tea")
     r = await fn(
         client, world.admin, "acceptVitrineRequest", {"request_id": seen["id"], "shop_id": str(uuid.uuid4())}
