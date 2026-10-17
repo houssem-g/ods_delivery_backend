@@ -301,7 +301,10 @@ async def _options_of(session: AsyncSession, shop: Shop, products: list[VitrineP
 
 async def record_options(session: AsyncSession, extras: dict[str, Any]) -> None:
     """placeOrder: the removals ordered feed the chips' order (aggregated counts only)."""
-    lines = (extras.get("cart") or {}).get("lines") or []
+    cart = extras.get("cart") or {}
+    if cart.get("test"):
+        return  # a test order (QA, Vitrine not public) never orders the real customers' chips
+    lines = cart.get("lines") or []
     if any(line.get("mods") for line in lines):
         await vitrine_options.record(session, extras["shop_id"], lines)
 

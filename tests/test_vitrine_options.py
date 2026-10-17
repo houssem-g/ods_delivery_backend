@@ -4,11 +4,13 @@ Tea and on a Tunisian snack, then the whole path: catalog with the ODS recipe â†
 admin's corrections."""
 
 import json
+import uuid
 from pathlib import Path
 
 import pytest
 from sqlalchemy import select
 
+from app.db import transaction
 from app.models import Order, OrderOffer, VitrineOptionStat
 from app.services import vitrine_options as vo
 from tests.order_helpers import OrderWorld, reload, rows
@@ -323,12 +325,18 @@ async def test_an_order_with_removals(client, world, qa, qa_courier):
     assert "mods" not in order.cart["lines"][1]
     doc = r.json()["order"]["vitrine_cart"]["lines"]
     assert doc[0]["mods_text"] == "Peu de harissa Â· Sans frites" and "ods_menu_id" not in doc[0]
-    # learning: aggregated counts, no customer
+    # a test order (QA) never feeds the chips' order
+    assert await rows(select(VitrineOptionStat)) == []
+    # a real order does: aggregated counts, no customer, then the most removed comes first
+    async with transaction() as session:
+        await vo.record(
+            session, uuid.UUID(shop_id), [{"product_id": makloub, "mods": [{"key": "salade"}]}] * 2
+        )
     stats = {(str(s.product_id), s.key): s.count for s in await rows(select(VitrineOptionStat))}
-    assert stats == {(makloub, "harissa"): 1, (makloub, "frites"): 1, (citron, "sucre"): 1}
+    assert stats == {(makloub, "salade"): 2}
     seen = (await ok(client, qa, "getVitrine", {"shop_id": shop_id}))["vitrine"]["products"]
     first_chip = {p["name"]: p["options"]["remove"][0]["key"] for p in seen if p["options"]["remove"]}
-    assert first_chip["Makloub escalope"] == "harissa"  # already first
+    assert first_chip["Makloub escalope"] == "salade"
     # ODS receives the removals of each line
     await ok(client, qa_courier, "createOrderOffer", {"order_id": str(order.id), "fee": 4, "eta_minutes": 15})
     offer_id = (await rows(select(OrderOffer)))[0].id
