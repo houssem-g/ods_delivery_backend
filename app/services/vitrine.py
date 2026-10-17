@@ -680,9 +680,15 @@ def _new_shop_fields(raw: Any) -> dict[str, Any]:
 async def create_vitrine(
     session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    from app.services import vitrine_catalog
+    from app.services import vitrine_catalog, vitrine_requests
 
     _admin(admin)
+    # « Accepter » a restaurant's request: checked open first, accepted with the Vitrine (17/10)
+    request_row = (
+        await vitrine_requests.open_request(session, payload.get("request_id"))
+        if payload.get("request_id") not in (None, "")
+        else None
+    )
     source = payload.get("source") or "manual"
     if source not in SOURCES:
         raise invalid("source: manual or ods")
@@ -753,6 +759,8 @@ async def create_vitrine(
     if partner is not None:
         await vitrine_catalog.apply_stored(session, vitrine)
     await session.flush()
+    if request_row is not None:
+        await vitrine_requests.mark_accepted(session, admin, request_row, shop.id)
     await session.refresh(shop)
     await session.refresh(vitrine)
     return {"success": True, "vitrine": await vitrine_json(session, shop, vitrine)}
@@ -1308,8 +1316,12 @@ async def list_nearby(session: AsyncSession, viewer: CurrentUser, payload: dict[
                 "lat": s_lat,
                 "lng": s_lng,
                 "distance_km": round(float(km), 2),
+                "address": shop.address,
+                "city": shop.city,
+                "photo_url": shop_service.photo_url_of(shop.photo_key),
                 "open_now": state["open_now"],
                 "opens_at": state["opens_at"],
+                "closes_at": state["closes_at"],
                 "source": vitrine.source,
                 "test": not effectively_public(shop, vitrine, allowed),
                 "preview": [

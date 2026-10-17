@@ -13,6 +13,7 @@ from sqlalchemy import (
     CheckConstraint,
     Date,
     DateTime,
+    Double,
     ForeignKey,
     Index,
     Integer,
@@ -29,6 +30,10 @@ from app.models.base import Base, created_at, updated_at, uuid_pk
 VITRINE_STATUSES = ("draft", "active", "paused", "archived")
 CATALOG_SOURCES = ("manual", "ods")
 SHOP_VISIBILITIES = ("public", "qa")
+REQUEST_STATUSES = ("pending", "accepted", "refused")
+# app = signed in in the app, public = the shareable page without an account, ods = sent by the ODS backend
+REQUEST_SOURCES = ("app", "public", "ods")
+REQUEST_KINDS = ("cafe", "restaurant", "bakery", "supermarket", "pharmacy", "other")
 MAX_PRODUCT_PRICE = Decimal("2000")
 
 
@@ -211,3 +216,68 @@ class VitrineVisit(Base):
     day: Mapped[date] = mapped_column(Date, nullable=False)
     kind: Mapped[str] = mapped_column(Text, nullable=False)
     visitor: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class VitrineRequest(Base):
+    """A restaurant asks to have its menu on ODS Delivery (owner 17/10): only an admin creates the
+    Vitrine. One open request per phone number (and per ODS restaurant). The requester's data (name,
+    phone, address, photo, message) is read by the admins only; the requester follows the state with
+    his account or with the follow token (sha256 stored) answered once at creation."""
+
+    __tablename__ = "vitrine_requests"
+    __table_args__ = (
+        CheckConstraint(f"status IN ({_in(REQUEST_STATUSES)})", name="status"),
+        CheckConstraint(f"source IN ({_in(REQUEST_SOURCES)})", name="source"),
+        CheckConstraint(f"kind IN ({_in(REQUEST_KINDS)})", name="kind"),
+        CheckConstraint("length(shop_name) BETWEEN 2 AND 100", name="shop_name"),
+        CheckConstraint("length(address) BETWEEN 3 AND 300", name="address"),
+        CheckConstraint("length(message) <= 500", name="message"),
+        CheckConstraint("length(refuse_reason) <= 300", name="refuse_reason"),
+        CheckConstraint("(lat IS NULL) = (lng IS NULL)", name="position"),
+        CheckConstraint("status <> 'refused' OR refuse_reason IS NOT NULL", name="refused_has_reason"),
+        Index(
+            "vitrine_requests_open_phone", "phone", unique=True, postgresql_where=text("status = 'pending'")
+        ),
+        Index(
+            "vitrine_requests_open_ods",
+            "ods_restaurant_id",
+            unique=True,
+            postgresql_where=text("status = 'pending' AND ods_restaurant_id IS NOT NULL"),
+        ),
+        Index("ix_vitrine_requests_status_created_at", "status", "created_at"),
+        Index("ix_vitrine_requests_user_id", "user_id"),
+        Index("ix_vitrine_requests_client_hash_created_at", "client_hash", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    source: Mapped[str] = mapped_column(Text, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    shop_name: Mapped[str] = mapped_column(Text, nullable=False)
+    phone: Mapped[str] = mapped_column(Text, nullable=False)  # E.164 (+216…)
+    address: Mapped[str] = mapped_column(Text, nullable=False)
+    lat: Mapped[float | None] = mapped_column(Double)
+    lng: Mapped[float | None] = mapped_column(Double)
+    kind: Mapped[str] = mapped_column(Text, nullable=False, server_default="restaurant")
+    uses_ods: Mapped[bool | None] = mapped_column(Boolean)
+    ods_restaurant_id: Mapped[int | None] = mapped_column(BigInteger)
+    # A PRIVATE upload of the requester (purpose « menu »): signed for the admins only.
+    menu_photo_key: Mapped[str | None] = mapped_column(Text)
+    message: Mapped[str | None] = mapped_column(Text)
+    test: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    lang: Mapped[str] = mapped_column(Text, nullable=False, server_default="fr")
+    follow_token_hash: Mapped[str | None] = mapped_column(Text, unique=True)
+    # sha256(JWT_SECRET + address): counts the requests of one connection, never the address itself.
+    client_hash: Mapped[str | None] = mapped_column(Text)
+    refuse_reason: Mapped[str | None] = mapped_column(Text)
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    shop_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("shops.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()

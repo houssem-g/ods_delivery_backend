@@ -51,6 +51,7 @@ from app.models.vitrine import (
     VitrineCategory,
     VitrinePoster,
     VitrineProduct,
+    VitrineRequest,
     VitrineStatDaily,
     VitrineVisit,
 )
@@ -110,6 +111,7 @@ __all__ = [
     "VitrineCategory",
     "VitrinePoster",
     "VitrineProduct",
+    "VitrineRequest",
     "VitrineStatDaily",
     "VitrineVisit",
     "courier_stats",

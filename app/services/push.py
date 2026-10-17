@@ -43,7 +43,7 @@ COURIER_TYPES = {"new_order", "customer_responded", "customer_no_response_final"
 CUSTOMER_TYPES = {
     "new_offer", "order_confirmed", "order_preparing", "at_shop", "purchased", "on_the_way",
     "courier_on_way", "eta_update", "delivered", "order_delivered", "delivery_delayed",
-    "delivery_cancelled", "emergency_contact", "issue_reported",
+    "delivery_cancelled", "emergency_contact", "issue_reported", "vitrine_request",
 }  # fmt: skip
 
 
@@ -121,6 +121,8 @@ def push_link(type_: str, order_id: str | None, metadata: dict[str, Any]) -> str
             path = f"/CourierOrderActive?id={order_id}&showChat=true"  # the chat opens (B57)
         else:
             path = f"/CourierOrderActive?id={order_id}"
+    elif type_ == "vitrine_request":
+        path = "/ma-carte"  # « Ma carte sur ODS Delivery »: the state of his request
     elif not order_id:
         path = "/"
     elif type_ == "new_offer":
