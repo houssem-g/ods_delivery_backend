@@ -18,8 +18,9 @@ Rules (« Fiche claire », direction A of ods-audit/livraison-1610/notifications
   become « 3 offres reçues · dès 4.000 DT ».
 
 Works without any app update: only fields the installed shells already honour (title, body, color,
-image, tag, notification_count, the existing channels and status-bar icon; APNs title / subtitle /
-body / thread-id; web push title, body, icon, badge, image, tag, renotify, dir, lang).
+image, tag, notification_count, the existing channels; APNs title / subtitle / body / thread-id; web
+push title, body, icon, badge, image, tag, renotify, dir, lang). The status-bar icon asked for
+(ic_stat_ods, the logo) needs the next shell build: until then Android shows the manifest's bag.
 """
 
 import logging
@@ -238,6 +239,11 @@ def _cart_lines(cart: dict[str, Any] | None) -> tuple[list[str], list[str]]:
         mods_ar = "، ".join(str(m.get("label_ar") or m.get("label_fr") or "") for m in mods)
         if not mods and line.get("mods_text"):
             mods_fr = mods_ar = str(line["mods_text"])
+        # the paid extras (« + Fromage »), names only: the price is the restaurant's business
+        adds = [f"+ {e['name']}" for e in line.get("extras") or [] if isinstance(e, dict) and e.get("name")]
+        if adds:
+            mods_fr = ", ".join(p for p in (mods_fr, *adds) if p)
+            mods_ar = "، ".join(p for p in (mods_ar, *(iso(a, "ar") for a in adds)) if p)
         fr.append(truncate(f"{head}{SEP}{mods_fr}" if mods_fr else head, 60))
         # the Latin « 2× Burger » isolated: in an Arabic line it keeps its order (« 2× » first)
         ar_head = f"{LTR_START}{head}{LTR_END}"

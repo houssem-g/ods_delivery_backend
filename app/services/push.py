@@ -158,8 +158,9 @@ def _web_link(link: str) -> messaging.WebpushFCMOptions | None:
     return messaging.WebpushFCMOptions(link=f"{base}{link if link.startswith('/') else '/' + link}")
 
 
-WEB_ICON = "/icons/icon-192.png"
-WEB_BADGE = "/icons/badge-96.png"  # white glyph on transparent (Android Chrome tints it)
+WEB_ICON = "/icons/icon-192.png"  # the app's logo, as the home-screen icon
+WEB_BADGE = "/icons/badge-96.png"  # the logo's white silhouette on transparent (Android Chrome tints it)
+ANDROID_ICON = "ic_stat_ods"
 
 
 def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, link: str) -> Any:
@@ -187,6 +188,9 @@ def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, 
                 channel_id=android_channel(msg.type),
                 sound="default",
                 tag=collapse,
+                # the logo's silhouette (ods-delivery-android ic_stat_ods); a build without it falls
+                # back to the manifest default (the bag) — FCM never fails on an unknown icon
+                icon=ANDROID_ICON,
                 color=view.color,
                 notification_count=view.count,
             ),

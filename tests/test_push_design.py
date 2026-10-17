@@ -106,6 +106,11 @@ def test_the_card_hides_the_test_words_but_remembers_the_test():
     assert (
         free.lines_fr == ("2 baguettes", "1 L de lait") and free.goods_exact is False and free.test is False
     )
+    burger = {"name": "Burger", "qty": 1, "mods": [{"label_fr": "Sans oignon", "label_ar": "بدون بصل"}]}
+    extras = {"lines": [{**burger, "extras": [{"key": "f", "name": "Fromage", "price": "1.500"}]}]}
+    with_extras = card_of(an_order(cart=extras), STOP)
+    assert with_extras.lines_fr == ("1× Burger · Sans oignon, + Fromage",)
+    assert "+ Fromage" in with_extras.lines_ar[0] and "1.500" not in with_extras.lines_fr[0]
     many = card_of(an_order(cart={"lines": [{"name": f"Plat {i}", "qty": 1} for i in range(7)]}), STOP)
     assert len(many.lines_fr) == 4 and many.more == 3
 
@@ -264,6 +269,7 @@ def test_the_message_carries_the_design_on_every_platform(monkeypatch):
     m = build_multicast(["tok"], "fr", new_order(card))
     assert m.notification.title == "Course · 3,2 km · Khezama · Test"
     assert m.android.notification.color == push_design.COURIER_COLOR
+    assert m.android.notification.icon == "ic_stat_ods"  # the logo; older shells fall back to theirs
     assert m.android.notification.tag == m.android.collapse_key == "order_o1"  # one per order on screen
     assert m.android.notification.channel_id == "new_orders"
     alert = m.apns.payload.aps.alert
