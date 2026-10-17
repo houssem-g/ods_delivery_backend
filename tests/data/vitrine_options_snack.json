@@ -1,0 +1,242 @@
+[
+{
+"category": "Makloub",
+"name": "Makloub escalope",
+"description": "Escalope, fromage, frites, harissa, salade"
+},
+{
+"category": "Makloub",
+"name": "Makloub thon",
+"description": null
+},
+{
+"category": "Makloub",
+"name": "Makloub kebab piquant",
+"description": "Viande kebab, sauce algérienne, oignons, frites"
+},
+{
+"category": "Chapati",
+"name": "Chapati thon œuf",
+"description": "Thon, œuf, fromage, harissa, mechouia"
+},
+{
+"category": "Chapati",
+"name": "Chapati escalope",
+"description": null
+},
+{
+"category": "Libanais",
+"name": "Libanais poulet",
+"description": "Poulet mariné, fromage, frites, sauce blanche, tomate"
+},
+{
+"category": "Libanais",
+"name": "Libanais mixte",
+"description": null
+},
+{
+"category": "Sandwichs",
+"name": "Kaskrout thon",
+"description": "Baguette, thon, harissa, olives, œuf, câpres"
+},
+{
+"category": "Sandwichs",
+"name": "Baguette farcie merguez",
+"description": "Merguez, frites, harissa, oignon"
+},
+{
+"category": "Sandwichs",
+"name": "Chawarma poulet",
+"description": "Poulet, sauce blanche, cornichons, frites"
+},
+{
+"category": "Sandwichs",
+"name": "Mlewi thon fromage",
+"description": null
+},
+{
+"category": "Tacos",
+"name": "Tacos poulet",
+"description": "Poulet, frites, sauce fromagère, sauce algérienne"
+},
+{
+"category": "Tacos",
+"name": "Tacos mixte XL",
+"description": null
+},
+{
+"category": "Pizzas",
+"name": "Pizza neptune",
+"description": "Sauce tomate, mozzarella, thon, olives, oignons"
+},
+{
+"category": "Pizzas",
+"name": "Pizza 4 saisons",
+"description": "Champignons, jambon, poivrons, olives, fromage"
+},
+{
+"category": "Pizzas",
+"name": "Pizza margherita",
+"description": "Sauce tomate, mozzarella, basilic"
+},
+{
+"category": "Pizzas",
+"name": "Pizza tunisienne",
+"description": null
+},
+{
+"category": "Burgers",
+"name": "Cheese burger",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Couscous agneau",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Ojja merguez",
+"description": "Œufs, sauce tomate, piment, merguez"
+},
+{
+"category": "Plats",
+"name": "Lablabi",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Kafteji",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Brik à l'œuf",
+"description": "Feuille de brick, œuf, thon, persil, câpres"
+},
+{
+"category": "Plats",
+"name": "Escalope grillée, frites, salade",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Riz djerbien",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Spaghetti fruits de mer",
+"description": null
+},
+{
+"category": "Salades",
+"name": "Salade tunisienne",
+"description": "Tomate, concombre, oignon, piment, thon, œuf, olives"
+},
+{
+"category": "Salades",
+"name": "Salade méchouia",
+"description": null
+},
+{
+"category": "Salades",
+"name": "Salade César",
+"description": "Laitue, poulet, parmesan, croûtons, sauce césar"
+},
+{
+"category": "Boissons",
+"name": "Citronnade",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Citronnade menthe 1 L",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Jus de fraise",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Café direct",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Capucin",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Café turc",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Thé vert à la menthe",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Coca-Cola 33 cl",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Eau minérale 1,5 L",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Boga cidre",
+"description": null
+},
+{
+"category": "Boissons",
+"name": "Canette Fanta",
+"description": null
+},
+{
+"category": "Desserts",
+"name": "Bambalouni",
+"description": null
+},
+{
+"category": "Desserts",
+"name": "Makroudh",
+"description": null
+},
+{
+"category": "Desserts",
+"name": "Crêpe chocolat chantilly",
+"description": null
+},
+{
+"category": "Desserts",
+"name": "Yaourt nature",
+"description": null
+},
+{
+"category": "Sandwichs",
+"name": "The Burger maison",
+"description": null
+},
+{
+"category": "Plats",
+"name": "Assiette mixte grill sans oignons",
+"description": "Kefta, merguez, poulet, frites, salade, sans oignons"
+},
+{
+"category": "مأكولات",
+"name": "مقلوب دجاج",
+"description": "دجاج، جبن، بطاطا مقلية، هريسة"
+},
+{
+"category": "مشروبات",
+"name": "عصير ليمون",
+"description": null
+}
+]

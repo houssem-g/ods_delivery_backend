@@ -138,9 +138,36 @@ class VitrineProduct(Base):
     available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     ods_menu_id: Mapped[int | None] = mapped_column(BigInteger)
+    # « ce que j'enlève » (17/10, app/services/vitrine_options.py): the dish's recipe as ODS sent it,
+    # [{name, removable: true|false|null}] (NULL = no recipe), and the admin's corrections
+    # {hidden: [key], added: [{key, name_fr, name_ar, levels}], order: [key]} (NULL = automatic).
+    ods_ingredients: Mapped[list | None] = mapped_column(JSONB(none_as_null=True))
+    options_override: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+class VitrineOptionStat(Base):
+    """How many ordered lines of a dish asked each removal: aggregated counts, no customer, no date.
+    Only orders the chips (most removed first)."""
+
+    __tablename__ = "vitrine_option_stats"
+    __table_args__ = (
+        PrimaryKeyConstraint("product_id", "key"),
+        CheckConstraint("count >= 0", name="count"),
+        CheckConstraint("length(key) BETWEEN 1 AND 48", name="key"),
+        Index("ix_vitrine_option_stats_shop_id", "shop_id"),
+    )
+
+    shop_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("vitrines.shop_id", ondelete="CASCADE"), nullable=False
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("vitrine_products.id", ondelete="CASCADE"), nullable=False
+    )
+    key: Mapped[str] = mapped_column(Text, nullable=False)
+    count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
 
 class VitrinePoster(Base):

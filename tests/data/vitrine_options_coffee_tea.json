@@ -1,0 +1,951 @@
+[
+{
+"category": "Cafés",
+"name": "Espresso",
+"ingredients": [
+"Café en grains",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Double Espresso",
+"ingredients": [
+"Café en grains",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Ristretto",
+"ingredients": [
+"Café en grains",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Americano",
+"ingredients": [
+"Café en grains",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Macchiato",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Capucin",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Latte Macchiato",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Cappuccino",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Cacao en poudre",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Cappuccino Chantilly",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Crème chantilly",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Flat White",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Cortado",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sucre en sachet"
+]
+},
+{
+"category": "Cafés",
+"name": "Mocaccino Nutella",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Nutella"
+]
+},
+{
+"category": "Cafés",
+"name": "Chocolat au Lait (Nesquik)",
+"ingredients": [
+"Lait entier",
+"Cacao en poudre",
+"Sucre en poudre"
+]
+},
+{
+"category": "Cafés",
+"name": "Nutella au Lait",
+"ingredients": [
+"Lait entier",
+"Nutella"
+]
+},
+{
+"category": "Cafés",
+"name": "Chocolat Chaud",
+"ingredients": [
+"Lait entier",
+"Chocolat noir",
+"Crème chantilly"
+]
+},
+{
+"category": "Cafés",
+"name": "Café Liégeois",
+"ingredients": [
+"Café en grains",
+"Glace vanille",
+"Crème chantilly"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Iced Coffee",
+"ingredients": [
+"Café en grains",
+"Sucre en sachet",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Iced Americano",
+"ingredients": [
+"Café en grains",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Iced Latte",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sucre en sachet",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Iced Cappuccino",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Crème chantilly",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Mocha Glacé",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Chocolat noir",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Frappuccino Caramel",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Sirop caramel",
+"Crème chantilly",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Frappuccino Chocolat",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Chocolat noir",
+"Crème chantilly",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Frappuccino Nutella",
+"ingredients": [
+"Café en grains",
+"Lait entier",
+"Nutella",
+"Crème chantilly",
+"Paille"
+]
+},
+{
+"category": "Cafés glacés",
+"name": "Affogato",
+"ingredients": [
+"Café en grains",
+"Glace vanille"
+]
+},
+{
+"category": "Thés",
+"name": "Thé à la Menthe",
+"ingredients": [
+"Thé vert (gunpowder)",
+"Menthe fraîche (botte)",
+"Sucre en poudre"
+]
+},
+{
+"category": "Thés",
+"name": "Thé Infusion Lipton",
+"ingredients": [
+"Thé Lipton (sachet)",
+"Sucre en sachet"
+]
+},
+{
+"category": "Thés",
+"name": "Thé à l'Amande",
+"ingredients": [
+"Thé vert (gunpowder)",
+"Menthe fraîche (botte)",
+"Sucre en poudre",
+"Amandes"
+]
+},
+{
+"category": "Thés",
+"name": "Thé aux Pignons",
+"ingredients": [
+"Thé vert (gunpowder)",
+"Menthe fraîche (botte)",
+"Sucre en poudre",
+"Pignons de pin"
+]
+},
+{
+"category": "Thés",
+"name": "Iced Tea",
+"ingredients": [
+"Thé Lipton (sachet)",
+"Citrons",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Citronnade",
+"ingredients": [
+"Citrons",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Citronnade Amande",
+"ingredients": [
+"Citrons",
+"Sucre en poudre",
+"Amandes",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Jus d'Orange",
+"ingredients": [
+"Oranges",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Fraise Citronnade",
+"ingredients": [
+"Citrons",
+"Fraises",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Banane Fraise",
+"ingredients": [
+"Bananes",
+"Fraises",
+"Lait entier",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Jus de Pêche",
+"ingredients": [
+"Pêches",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Jus d'Ananas",
+"ingredients": [
+"Ananas",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Jus de Mangue",
+"ingredients": [
+"Mangues",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Jus de Pomme",
+"ingredients": [
+"Pommes",
+"Paille"
+]
+},
+{
+"category": "Jus frais",
+"name": "Jus de Kiwi",
+"ingredients": [
+"Kiwis",
+"Sucre en poudre",
+"Paille"
+]
+},
+{
+"category": "Milkshakes",
+"name": "Milkshake Vanille",
+"ingredients": [
+"Glace vanille",
+"Lait entier",
+"Paille"
+]
+},
+{
+"category": "Milkshakes",
+"name": "Milkshake Fraise",
+"ingredients": [
+"Fraises",
+"Glace vanille",
+"Lait entier",
+"Paille"
+]
+},
+{
+"category": "Milkshakes",
+"name": "Milkshake Banane",
+"ingredients": [
+"Bananes",
+"Glace vanille",
+"Lait entier",
+"Paille"
+]
+},
+{
+"category": "Milkshakes",
+"name": "Milkshake Oreo",
+"ingredients": [
+"Biscuits Oreo",
+"Glace vanille",
+"Lait entier",
+"Paille"
+]
+},
+{
+"category": "Milkshakes",
+"name": "Milkshake Speculoos Lotus",
+"ingredients": [
+"Biscuits Lotus",
+"Pâte Lotus (Biscoff)",
+"Glace vanille",
+"Lait entier",
+"Paille"
+]
+},
+{
+"category": "Smoothies",
+"name": "Smoothie Fraise",
+"ingredients": [
+"Fraises",
+"Yaourt nature",
+"Miel",
+"Paille"
+]
+},
+{
+"category": "Smoothies",
+"name": "Smoothie Banane",
+"ingredients": [
+"Bananes",
+"Yaourt nature",
+"Miel",
+"Paille"
+]
+},
+{
+"category": "Smoothies",
+"name": "Smoothie Mangue",
+"ingredients": [
+"Mangues",
+"Yaourt nature",
+"Paille"
+]
+},
+{
+"category": "Smoothies",
+"name": "Banane, Dattes et Miel",
+"ingredients": [
+"Bananes",
+"Dattes Deglet Nour",
+"Miel",
+"Lait entier",
+"Paille"
+]
+},
+{
+"category": "Smoothies",
+"name": "Détox Gingembre Carotte Orange",
+"ingredients": [
+"Carottes",
+"Oranges",
+"Gingembre frais",
+"Paille"
+]
+},
+{
+"category": "Petit-déjeuner",
+"name": "Omelette Nature",
+"ingredients": [
+"Œufs",
+"Beurre",
+"Pain baguette",
+"Serviette papier"
+]
+},
+{
+"category": "Petit-déjeuner",
+"name": "Omelette Fromage",
+"ingredients": [
+"Œufs",
+"Beurre",
+"Fromage gruyère râpé",
+"Pain baguette",
+"Serviette papier"
+]
+},
+{
+"category": "Petit-déjeuner",
+"name": "Omelette Thon-Fromage",
+"ingredients": [
+"Œufs",
+"Beurre",
+"Thon à l'huile",
+"Fromage gruyère râpé",
+"Pain baguette",
+"Serviette papier"
+]
+},
+{
+"category": "Petit-déjeuner",
+"name": "Œufs Brouillés ou au Plat",
+"ingredients": [
+"Œufs",
+"Beurre",
+"Pain baguette",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes sucrées",
+"name": "Crêpe Nutella",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Nutella",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes sucrées",
+"name": "Crêpe Miel",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Miel",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes sucrées",
+"name": "Crêpe Nutella Banane Amande",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Nutella",
+"Bananes",
+"Amandes",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes sucrées",
+"name": "Crêpe Lotus",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Pâte Lotus (Biscoff)",
+"Biscuits Lotus",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes sucrées",
+"name": "Crêpe Suzette",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Sucre en poudre",
+"Oranges",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes salées",
+"name": "Crêpe 4 Fromages",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Fromage gruyère râpé",
+"Mozzarella",
+"Fromage cheddar (tranche)",
+"Parmesan",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes salées",
+"name": "Crêpe Thon Fromage Épinard & Œuf",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Thon à l'huile",
+"Fromage gruyère râpé",
+"Épinards",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes salées",
+"name": "Crêpe Jambon Fromage Champignons",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Jambon de dinde",
+"Fromage gruyère râpé",
+"Champignons de Paris",
+"Serviette papier"
+]
+},
+{
+"category": "Crêpes salées",
+"name": "Crêpe Poulet Champignon Gruyère",
+"ingredients": [
+"Farine",
+"Œufs",
+"Lait entier",
+"Beurre",
+"Blanc de poulet",
+"Fromage gruyère râpé",
+"Champignons de Paris",
+"Crème fraîche",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "Mini Sandwich Thon ou Omelette",
+"ingredients": [
+"Pain baguette",
+"Thon à l'huile",
+"Harissa",
+"Huile d'olive",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "Sandwich Poulet Fumé",
+"ingredients": [
+"Pain baguette",
+"Blanc de poulet",
+"Laitue (pièce)",
+"Tomates",
+"Mayonnaise",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "Sandwich Thon, Œufs, Mayonnaise",
+"ingredients": [
+"Pain baguette",
+"Thon à l'huile",
+"Œufs",
+"Mayonnaise",
+"Laitue (pièce)",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "Sandwich Caprese",
+"ingredients": [
+"Pain baguette",
+"Mozzarella",
+"Tomates",
+"Basilic frais",
+"Huile d'olive",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "Sandwich Poulet Grillé Champignons Gruyère",
+"ingredients": [
+"Pain baguette",
+"Blanc de poulet",
+"Champignons de Paris",
+"Fromage gruyère râpé",
+"Mayonnaise",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "French Tacos Escalope",
+"ingredients": [
+"Tortilla wrap",
+"Escalope de poulet",
+"Frites surgelées",
+"Fromage cheddar (tranche)",
+"Crème fraîche",
+"Serviette papier"
+]
+},
+{
+"category": "Sandwichs",
+"name": "Wrap Mozza-Chicks",
+"ingredients": [
+"Tortilla wrap",
+"Escalope de poulet",
+"Mozzarella",
+"Laitue (pièce)",
+"Tomates",
+"Mayonnaise",
+"Serviette papier"
+]
+},
+{
+"category": "Pizzas",
+"name": "Pizza Margherita",
+"ingredients": [
+"Farine",
+"Levure boulangère",
+"Huile d'olive",
+"Double concentré de tomate",
+"Mozzarella",
+"Basilic frais",
+"Serviette papier"
+]
+},
+{
+"category": "Pizzas",
+"name": "Pizza Thon et Jambon",
+"ingredients": [
+"Farine",
+"Levure boulangère",
+"Huile d'olive",
+"Double concentré de tomate",
+"Mozzarella",
+"Thon à l'huile",
+"Jambon de dinde",
+"Olives noires",
+"Serviette papier"
+]
+},
+{
+"category": "Pizzas",
+"name": "Pizza Quatre Fromages",
+"ingredients": [
+"Farine",
+"Levure boulangère",
+"Huile d'olive",
+"Crème fraîche",
+"Mozzarella",
+"Fromage gruyère râpé",
+"Parmesan",
+"Fromage cheddar (tranche)",
+"Serviette papier"
+]
+},
+{
+"category": "Pizzas",
+"name": "Pizza Pepperoni",
+"ingredients": [
+"Farine",
+"Levure boulangère",
+"Huile d'olive",
+"Double concentré de tomate",
+"Mozzarella",
+"Pepperoni de bœuf",
+"Serviette papier"
+]
+},
+{
+"category": "Pizzas",
+"name": "Pizza Sauce Blanche Poulet Champignons",
+"ingredients": [
+"Farine",
+"Levure boulangère",
+"Huile d'olive",
+"Crème fraîche",
+"Mozzarella",
+"Blanc de poulet",
+"Champignons de Paris",
+"Serviette papier"
+]
+},
+{
+"category": "Salades",
+"name": "Salade Œuf Thon ou Jambon",
+"ingredients": [
+"Laitue (pièce)",
+"Tomates",
+"Concombre",
+"Œufs",
+"Thon à l'huile",
+"Olives noires",
+"Huile d'olive",
+"Serviette papier"
+]
+},
+{
+"category": "Salades",
+"name": "Salade Poulet Grillé",
+"ingredients": [
+"Laitue (pièce)",
+"Tomates",
+"Concombre",
+"Blanc de poulet",
+"Parmesan",
+"Huile d'olive",
+"Serviette papier"
+]
+},
+{
+"category": "Salades",
+"name": "Salade Burrata",
+"ingredients": [
+"Burrata",
+"Tomates",
+"Roquette",
+"Basilic frais",
+"Huile d'olive",
+"Serviette papier"
+]
+},
+{
+"category": "Salades",
+"name": "Salade de Fruits",
+"ingredients": [
+"Pommes",
+"Bananes",
+"Oranges",
+"Fraises",
+"Kiwis",
+"Miel",
+"Serviette papier"
+]
+},
+{
+"category": "Plats",
+"name": "Penne Bolognaise",
+"ingredients": [
+"Pâtes penne",
+"Viande hachée de bœuf",
+"Double concentré de tomate",
+"Oignons",
+"Huile d'olive",
+"Parmesan",
+"Serviette papier"
+]
+},
+{
+"category": "Plats",
+"name": "Pâtes Cacio e Pepe",
+"ingredients": [
+"Spaghetti",
+"Parmesan",
+"Beurre",
+"Poivre noir moulu",
+"Serviette papier"
+]
+},
+{
+"category": "Plats",
+"name": "Ravioli Fromage Sauce Tomate",
+"ingredients": [
+"Ravioli au fromage",
+"Double concentré de tomate",
+"Parmesan",
+"Serviette papier"
+]
+},
+{
+"category": "Plats",
+"name": "Chicken Florentine Pasta",
+"ingredients": [
+"Pâtes penne",
+"Blanc de poulet",
+"Épinards",
+"Crème fraîche",
+"Parmesan",
+"Serviette papier"
+]
+},
+{
+"category": "Burgers",
+"name": "Burger Maison + Frites",
+"ingredients": [
+"Pain burger",
+"Viande hachée de bœuf",
+"Fromage cheddar (tranche)",
+"Laitue (pièce)",
+"Tomates",
+"Oignons",
+"Frites surgelées",
+"Mayonnaise",
+"Serviette papier"
+]
+},
+{
+"category": "Burgers",
+"name": "Crispy Chicken Burger Piquant",
+"ingredients": [
+"Pain burger",
+"Escalope de poulet",
+"Farine",
+"Harissa",
+"Laitue (pièce)",
+"Mayonnaise",
+"Frites surgelées",
+"Serviette papier"
+]
+},
+{
+"category": "Burgers",
+"name": "Double Cheese Burger",
+"ingredients": [
+"Pain burger",
+"Viande hachée de bœuf",
+"Fromage cheddar (tranche)",
+"Oignons",
+"Frites surgelées",
+"Mayonnaise",
+"Serviette papier"
+]
+},
+{
+"category": "Desserts",
+"name": "Tiramisu Classique",
+"ingredients": [
+"Mascarpone",
+"Biscuits cuillère",
+"Café en grains",
+"Œufs",
+"Sucre en poudre",
+"Cacao en poudre"
+]
+},
+{
+"category": "Desserts",
+"name": "Tiramisu Lotus",
+"ingredients": [
+"Mascarpone",
+"Biscuits Lotus",
+"Pâte Lotus (Biscoff)",
+"Œufs",
+"Sucre en poudre"
+]
+}
+]

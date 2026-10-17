@@ -541,5 +541,7 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     session.add(built.order)
     await session.flush()
     session.add_all(built.stops)
+    if vitrine_extras is not None:
+        await vitrine_orders.record_options(session, vitrine_extras)
     await ot.start(session, built.order, user.id, "placeOrder")
     return built.order

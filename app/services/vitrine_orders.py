@@ -31,12 +31,13 @@ from app.models import (
     Shop,
     User,
     Vitrine,
+    VitrineCategory,
     VitrineProduct,
 )
 from app.realtime.events import emit
 from app.security.deps import to_current_user
 from app.services import order_transitions as ot
-from app.services import partner_webhooks
+from app.services import partner_webhooks, vitrine_options
 from app.services import vitrine as vitrine_service
 from app.services.orders import MAX_BUDGET, MAX_QUANTITY, OrderRefused, is_test_order
 from app.services.places import lat_expr, lng_expr
@@ -84,6 +85,8 @@ def _first_name(full_name: str | None) -> str | None:
 
 
 def _lines(raw: Any) -> list[dict[str, Any]]:
+    """The cart lines, shape only. One line = (product, removals): the same dish twice with other
+    removals is two lines (« sans harissa » for the child), the same dish and removals twice is refused."""
     if not isinstance(raw, list) or not 1 <= len(raw) <= MAX_LINES:
         raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
     lines, seen = [], set()
@@ -91,11 +94,12 @@ def _lines(raw: Any) -> list[dict[str, Any]]:
         line = item if isinstance(item, dict) else {}
         product_id = vitrine_service.as_uuid(line.get("product_id"))
         qty = line.get("qty")
-        if product_id is None or product_id in seen:
+        mods = vitrine_options.parse_mods(line.get("mods"))
+        if product_id is None or mods is None or (product_id, vitrine_options.signature(mods)) in seen:
             raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
         if isinstance(qty, bool) or not isinstance(qty, int) or not 1 <= qty <= MAX_LINE_QTY:
             raise OrderRefused(400, "invalid_cart", max_qty=MAX_LINE_QTY)
-        seen.add(product_id)
+        seen.add((product_id, vitrine_options.signature(mods)))
         unit_price = None
         if line.get("unit_price") not in (None, ""):
             unit_price = vitrine_service.money(line.get("unit_price"))
@@ -107,6 +111,7 @@ def _lines(raw: Any) -> list[dict[str, Any]]:
                 "qty": qty,
                 "note": vitrine_service.clean(line.get("note"), vitrine_service.NOTE_MAX) or None,
                 "unit_price": unit_price,
+                "mods": mods,
             }
         )
     return lines
@@ -115,17 +120,26 @@ def _lines(raw: Any) -> list[dict[str, Any]]:
 def items_text(name: str, cart_lines: list[dict[str, Any]], total: Decimal, test: bool) -> str:
     """`[Vitrine] <name>` + `2× Café crème — 5.000 DT (précision)` … + `Total articles : …` (≤ 2000)."""
 
-    def build(with_notes: bool, name_max: int) -> str:
+    def build(with_notes: bool, name_max: int, with_mods: bool = True) -> str:
         rows = [f"{LABEL} {name}"]
         for line in cart_lines:
             note = f" ({line['note']})" if with_notes and line.get("note") else ""
-            rows.append(f"{line['qty']}× {line['name'][:name_max]} — {dt(Decimal(line['line_total']))}{note}")
+            mods = f" · {line['mods_text']}" if with_mods and line.get("mods_text") else ""
+            rows.append(
+                f"{line['qty']}× {line['name'][:name_max]} — {dt(Decimal(line['line_total']))}{mods}{note}"
+            )
         rows.append(f"Total articles : {dt(total)}")
         text = "\n".join(rows)
         return TEST_PREFIX + text if test else text
 
-    for with_notes, name_max in ((True, 100), (False, 100), (False, 40)):
-        text = build(with_notes, name_max)
+    # the removals go before the notes: they are what the shop must not miss
+    for with_notes, name_max, with_mods in (
+        (True, 100, True),
+        (False, 100, True),
+        (False, 40, True),
+        (False, 40, False),
+    ):
+        text = build(with_notes, name_max, with_mods)
         if len(text) <= ITEMS_TEXT_MAX:
             return text
     raise OrderRefused(400, "invalid_cart", reason="too_long")
@@ -181,23 +195,36 @@ async def prepare(
     ]
     if changed:
         raise OrderRefused(409, "prices_changed", lines=changed)
-    cart_lines = []
-    total = Decimal("0")
+    # the removals: only the ones this dish offers now (the server's list, never the client's)
+    options = await _options_of(session, shop, [products[line["product_id"]] for line in lines])
+    resolved, stale = [], []
     for line in lines:
         product = products[line["product_id"]]
-        line_total = product.price * line["qty"]
+        mods, bad = vitrine_options.resolve(line["mods"], options.get(product.id, []))
+        if bad:
+            stale.append({"product_id": str(product.id), "name": product.name, "keys": bad})
+        resolved.append(mods)
+    if stale:
+        raise OrderRefused(409, "options_changed", lines=stale)
+    cart_lines = []
+    total = Decimal("0")
+    for line, mods in zip(lines, resolved, strict=True):
+        product = products[line["product_id"]]
+        line_total = product.price * line["qty"]  # a removal never changes the price (price_delta 0)
         total += line_total
-        cart_lines.append(
-            {
-                "product_id": str(product.id),
-                "ods_menu_id": product.ods_menu_id,
-                "name": product.name,
-                "qty": line["qty"],
-                "unit_price": str(product.price),
-                "line_total": str(line_total),
-                "note": line["note"],
-            }
-        )
+        cart_line = {
+            "product_id": str(product.id),
+            "ods_menu_id": product.ods_menu_id,
+            "name": product.name,
+            "qty": line["qty"],
+            "unit_price": str(product.price),
+            "line_total": str(line_total),
+            "note": line["note"],
+        }
+        if mods:
+            cart_line["mods"] = mods
+            cart_line["mods_text"] = vitrine_options.mods_text(mods)
+        cart_lines.append(cart_line)
     if total > MAX_BUDGET:
         raise OrderRefused(400, "invalid_budget", max=float(MAX_BUDGET))
     allowed = await vitrine_service.public_allowed(session)
@@ -246,6 +273,33 @@ async def prepare(
     return rebuilt, extras
 
 
+async def _options_of(session: AsyncSession, shop: Shop, products: list[VitrineProduct]) -> dict[Any, list]:
+    """{product id: every removal it allows now} (engine + admin corrections, uncapped)."""
+    category_ids = {p.category_id for p in products if p.category_id is not None}
+    names = (
+        dict(
+            (
+                await session.execute(
+                    select(VitrineCategory.id, VitrineCategory.name).where(
+                        VitrineCategory.id.in_(category_ids), VitrineCategory.archived_at.is_(None)
+                    )
+                )
+            ).all()
+        )
+        if category_ids
+        else {}
+    )
+    kind = shop.categories[0] if shop.categories else None
+    return {p.id: vitrine_options.for_product(p, names.get(p.category_id), kind) for p in products}
+
+
+async def record_options(session: AsyncSession, extras: dict[str, Any]) -> None:
+    """placeOrder: the removals ordered feed the chips' order (aggregated counts only)."""
+    lines = (extras.get("cart") or {}).get("lines") or []
+    if any(line.get("mods") for line in lines):
+        await vitrine_options.record(session, extras["shop_id"], lines)
+
+
 def apply_extras(order: Order, stops: list[Any], extras: dict[str, Any]) -> None:
     order.source = "vitrine"
     order.vitrine_shop_id = extras["shop_id"]
@@ -284,16 +338,24 @@ async def linked_partner(session: AsyncSession, order: Order) -> Partner | None:
 
 
 def _lines_for_ods(order: Order) -> list[dict[str, Any]]:
-    return [
-        {
+    out = []
+    for line in (order.cart or {}).get("lines") or []:
+        row = {
             "ods_menu_id": line.get("ods_menu_id"),
             "name": line.get("name"),
             "qty": line.get("qty"),
             "unit_price": float(line.get("unit_price") or 0),
             "note": line.get("note"),
         }
-        for line in (order.cart or {}).get("lines") or []
-    ]
+        if line.get("mods"):
+            # « ce que j'enlève »: the kitchen reads them in French (CONTRAT-OPTIONS §4)
+            row["mods"] = [
+                {"key": m.get("key"), "level": m.get("level"), "label": m.get("label_fr")}
+                for m in line["mods"]
+            ]
+            row["mods_text"] = line.get("mods_text")
+        out.append(row)
+    return out
 
 
 async def _courier(session: AsyncSession, order: Order) -> dict[str, Any] | None:
@@ -496,7 +558,11 @@ async def report_missing(session: AsyncSession, partner: Partner, ref: str, raw:
         raise ApiError(409, "item_already_reported", "Already asked for this dish")
     if len(checks) >= stock_checks.MAX_CHECKS:
         raise ApiError(429, "too_many_stock_checks", "Too many questions on this order")
-    missing_price = sum(Decimal(str(by_id[i].get("line_total") or 0)) for i in ids)
+    missing_price = sum(
+        Decimal(str(line.get("line_total") or 0))
+        for line in (order.cart or {}).get("lines") or []
+        if line.get("ods_menu_id") in ids
+    )  # the same dish can be on two lines (other removals)
     now = ot.now_utc()
     check = OrderStockCheck(
         order_id=order.id,

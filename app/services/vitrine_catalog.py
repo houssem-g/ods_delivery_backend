@@ -25,6 +25,7 @@ from app.errors import ApiError
 from app.models import Partner, PartnerCatalog, Shop, Vitrine, VitrineCategory, VitrineProduct
 from app.security.deps import CurrentUser
 from app.services import vitrine as vitrine_service
+from app.services import vitrine_options
 
 MAX_PRODUCTS = 300
 MAX_CATEGORIES = 100
@@ -61,6 +62,14 @@ class CategoryIn(BaseModel):
     position: int = Field(default=0, ge=0, le=100_000)
 
 
+class IngredientIn(BaseModel):
+    """One ingredient of the dish's recipe in ODS (options « ce que j'enlève », CONTRAT-OPTIONS §1)."""
+
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(min_length=1, max_length=200)
+    removable: bool | None = None
+
+
 class ProductIn(BaseModel):
     model_config = ConfigDict(extra="ignore")
     ods_menu_id: int = Field(gt=0)
@@ -71,6 +80,8 @@ class ProductIn(BaseModel):
     photo_url: str | None = Field(default=None, max_length=1000)
     available: bool = True
     position: int = Field(default=0, ge=0, le=100_000)
+    # absent = no recipe (an ODS that does not send it keeps its fingerprint)
+    ingredients: list[IngredientIn] | None = Field(default=None, max_length=60)
 
     @field_validator("price")
     @classmethod
@@ -148,6 +159,7 @@ def normalized(body: CatalogIn) -> dict[str, Any]:
         "products": sorted(
             (
                 {
+                    **_ingredients(p),
                     "ods_menu_id": p.ods_menu_id,
                     "ods_category_id": p.ods_category_id,
                     "name": clean(p.name, vitrine_service.NAME_MAX) or "—",
@@ -164,6 +176,19 @@ def normalized(body: CatalogIn) -> dict[str, Any]:
             key=lambda p: p["ods_menu_id"],
         ),
     }
+
+
+def _ingredients(p: ProductIn) -> dict[str, Any]:
+    """{"ingredients": [{name, removable}]} cut to 30 distinct names, or nothing when ODS sent none."""
+    if p.ingredients is None:
+        return {}
+    out, seen = [], set()
+    for ing in p.ingredients:
+        name = vitrine_service.clean(ing.name, vitrine_options.INGREDIENT_NAME_MAX)
+        if name and name.lower() not in seen:
+            seen.add(name.lower())
+            out.append({"name": name, "removable": ing.removable})
+    return {"ingredients": out[: vitrine_options.MAX_INGREDIENTS]}
 
 
 def content_hash(content: dict[str, Any]) -> str:
@@ -281,6 +306,7 @@ async def apply(session: AsyncSession, vitrine: Vitrine, snapshot: PartnerCatalo
             "available": incoming["available"],
             "position": incoming["position"],
             "category_id": category.id if category is not None and category.archived_at is None else None,
+            "ods_ingredients": incoming.get("ingredients"),
             "archived_at": None,
         }
         row = products.get(ods_id)

@@ -43,7 +43,7 @@ from app.models.vitrine import MAX_PRODUCT_PRICE
 from app.security import secret_box
 from app.security.deps import CurrentUser
 from app.services import shops as shop_service
-from app.services import text_norm
+from app.services import text_norm, vitrine_options
 from app.services.geo import ORDER_BOUNDS, within
 from app.services.orders import is_qa_account
 from app.services.places import lat_expr, lng_expr
@@ -431,7 +431,9 @@ def category_json(category: VitrineCategory, *, admin: bool = False) -> dict[str
     return out
 
 
-def product_json(product: VitrineProduct, *, admin: bool = False) -> dict[str, Any]:
+def product_json(
+    product: VitrineProduct, *, admin: bool = False, options: dict[str, Any] | None = None
+) -> dict[str, Any]:
     out = {
         "id": str(product.id),
         "category_id": str(product.category_id) if product.category_id else None,
@@ -441,6 +443,7 @@ def product_json(product: VitrineProduct, *, admin: bool = False) -> dict[str, A
         "photo_url": shop_service.photo_url_of(product.photo_key),
         "available": product.available,
         "position": product.position,
+        "options": options if options is not None else {"remove": []},
     }
     if admin:
         out["ods_menu_id"] = product.ods_menu_id
@@ -647,11 +650,55 @@ async def get_admin(session: AsyncSession, admin: CurrentUser, payload: dict[str
     shop, vitrine = await load(session, payload.get("shop_id"))
     categories = await _active_rows(session, VitrineCategory, shop.id)
     products = await _active_rows(session, VitrineProduct, shop.id)
+    options = await vitrine_options.shop_options(session, shop, products, categories)
+    names = {c.id: c.name for c in categories}
     return {
         "success": True,
         "vitrine": await vitrine_json(session, shop, vitrine),
         "categories": [category_json(c, admin=True) for c in categories],
-        "products": [product_json(p, admin=True) for p in products],
+        "products": [
+            admin_product_json(shop, p, names.get(p.category_id), options.get(p.id)) for p in products
+        ],
+    }
+
+
+def admin_product_json(
+    shop: Shop, product: VitrineProduct, category_name: str | None, options: dict[str, Any] | None
+) -> dict[str, Any]:
+    """The admin's product: + `options_auto` (the engine, uncapped, before corrections),
+    `options_override`, `ingredients` (the ODS recipe)."""
+    kind = shop.categories[0] if shop.categories else None
+    out = product_json(product, admin=True, options=options)
+    out["options_auto"] = vitrine_options.candidates(
+        product.name, product.description, category_name, product.ods_ingredients, kind
+    )
+    out["options_override"] = product.options_override
+    out["ingredients"] = product.ods_ingredients
+    return out
+
+
+async def set_product_options(
+    session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """setVitrineProductOptions: hide, add or order a dish's removals (also on a catalog linked to
+    ODS: the options are Delivery's own). `reset: true` = back to automatic."""
+    _admin(admin)
+    shop, _vitrine = await load(session, payload.get("shop_id"), lock=True)
+    product = await _product(session, shop.id, payload.get("product_id"))
+    category = await session.get(VitrineCategory, product.category_id) if product.category_id else None
+    category_name = category.name if category is not None and category.archived_at is None else None
+    kind = shop.categories[0] if shop.categories else None
+    auto = vitrine_options.candidates(
+        product.name, product.description, category_name, product.ods_ingredients, kind
+    )
+    product.options_override = vitrine_options.clean_override(payload, {o["key"] for o in auto})
+    await session.flush()
+    await session.refresh(product)
+    categories = [category] if category is not None else []
+    options = await vitrine_options.shop_options(session, shop, [product], categories)
+    return {
+        "success": True,
+        "product": admin_product_json(shop, product, category_name, options.get(product.id)),
     }
 
 
@@ -984,7 +1031,13 @@ async def upsert_product(
         product.available = payload["available"]
     await session.flush()
     await session.refresh(product)
-    return {"success": True, "product": product_json(product, admin=True)}
+    category = await session.get(VitrineCategory, product.category_id) if product.category_id else None
+    options = await vitrine_options.shop_options(session, shop, [product], [category] if category else [])
+    category_name = category.name if category is not None else None
+    return {
+        "success": True,
+        "product": admin_product_json(shop, product, category_name, options.get(product.id)),
+    }
 
 
 async def delete_product(
@@ -1205,6 +1258,7 @@ async def client_json(session: AsyncSession, shop: Shop, vitrine: Vitrine) -> di
     lat, lng = await _coords(session, shop)
     categories = await _active_rows(session, VitrineCategory, shop.id)
     products = await _active_rows(session, VitrineProduct, shop.id)
+    options = await vitrine_options.shop_options(session, shop, products, categories)
     snapshot = await _partner_catalog(session, vitrine.partner_id) if vitrine.source == "ods" else None
     state = open_state(vitrine.hours)
     allowed = await public_allowed(session)
@@ -1233,7 +1287,7 @@ async def client_json(session: AsyncSession, shop: Shop, vitrine: Vitrine) -> di
         "catalog_stale": catalog_stale(vitrine, snapshot.checked_at if snapshot is not None else None),
         "ordering": await ordering_state(session, vitrine, state, sum(1 for p in products if p.available)),
         "categories": [category_json(c) for c in categories],
-        "products": [product_json(p) for p in products],
+        "products": [product_json(p, options=options.get(p.id)) for p in products],
     }
 
 
