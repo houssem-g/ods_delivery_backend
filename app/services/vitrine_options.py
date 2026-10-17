@@ -19,7 +19,7 @@ Rules that keep it sensible (expert review 17/10, REVUE-EXPERTS.md):
   (``vitrine_option_stats``, aggregated counts, no customer), then by the lexicon's order (the order
   of the requests heard at a Tunisian counter, sugar first for the drinks).
 
-Phase 2 (paid extras) only has its place in the shapes (``options.extras``, ``mods[].price_delta``).
+Paid extras (``options.extras``): app/services/vitrine_extras.py (only the dish's questions in ODS).
 """
 
 import logging
@@ -36,6 +36,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import ApiError
+from app.services import vitrine_extras
 
 logger = logging.getLogger(__name__)
 
@@ -572,7 +573,8 @@ async def stats(session: AsyncSession, shop_id: uuid.UUID) -> dict[uuid.UUID, di
 async def shop_options(
     session: AsyncSession, shop: Any, products: list[Any], categories: list[Any]
 ) -> dict[uuid.UUID, dict[str, Any]]:
-    """{product id: {"remove": [≤ 6 ranked options]}} for a whole Vitrine (one stats query)."""
+    """{product id: {"remove": [≤ 6 ranked options], "extras": [the ODS extras]}} for a whole Vitrine (one
+    stats query)."""
     kind = shop.categories[0] if getattr(shop, "categories", None) else None
     names = {c.id: c.name for c in categories}
     counts = await stats(session, shop.id)
@@ -587,7 +589,9 @@ async def shop_options(
         out[p.id] = {
             "remove": rank(
                 options, counts.get(p.id), by_category.get(p.category_id) if p.category_id else None, order
-            )
+            ),
+            # paid extras: only what the restaurant set on the dish in ODS (CONTRAT-AJOUTS §2)
+            "extras": vitrine_extras.client_json(p),
         }
     return out
 

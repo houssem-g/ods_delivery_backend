@@ -37,7 +37,7 @@ from app.models import (
 from app.realtime.events import emit
 from app.security.deps import to_current_user
 from app.services import order_transitions as ot
-from app.services import partner_webhooks, vitrine_options
+from app.services import partner_webhooks, vitrine_extras, vitrine_options
 from app.services import vitrine as vitrine_service
 from app.services.orders import MAX_BUDGET, MAX_QUANTITY, OrderRefused, is_test_order
 from app.services.places import lat_expr, lng_expr
@@ -85,8 +85,9 @@ def _first_name(full_name: str | None) -> str | None:
 
 
 def _lines(raw: Any) -> list[dict[str, Any]]:
-    """The cart lines, shape only. One line = (product, removals): the same dish twice with other
-    removals is two lines (« sans harissa » for the child), the same dish and removals twice is refused."""
+    """The cart lines, shape only. One line = (product, removals, extras): the same dish twice with other
+    removals or extras is two lines (« sans harissa » for the child), the same dish, removals and extras twice
+    is refused."""
     if not isinstance(raw, list) or not 1 <= len(raw) <= MAX_LINES:
         raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
     lines, seen = [], set()
@@ -95,11 +96,15 @@ def _lines(raw: Any) -> list[dict[str, Any]]:
         product_id = vitrine_service.as_uuid(line.get("product_id"))
         qty = line.get("qty")
         mods = vitrine_options.parse_mods(line.get("mods"))
-        if product_id is None or mods is None or (product_id, vitrine_options.signature(mods)) in seen:
+        adds = vitrine_extras.parse(line.get("extras"))
+        if product_id is None or mods is None or adds is None:
+            raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
+        identity = (product_id, vitrine_options.signature(mods), vitrine_extras.signature(adds))
+        if identity in seen:
             raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
         if isinstance(qty, bool) or not isinstance(qty, int) or not 1 <= qty <= MAX_LINE_QTY:
             raise OrderRefused(400, "invalid_cart", max_qty=MAX_LINE_QTY)
-        seen.add((product_id, vitrine_options.signature(mods)))
+        seen.add(identity)
         unit_price = None
         if line.get("unit_price") not in (None, ""):
             unit_price = vitrine_service.money(line.get("unit_price"))
@@ -112,6 +117,7 @@ def _lines(raw: Any) -> list[dict[str, Any]]:
                 "note": vitrine_service.clean(line.get("note"), vitrine_service.NOTE_MAX) or None,
                 "unit_price": unit_price,
                 "mods": mods,
+                "extras": adds,
             }
         )
     return lines
@@ -125,6 +131,8 @@ def items_text(name: str, cart_lines: list[dict[str, Any]], total: Decimal, test
         for line in cart_lines:
             note = f" ({line['note']})" if with_notes and line.get("note") else ""
             mods = f" · {line['mods_text']}" if with_mods and line.get("mods_text") else ""
+            # a paid extra always shows (it is in the price)
+            mods += f" · {line['extras_text']}" if line.get("extras_text") else ""
             rows.append(
                 f"{line['qty']}× {line['name'][:name_max]} — {dt(Decimal(line['line_total']))}{mods}{note}"
             )
@@ -188,19 +196,6 @@ async def prepare(
     ]
     if unavailable:
         raise OrderRefused(409, "items_unavailable", product_ids=unavailable)
-    changed = [
-        {
-            "product_id": str(line["product_id"]),
-            "name": products[line["product_id"]].name,
-            "old_price": float(line["unit_price"]) if line["unit_price"] >= 0 else None,
-            "new_price": float(products[line["product_id"]].price),
-        }
-        for line in lines
-        if line["unit_price"] is not None and line["unit_price"] != products[line["product_id"]].price
-    ]
-    if changed:
-        changed = list({c["product_id"]: c for c in changed}.values())  # one row per dish
-        raise OrderRefused(409, "prices_changed", lines=changed)
     # the removals: only the ones this dish offers now (the server's list, never the client's)
     options = await _options_of(session, shop, [products[line["product_id"]] for line in lines])
     resolved, stale = [], []
@@ -210,26 +205,67 @@ async def prepare(
         if bad and str(product.id) not in {x["product_id"] for x in stale}:
             stale.append({"product_id": str(product.id), "name": product.name, "keys": bad})
         resolved.append(mods)
+    # the paid extras: only the restaurant's own (its questions in ODS), at the catalog's prices
+    added = []
+    for line in lines:
+        product = products[line["product_id"]]
+        chosen, bad = vitrine_extras.resolve(line["extras"], vitrine_extras.groups_of(product))
+        if bad:
+            row = next((x for x in stale if x["product_id"] == str(product.id)), None)
+            if row is None:
+                stale.append({"product_id": str(product.id), "name": product.name, "keys": bad})
+            else:
+                row["keys"] = list(dict.fromkeys([*row["keys"], *bad]))
+        added.append(chosen)
     if stale:
         raise OrderRefused(409, "options_changed", lines=stale)
+    # the price the customer saw for one: the dish + its extras (never the client's figure)
+    changed: dict[str, dict[str, Any]] = {}
+    for line, chosen in zip(lines, added, strict=True):
+        product = products[line["product_id"]]
+        unit = product.price + vitrine_extras.total(chosen)
+        if line["unit_price"] is not None and line["unit_price"] != unit:
+            row = changed.setdefault(
+                str(product.id),
+                {
+                    "product_id": str(product.id),
+                    "name": product.name,
+                    "old_price": float(line["unit_price"]) if line["unit_price"] >= 0 else None,
+                    "new_price": float(unit),
+                },
+            )
+            if chosen:  # the dish's own price apart (the cart keeps the dish and its extras apart)
+                row["base_price"] = float(product.price)
+                prices = {e["key"]: e["price"] for e in row.get("extras", [])}
+                prices.update({e["key"]: float(Decimal(e["price"])) for e in chosen})
+                row["extras"] = [{"key": k, "price": v} for k, v in prices.items()]
+    if changed:
+        raise OrderRefused(409, "prices_changed", lines=list(changed.values()))  # one row per dish
     cart_lines = []
     total = Decimal("0")
-    for line, mods in zip(lines, resolved, strict=True):
+    for line, mods, chosen in zip(lines, resolved, added, strict=True):
         product = products[line["product_id"]]
-        line_total = product.price * line["qty"]  # a removal never changes the price (price_delta 0)
+        unit = product.price + vitrine_extras.total(
+            chosen
+        )  # a removal never changes the price (price_delta 0)
+        line_total = unit * line["qty"]
         total += line_total
         cart_line = {
             "product_id": str(product.id),
             "ods_menu_id": product.ods_menu_id,
             "name": product.name,
             "qty": line["qty"],
-            "unit_price": str(product.price),
+            "unit_price": str(unit),
             "line_total": str(line_total),
             "note": line["note"],
         }
         if mods:
             cart_line["mods"] = mods
             cart_line["mods_text"] = vitrine_options.mods_text(mods)
+        if chosen:
+            cart_line["base_price"] = str(product.price)
+            cart_line["extras"] = chosen
+            cart_line["extras_text"] = vitrine_extras.text(chosen)
         cart_lines.append(cart_line)
     if total > MAX_BUDGET:
         raise OrderRefused(400, "invalid_budget", max=float(MAX_BUDGET))
@@ -363,6 +399,20 @@ def _lines_for_ods(order: Order) -> list[dict[str, Any]]:
                 for m in line["mods"]
             ]
             row["mods_text"] = line.get("mods_text")
+        if line.get("extras"):
+            # paid extras (CONTRAT-AJOUTS §4): `unit_price` already holds them (an older ODS keeps the total)
+            row["base_price"] = float(line.get("base_price") or 0)
+            row["extras"] = [
+                {
+                    "group_id": e.get("group"),
+                    "question": e.get("group_name"),
+                    "choice_id": e.get("key"),
+                    "name": e.get("name"),
+                    "price": float(Decimal(str(e.get("price") or 0))),
+                }
+                for e in line["extras"]
+            ]
+            row["extras_text"] = line.get("extras_text")
         out.append(row)
     return out
 

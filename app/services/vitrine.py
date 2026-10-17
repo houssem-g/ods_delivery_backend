@@ -443,7 +443,7 @@ def product_json(
         "photo_url": shop_service.photo_url_of(product.photo_key),
         "available": product.available,
         "position": product.position,
-        "options": options if options is not None else {"remove": []},
+        "options": options if options is not None else {"remove": [], "extras": []},
     }
     if admin:
         out["ods_menu_id"] = product.ods_menu_id

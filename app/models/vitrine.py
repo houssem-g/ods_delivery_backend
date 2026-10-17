@@ -143,6 +143,9 @@ class VitrineProduct(Base):
     # {hidden: [key], added: [{key, name_fr, name_ar, levels}], order: [key]} (NULL = automatic).
     ods_ingredients: Mapped[list | None] = mapped_column(JSONB(none_as_null=True))
     options_override: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
+    # paid extras (17/10, app/services/vitrine_extras.py): the dish's questions in ODS as pushed,
+    # [{id, name, multiple, choices: [{id, name, price}]}] (NULL = none; a hand-made dish never has any).
+    ods_extras: Mapped[list | None] = mapped_column(JSONB(none_as_null=True))
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
