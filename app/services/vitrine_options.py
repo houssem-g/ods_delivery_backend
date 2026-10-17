@@ -27,6 +27,7 @@ import unicodedata
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any
 
 from sqlalchemy import select
@@ -182,7 +183,8 @@ SPICY = ("piquant", "pimente", "spicy", "harr", "حار")
 _SEGMENTS = re.compile(r"[,;/+&·()\n،]|\s(?:et|avec|and|w)\s", re.IGNORECASE)
 
 
-def _segment_keys(raw: str) -> list[str]:
+@lru_cache(maxsize=8192)
+def _segment_keys(raw: str) -> tuple[str, ...]:
     folded = norm(raw)
     low = raw.lower()
     found = []
@@ -200,7 +202,7 @@ def _segment_keys(raw: str) -> list[str]:
             hit = any(a in low for a in RAW_ALIASES[key])
         if hit:
             found.append(key)
-    return found
+    return tuple(found)
 
 
 def find_keys(text: Any) -> list[str]:
