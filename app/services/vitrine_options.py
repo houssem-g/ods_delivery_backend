@@ -90,14 +90,16 @@ class Ingredient:
     blockers: tuple[str, ...] = ()  # « double concentré de tomate » is not a fresh tomato
 
     def labels(self) -> dict[str, dict[str, str]]:
-        out = {"none": {"fr": f"Sans {self.noun}", "ar": f"بدون {self.ar}"}}
-        if self.less:
-            elided = self.noun[0] in "aeiouyéèêâîôœ"
-            out["less"] = {
+        """Every removal has both words (owner 17/10: « toutes les options doivent avoir peu ou sans »):
+        « Peu d'oignon » / « Sans oignon », « قليل من البصل » / « بدون بصل »."""
+        elided = self.noun[0] in "aeiouyéèêâîôœ"  # « harissa »: h aspiré, « Peu de harissa »
+        return {
+            "less": {
                 "fr": f"Peu d'{self.noun}" if elided else f"Peu de {self.noun}",
                 "ar": f"قليل من {self.ar_def}",
-            }
-        return out
+            },
+            "none": {"fr": f"Sans {self.noun}", "ar": f"بدون {self.ar}"},
+        }
 
 
 def _i(key, fr, noun, ar, ar_def, less, condiment, aliases, blockers=()) -> Ingredient:
@@ -276,7 +278,7 @@ TYPES: tuple[DishType, ...] = (
     _t("pizza", ["pizza", "calzone", "بيتزا"],
        {"olives", "oignon", "harissa", "piment", "champignons", "poivron", "thon", "oeuf", "basilic",
            "roquette",
-        "mais", "ail", "persil"}, ("olives", "harissa", "oignon")),
+        "mais", "ail", "persil"}, ("olives", "oignon")),
     _t("crepe", ["crepe", "galette", "gaufre", "waffle", "كريب"],
        {"fromage", "champignons", "oignon", "olives", "harissa", "piment", "chantilly", "thon", "tomate",
         "sauce", "mayonnaise", "persil"}),
@@ -369,15 +371,18 @@ def _option(key: str, levels: tuple[str, ...]) -> dict[str, Any]:
     }
 
 
-def custom_option(key: str, name_fr: str, name_ar: str | None, levels: tuple[str, ...]) -> dict[str, Any]:
-    """An option the restaurant (ODS « always ») or the admin added: generic labels."""
+def custom_option(
+    key: str, name_fr: str, name_ar: str | None, levels: tuple[str, ...] = LEVELS
+) -> dict[str, Any]:
+    """An option the restaurant (ODS « always ») or the admin added: generic labels, both levels."""
     noun = name_fr[:1].lower() + name_fr[1:] if name_fr[:2] != name_fr[:2].upper() else name_fr
     ar = name_ar or name_fr
-    labels = {"none": {"fr": f"Sans {noun}", "ar": f"بدون {ar}"}}
-    if "less" in levels:
-        elided = noun[:1].lower() in "aeiouyéèêâîôœ"
-        labels["less"] = {"fr": f"Peu d'{noun}" if elided else f"Peu de {noun}", "ar": f"كمية قليلة من {ar}"}
-    return {"key": key, "name": {"fr": name_fr, "ar": ar}, "levels": list(levels), "labels": labels}
+    elided = noun[:1].lower() in "aeiouyéèêâîôœ"
+    labels = {
+        "less": {"fr": f"Peu d'{noun}" if elided else f"Peu de {noun}", "ar": f"كمية قليلة من {ar}"},
+        "none": {"fr": f"Sans {noun}", "ar": f"بدون {ar}"},
+    }
+    return {"key": key, "name": {"fr": name_fr, "ar": ar}, "levels": list(LEVELS), "labels": labels}
 
 
 # The main thing of a dish when the lexicon does not know it (« Crêpe POULET champignons gruyère »):
@@ -448,6 +453,30 @@ def title_rules(name: Any, kind: DishType) -> tuple[set[str], bool]:
     return protected, spicy
 
 
+# Where a Tunisian counter serves harissa though the menu does not say it (Tunisian restaurateur, 17/10):
+# the street sandwiches (makloub, chapati, libanais, baguette farcie, kaskrout, tabouna, mlewi, fricassé,
+# chawarma, tacos), lablabi, ojja, brik, chakchouka, kafteji, couscous, makarouna, mloukhia, marka, kamounia,
+# grillades. Never a coffee, a dessert, a drink (their types do not allow it); a burger only when « piquant »;
+# a pizza only when its recipe or description names it.
+HARISSA_TYPES = frozenset({"makloub", "libanais", "chapati", "tacos", "sandwich", "lablabi"})
+HARISSA_WORDS = tuple(norm(w).strip() for w in (
+    "ojja", "brik", "chakchouka", "kafteji", "couscous", "makarouna", "mloukhia", "marka", "kamounia",
+    "grillade", "mixed grill", "merguez", "plat tunisien", "riz djerbien", "عجه", "بريك", "كسكسي", "مقرونه",
+))  # fmt: skip
+NO_HARISSA = tuple(norm(w).strip() for w in ("caprese", "margherita", "nicoise", "cesar", "caesar", "sucre"))
+
+
+def serves_harissa(name: Any, category: Any, kind: DishType) -> bool:
+    if "harissa" not in kind.allowed:
+        return False
+    folded = norm(name)
+    if any(has(folded, w) for w in NO_HARISSA):
+        return False
+    if kind.name in HARISSA_TYPES:
+        return True
+    return any(has(f, w) for f in (folded, norm(category)) for w in HARISSA_WORDS)
+
+
 def candidates(
     name: Any,
     description: Any = None,
@@ -490,23 +519,22 @@ def candidates(
     if kind.cold and "glacons" not in found:
         found.append("glacons")  # ice is service, never in a recipe
     if spicy and not ({"harissa", "piment"} & set(found)):
-        found.append("piment")
+        found.append("harissa")
+    if serves_harissa(name, category, kind) and "harissa" not in found:
+        found.append("harissa")  # served with it in Tunisia even when the menu does not say so
     out: list[dict[str, Any]] = []
     for key in sorted(dict.fromkeys(found), key=lambda k: RANK[k]):
         if key in never or (key not in kind.allowed and key not in forced):
             continue
         item = BY_KEY[key]
-        levels: tuple[str, ...] = ("less", "none") if item.less else ("none",)
-        if key in protected and key not in forced:
-            if not (item.condiment and item.less):
-                continue  # « Sandwich thon » without tuna is another dish
-            levels = ("less",)
-        out.append(_option(key, levels))
+        if key in protected and key not in forced and not item.condiment:
+            continue  # « Sandwich thon » without tuna is another dish (a condiment stays: « Burger piquant »)
+        out.append(_option(key, LEVELS))  # always « Peu » and « Sans »
     seen = {o["key"] for o in out}
     for key, label in always:
         if key not in seen:
             seen.add(key)
-            out.append(custom_option(key, label, None, ("none",)))
+            out.append(custom_option(key, label, None))
     return out
 
 
@@ -696,6 +724,7 @@ def clean_override(payload: dict[str, Any], auto_keys: set[str]) -> dict[str, An
         levels = a.get("levels") or ["none"]
         if len(name_fr) < 1 or levels not in (["none"], ["less", "none"]):
             raise ApiError(400, "validation_error", "added: name_fr 1–40, levels [none] or [less, none]")
+        levels = list(LEVELS)  # every removal has both words (an older admin may send [none])
         key = "c-" + norm(name_fr).strip().replace(" ", "-")[:40]
         if key in keys:
             continue
