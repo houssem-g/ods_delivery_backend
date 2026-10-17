@@ -145,12 +145,14 @@ async def notify(
     order_id: uuid.UUID | None = None,
     metadata: dict[str, Any] | None = None,
     push: bool = True,
+    push_card: Any = None,
 ) -> Notification:
     """Writes the notification, queues its realtime event and pushes it when the
-    user's preferences allow. Returns the flushed row."""
+    user's preferences allow. Returns the flushed row. `push_card` (push_design.OrderCard): the
+    order's card when the caller already has it (dispatch: one for every courier)."""
     result = await notify_detailed(
         session, user_id=user_id, type_=type_, title_ar=title_ar, title_fr=title_fr, body_ar=body_ar,
-        body_fr=body_fr, order_id=order_id, metadata=metadata, push=push,
+        body_fr=body_fr, order_id=order_id, metadata=metadata, push=push, push_card=push_card,
     )  # fmt: skip
     return result.notification
 
@@ -167,6 +169,7 @@ async def notify_detailed(
     order_id: uuid.UUID | None = None,
     metadata: dict[str, Any] | None = None,
     push: bool = True,
+    push_card: Any = None,
 ) -> NotifyResult:
     """`notify`, answering what happened to the push (sendNotificationIfEnabled's `push_skipped`)."""
     stored_type = canonical_type(type_)
@@ -201,6 +204,7 @@ async def notify_detailed(
             order_id=str(order_id) if order_id else None,
             notification_id=str(row.id),
             metadata=row.data,
+            card=push_card,
         ),
     )
     whatsapp = None
