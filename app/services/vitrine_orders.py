@@ -176,6 +176,11 @@ async def prepare(
             )
         ).scalars()
     }
+    per_product: dict[Any, int] = {}
+    for line in lines:  # the same dish on several lines (other removals): 50 at most in all
+        per_product[line["product_id"]] = per_product.get(line["product_id"], 0) + line["qty"]
+    if any(q > MAX_LINE_QTY for q in per_product.values()):
+        raise OrderRefused(400, "invalid_cart", max_qty=MAX_LINE_QTY)
     unavailable = [
         str(line["product_id"])
         for line in lines
@@ -194,6 +199,7 @@ async def prepare(
         if line["unit_price"] is not None and line["unit_price"] != products[line["product_id"]].price
     ]
     if changed:
+        changed = list({c["product_id"]: c for c in changed}.values())  # one row per dish
         raise OrderRefused(409, "prices_changed", lines=changed)
     # the removals: only the ones this dish offers now (the server's list, never the client's)
     options = await _options_of(session, shop, [products[line["product_id"]] for line in lines])
@@ -201,7 +207,7 @@ async def prepare(
     for line in lines:
         product = products[line["product_id"]]
         mods, bad = vitrine_options.resolve(line["mods"], options.get(product.id, []))
-        if bad:
+        if bad and str(product.id) not in {x["product_id"] for x in stale}:
             stale.append({"product_id": str(product.id), "name": product.name, "keys": bad})
         resolved.append(mods)
     if stale:

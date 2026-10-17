@@ -22,6 +22,7 @@ Rules that keep it sensible (expert review 17/10, REVUE-EXPERTS.md):
 Phase 2 (paid extras) only has its place in the shapes (``options.extras``, ``mods[].price_delta``).
 """
 
+import logging
 import re
 import unicodedata
 import uuid
@@ -35,6 +36,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import ApiError
+
+logger = logging.getLogger(__name__)
 
 MAX_SHOWN = 6
 MAX_MODS = 8
@@ -640,23 +643,30 @@ def mods_text(mods: list[dict[str, Any]]) -> str:
 
 
 async def record(session: AsyncSession, shop_id: uuid.UUID, lines: list[dict[str, Any]]) -> None:
-    """+1 per ordered line for each removal (aggregated, no customer): the order of the chips."""
+    """+1 per ordered line for each removal (aggregated, no customer): the order of the chips. One
+    statement, rows in a fixed order (two orders at once never lock each other), in a savepoint: a
+    failure here never costs the order."""
     from app.models import VitrineOptionStat
 
     counts: dict[tuple[str, str], int] = defaultdict(int)
     for line in lines:
         for m in line.get("mods") or []:
             counts[(line["product_id"], m["key"])] += 1
-    for (product_id, key), n in counts.items():
-        stmt = insert(VitrineOptionStat).values(
-            shop_id=shop_id, product_id=uuid.UUID(product_id), key=key, count=n
-        )
-        await session.execute(
-            stmt.on_conflict_do_update(
-                index_elements=["product_id", "key"],
-                set_={"count": VitrineOptionStat.count + n},
-            )
-        )
+    if not counts:
+        return
+    rows = [
+        {"shop_id": shop_id, "product_id": uuid.UUID(product_id), "key": key, "count": n}
+        for (product_id, key), n in sorted(counts.items())
+    ]
+    stmt = insert(VitrineOptionStat).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["product_id", "key"], set_={"count": VitrineOptionStat.count + stmt.excluded.count}
+    )
+    try:
+        async with session.begin_nested():
+            await session.execute(stmt)
+    except Exception:
+        logger.warning("vitrine options: stats not recorded for shop %s", shop_id)
 
 
 # ─────────────────────────────── the admin ───────────────────────────────

@@ -369,10 +369,21 @@ async def test_removals_are_checked_by_the_server(client, world, qa):
     ):
         r = await place(lines)
         assert r.status_code == 400 and r.json()["error"] == "invalid_cart", r.text
+    # 50 of a dish at most, even split over lines with other removals
+    split = [
+        {"product_id": makloub, "qty": 30, "mods": [{"key": "harissa", "level": "none"}]},
+        {"product_id": makloub, "qty": 30},
+    ]
+    r = await place(split)
+    assert r.status_code == 400 and r.json()["error"] == "invalid_cart", r.text
     assert await rows(select(Order)) == []
+    # the free note stays bounded (120), without any control character (it reaches a kitchen printer)
+    r = await place([{"product_id": makloub, "qty": 1, "note": "bien\x1bp\x00 cuit"}])
+    assert r.status_code == 200 and (await rows(select(Order)))[0].cart["lines"][0]["note"] == "bienp cuit"
     # the free note stays bounded (120)
     r = await place([{"product_id": makloub, "qty": 1, "note": "x" * 500}])
-    assert r.status_code == 200 and len((await rows(select(Order)))[0].cart["lines"][0]["note"]) == 120
+    assert r.status_code == 200
+    assert max(len(o.cart["lines"][0]["note"]) for o in await rows(select(Order))) == 120
 
 
 async def test_the_admin_corrects_the_options(client, world, qa):

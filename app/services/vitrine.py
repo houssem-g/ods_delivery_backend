@@ -694,12 +694,7 @@ async def set_product_options(
     product.options_override = vitrine_options.clean_override(payload, {o["key"] for o in auto})
     await session.flush()
     await session.refresh(product)
-    categories = [category] if category is not None else []
-    options = await vitrine_options.shop_options(session, shop, [product], categories)
-    return {
-        "success": True,
-        "product": admin_product_json(shop, product, category_name, options.get(product.id)),
-    }
+    return {"success": True, "product": await _admin_product(session, shop, product)}
 
 
 def _new_shop_fields(raw: Any) -> dict[str, Any]:
@@ -1031,13 +1026,18 @@ async def upsert_product(
         product.available = payload["available"]
     await session.flush()
     await session.refresh(product)
-    category = await session.get(VitrineCategory, product.category_id) if product.category_id else None
-    options = await vitrine_options.shop_options(session, shop, [product], [category] if category else [])
-    category_name = category.name if category is not None else None
-    return {
-        "success": True,
-        "product": admin_product_json(shop, product, category_name, options.get(product.id)),
-    }
+    return {"success": True, "product": await _admin_product(session, shop, product)}
+
+
+async def _admin_product(session: AsyncSession, shop: Shop, product: VitrineProduct) -> dict[str, Any]:
+    """One product as getVitrineAdmin shows it (its chips ranked with the whole shop's counts)."""
+    categories = await _active_rows(session, VitrineCategory, shop.id)
+    products = await _active_rows(session, VitrineProduct, shop.id)
+    if all(p.id != product.id for p in products):
+        products.append(product)
+    options = await vitrine_options.shop_options(session, shop, products, categories)
+    names = {c.id: c.name for c in categories}
+    return admin_product_json(shop, product, names.get(product.category_id), options.get(product.id))
 
 
 async def delete_product(

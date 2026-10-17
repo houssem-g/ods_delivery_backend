@@ -36,14 +36,16 @@ CATEGORIES = (
 )  # fmt: skip
 BOUNDS = {"min_lat": 29.5, "max_lat": 38.5, "min_lng": 7.0, "max_lng": 12.5}
 _HTTPS_PHOTO = re.compile(r"^https://\S{1,500}$")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 _TN_PREFIX = re.compile(r"^(00)?216(?=\d{8}$)")
 
 
 def clean_text(value: Any, limit: int) -> str:
-    """`text()`: whitespace collapsed, trimmed, cut to `limit` characters."""
+    """`text()`: whitespace collapsed, control characters dropped (a note reaches a kitchen printer:
+    no ESC/POS command can ride in it), trimmed, cut to `limit` characters."""
     if value is None:
         return ""
-    return re.sub(r"\s+", " ", str(value)).strip()[:limit]
+    return _CONTROL.sub("", re.sub(r"\s+", " ", str(value))).strip()[:limit]
 
 
 # --- file URLs --------------------------------------------------------------------------
