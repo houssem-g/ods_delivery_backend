@@ -10,6 +10,7 @@ failures after 5 in a row. Preference checks (push_enabled...) belong to the cal
 """
 
 import asyncio
+import dataclasses
 import json
 import logging
 import os
@@ -28,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import DeviceToken, PushDelivery
 from app.security.tokens import now_utc
-from app.services import launch_mode
+from app.services import launch_mode, push_design
 
 log = logging.getLogger("odsd.push")
 FAILURE_THRESHOLD = 5
@@ -70,6 +71,9 @@ class PushMessage:
     order_id: str | None = None
     notification_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    # push_design.OrderCard: what the lock screen shows about the order (loaded by send_to_user
+    # when the caller has none; dispatch passes one for all its couriers)
+    card: Any = None
 
 
 @dataclass(frozen=True)
@@ -154,12 +158,17 @@ def _web_link(link: str) -> messaging.WebpushFCMOptions | None:
     return messaging.WebpushFCMOptions(link=f"{base}{link if link.startswith('/') else '/' + link}")
 
 
+WEB_ICON = "/icons/icon-192.png"  # the app's logo, as the home-screen icon
+WEB_BADGE = "/icons/badge-96.png"  # the logo's white silhouette on transparent (Android Chrome tints it)
+ANDROID_ICON = "ic_stat_ods"
+
+
 def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, link: str) -> Any:
+    # THE look of the push on every platform (push_design); `data` keeps the in-app row's texts
+    view = push_design.render(msg, "ar" if is_ar else "fr")
     return messaging.MulticastMessage(
         tokens=tokens,
-        notification=messaging.Notification(
-            title=msg.title_ar if is_ar else msg.title_fr, body=msg.body_ar if is_ar else msg.body_fr
-        ),
+        notification=messaging.Notification(title=view.title, body=view.body, image=view.image),
         data={
             "type": msg.type,
             "notification_id": msg.notification_id or "",
@@ -170,6 +179,7 @@ def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, 
             "body_fr": msg.body_fr,
             "metadata_json": json.dumps(msg.metadata, ensure_ascii=False),
             "click_action": link,
+            "lang": view.lang,
         },
         android=messaging.AndroidConfig(
             priority="high",
@@ -178,20 +188,36 @@ def _multicast(tokens: list[str], msg: PushMessage, is_ar: bool, collapse: str, 
                 channel_id=android_channel(msg.type),
                 sound="default",
                 tag=collapse,
+                # the logo's silhouette (ods-delivery-android ic_stat_ods); a build without it falls
+                # back to the manifest default (the bag) — FCM never fails on an unknown icon
+                icon=ANDROID_ICON,
+                color=view.color,
+                notification_count=view.count,
             ),
         ),
         apns=messaging.APNSConfig(
             headers={"apns-priority": "10", "apns-collapse-id": collapse},
             payload=messaging.APNSPayload(
-                aps=messaging.Aps(sound="default", mutable_content=True, thread_id=collapse)
+                aps=messaging.Aps(
+                    alert=messaging.ApsAlert(
+                        title=view.title, subtitle=view.ios_subtitle, body=view.ios_body
+                    ),
+                    sound="default",
+                    mutable_content=True,
+                    thread_id=collapse,
+                )
             ),
         ),
         webpush=messaging.WebpushConfig(
             headers={"Urgency": "high", "TTL": "3600"},
             notification=messaging.WebpushNotification(
-                icon="/icons/icon-192.png",
-                badge="/icons/icon-192.png",
+                icon=WEB_ICON,
+                badge=WEB_BADGE,
+                image=view.image,
                 tag=collapse,
+                renotify=view.renotify or None,
+                direction="rtl" if is_ar else "ltr",
+                language=view.lang,
                 require_interaction=msg.type == "new_order" or msg.type in URGENT_TYPES,
             ),
             # FCM requires an absolute HTTPS link (a relative one made every send fail).
@@ -308,6 +334,9 @@ async def send_to_user(
     chosen = provider or get_provider()
     if not tokens:
         return {"provider": chosen.name, "attempted": 0, "delivered": 0}
+    if msg.card is None and msg.order_id:
+        card = await push_design.load_card(session, msg.order_id, with_offers=msg.type == "new_offer")
+        msg = dataclasses.replace(msg, card=card)
     outcomes = await chosen.send(tokens, msg)
     by_id = {t.id: t for t in tokens}
     now = now_utc()

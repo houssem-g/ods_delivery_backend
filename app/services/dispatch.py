@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import Courier, Order, OrderStop, User
-from app.services import launch_mode, order_texts
+from app.services import launch_mode, order_texts, push_design
 from app.services.notifications import notify
 from app.services.order_transitions import now_utc
 from app.services.orders import (
@@ -146,6 +146,8 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     stop = await first_stop(session, order.id)
     shop = await stop_coordinates(session, stop)
     items = (order.items_text or "")[:60]
+    # what every courier's lock screen shows of the order (distance aside): built once
+    card = await push_design.load_card(session, order.id)
     dispatched = 0
     skipped: list[dict[str, Any]] = []
     preferred_id: uuid.UUID | None = None
@@ -174,6 +176,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
                 type_="new_order",
                 order_id=order.id,
                 metadata=_metadata(order, stop, extra),
+                push_card=card,
                 **text,
             )
             if await _push_wanted(session, courier.user_id):
@@ -260,6 +263,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
             type_="new_order",
             order_id=order.id,
             metadata=_metadata(order, stop, {} if distance is None else {"distance_km": round(distance, 1)}),
+            push_card=card,
             **order_texts.new_order(items, stop.name if stop else None, distance),
         )
         if push_enabled and wants_new_orders:
