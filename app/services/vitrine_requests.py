@@ -12,6 +12,9 @@ A restaurant asks; ONLY an admin creates the Vitrine (app/services/vitrine.py, c
   partner. Without the key it is a claim: public limits, « non vérifié » for the admin, never merged
   into another request. The admin calls before creating anything either way.
 
+Not public yet: while the global switch « Vitrines publiques autorisées » is OFF, only admins, QA accounts
+and ODS restaurants proven by their key may ask (anybody else: a neutral 404); ON → everybody.
+
 Abuse: a hidden field (`website`) filled → a decoy success, nothing stored; per address 5/hour
 (limiter) and 10/day (database, salted hash — the address itself is never stored); per account
 5/day; per phone 3 per 30 days (then a silent decoy) and ONE open request at a time: a second one
@@ -262,6 +265,30 @@ async def _verified_ods(session: AsyncSession, partner_key: str | None, ods_rid:
     )
 
 
+async def may_request(session: AsyncSession, user: CurrentUser | None, verified: bool) -> bool:
+    """Not for the general public yet (owner 17/10): while « Vitrines publiques autorisées » is OFF only an
+    admin, a QA account or an ODS restaurant proven by its partner key may ask; ON → everybody."""
+    from app.services.vitrine import public_allowed
+
+    if verified or (user is not None and (user.is_admin or is_qa_account(user.email))):
+        return True
+    return await public_allowed(session)
+
+
+def _closed() -> ApiError:
+    # neutral: the same answer as an unknown function call target, nothing says why
+    return ApiError(404, "not_found", "Not available")
+
+
+async def access(
+    session: AsyncSession, user: CurrentUser | None, payload: dict[str, Any], partner_key: str | None = None
+) -> dict[str, Any]:
+    """getVitrineRequestAccess (account optional): { open } — whether this caller may ask (the front shows the
+    entries « Vous avez un restaurant ? » and the form only then)."""
+    verified = await _verified_ods(session, partner_key, _positive_int(payload.get("ods_restaurant_id")))
+    return {"success": True, "open": await may_request(session, user, verified)}
+
+
 async def submit(
     session: AsyncSession,
     user: CurrentUser | None,
@@ -273,12 +300,14 @@ async def submit(
     from_ods = payload.get("source") == "ods"
     source = "ods" if from_ods else ("app" if user is not None else "public")
     typed_name = _text(payload.get("shop_name") or payload.get("name"), NAME_MAX)
-    if clean_text(payload.get(HONEYPOT), 200):
-        return _decoy(source, typed_name)  # a robot filled the hidden field: nothing stored
     ods_rid = _positive_int(payload.get("ods_restaurant_id")) if from_ods else None
     if from_ods and ods_rid is None:
         raise ApiError(400, "validation_error", "ods_restaurant_id: a positive integer")
     verified = await _verified_ods(session, partner_key, ods_rid) if from_ods else False
+    if not await may_request(session, user, verified):
+        raise _closed()
+    if clean_text(payload.get(HONEYPOT), 200):
+        return _decoy(source, typed_name)  # a robot filled the hidden field: nothing stored
 
     # the cheap limits first (no database read); a claimed but unproven « ODS » counts like the public
     if verified:

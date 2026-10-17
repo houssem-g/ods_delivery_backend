@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app.db import SessionLocal
-from app.models import File, Notification, VitrineRequest
+from app.models import AppSetting, File, Notification, VitrineRequest
 from app.rate_limit import limiter
 from app.services.push import push_link
 from tests.order_helpers import SOUSSE_SHOP, OrderWorld, rows
@@ -18,6 +18,22 @@ from tests.vitrine_helpers import QA_CUSTOMER, fn, manual_vitrine, ok, shop_body
 @pytest.fixture
 async def world(factory):
     return await OrderWorld(factory).setup()
+
+
+async def set_public(on: bool) -> None:
+    async with SessionLocal() as s:
+        row = await s.get(AppSetting, "vitrine")
+        if row is None:
+            s.add(AppSetting(key="vitrine", value={"public_allowed": on}))
+        else:
+            row.value = {"public_allowed": on}
+        await s.commit()
+
+
+@pytest.fixture(autouse=True)
+async def public_switch_on():
+    """Most tests read the public behaviour (switch ON); test_switch_off_* turns it off."""
+    await set_public(True)
 
 
 def request_body(**extra):
@@ -318,3 +334,42 @@ async def test_nearby_list_carries_the_page_fields(client, world, factory):
     assert (
         await ok(client, world.customer, "listVitrinesNearby", {"lat": SOUSSE_SHOP[0], "lng": SOUSSE_SHOP[1]})
     )["vitrines"] == []
+
+
+async def test_switch_off_only_qa_admin_and_proven_ods_may_ask(client, world, factory):
+    await set_public(False)
+    qa = await factory.user(email=QA_CUSTOMER)
+    # anonymous and a normal account: a neutral 404, nothing stored, the access says closed
+    for user in (None, world.customer):
+        r = await fn(client, user, "submitVitrineRequest", request_body())
+        assert r.status_code == 404 and r.json()["error"] == "not_found"
+        # even a robot (hidden field filled) learns nothing
+        r = await fn(client, user, "submitVitrineRequest", request_body(website="x"))
+        assert r.status_code == 404
+        assert (await ok(client, user, "getVitrineRequestAccess", {}))["open"] is False
+    # a mere « ODS » claim without its key: closed too
+    r = await fn(client, None, "submitVitrineRequest", request_body(source="ods", ods_restaurant_id=1))
+    assert r.status_code == 404
+    assert await count_requests() == 0
+    # a QA account and an admin: open
+    for user in (qa, world.admin):
+        assert (await ok(client, user, "getVitrineRequestAccess", {}))["open"] is True
+    await ok(client, qa, "submitVitrineRequest", request_body(phone="22333441"))
+    await ok(client, world.admin, "submitVitrineRequest", request_body(phone="22333442"))
+    # the ODS restaurant proven by its partner key: open, its test flag kept
+    pw = await make_partner(client, world.admin, ods_restaurant_id=1)
+    key = {"X-Partner-Key": pw.api_key}
+    r = await client.post(
+        "/api/functions/getVitrineRequestAccess", json={"ods_restaurant_id": 1}, headers=key
+    )
+    assert r.json()["open"] is True
+    body = request_body(source="ods", ods_restaurant_id=1, test=True, phone="73123456")
+    r = await client.post("/api/functions/submitVitrineRequest", json=body, headers=key)
+    assert r.status_code == 200
+    rows_ = await rows(select(VitrineRequest).order_by(VitrineRequest.created_at))
+    assert len(rows_) == 3 and rows_[0].test is True and rows_[2].ods_verified and rows_[2].test is True
+    # switch ON: everybody again
+    await set_public(True)
+    assert (await ok(client, None, "getVitrineRequestAccess", {}))["open"] is True
+    await ok(client, None, "submitVitrineRequest", request_body(phone="22333443"))
+    assert await count_requests() == 4
