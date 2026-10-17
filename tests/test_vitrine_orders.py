@@ -146,7 +146,9 @@ async def test_a_forged_or_changed_price_is_never_taken(client, world):
     )
     assert r.status_code == 409 and r.json() == {
         "error": "prices_changed",
-        "lines": [{"product_id": cafe, "name": "Café crème", "old_price": 0.1, "new_price": 2.5}],
+        "lines": [
+            {"product_id": cafe, "name": "Café crème", "old_price": 0.1, "new_price": 2.5, "base_price": 2.5}
+        ],
     }
     await ok(client, world.admin, "upsertVitrineProduct", {"shop_id": shop_id, "id": cafe, "price": 2.8})
     r = await place(

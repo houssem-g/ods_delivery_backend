@@ -263,6 +263,15 @@ async def test_extras_are_checked_by_the_server(client, world, qa):
     row = r.json()["lines"][0]
     assert (row["old_price"], row["new_price"], row["base_price"]) == (20.5, 22.0, 20.5)
     assert row["extras"] == [{"key": "q71-aaaaaaaaaa", "price": 1.5}]
+    # two lines of the same dish (one with extras, one without), both priced wrong: one row for the dish,
+    # its own price apart (`base_price`) and the extras' prices, whatever the order of the lines
+    plain_line = {"product_id": burger, "qty": 1, "unit_price": 1}
+    cheese_line = {**plain_line, "extras": ["q71-aaaaaaaaaa"]}
+    for lines in ([plain_line, cheese_line], [cheese_line, plain_line]):
+        r = await place(lines)
+        assert r.status_code == 409 and r.json()["error"] == "prices_changed", r.text
+        [row] = r.json()["lines"]
+        assert row["base_price"] == 20.5 and row["extras"] == [{"key": "q71-aaaaaaaaaa", "price": 1.5}]
     # a bad shape, or the same dish + removals + extras twice
     same = {"product_id": burger, "qty": 1, "extras": ["q71-aaaaaaaaaa"]}
     for lines in (

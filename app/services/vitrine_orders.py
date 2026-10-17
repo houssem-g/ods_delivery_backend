@@ -232,10 +232,12 @@ async def prepare(
                     "name": product.name,
                     "old_price": float(line["unit_price"]) if line["unit_price"] >= 0 else None,
                     "new_price": float(unit),
+                    # the dish's own price apart: the cart keeps the dish and its extras apart, and the row
+                    # is the same for every line of the dish (one with extras, one without)
+                    "base_price": float(product.price),
                 },
             )
-            if chosen:  # the dish's own price apart (the cart keeps the dish and its extras apart)
-                row["base_price"] = float(product.price)
+            if chosen:
                 prices = {e["key"]: e["price"] for e in row.get("extras", [])}
                 prices.update({e["key"]: float(Decimal(e["price"])) for e in chosen})
                 row["extras"] = [{"key": k, "price": v} for k, v in prices.items()]
