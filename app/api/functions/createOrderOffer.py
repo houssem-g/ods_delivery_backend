@@ -4,7 +4,8 @@ The offer is built from his own profile.
 Body: { order_id, fee, eta_minutes?, distance_km?, message?, from_lat?, from_lng? } — `from`: the
 courier's position the app used (else the server's recent one); the server computes his arrival
 (app/services/arrival.py) and stores it on the offer (estimated_eta_minutes, to_shop_km,
-eta_announced); without eta_minutes (an older app) the computed arrival is the delay.
+eta_announced); without eta_minutes (an older app) the computed arrival is the delay; a delay
+more than 2 min under the computation is refused (400 eta_below_computed, min_eta, computed).
 Returns { success, offer, rank, total, cheapest, tied, eta_rank, board… } (getOfferRank).
 Errors: invalid_fee (400), courier_profile_missing / courier_not_verified / own_order (403),
 order_not_found (404), order_not_open / offer_already_sent (409).
@@ -26,5 +27,12 @@ async def handle(
     payload: dict[str, Any], user: CurrentUser, session: AsyncSession, request: Request
 ) -> tuple[int, dict[str, Any]]:
     offer = await create_offer(session, user, payload)
-    rank = await offer_rank(session, offer.order_id, offer.courier_id, offer.proposed_fee, offer.eta_minutes)
+    rank = await offer_rank(
+        session,
+        offer.order_id,
+        offer.courier_id,
+        offer.proposed_fee,
+        offer.eta_minutes,
+        estimated=offer.estimated_eta_minutes,
+    )
     return 200, {"success": True, "offer": await document(session, "OrderOffer", user, offer.id), **rank}

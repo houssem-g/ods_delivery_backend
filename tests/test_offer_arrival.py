@@ -13,7 +13,7 @@ from sqlalchemy import update
 from app.config import settings
 from app.db import SessionLocal
 from app.integrations import osrm
-from app.models import Courier, OrderOffer, OrderStatusEvent
+from app.models import Courier, Order, OrderOffer, OrderStatusEvent
 from app.services import arrival
 from tests.factories import auth
 from tests.order_helpers import SOUSSE_SHOP, TUNIS, OrderWorld, notifications, now, pt, reload
@@ -219,33 +219,83 @@ async def test_multi_shop_order_waits_at_each_shop(client, world):
 # --- the offer stores it ------------------------------------------------------------------------------
 
 
-async def test_offer_stores_the_estimate_and_announced(client, world):
+async def test_offer_stores_the_estimate_and_the_delay_never_goes_under_it(client, world):
+    """Owner 18/10/2026: he may ADD time to the computation, never remove more than 2 min."""
     order = await world.order()
     at = {"from_lat": NEAR[0], "from_lng": NEAR[1]}
+    short = await call(
+        client,
+        world.courier_user,
+        "createOrderOffer",
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 12, **at},
+    )
+    assert short.status_code == 400
+    assert short.json() == {"error": "eta_below_computed", "min_eta": 13, "computed": 15}
     sent = await call(
         client,
         world.courier_user,
         "createOrderOffer",
-        {"order_id": str(order.id), "fee": 4, "eta_minutes": 10, **at},
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 13, **at},
     )
     assert sent.status_code == 200, sent.text
     offer = sent.json()["offer"]
-    assert offer["estimated_eta_minutes"] == 15 and offer["to_shop_km"] == 1.17
-    assert offer["eta_announced"] is True  # 10 < 15 - 3
+    assert offer["estimated_eta_minutes"] == 15 and offer["to_shop_km"] == 1.17 and offer["eta_minutes"] == 13
+    assert offer["eta_announced"] is False
     row = await reload(OrderOffer, offer["id"])
-    assert (row.estimated_eta_minutes, row.eta_announced) == (15, True)
+    assert row.estimated_eta_minutes == 15
 
+    refused = await call(
+        client,
+        world.courier_user,
+        "updateOrderOffer",
+        {"offer_id": offer["id"], "fee": 4, "eta_minutes": 10, **at},
+    )
+    assert refused.status_code == 400 and refused.json()["error"] == "eta_below_computed"
+    assert (await reload(OrderOffer, offer["id"])).eta_minutes == 13  # nothing changed
     changed = await call(
         client,
         world.courier_user,
         "updateOrderOffer",
-        {"offer_id": offer["id"], "fee": 4, "eta_minutes": 12, **at},
+        {"offer_id": offer["id"], "fee": 4, "eta_minutes": 23, **at},
     )
-    assert changed.json()["offer"]["eta_announced"] is False  # 12 = 15 - 3: within the margin
-    assert changed.json()["my_eta"] == 12
-    # the customer reads it, « chez vous ≈ 12 min »
+    assert changed.status_code == 200 and changed.json()["my_eta"] == 23
+    # the price alone may change without a delay (no floor check then)
+    assert (
+        await call(client, world.courier_user, "updateOrderOffer", {"offer_id": offer["id"], "fee": 4.5})
+    ).status_code == 200
+    # the customer reads the typed delay, « chez vous ≈ 23 min »
     note = (await notifications(world.customer, "new_offer"))[-1]
-    assert "chez vous ≈ 12 min" in note.body_fr and "الوصول إليك ≈ 12 دق" in note.body_ar
+    assert "chez vous ≈ 23 min" in note.body_fr and "الوصول إليك ≈ 23 دق" in note.body_ar
+
+
+async def test_ranked_by_the_computed_arrival_never_the_typed_one(client, world, factory):
+    order = await world.order()
+    typed_fast = await rival(world, factory, order, 0, "3", 5, 6)  # A: typed 5, no computation
+    computed = await rival(world, factory, order, 1, "3", 30, 5)  # B: typed 30, computed 25
+    async with SessionLocal() as s:
+        await s.execute(
+            update(OrderOffer).where(OrderOffer.courier_id == computed.id).values(estimated_eta_minutes=25)
+        )
+        await s.commit()
+    assert typed_fast  # an offer without a computation comes after every computed one
+    body = (
+        await call(
+            client,
+            world.courier_user,
+            "getOfferRank",
+            {"order_id": str(order.id), "fee": 4, "eta": 30, "estimate": 28},
+        )
+    ).json()
+    assert [e["who"] for e in body["board"]] == ["B", "me", "A"]
+    assert [e["eta_minutes"] for e in body["board"]] == [30, 30, 5]  # the typed delays are shown
+    assert body["board"][0]["fastest"] and body["eta_rank"] == 2
+    # without his computation (position unknown), his typed delay ranks him after the computed ones
+    blind = (
+        await call(
+            client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 4, "eta": 3}
+        )
+    ).json()
+    assert [e["who"] for e in blind["board"]] == ["B", "me", "A"] and blind["eta_rank"] == 2
 
 
 async def test_older_app_without_delay_gets_the_computed_one(client, world):
@@ -405,11 +455,11 @@ async def test_estimate_fields_are_for_the_offer_customer_only(client, world, fa
         client,
         world.courier_user,
         "createOrderOffer",
-        {"order_id": str(order.id), "fee": 4, "eta_minutes": 5},
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 14},
     )
     offer_id = sent.json()["offer"]["id"]
     seen = await client.get(f"/api/entities/OrderOffer/{offer_id}", headers=auth(world.customer))
-    assert seen.json()["eta_announced"] is True and seen.json()["estimated_eta_minutes"] == 12
+    assert seen.json()["eta_minutes"] == 14 and seen.json()["estimated_eta_minutes"] == 12
     other_user = await factory.user(email="other@example.test", profile=False)
     await world.make_courier(other_user, display_name="Other")
     hidden = await client.get(f"/api/entities/OrderOffer/{offer_id}", headers=auth(other_user))
@@ -428,7 +478,7 @@ async def test_the_customers_list_is_unchanged_for_acceptance(client, world):
         client,
         world.courier_user,
         "createOrderOffer",
-        {"order_id": str(order.id), "fee": 4, "eta_minutes": 5},
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 12},
     )
     offer_id = sent.json()["offer"]["id"]
     accepted = await call(
@@ -436,3 +486,49 @@ async def test_the_customers_list_is_unchanged_for_acceptance(client, world):
     )
     assert accepted.status_code == 200, accepted.text
     assert (await reload(OrderOffer, offer_id)).status == "accepted"
+
+
+# --- punctuality (owner 18/10/2026): his own, never the customer's nor the ranking's -------------
+
+
+async def test_punctuality_written_at_delivery_and_shown_to_him_only(client, world, factory):
+    from app.services import order_transitions as ot
+
+    order = await world.order(status="on_the_way", courier=world.courier, fee="4", purchase="10")
+    async with SessionLocal() as s:
+        row = await s.get(Order, order.id)
+        row.accepted_at, row.eta_minutes = now() - timedelta(minutes=31), 20
+        await ot.transition(s, row, "delivered", world.courier_user, "test")
+        await s.commit()
+    assert (await reload(Order, order.id)).punctuality_late_minutes == 11
+    # nine earlier courses: 7 on time (≤ 5 min late), 2 late
+    for n, late in enumerate([-3, 0, 2, 5, 1, -10, 4, 9, 30]):
+        past = await world.order(status="delivered", courier=world.courier, fee="4", purchase="10")
+        async with SessionLocal() as s:
+            await s.execute(
+                update(Order)
+                .where(Order.id == past.id)
+                .values(punctuality_late_minutes=late, delivered_at=now() - timedelta(days=1, minutes=n))
+            )
+            await s.commit()
+    body = (await call(client, world.courier_user, "getMyPunctuality")).json()
+    assert body == {
+        "success": True, "window": 10, "count": 10, "on_time": 7,
+        "avg_late_minutes": round((11 + 2 + 5 + 1 + 4 + 9 + 30) / 10), "tolerance_minutes": 5,
+    }  # fmt: skip
+    # never on the order the customer reads
+    seen = await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.customer))
+    assert "punctuality_late_minutes" not in seen.json()
+    assert (await call(client, world.customer, "getMyPunctuality")).status_code == 403
+
+
+def test_punctuality_needs_an_acceptance_and_a_delay():
+    from datetime import UTC, datetime
+
+    from app.services.order_transitions import punctuality_late_minutes
+
+    t = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+    assert punctuality_late_minutes(None, 20, t) is None
+    assert punctuality_late_minutes(t, None, t) is None
+    assert punctuality_late_minutes(t - timedelta(minutes=15), 20, t) == -5
+    assert punctuality_late_minutes(t - timedelta(days=5), 20, t) == 1440

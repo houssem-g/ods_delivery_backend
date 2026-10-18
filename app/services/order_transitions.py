@@ -150,6 +150,20 @@ async def start(
     emit(session, "Order", "create", order.id)
 
 
+PUNCTUALITY_BOUND = 24 * 60  # minutes kept either side (a course forgotten open for days is noise)
+
+
+def punctuality_late_minutes(
+    accepted_at: datetime | None, eta_minutes: int | None, delivered_at: datetime
+) -> int | None:
+    """Delivered minus announced (accepted_at + the delay of his offer), whole minutes; negative =
+    early. None without an acceptance time or a delay (a resold hot deal has no delay)."""
+    if accepted_at is None or eta_minutes is None:
+        return None
+    late = round((delivered_at - accepted_at).total_seconds() / 60 - eta_minutes)
+    return max(-PUNCTUALITY_BOUND, min(PUNCTUALITY_BOUND, late))
+
+
 async def transition(
     session: AsyncSession,
     order: Order,
@@ -183,6 +197,7 @@ async def transition(
             order.accepted_at = at
     elif to_status == "delivered":
         order.delivered_at = at
+        order.punctuality_late_minutes = punctuality_late_minutes(order.accepted_at, order.eta_minutes, at)
     elif to_status == "cancelled":
         order.cancelled_at = at
     elif to_status == "preparing":

@@ -195,7 +195,7 @@ customer side on its existence). Compat id = `users.id`.
 | created_via | fn R/W | *derived* constant `'createOrderOffer'` | every offer is server-made now |
 | courier_ratings_count, courier_deliveries | front R | *derived* `courier_stats.ratings_count / total_deliveries` | new (Aurora); guard: the order's customer + admin |
 | delivered_to_you | front R | *derived* delivered orders of this customer by this courier | new (Aurora); guard: the order's customer + admin |
-| estimated_eta_minutes, to_shop_km, eta_announced | front R, fn W | same-name columns | new (18/10/2026, `app/services/arrival.py`): the server's arrival when he sent / changed the offer, his distance to the shop then, « annoncé » (his delay > 3 min under it); read by the offer's courier, its customer and admins only |
+| estimated_eta_minutes, to_shop_km, eta_announced | front R, fn W | same-name columns | new (18/10/2026, `app/services/arrival.py`): the server's arrival when he sent / changed the offer, his distance to the shop then, « annoncé » (his delay > 3 min under it); read by the offer's courier, its customer and admins only. 18/10 (2nd decision): the arrival RANKING uses `estimated_eta_minutes` only (no computation = after the computed ones, by the typed delay); `eta_minutes` may never be more than 2 min under it (400 `eta_below_computed`); `eta_announced` stays false (kept for older apps) |
 
 ## Message → `messages`
 

@@ -96,6 +96,7 @@ class Order(Base):
         # tracking token, the per-phone badge over partner orders.
         CheckConstraint("source IN ('app','partner','vitrine')", name="source"),
         CheckConstraint("(source = 'vitrine') = (vitrine_shop_id IS NOT NULL)", name="vitrine_shop"),
+        CheckConstraint("punctuality_late_minutes BETWEEN -1440 AND 1440", name="punctuality_late_minutes"),
         CheckConstraint("cart IS NULL OR jsonb_typeof(cart) = 'object'", name="cart"),
         # « Je viens chercher » (vcc): only a Vitrine order is collected, and it lives in its own statuses
         CheckConstraint("fulfillment IN ('delivery','pickup')", name="fulfillment"),
@@ -177,6 +178,9 @@ class Order(Base):
     scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     distance_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     eta_minutes: Mapped[int | None] = mapped_column(Integer)
+    # Punctuality (owner 18/10/2026), written when delivered: minutes between the delivery and the
+    # time he announced (accepted_at + eta_minutes); negative = early. Shown to the courier only.
+    punctuality_late_minutes: Mapped[int | None] = mapped_column(Integer)
     # Total paid at the shops (what the customer reimburses); per-stop amounts live on order_stops.
     purchase_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     delivery_fee: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))

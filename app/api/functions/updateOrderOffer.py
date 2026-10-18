@@ -3,7 +3,8 @@ delay and note) while the order is still open for offers.
 
 Body: { offer_id, fee, eta_minutes?, message?, from_lat?, from_lng? } — same bounds as createOrderOffer
 (0 < fee ≤ 200 TND, 3 decimals; eta 1-600 min, an invalid one keeps the current; message ≤ 300 chars,
-"" clears). The arrival is computed again from where he is (estimated_eta_minutes, eta_announced).
+"" clears). The arrival is computed again from where he is (estimated_eta_minutes); a delay more
+than 2 min under the computation is refused (400 eta_below_computed, min_eta, computed).
 Returns { success, offer, rank, total, cheapest, tied } (the rank of the new price, getOfferRank).
 The customer's OrderOffers screen hears the OrderOffer update event; he is notified in-app
 (type new_offer, data.kind = "offer_updated": "Karim a modifié son offre : 6.500 DT"), pushed at

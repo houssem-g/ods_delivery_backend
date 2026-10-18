@@ -56,6 +56,19 @@ def _bounded(minutes: int | None) -> int | None:
     return minutes if minutes is not None and 0 <= minutes <= 600 else None
 
 
+ETA_FLOOR_MARGIN = 2  # minutes he may announce under the computation (owner 18/10/2026: add, never remove)
+
+
+def _check_eta_floor(eta: int, computed: int | None) -> None:
+    """The courier may ADD time to the computed arrival, never remove it (owner, 18/10/2026): a delay
+    more than ETA_FLOOR_MARGIN under the computation is refused (400 eta_below_computed, the app
+    words it in French / Arabic with `min_eta`). No computation (position unknown): no floor."""
+    if computed is not None and eta < computed - ETA_FLOOR_MARGIN:
+        raise OrderRefused(
+            400, "eta_below_computed", min_eta=max(1, computed - ETA_FLOOR_MARGIN), computed=computed
+        )
+
+
 def _store_estimate(offer: OrderOffer, estimate: arrival.Arrival | None) -> None:
     """The computed arrival on the offer and « annoncé » (his delay clearly under it). Without a new
     estimate (no position, OSRM and straight line both impossible) the stored one is kept."""
@@ -83,10 +96,21 @@ def _letter(n: int) -> str:
     return chr(ord("A") + n) if n < 26 else str(n + 1)
 
 
-def _arrival_key(eta: int | None, fee: float, created: Any) -> tuple:
-    """How the customer's offers list is sorted (owner 18/10/2026): the soonest at his door first,
-    then the cheaper, then the earlier offer. An offer without a delay comes last."""
-    return (eta is None, eta if eta is not None else 0, fee, created)
+def _arrival(estimated: int | None, eta: int | None) -> tuple[int, int]:
+    """The arrival an offer is RANKED by (owner 18/10/2026, 2nd decision): the server's computation
+    only, never the delay the courier typed. An offer without a computation (his position unknown,
+    an offer older than the computation) comes after every computed one, ordered by its typed
+    delay — it stays comparable, but a typed number never beats a measured one. No delay at all:
+    last."""
+    if estimated is not None:
+        return (0, estimated)
+    return (1, eta) if eta is not None else (2, 0)
+
+
+def _arrival_key(estimated: int | None, eta: int | None, fee: float, created: Any) -> tuple:
+    """How the customer's offers list is sorted: the soonest COMPUTED arrival first, then the
+    cheaper, then the earlier offer (src/lib/offerBoard.js compareByArrival, the same rule)."""
+    return (*_arrival(estimated, eta), fee, created)
 
 
 async def offer_rank(
@@ -96,6 +120,7 @@ async def offer_rank(
     fee: Decimal,
     eta: int | None = None,
     *,
+    estimated: int | None = None,
     board: bool = True,
 ) -> dict[str, Any]:
     """Where `fee` (and the delay `eta`) stand among the OTHER couriers' pending offers on the order.
@@ -104,8 +129,10 @@ async def offer_rank(
     `other_fees`: the other pending prices, ascending, anonymous (never an id or a name): the owner
     wants couriers to see the prices to beat (2026-09-30), `lowest_other` the cheapest.
 
-    Arrival (owner 18/10/2026): eta_rank = 1 + others arriving strictly sooner (an offer without a
-    delay counts as later), eta_tied the others at the same minute; None without his delay.
+    Arrival (owner 18/10/2026): ranked by the server's computed arrival only (`estimated`: his own,
+    the others' stored `estimated_eta_minutes`; _arrival): eta_rank = 1 + others arriving strictly
+    sooner, eta_tied the others at the same place; None without any delay of his. The board shows
+    the typed delays (what the customer reads, never under the computation − ETA_FLOOR_MARGIN).
     `board` (single order only): every pending offer as the customer sees them — sorted by arrival,
     then price — each `{who: "me" | "A" | "B" …, fee, eta_minutes, fastest, cheapest}`. The others are
     letters in the order they offered: never an id, a name, a phone, a distance or a position."""
@@ -127,7 +154,12 @@ async def offer_rank(
     )
     rows = (
         await session.execute(
-            select(OrderOffer.proposed_fee, OrderOffer.eta_minutes, OrderOffer.created_at)
+            select(
+                OrderOffer.proposed_fee,
+                OrderOffer.eta_minutes,
+                OrderOffer.created_at,
+                OrderOffer.estimated_eta_minutes,
+            )
             .join(Courier, Courier.id == OrderOffer.courier_id)
             .where(*others)
             .order_by(OrderOffer.created_at, OrderOffer.id)
@@ -147,24 +179,31 @@ async def offer_rank(
         "eta_rank": None,
         "eta_tied": 0,
     }
-    if eta is not None:
-        answer["eta_rank"] = 1 + sum(1 for r in rows if r[1] is not None and r[1] < eta)
-        answer["eta_tied"] = sum(1 for r in rows if r[1] == eta)
+    mine_place = _arrival(estimated, eta)
+    if estimated is not None or eta is not None:
+        places = [_arrival(r[3], r[1]) for r in rows]
+        answer["eta_rank"] = 1 + sum(1 for p in places if p < mine_place)
+        answer["eta_tied"] = sum(1 for p in places if p == mine_place)
     if not board:
         return answer
     entries = [
-        {"who": _letter(n), "fee": float(f), "eta_minutes": e, "_key": _arrival_key(e, float(f), (0, n))}
-        for n, (f, e, _) in enumerate(rows)
+        {"who": _letter(n), "fee": float(f), "eta_minutes": e, "_key": _arrival_key(est, e, float(f), (0, n))}
+        for n, (f, e, _, est) in enumerate(rows)
     ]
     # he is the latest offer while he types (no offer yet), else at his own place in time
-    me = {"who": "me", "fee": float(fee), "eta_minutes": eta, "_key": _arrival_key(eta, float(fee), (1, 0))}
+    me = {
+        "who": "me",
+        "fee": float(fee),
+        "eta_minutes": eta,
+        "_key": _arrival_key(estimated, eta, float(fee), (1, 0)),
+    }
     entries.append(me)
     mine = await _pending_offer_of(session, order_id, courier_id)
     if mine is not None:
         before = sum(1 for r in rows if r[2] < mine.created_at)
-        me["_key"] = _arrival_key(eta, float(fee), (0, before - 0.5))
+        me["_key"] = _arrival_key(estimated, eta, float(fee), (0, before - 0.5))
     entries.sort(key=lambda e: e["_key"])
-    fastest = entries[0] if entries[0]["eta_minutes"] is not None else None
+    fastest = entries[0] if entries[0]["_key"][0] < 2 else None
     cheapest = min(entries, key=lambda e: (e["fee"], e["_key"]))
     multi = len(entries) > 1
     answer["board"] = [
@@ -207,7 +246,8 @@ def _as_uuid(value: Any) -> uuid.UUID | None:
 
 async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
     """getOfferRank. One order: `fee` (the price he is typing) or his pending offer's price, `eta`
-    (the delay he is choosing) or his pending offer's delay. Several (`order_ids`, his offers list):
+    (the delay he is choosing) or his pending offer's delay, `estimate` (his computed arrival, the
+    sheet's) or his pending offer's. Several (`order_ids`, his offers list):
     his pending offers only, orders without one or no longer open are left out."""
     courier = await verified_courier(session, user)
     raw_ids = payload.get("order_ids")
@@ -230,7 +270,13 @@ async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, 
         ranks = {}
         for offer in mine:
             rank = await offer_rank(
-                session, offer.order_id, courier.id, offer.proposed_fee, offer.eta_minutes, board=False
+                session,
+                offer.order_id,
+                courier.id,
+                offer.proposed_fee,
+                offer.eta_minutes,
+                estimated=offer.estimated_eta_minutes,
+                board=False,
             )
             ranks[str(offer.order_id)] = {**rank, "my_offer": _my_offer(offer)}
         return {"success": True, "ranks": ranks}
@@ -263,7 +309,12 @@ async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, 
         fee = mine_offer.proposed_fee
     if eta is None and mine_offer is not None:
         eta = mine_offer.eta_minutes
-    rank = await offer_rank(session, order.id, courier.id, fee, eta)
+    # his computed arrival: the one the sheet shows (getOfferEstimate) while he types — it only
+    # places HIM on his own board — else his offer's stored one
+    estimated = _parse_eta(payload.get("estimate")) if payload.get("estimate") is not None else None
+    if estimated is None and mine_offer is not None:
+        estimated = mine_offer.estimated_eta_minutes
+    rank = await offer_rank(session, order.id, courier.id, fee, eta, estimated=estimated)
     return {"success": True, **rank, "my_offer": _my_offer(mine_offer)}
 
 
@@ -310,8 +361,13 @@ async def update_offer(
     new_eta = eta if eta is not None else offer.eta_minutes
     new_message = (message or None) if message is not None else offer.message
     previous_fee = offer.proposed_fee
+    floor_ref = (estimate.total_min if estimate is not None else None) or offer.estimated_eta_minutes
+    if eta is not None:
+        _check_eta_floor(eta, floor_ref)
     if fee == previous_fee and new_eta == offer.eta_minutes and new_message == offer.message:
-        return offer, await offer_rank(session, order.id, courier.id, fee, offer.eta_minutes)
+        return offer, await offer_rank(
+            session, order.id, courier.id, fee, offer.eta_minutes, estimated=offer.estimated_eta_minutes
+        )
 
     updates = Notification.__table__.c
     edits = select(func.count()).where(
@@ -357,7 +413,9 @@ async def update_offer(
         push=not pushed_lately,
     )
     await partner_webhooks.on_offer(session, order, offer, "updated", previous_fee)
-    return offer, await offer_rank(session, order.id, courier.id, fee, new_eta)
+    return offer, await offer_rank(
+        session, order.id, courier.id, fee, new_eta, estimated=offer.estimated_eta_minutes
+    )
 
 
 async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> OrderOffer:
@@ -388,6 +446,8 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
         raise OrderRefused(409, "order_not_open", status=peek.status)
     # the arrival from where he is (arrival.py), computed before the order's lock (OSRM may take seconds)
     estimate = await arrival.offer_estimate(session, order_uuid, courier, payload, ot.now_utc())
+    if eta is not None and estimate is not None:
+        _check_eta_floor(eta, estimate.total_min)
     order = await ot.lock_order(session, order_id)
     if order is None:
         raise OrderRefused(404, "order_not_found")
