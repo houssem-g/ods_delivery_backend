@@ -483,8 +483,9 @@ def _money(value: object) -> str:
 def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | None) -> Text:
     name_fr = short_name(courier_name) or "Un livreur"
     name_ar = short_name(courier_name) or "مندوب"
-    eta_fr = f" · ~{eta} min" if eta else ""
-    eta_ar = f" · ~{eta} دق" if eta else ""
+    # « chez vous ≈ 22 min »: the arrival at his door, the shop's wait included (owner 18/10/2026)
+    eta_fr = f" · chez vous ≈ {eta} min" if eta else ""
+    eta_ar = f" · الوصول إليك ≈ {eta} دق" if eta else ""
     return {
         "title_ar": "عرض جديد",
         "title_fr": "Nouvelle offre",

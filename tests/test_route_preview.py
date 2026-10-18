@@ -67,7 +67,8 @@ async def test_courier_gets_the_road_route_and_it_is_cached(client, world, osrm_
     assert body["to_shop"]["distance_km"] == 5.2 and body["to_shop"]["duration_min"] == 12.5
     assert body["delivery"]["distance_km"] == 3.1 and body["delivery"]["duration_min"] == 7.4
     assert body["to_shop"]["path"][0] == [35.82, 10.6] and len(body["delivery"]["path"]) == 3
-    assert body["distance_km"] == 8.3 and body["drive_minutes"] == 20 and body["eta_minutes"] == 35
+    assert body["distance_km"] == 8.3 and body["drive_minutes"] == 20 and body["eta_minutes"] == 12 + 8 + 7
+    assert body["shop_wait_minutes"] == 8 and body["arrival"]["total_minutes"] == 27
     # a few metres further: same answer from memory, no second OSRM call
     again = await ask(client, world.courier_user, order.id, (SOUSSE_ME[0] + 0.0001, SOUSSE_ME[1]))
     assert again.json() == body and len(osrm_ok) == 1

@@ -54,7 +54,8 @@ async def test_rank_alone_and_by_typed_fee(client, world, factory):
     assert alone.status_code == 200, alone.text
     assert alone.json() == {
         "success": True, "rank": 1, "total": 1, "cheapest": True, "tied": 0, "my_offer": None,
-        "other_fees": [], "lowest_other": None,
+        "other_fees": [], "lowest_other": None, "my_eta": None, "eta_rank": None, "eta_tied": 0,
+        "board": [{"who": "me", "fee": 5.0, "eta_minutes": None, "fastest": False, "cheapest": False}],
     }  # fmt: skip
 
     await rivals(world, factory, order, "4", "6", "6", "9.5")
@@ -101,6 +102,10 @@ async def test_rank_of_my_offer_ignores_closed_offers_and_names_nobody(client, w
         "my_offer",
         "other_fees",
         "lowest_other",
+        "my_eta",
+        "eta_rank",
+        "eta_tied",
+        "board",
     }
 
 
@@ -208,8 +213,8 @@ async def test_update_offer_changes_price_rank_and_tells_the_customer(client, wo
 
     [note] = await notifications(world.customer, "new_offer")
     assert note.title_fr == "Offre modifiée" and note.title_ar == "تم تعديل العرض"
-    assert note.body_fr == "Karim T. a modifié son offre : 4.556 DT · ~15 min"
-    assert note.body_ar == "Karim T. عدّل عرضه: 4.556 د.ت · ~15 دق"
+    assert note.body_fr == "Karim T. a modifié son offre : 4.556 DT · chez vous ≈ 15 min"
+    assert note.body_ar == "Karim T. عدّل عرضه: 4.556 د.ت · الوصول إليك ≈ 15 دق"
     assert note.order_id == order.id and note.data["kind"] == "offer_updated"
     assert note.data["offer_id"] == str(mine.id) and note.data["previous_fee"] == 7.0
     assert note.data["recipient_role"] == "customer"

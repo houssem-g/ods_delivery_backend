@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.compat.dates import legacy_datetime
 from app.integrations import osrm
 from app.models import Courier, Order, OrderTracking, courier_stats
+from app.services.arrival import speed_kmh
 from app.services.geo import haversine_km, lat_of, lng_of
 from app.services.orders import first_stop, stop_coordinates
 
@@ -88,14 +89,6 @@ async def courier_card(
         card["current_lat"], card["current_lng"] = best[0], best[1]
         card["location_updated_at"] = legacy_datetime(best[2]) if best[2] else None
     return card
-
-
-def speed_kmh(vehicle: str | None) -> int:
-    if vehicle == "car":
-        return 30
-    if vehicle == "walking":
-        return 5
-    return 25
 
 
 ETA_STATUSES = ("accepted", "at_shop", "purchased", "on_the_way", "client_no_response")

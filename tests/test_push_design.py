@@ -205,7 +205,8 @@ def test_offer_received_then_several_offers_in_one_notification():
         shop="Coffee and Tea", image="https://cdn.example/shop.jpg", offers=1, best_fee=Decimal("5")
     )
     one = render(offer(card), "fr")
-    assert one.title == "Nouvelle offre · Karim T. · ~15 min"
+    assert one.title == "Nouvelle offre · Karim T. · ≈ 15 min"
+    assert one.body.split("\n")[-1] == "Chez vous ≈ 15 min. Touchez pour voir et accepter."
     assert (
         one.body.split("\n")[0] == "Livraison 5.000 DT + vos achats · Coffee and Tea"
     )  # never the fee alone

@@ -87,6 +87,12 @@ FIELDS: dict[str, LegacyField] = {
     "message": LegacyField(offers.c.message, "string"),
     "status": LegacyField(cast(offers.c.status, Text), "string"),
     "created_via": LegacyField(literal("createOrderOffer"), "string"),
+    # 18/10/2026 (app/services/arrival.py): the server's arrival when he offered, how far he was from
+    # the shop, « annoncé » (his delay clearly under it). Only the offer's courier, its customer and
+    # admins read an offer: another courier never sees these.
+    "estimated_eta_minutes": LegacyField(offers.c.estimated_eta_minutes, "integer"),
+    "to_shop_km": LegacyField(offers.c.to_shop_km, "number"),
+    "eta_announced": LegacyField(offers.c.eta_announced, "boolean"),
     # Aurora offer card, for the order's customer (and admins).
     "courier_ratings_count": LegacyField(_stat(courier_stats.c.ratings_count), "integer", **for_customer),
     "courier_deliveries": LegacyField(_stat(courier_stats.c.total_deliveries), "integer", **for_customer),

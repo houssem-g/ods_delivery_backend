@@ -288,6 +288,8 @@ class OrderOffer(Base):
         CheckConstraint("proposed_fee > 0 AND proposed_fee <= 200", name="proposed_fee"),
         CheckConstraint("eta_minutes BETWEEN 0 AND 600", name="eta_minutes"),
         CheckConstraint("length(message) <= 500", name="message"),
+        CheckConstraint("estimated_eta_minutes BETWEEN 0 AND 600", name="estimated_eta_minutes"),
+        CheckConstraint("to_shop_km >= 0 AND to_shop_km <= 1000", name="to_shop_km"),
         Index(
             "one_live_offer_per_courier",
             "order_id",
@@ -312,6 +314,12 @@ class OrderOffer(Base):
     distance_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     message: Mapped[str | None] = mapped_column(Text)
     courier_rating_snapshot: Mapped[Decimal | None] = mapped_column(Numeric(3, 2))
+    # 18/10/2026 (app/services/arrival.py): the arrival at the customer the server computed when he
+    # sent / changed the offer, how far he was from the shop then, and « annoncé » — his delay
+    # (eta_minutes, what the customer reads) is clearly under that computation.
+    estimated_eta_minutes: Mapped[int | None] = mapped_column(Integer)
+    to_shop_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    eta_announced: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     status: Mapped[str] = mapped_column(offer_status, nullable=False, server_default="pending")
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     old_import_id: Mapped[str | None] = legacy_id()

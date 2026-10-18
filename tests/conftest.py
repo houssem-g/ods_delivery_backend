@@ -89,8 +89,8 @@ from app.integrations import osm
 from app.main import app as fastapi_app
 from app.models import Base
 from app.rate_limit import limiter
+from app.services import arrival, partner_webhooks
 from app.services import email as email_service
-from app.services import partner_webhooks
 from tests.factories import Factory
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -116,6 +116,8 @@ async def clean_state() -> None:
         await conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
     email_service.OUTBOX.clear()
     limiter.reset()
+    arrival.wait_cache.clear()  # the shops' average waits and the OSRM trips live in memory
+    arrival.trip_cache.clear()
 
 
 def _refuse_network(request: httpx.Request) -> httpx.Response:
