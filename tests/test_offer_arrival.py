@@ -470,6 +470,8 @@ async def test_fastest_only_among_verified_and_never_beaten_by_a_shown_delay(cli
         ("me", 22, True), ("A", 18, False), ("B", 30, False),
     ]  # fmt: skip
     assert not any(e["fastest"] for e in body["board"]) and body["eta_rank"] == 1
+    # the place he reads counts every shown delay: 2nd of 3 (A's unverified 18 min is shorter)
+    assert (body["eta_rank_shown"], body["total"], body["my_verified"]) == (2, 3, True)
     async with SessionLocal() as s:  # A computed now: 25 shown, 25 computed
         await s.execute(
             update(OrderOffer)

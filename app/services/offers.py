@@ -188,6 +188,14 @@ async def offer_rank(
         places = [_arrival(r[3], r[1]) for r in rows]
         answer["eta_rank"] = 1 + sum(1 for p in places if p < mine_place)
         answer["eta_tied"] = sum(1 for p in places if p == mine_place)
+    # the place he READS (owner 18/10/2026, 4th round: « jamais une phrase sans rang »): among every
+    # delay shown on the board, unverified ones included (they stay marked « non vérifié » and never
+    # get « le + rapide »); eta_rank above keeps the verified-first order of the lists
+    answer["eta_rank_shown"] = (
+        1 + sum(1 for r in rows if r[1] is not None and r[1] < eta) if eta is not None else None
+    )
+    answer["eta_tied_shown"] = sum(1 for r in rows if r[1] == eta) if eta is not None else 0
+    answer["my_verified"] = estimated is not None
     if not board:
         return answer
     customer_id = (await session.execute(select(Order.customer_id).where(Order.id == order_id))).scalar_one()
