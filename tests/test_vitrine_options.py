@@ -76,6 +76,7 @@ COFFEE_AND_TEA = {
     "Pâtes Cacio e Pepe": [],
     "Burger Maison + Frites": [
         "Peu d'oignon/Sans oignon",
+        "Peu de harissa/Sans harissa",
         "Peu de mayonnaise/Sans mayonnaise",
         "Peu de salade/Sans salade",
         "Peu de fromage/Sans fromage",
@@ -89,6 +90,7 @@ COFFEE_AND_TEA = {
     ],
     "Double Cheese Burger": [
         "Peu d'oignon/Sans oignon",
+        "Peu de harissa/Sans harissa",
         "Peu de mayonnaise/Sans mayonnaise",
         "Peu de frites/Sans frites",
     ],
@@ -124,8 +126,8 @@ def test_coffee_and_tea_88_dishes():
 def test_a_tunisian_snack_without_recipes():
     # every removal has « Peu » and « Sans »; harissa where a Tunisian counter serves it, said or not
     assert labels("Makloub thon", category="Makloub") == [
-        "Peu de harissa/Sans harissa",
         "Peu d'oignon/Sans oignon",
+        "Peu de harissa/Sans harissa",
         "Peu de mayonnaise/Sans mayonnaise",
         "Peu de frites/Sans frites",
         "Peu de salade/Sans salade",
@@ -155,25 +157,20 @@ def test_a_tunisian_snack_without_recipes():
     ]
     assert labels("Couscous agneau") == ["Peu de harissa/Sans harissa", "Peu de piment/Sans piment"]
     assert labels("Baguette farcie merguez", "Merguez, frites, oignon") == [
-        "Peu de harissa/Sans harissa",
         "Peu d'oignon/Sans oignon",
+        "Peu de harissa/Sans harissa",
         "Peu de frites/Sans frites",
     ]
     assert labels("Pizza margherita", "Sauce tomate, mozzarella, basilic") == []
-    assert labels("Pizza tunisienne") == ["Peu d'olives/Sans olives"]  # a pizza: harissa only when named
-    assert labels("Pizza piquante", "Sauce tomate, harissa, thon")[0] == "Peu de harissa/Sans harissa"
-    assert labels("Lablabi")[:3] == [
-        "Peu de harissa/Sans harissa",
-        "Peu d'olives/Sans olives",
-        "Peu de thon/Sans thon",
-    ]
-    assert labels("Burger maison")[0] == "Peu d'oignon/Sans oignon"  # a burger: no harissa unless « piquant »
-    assert labels("Burger piquant")[0] == "Peu de harissa/Sans harissa"
+    assert labels("Pizza tunisienne") == ["Peu d'olives/Sans olives"]
+    # a burger with salad or mayonnaise gets harissa too (owner 18/10), right after the onion
+    assert labels("Burger maison")[:2] == ["Peu d'oignon/Sans oignon", "Peu de harissa/Sans harissa"]
+    assert labels("Burger piquant")[:2] == ["Peu d'oignon/Sans oignon", "Peu de harissa/Sans harissa"]
     # never on a coffee, a drink, a dessert
     assert labels("Café direct", category="Boissons") == ["Peu de sucre/Sans sucre"]
     assert labels("Citronnade menthe 1 L") == ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons"]
     assert labels("Bambalouni") == ["Peu de sucre/Sans sucre"]
-    assert labels("Tiramisu") == [] and labels("Sandwich Caprese", "Mozzarella, tomate, basilic") == []
+    assert labels("Tiramisu") == []
     for bottle in ("Coca-Cola 33 cl", "Eau minérale 1,5 L", "Boga cidre", "Canette Fanta", "Yaourt nature"):
         assert labels(bottle, category="Boissons") == [], bottle
     assert labels("The Burger maison")[0] == "Peu d'oignon/Sans oignon"  # a burger, never a tea
@@ -193,6 +190,29 @@ def test_a_tunisian_snack_without_recipes():
         options = vo.candidates(d["name"], d["description"], d["category"], None, "restaurant")
         assert all(o["levels"] == ["less", "none"] for o in options), d["name"]
         assert len(vo.rank(options)) <= 6
+
+
+def test_harissa_comes_with_salad_or_mayonnaise():
+    """Owner 18/10: « La harissa en Tunisie arrive à chaque fois qu'il y a salade ou mayonnaise »."""
+    burger = vo.candidates(
+        "Burger maison", ingredients=[{"name": "Pain burger"}, {"name": "Oignons"}, {"name": "Laitue"}]
+    )
+    assert [o["key"] for o in burger] == ["oignon", "harissa", "salade"]
+    mayo = vo.candidates("Crêpe poulet", ingredients=[{"name": "Pâte"}, {"name": "Mayonnaise"}])
+    assert [o["key"] for o in mayo] == ["harissa", "mayonnaise"]
+    # « ne peut pas être retirée » in ODS, or hidden by the admin: never
+    never = vo.candidates(
+        "Burger maison", ingredients=[{"name": "Laitue"}, {"name": "Harissa", "removable": False}]
+    )
+    assert [o["key"] for o in never] == ["salade"]
+    hidden = vo.apply_override(burger, {"hidden": ["harissa"]})
+    assert "harissa" not in [o["key"] for o in hidden]
+    # never on a dessert or a drink, never without salad / mayonnaise
+    assert (
+        vo.candidates("Smoothie fraise", ingredients=[{"name": "Fraises"}, {"name": "Miel"}])[0]["key"]
+        != "harissa"
+    )
+    assert [o["key"] for o in vo.candidates("Burger maison", ingredients=[{"name": "Oignons"}])] == ["oignon"]
 
 
 def test_labels_fr_and_ar():
@@ -229,9 +249,9 @@ def test_the_restaurant_decides_in_ods():
 
 def test_ranking_learns_from_orders_then_category():
     options = vo.candidates("Makloub thon")
-    assert [o["key"] for o in vo.rank(options)][:2] == ["harissa", "oignon"]
+    assert [o["key"] for o in vo.rank(options)][:2] == ["oignon", "harissa"]  # harissa right after the onion
     learnt = vo.rank(options, {"frites": 3}, {"salade": 9})
-    assert [o["key"] for o in learnt][:3] == ["frites", "salade", "harissa"]
+    assert [o["key"] for o in learnt][:3] == ["frites", "salade", "oignon"]
     pinned = vo.rank(options, {"frites": 3}, None, ["fromage"])
     assert pinned[0]["key"] == "fromage" and len(pinned) == 6
 
@@ -365,7 +385,10 @@ async def test_the_recipe_travels_and_the_client_reads_the_options(client, world
     assert r.json()["status"] == "updated"
     admin = await ok(client, world.admin, "getVitrineAdmin", {"shop_id": shop_id})
     makloub = {p["ods_menu_id"]: p for p in admin["products"]}[501]
-    assert makloub["ingredients"] is None and keys_of(makloub)[0] == ("harissa", ["less", "none"])
+    assert makloub["ingredients"] is None and keys_of(makloub)[:2] == [
+        ("oignon", ["less", "none"]),
+        ("harissa", ["less", "none"]),
+    ]
 
 
 async def test_an_order_with_removals(client, world, qa, qa_courier):

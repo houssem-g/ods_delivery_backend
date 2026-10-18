@@ -106,16 +106,17 @@ def _i(key, fr, noun, ar, ar_def, less, condiment, aliases, blockers=()) -> Ingr
     return Ingredient(key, fr, noun, ar, ar_def, less, condiment, tuple(aliases), tuple(blockers))
 
 
-# The order = what is asked most at a Tunisian counter (sugar first: the drinks).
+# The order = what is asked most at a Tunisian counter (sugar first: the drinks; harissa right after the
+# onion, owner 18/10).
 # fmt: off
 LEXICON: tuple[Ingredient, ...] = (
     _i("sucre", "Sucre", "sucre", "سكر", "السكر", True, True,
        ["sucre", "sucre en poudre", "sucre semoule", "sucre en sachet", "sucre glace", "sokkor", "sokor",
         "sukkar", "سكر"]),
-    _i("harissa", "Harissa", "harissa", "هريسة", "الهريسة", True, True,
-       ["harissa", "hrissa", "harisa", "hrisa", "harissa arbi", "هريسه", "هريسة"]),
     _i("oignon", "Oignon", "oignon", "بصل", "البصل", False, False,
        ["oignon", "ognon", "onion", "oignon rouge", "oignon blanc", "oignon frit", "bsal", "basla", "بصل"]),
+    _i("harissa", "Harissa", "harissa", "هريسة", "الهريسة", True, True,
+       ["harissa", "hrissa", "harisa", "hrisa", "harissa arbi", "هريسه", "هريسة"]),
     _i("mayonnaise", "Mayonnaise", "mayonnaise", "مايونيز", "المايونيز", True, True,
        ["mayonnaise", "mayo", "mayonaise", "mayonnaisse", "mayonez", "مايونيز"]),
     _i("frites", "Frites", "frites", "بطاطا مقلية", "البطاطا المقلية", False, False,
@@ -466,6 +467,9 @@ HARISSA_WORDS = tuple(norm(w).strip() for w in (
 NO_HARISSA = tuple(norm(w).strip() for w in ("caprese", "margherita", "nicoise", "cesar", "caesar", "sucre"))
 
 
+HARISSA_WITH = frozenset({"salade", "mayonnaise"})  # owner 18/10: harissa comes with them at every counter
+
+
 def serves_harissa(name: Any, category: Any, kind: DishType) -> bool:
     if "harissa" not in kind.allowed:
         return False
@@ -530,6 +534,11 @@ def candidates(
         if key in protected and key not in forced and not item.condiment:
             continue  # « Sandwich thon » without tuna is another dish (a condiment stays: « Burger piquant »)
         out.append(_option(key, LEVELS))  # always « Peu » and « Sans »
+    keys = {o["key"] for o in out}
+    if keys & HARISSA_WITH and "harissa" not in keys and "harissa" not in never and "harissa" in kind.allowed:
+        # owner 18/10: « La harissa en Tunisie arrive à chaque fois qu'il y a salade ou mayonnaise »
+        out.append(_option("harissa", LEVELS))
+        out.sort(key=lambda o: RANK[o["key"]])
     seen = {o["key"] for o in out}
     for key, label in always:
         if key not in seen:
