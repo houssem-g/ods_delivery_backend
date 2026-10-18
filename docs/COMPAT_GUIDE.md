@@ -296,10 +296,15 @@ Hooks and helpers for the no-response / hot-deal features:
   expired, courier cancel → expired; it emits `ResaleOrder` updates.
 - `app.services.dispatch.dispatch_order(session, order)` (order locked): broadcast again.
 - `app.services.offers.demote_if_no_pending_offer(session, order_id, actor, source)`.
-- `app.services.offers.offer_rank(session, order_id, courier_id, fee)`: where a price stands
-  among the OTHER couriers' pending offers (`rank`, `total`, `cheapest`, `tied`), counts only —
-  getOfferRank, createOrderOffer and updateOrderOffer answer it; never return another
-  courier's price, id or name from it.
+- `app.services.offers.offer_rank(session, order_id, courier_id, fee, eta)`: where a price (and
+  a delay) stands among the OTHER couriers' pending offers (`rank`, `total`, `cheapest`, `tied`,
+  `other_fees`, `eta_rank`, `eta_tied`, and `board`: every offer as the customer sees them, the
+  others as letters « A / B / C ») — getOfferRank, createOrderOffer and updateOrderOffer answer
+  it; never return another courier's id, name, phone, distance or position from it.
+- `app.services.arrival`: the courier's arrival at the customer (courier → shop + the shop's
+  average wait + shop → customer, by vehicle) — the ONE computation of getOfferEstimate,
+  getRoutePreview's `eta_minutes` and the offers' `estimated_eta_minutes`; reuse it, never a
+  second formula.
 - A limit inside a function (the route is shared by all of them):
   `app.rate_limit.allow(scope, key, rate)` on the limiter's storage (getOfferRank,
   `RATE_LIMIT_OFFER_RANK`); answer your own 429 code, not "rate limit".
