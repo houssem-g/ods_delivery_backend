@@ -15,6 +15,9 @@ his radius, or no position yet but serving the shop's governorate). Switched off
 Paramètres once there are enough couriers.
 QA orders (« QA TEST » / « PW- » in the items, settings.QA_ACCOUNTS) reach the QA couriers only:
 same path, same notifications, nobody else (owner, 16/10/2026 — the ODS staging tests use it).
+Invite-link head start (owner 18/10/2026, app/services/invite_priority.py): when the customer's own
+courier can take the order (step 1) and it never had one, he ALONE is told and the others hear about
+it 60 s later (the job invite_priority_release calls dispatch_order(after_head_start=True)).
 The caller holds the order lock.
 """
 
@@ -29,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import Courier, Order, OrderStop, User
-from app.services import launch_mode, order_texts, push_design
+from app.services import invite_priority, launch_mode, order_texts, push_design
 from app.services.notifications import notify
 from app.services.order_transitions import now_utc
 from app.services.orders import (
@@ -108,10 +111,11 @@ async def _preferred(
         return None, "not_attributed", None
     if courier.user_id == order.customer_id:
         return None, "self", None
-    if qa_only:
-        courier_user = await session.get(User, courier.user_id)
-        if courier_user is None or not is_qa_account(courier_user.email):
-            return None, "not_qa", None
+    courier_user = await session.get(User, courier.user_id)
+    if courier_user is None or courier_user.deleted_at is not None or courier_user.disabled_at is not None:
+        return None, "inactive", None  # a deleted or disabled account: the others at once
+    if qa_only and not is_qa_account(courier_user.email):
+        return None, "not_qa", None
     if not courier.is_online and not offline_too:
         return None, "offline", None
     if courier.verification != "verified":
@@ -133,9 +137,30 @@ async def _preferred(
     return courier, None, distance
 
 
-async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
-    """Claims the run (last_dispatched_at) and notifies the couriers. Returns the function's answer."""
-    order.last_dispatched_at = now_utc()
+def _iso(value: datetime) -> str:
+    return value.isoformat().replace("+00:00", "Z")
+
+
+async def dispatch_order(
+    session: AsyncSession, order: Order, *, after_head_start: bool = False
+) -> dict[str, Any]:
+    """Claims the run (last_dispatched_at) and notifies the couriers. Returns the function's answer.
+    after_head_start: the invite-link courier's 60 s just ended (invite_priority.release): he knows
+    already, the others are told now."""
+    now = now_utc()
+    if invite_priority.running(order, now):
+        # his 60 s are running: nobody else is told before they end (a re-broadcast waits too)
+        return {
+            "success": True,
+            "order_id": str(order.id),
+            "dispatched": 0,
+            "reason": "invite_priority",
+            "priority_until": _iso(order.priority_until),
+            "preferred_notified": False,
+        }
+    if order.priority_until is not None and order.priority_released_at is None:
+        order.priority_released_at = now  # ended, the job has not run yet: this broadcast is the one
+    order.last_dispatched_at = now
     await session.flush()
     # a QA order (« QA TEST » / « PW- ») is offered to the QA accounts only (settings.QA_ACCOUNTS)
     qa_only = is_test_order(order.items_text)
@@ -156,7 +181,9 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
     dropped |= await blocked_with(session, order.customer_id)  # a block either way: never offered
     offline_too = await launch_mode.notify_offline_couriers(session)
 
-    if order.preferred_courier_id is not None:
+    if after_head_start:
+        preferred_id = order.priority_courier_id  # told 60 s ago: not twice
+    elif order.preferred_courier_id is not None:
         courier, reason, distance = await _preferred(session, order, stop, shop, offline_too, qa_only)
         if courier is not None and courier.user_id in dropped:
             courier, reason = None, "dropped"
@@ -164,10 +191,20 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
             skipped.append({"id": str(order.preferred_courier_id), "reason": f"preferred_{reason}"})
         else:
             preferred_id = courier.id
+            wants_push = await _push_wanted(session, courier.user_id)
+            # the head start: once per order, and only to a courier who will hear about it
+            head_start = order.priority_until is None and wants_push
+            until = invite_priority.start(session, order, courier.id, now) if head_start else None
             text = order_texts.new_order_preferred(
-                _first_name(order.contact_name), items, stop.name if stop else None, distance
+                _first_name(order.contact_name),
+                items,
+                stop.name if stop else None,
+                distance,
+                head_start_s=int(invite_priority.HEAD_START.total_seconds()) if head_start else None,
             )
             extra: dict[str, Any] = {"preferred_courier": True}
+            if until is not None:
+                extra["priority_until"] = _iso(until)
             if distance is not None:
                 extra["distance_km"] = round(distance, 1)
             await notify(
@@ -179,11 +216,22 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
                 push_card=card,
                 **text,
             )
-            if await _push_wanted(session, courier.user_id):
+            if wants_push:
                 preferred_notified = True
                 dispatched += 1
             else:
                 skipped.append({"id": str(courier.id), "reason": "pref_disabled"})
+            if until is not None:
+                await session.flush()
+                return {
+                    "success": True,
+                    "order_id": str(order.id),
+                    "dispatched": dispatched,
+                    "qa_only": qa_only,
+                    "reason": "invite_priority",
+                    "priority_until": _iso(until),
+                    "preferred_notified": preferred_notified,
+                }
 
     if shop is None:
         return {
@@ -279,6 +327,7 @@ async def dispatch_order(session: AsyncSession, order: Order) -> dict[str, Any]:
         "skipped": len(skipped) + not_eligible,
         "candidates_total": candidates_total,
         "preferred_notified": preferred_notified,
+        "after_head_start": after_head_start,
         "sample_skips": skipped[:5],
     }
 

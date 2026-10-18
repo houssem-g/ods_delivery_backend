@@ -17,20 +17,24 @@ class Job:
     trigger: BaseTrigger
     description: str
     enabled: bool = True
+    # a frequent job (every few seconds): an empty run is logged at debug only
+    quiet: bool = False
 
 
 JOBS: dict[str, Job] = {}
 
 
 def job(
-    name: str, trigger: BaseTrigger, description: str, enabled: bool = True
+    name: str, trigger: BaseTrigger, description: str, enabled: bool = True, quiet: bool = False
 ) -> Callable[[JobFunc], JobFunc]:
     """Decorator registering a scheduled job (also runnable by hand via /api/admin/jobs/{name}/run)."""
 
     def register(func: JobFunc) -> JobFunc:
         if name in JOBS:
             raise RuntimeError(f"job {name} registered twice")
-        JOBS[name] = Job(name=name, func=func, trigger=trigger, description=description, enabled=enabled)
+        JOBS[name] = Job(
+            name=name, func=func, trigger=trigger, description=description, enabled=enabled, quiet=quiet
+        )
         return func
 
     return register

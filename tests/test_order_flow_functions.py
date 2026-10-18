@@ -222,8 +222,11 @@ async def test_invite_link_courier_is_told_first(client, world, factory):
     assert order["preferred_courier_id"] == str(referrer.id)
     [note] = await notifications(referrer_user, "new_order")
     assert note.title_fr == "⭐ Votre client Amel a passé une commande"
-    assert note.data["preferred_courier"] is True and note.body_fr.endswith("km")
-    assert response.json()["dispatched"] == 2  # him + the courier at the shop (devices or not, as live)
+    assert note.data["preferred_courier"] is True and note.body_fr.endswith("km · 60 s rien que pour vous")
+    # him alone for 60 s (invite-link head start, tests/test_invite_priority.py), the courier at the
+    # shop after that
+    assert response.json()["dispatched"] == 1
+    assert await notifications(world.courier_user, "new_order") == []
 
 
 # --- dispatchOrderToCouriers -----------------------------------------------------------------------

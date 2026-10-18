@@ -17,7 +17,7 @@ from app.errors import ApiError
 from app.models import Courier, Order, OrderOffer, User, UserBlock, courier_stats
 from app.security.deps import CurrentUser
 from app.services.offers import withdraw_offer
-from app.services.orders import OrderRefused
+from app.services.orders import SIGNUP_WINDOW, OrderRefused
 
 offers = OrderOffer.__table__
 offer_order = Order.__table__.alias("offer_order")
@@ -70,6 +70,19 @@ def _delivered_to_customer() -> Any:
     )
 
 
+def _from_invite_courier() -> Any:
+    """The offer comes from the customer's own courier (invite link, sign-up attribution:
+    services/orders.signup_attribution, the same 24 h rule): « Votre livreur », pinned on top."""
+    created = offer_customer.c.profile_created_at
+    gap = func.abs(func.extract("epoch", offer_customer.c.referred_at - created))
+    return and_(
+        offer_customer.c.referred_by_courier_id == offers.c.courier_id,
+        offer_customer.c.referred_at.is_not(None),
+        or_(created.is_(None), gap <= SIGNUP_WINDOW.total_seconds()),
+        offer_customer.c.id != offer_courier.c.user_id,
+    )
+
+
 for_customer = {"read_guard": _customer_or_admin}
 
 FIELDS: dict[str, LegacyField] = {
@@ -97,6 +110,8 @@ FIELDS: dict[str, LegacyField] = {
     "courier_ratings_count": LegacyField(_stat(courier_stats.c.ratings_count), "integer", **for_customer),
     "courier_deliveries": LegacyField(_stat(courier_stats.c.total_deliveries), "integer", **for_customer),
     "delivered_to_you": LegacyField(_delivered_to_customer(), "integer", **for_customer),
+    # 18/10/2026 (app/services/invite_priority.py): pinned on top of the customer's list
+    "from_your_courier": LegacyField(_from_invite_courier(), "boolean", **for_customer),
 }
 
 

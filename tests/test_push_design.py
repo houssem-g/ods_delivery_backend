@@ -182,6 +182,11 @@ def test_unknown_distance_and_preferred_client():
     preferred = render(new_order(card, preferred_courier=True), "fr")
     assert preferred.title == "Votre client · 3,2 km · Khezama"  # « Course de votre client » is 41
     assert render(new_order(card, preferred_courier=True), "ar").title.startswith("طلب من حريفك")
+    # the invite-link head start (owner 18/10/2026): said on the first line
+    lead = new_order(card, preferred_courier=True, priority_until="2026-10-18T20:00:00Z")
+    assert render(lead, "fr").body.startswith("⏱ 60 s rien que pour vous")
+    assert render(lead, "ar").body.startswith("⏱ 60 ثانية لك وحدك")
+    assert all(len(row) <= LINE_MAX for row in render(lead, "fr").body.split("\n"))
 
 
 def test_a_photo_only_when_it_hides_no_dish():

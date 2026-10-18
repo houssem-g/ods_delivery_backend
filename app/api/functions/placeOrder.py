@@ -14,6 +14,8 @@ invalid_delivery_address, invalid_delivery_location, invalid_budget (+ max), pho
 phone_unverified (400: the profile's foreign number was not confirmed by the WhatsApp code, see
 requestPhoneVerification),
 too_many_open_orders (429, max). QA orders are not broadcast.
+A customer signed up through a courier's invite link: that courier alone is told for 60 s
+(app/services/invite_priority.py), `dispatched` counts him only; the others hear it 60 s later.
 « Je viens chercher » (order.vitrine.fulfillment = pickup, client_ref = the cart's attempt key): the
 restaurant's ODS takes it inside this request (app/services/vitrine_sync.py), else 503
 restaurant_unreachable and nothing is kept; the same client_ref again answers the same order.

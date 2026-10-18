@@ -92,6 +92,12 @@ class Order(Base):
         ),
         Index("orders_active", "status", postgresql_where=text("status NOT IN ('delivered','cancelled')")),
         Index("ix_orders_preferred_courier_id", "preferred_courier_id"),
+        # the head starts still to end (invite_priority.due_order_ids, every few seconds)
+        Index(
+            "orders_priority_due",
+            "priority_until",
+            postgresql_where=text("priority_until IS NOT NULL AND priority_released_at IS NULL"),
+        ),
         # Partner orders (app/services/partner_orders.py): idempotence per partner, the public
         # tracking token, the per-phone badge over partner orders.
         CheckConstraint("source IN ('app','partner','vitrine')", name="source"),
@@ -194,6 +200,14 @@ class Order(Base):
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The invite-link head start (owner 18/10/2026, app/services/invite_priority.py): the customer's
+    # own courier alone sees the order until priority_until; priority_released_at = when the other
+    # couriers were told (NULL while it runs). Set once per order, never given again.
+    priority_courier_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("couriers.id", ondelete="SET NULL")
+    )
+    priority_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    priority_released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resale_deal_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("hot_deals.id", ondelete="SET NULL", use_alter=True)
     )

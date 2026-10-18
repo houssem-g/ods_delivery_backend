@@ -61,7 +61,7 @@ from app.models import (
     courier_stats,
 )
 from app.security.deps import CurrentUser
-from app.services import order_steps
+from app.services import invite_priority, order_steps
 from app.services import order_transitions as ot
 from app.services.commission import COMMISSION_KINDS, LEGACY_STATUS
 from app.services.geo import lat_of, lng_of
@@ -139,6 +139,8 @@ def read_policy(user: CurrentUser) -> Any:
         not_qa,
         not_(blocked_pair(orders.c.customer_id, user.id)),
         not_(dropped_by_user(user)),
+        # the invite-link courier's 60 s: nobody else sees the order yet (invite_priority)
+        not_(invite_priority.hidden_sql(orders, user.id)),
     )
     return or_(parties(user), open_to_bid)
 
@@ -305,6 +307,32 @@ def contact_reachable(user: CurrentUser) -> Any:
 
 def customer_or_admin(user: CurrentUser) -> Any:
     return true() if user.is_admin else orders.c.customer_id == user.id
+
+
+def priority_party(user: CurrentUser) -> Any:
+    """The customer, the invite-link courier who has the head start, admins (invite_priority)."""
+    if user.is_admin:
+        return true()
+    mine = exists().where(couriers.c.id == orders.c.priority_courier_id, couriers.c.user_id == user.id)
+    return or_(orders.c.customer_id == user.id, mine)
+
+
+def _priority_running() -> Any:
+    return and_(
+        orders.c.priority_until.is_not(None),
+        orders.c.priority_released_at.is_(None),
+        orders.c.priority_until > func.now(),
+    )
+
+
+def _priority_first_name() -> Any:
+    """« Votre livreur Amine a 60 s … »: his first name only."""
+    head = Courier.__table__.alias("priority_head")
+    return (
+        select(func.split_part(func.btrim(head.c.display_name), " ", 1))
+        .where(head.c.id == orders.c.priority_courier_id)
+        .scalar_subquery()
+    )
 
 
 def _preparing_offers() -> Any:
@@ -523,6 +551,21 @@ FIELDS: dict[str, LegacyField] = {
     "has_issues": LegacyField(exists().where(issues.c.order_id == orders.c.id), "boolean", **guarded),
     "status_history": LegacyField(_history(), "array"),
     "preferred_courier_id": LegacyField(orders.c.preferred_courier_id, "id"),
+    # the invite-link head start while it runs (app/services/invite_priority.py), else null: for the
+    # customer (« Votre livreur Amine a 60 s pour vous répondre en premier »), that courier, admins
+    "priority_until": LegacyField(
+        case((_priority_running(), orders.c.priority_until), else_=null()),
+        "datetime",
+        read_guard=priority_party,
+    ),
+    "priority_courier_id": LegacyField(
+        case((_priority_running(), orders.c.priority_courier_id), else_=null()),
+        "id",
+        read_guard=priority_party,
+    ),
+    "priority_courier_name": LegacyField(
+        case((_priority_running(), _priority_first_name()), else_=null()), "string", read_guard=priority_party
+    ),
     "courier_stats_recorded_at": LegacyField(orders.c.delivered_at, "datetime"),
     "last_dispatched_at": LegacyField(orders.c.last_dispatched_at, "datetime"),
     "accepted_at": LegacyField(orders.c.accepted_at, "datetime"),

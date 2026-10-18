@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, UserBlock, courier_stats
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
-from app.services import arrival, credit, partner_webhooks, step_notices, text_filter
+from app.services import arrival, credit, invite_priority, partner_webhooks, step_notices, text_filter
 from app.services import order_transitions as ot
 from app.services.geo import as_float
 from app.services.notifications import notify
@@ -135,7 +135,10 @@ async def offer_rank(
     the typed delays (what the customer reads, never under the computation − ETA_FLOOR_MARGIN).
     `board` (single order only): every pending offer as the customer sees them — sorted by arrival,
     then price — each `{who: "me" | "A" | "B" …, fee, eta_minutes, fastest, cheapest}`. The others are
-    letters in the order they offered: never an id, a name, a phone, a distance or a position."""
+    letters in the order they offered: never an id, a name, a phone, a distance or a position.
+    Invite link (owner 18/10/2026): the customer's own courier's offer is pinned on top, as on the
+    customer's list — « pinned » on that entry, who « client » for the others (« Livreur du client »),
+    « me » + pinned for him (« Vous · votre client »); « fastest » / « cheapest » stay the true ones."""
     # the offers the customer sees: a courier he blocked (or who blocked him) is on nobody's board
     # (the OrderOffer entity's read rule), so the places and the badges are the ones he reads
     customer = select(Order.customer_id).where(Order.id == order_id).scalar_subquery()
@@ -159,6 +162,7 @@ async def offer_rank(
                 OrderOffer.eta_minutes,
                 OrderOffer.created_at,
                 OrderOffer.estimated_eta_minutes,
+                OrderOffer.courier_id,
             )
             .join(Courier, Courier.id == OrderOffer.courier_id)
             .where(*others)
@@ -186,15 +190,29 @@ async def offer_rank(
         answer["eta_tied"] = sum(1 for p in places if p == mine_place)
     if not board:
         return answer
-    entries = [
-        {"who": _letter(n), "fee": float(f), "eta_minutes": e, "_key": _arrival_key(est, e, float(f), (0, n))}
-        for n, (f, e, _, est) in enumerate(rows)
-    ]
+    customer_id = (await session.execute(select(Order.customer_id).where(Order.id == order_id))).scalar_one()
+    pinned_id = await invite_priority.invite_courier_id(session, customer_id)
+    entries = []
+    letters = 0
+    for f, e, _, est, cid in rows:
+        pinned = pinned_id is not None and cid == pinned_id
+        who = "client" if pinned else _letter(letters)
+        letters += 0 if pinned else 1
+        entries.append(
+            {
+                "who": who,
+                "fee": float(f),
+                "eta_minutes": e,
+                "pinned": pinned,
+                "_key": _arrival_key(est, e, float(f), (0, len(entries))),
+            }
+        )
     # he is the latest offer while he types (no offer yet), else at his own place in time
     me = {
         "who": "me",
         "fee": float(fee),
         "eta_minutes": eta,
+        "pinned": pinned_id is not None and courier_id == pinned_id,
         "_key": _arrival_key(estimated, eta, float(fee), (1, 0)),
     }
     entries.append(me)
@@ -202,9 +220,11 @@ async def offer_rank(
     if mine is not None:
         before = sum(1 for r in rows if r[2] < mine.created_at)
         me["_key"] = _arrival_key(estimated, eta, float(fee), (0, before - 0.5))
-    entries.sort(key=lambda e: e["_key"])
-    fastest = entries[0] if entries[0]["_key"][0] < 2 else None
+    # the badges by the true arrival / price; the customer's own courier on top of the list
+    by_arrival = sorted(entries, key=lambda e: e["_key"])
+    fastest = by_arrival[0] if by_arrival[0]["_key"][0] < 2 else None
     cheapest = min(entries, key=lambda e: (e["fee"], e["_key"]))
+    entries.sort(key=lambda e: (0 if e["pinned"] else 1, e["_key"]))
     multi = len(entries) > 1
     answer["board"] = [
         {
@@ -213,6 +233,7 @@ async def offer_rank(
             "eta_minutes": e["eta_minutes"],
             "fastest": multi and e is fastest,
             "cheapest": multi and e is cheapest,
+            **({"pinned": True} if e["pinned"] else {}),
         }
         for e in entries
     ]
@@ -291,7 +312,7 @@ async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, 
             raise OrderRefused(400, "invalid_fee")
     order_uuid = _as_uuid(order_id)
     order = await session.get(Order, order_uuid) if order_uuid else None
-    if order is None:
+    if order is None or invite_priority.hidden_from(order, courier.id, ot.now_utc()):
         raise OrderRefused(404, "order_not_found")
     if order.customer_id == user.id:
         raise OrderRefused(403, "own_order")
@@ -434,11 +455,22 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     order_uuid = _as_uuid(order_id)
     # the cheap refusals first (no route computed for an offer that cannot go), again under the lock
     peek = (
-        (await session.execute(select(Order.customer_id, Order.status).where(Order.id == order_uuid))).first()
+        (
+            await session.execute(
+                select(
+                    Order.customer_id,
+                    Order.status,
+                    Order.priority_courier_id,
+                    Order.priority_until,
+                    Order.priority_released_at,
+                ).where(Order.id == order_uuid)
+            )
+        ).first()
         if order_uuid is not None
         else None
     )
-    if peek is None:
+    if peek is None or invite_priority.hidden_from(peek, courier.id, ot.now_utc()):
+        # another courier's 60 s head start (invite_priority): as if the order did not exist
         raise OrderRefused(404, "order_not_found")
     if peek.customer_id == user.id:
         raise OrderRefused(403, "own_order")
@@ -449,7 +481,7 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     if eta is not None and estimate is not None:
         _check_eta_floor(eta, estimate.total_min)
     order = await ot.lock_order(session, order_id)
-    if order is None:
+    if order is None or invite_priority.hidden_from(order, courier.id, ot.now_utc()):
         raise OrderRefused(404, "order_not_found")
     if order.customer_id == user.id:
         raise OrderRefused(403, "own_order")

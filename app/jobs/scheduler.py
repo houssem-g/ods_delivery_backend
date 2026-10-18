@@ -34,7 +34,9 @@ async def run_job(job: Job) -> dict[str, Any]:
         return {"job": job.name, "ok": False, "error": type(exc).__name__}
     metrics.observe_job(job.name, True, time.monotonic() - started)
     elapsed_ms = round((time.monotonic() - started) * 1000)
-    log.info("job %s done in %d ms: %s", job.name, elapsed_ms, result)
+    (log.debug if job.quiet and not result else log.info)(
+        "job %s done in %d ms: %s", job.name, elapsed_ms, result
+    )
     return {"job": job.name, "ok": True, "duration_ms": elapsed_ms, "result": result or {}}
 
 

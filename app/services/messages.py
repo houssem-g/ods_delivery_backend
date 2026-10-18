@@ -33,8 +33,8 @@ from app.models import Courier, File, Message, MessageTranslation, Notification,
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
+from app.services import invite_priority, text_filter
 from app.services import order_transitions as ot
-from app.services import text_filter
 from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.safety import block_direction, blocked_pair, is_blocked
@@ -95,13 +95,15 @@ async def chat_role(
         return "customer"
     if order.courier_id is not None and await courier_user_id(session, order) == user.id:
         return "courier"
-    verification = (
-        await session.execute(select(Courier.verification).where(Courier.user_id == user.id))
-    ).scalar_one_or_none()
+    mine = (
+        await session.execute(select(Courier.id, Courier.verification).where(Courier.user_id == user.id))
+    ).first()
     if (
-        verification == "verified"
+        mine is not None
+        and mine.verification == "verified"
         and order.courier_id is None
         and order.status in OPEN_STATUSES
+        and not invite_priority.hidden_from(order, mine.id, now_utc())  # another courier's head start
         and not await is_blocked(session, user.id, order.customer_id)
     ):
         return "bidder"

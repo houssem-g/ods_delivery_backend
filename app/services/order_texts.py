@@ -48,9 +48,18 @@ def new_order(items: str, shop_name: str | None, distance_km: float | None) -> T
     }
 
 
-def new_order_preferred(client: str, items: str, shop_name: str | None, distance_km: float | None) -> Text:
+def new_order_preferred(
+    client: str,
+    items: str,
+    shop_name: str | None,
+    distance_km: float | None,
+    head_start_s: int | None = None,
+) -> Text:
     dist_fr = "" if distance_km is None else f" - À {_km(distance_km)} km"
     dist_ar = "" if distance_km is None else f" - {_km(distance_km, 'ar')} كم"
+    if head_start_s:  # the invite-link head start (app/services/invite_priority.py)
+        dist_fr += f" · {head_start_s} s rien que pour vous"
+        dist_ar += f" · {head_start_s} ثانية لك وحدك"
     return {
         "title_ar": f"⭐ حريفك {client} قدّم طلباً" if client else "⭐ حريفك قدّم طلباً",
         "title_fr": f"⭐ Votre client {client} a passé une commande"

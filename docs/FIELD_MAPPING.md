@@ -168,6 +168,7 @@ customer side on its existence). Compat id = `users.id`.
 | stock_check, stock_checks[] (id, status, missing_text, substitute_text, substitute_price, photo_url, nothing_available, decided_by, created_at, deadline_at, decided_at) | front R | `order_stock_checks` | new 2026-09-29 ("article indisponible", `app/services/stock_checks.py`): the latest check / all of them; guard: parties + admin |
 | status_history[] (status, timestamp, lat, lng, cancelled_by, reason, source) | front R/W, fn R/W | `order_status_events` (`to_status, created_at, location, cancelled_by, reason, source`) | append-only, aggregated in order; client arrays are ignored (only the courier's lat/lng of its last entry is kept on the event); a courier dropping the order is ONE event `→ pending` carrying `cancelled_by`/`reason`. Import: `source` absent → `legacy`; synthetic events have `source = 'migration'` (no history: `pending` + final; last item ≠ status: final) |
 | preferred_courier_id | front R, fn R/W | `orders.preferred_courier_id` → `couriers` | |
+| priority_until / priority_courier_id / priority_courier_name | front R | `orders.priority_until`, `orders.priority_courier_id` (+ his first name) while the invite-link head start runs, else null | new 18/10/2026 (app/services/invite_priority.py); guard: the customer, that courier, admins |
 | courier_stats_recorded_at | fn R/W | *derived* `orders.delivered_at` | counters are views: nothing to record |
 | last_dispatched_at | fn R/W | `orders.last_dispatched_at` | |
 | (new) accepted_at, delivered_at | – | `orders.accepted_at / delivered_at` | missing timestamps (audit §3.3 #17). Import: last `accepted` / `delivered` history item; else the accepted offer's date / `courier_stats_recorded_at`, else `updated_date` |
@@ -195,6 +196,7 @@ customer side on its existence). Compat id = `users.id`.
 | created_via | fn R/W | *derived* constant `'createOrderOffer'` | every offer is server-made now |
 | courier_ratings_count, courier_deliveries | front R | *derived* `courier_stats.ratings_count / total_deliveries` | new (Aurora); guard: the order's customer + admin |
 | delivered_to_you | front R | *derived* delivered orders of this customer by this courier | new (Aurora); guard: the order's customer + admin |
+| from_your_courier | front R | *derived* the offer's courier is the customer's invite-link courier (sign-up attribution, 24 h rule) | new 18/10/2026: pinned on top; guard: the order's customer + admin |
 | estimated_eta_minutes, to_shop_km, eta_announced | front R, fn W | same-name columns | new (18/10/2026, `app/services/arrival.py`): the server's arrival when he sent / changed the offer, his distance to the shop then, « annoncé » (his delay > 3 min under it); read by the offer's courier, its customer and admins only. 18/10 (2nd decision): the arrival RANKING uses `estimated_eta_minutes` only (no computation = after the computed ones, by the typed delay); `eta_minutes` may never be more than 2 min under it (400 `eta_below_computed`); `eta_announced` stays false (kept for older apps) |
 
 ## Message → `messages`

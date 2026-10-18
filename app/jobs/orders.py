@@ -9,7 +9,15 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.db import transaction
 from app.jobs.registry import job
-from app.services import commission, couriers, expiry, offer_intents, order_drafts, stock_checks
+from app.services import (
+    commission,
+    couriers,
+    expiry,
+    invite_priority,
+    offer_intents,
+    order_drafts,
+    stock_checks,
+)
 
 log = logging.getLogger("odsd.jobs")
 
@@ -59,6 +67,28 @@ async def stock_check_timeout() -> dict[str, Any]:
             errors += 1
             log.exception("stock_check_timeout: order %s failed", order_id)
     return {"checked": len(due), "advanced": advanced, "errors": errors}
+
+
+@job(
+    "invite_priority_release",
+    IntervalTrigger(seconds=5),
+    "invite-link head starts past their 60 s → the order is broadcast to the other couriers",
+    quiet=True,
+)
+async def invite_priority_release() -> dict[str, Any]:
+    async with transaction() as session:
+        due = await invite_priority.due_order_ids(session)
+    if not due:
+        return {}
+    released = errors = 0
+    for order_id in due:
+        try:
+            async with transaction() as session:
+                released += await invite_priority.release(session, order_id) is not None
+        except Exception:  # one bad order never blocks the others
+            errors += 1
+            log.exception("invite_priority_release: order %s failed", order_id)
+    return {"due": len(due), "released": released, "errors": errors}
 
 
 @job("courier_presence_expiry", IntervalTrigger(minutes=5), "online couriers silent for 15 min → offline")

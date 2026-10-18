@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import OfferIntent, Order
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
+from app.services import invite_priority
 from app.services import order_transitions as ot
 from app.services.offers import verified_courier
 from app.services.orders import OrderRefused, dropped_by
@@ -44,9 +45,9 @@ async def signal(session: AsyncSession, user: CurrentUser, payload: dict[str, An
     courier = await verified_courier(session, user)
     order_id = _uuid(raw_id)
     order = await session.get(Order, order_id) if order_id else None
-    if order is None:
-        raise OrderRefused(404, "order_not_found")
     now = ot.now_utc()
+    if order is None or invite_priority.hidden_from(order, courier.id, now):
+        raise OrderRefused(404, "order_not_found")  # (another courier's head start: invite_priority)
     key = (OfferIntent.order_id == order.id, OfferIntent.courier_id == courier.id)
     previous = (await session.execute(select(OfferIntent.updated_at).where(*key))).scalar_one_or_none()
     fresh_before = previous is not None and previous >= now - INTENT_TTL

@@ -401,6 +401,9 @@ def _new_order(msg: Any, card: OrderCard, lang: str) -> tuple[list[str], str, li
     titles = [SEP.join(p for p in (h, d, area) if p) for h in heads]
     titles += [SEP.join(p for p in (h, d) if p) for h in heads]
     first = SEP.join(p for p in (_route(card, lang), _goods(card, lang)) if p)
+    if msg.metadata.get("priority_until"):  # the invite-link head start (invite_priority.py)
+        lead = "⏱ 60 s rien que pour vous" if lang == "fr" else "⏱ 60 ثانية لك وحدك"
+        first = SEP.join(p for p in (lead, first) if p)
     return titles, first, _lines(card, lang)
 
 
