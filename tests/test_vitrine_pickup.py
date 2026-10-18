@@ -4,6 +4,7 @@ pas venu, prévenir), the badge, the customer's cancellation, the confirmation t
 
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
 from sqlalchemy import select, text
 
@@ -14,6 +15,12 @@ from tests.factories import auth
 from tests.order_helpers import OrderWorld, notifications, reload, rows
 from tests.partner_helpers import PARTNER_API, WEBHOOK_URL, WebhookServer, make_partner
 from tests.vitrine_helpers import QA_CUSTOMER, cart_order, catalog_body, fn, ok, shop_body
+
+
+@pytest.fixture(autouse=True)
+def ods():
+    """The restaurant's ODS, answering « ok, order n° … » (vitrine_sync needs it to create any order)."""
+    return WebhookServer().install()
 
 
 @pytest.fixture
@@ -153,8 +160,8 @@ def test_closing_soon_and_closed():
 # --- placing --------------------------------------------------------------------------------------------
 
 
-async def test_a_pickup_order_goes_to_ods_and_never_to_a_courier(client, world, qa):
-    server = WebhookServer().install()
+async def test_a_pickup_order_goes_to_ods_and_never_to_a_courier(client, world, qa, ods):
+    server = ods
     _pw, shop_id, ids = await linked(client, world)
     body = pickup_order(
         shop_id, [{"product_id": ids[345], "qty": 2, "note": "bien chaud"}], pickup_name="Maman de Sami"
@@ -166,7 +173,8 @@ async def test_a_pickup_order_goes_to_ods_and_never_to_a_courier(client, world, 
     doc = r.json()["order"]
     assert doc["fulfillment"] == "pickup" and doc["status"] == "awaiting_restaurant"
     assert len(doc["pickup_code"]) == 3 and doc["pickup_code"].isdigit()
-    assert doc["pickup_name"] == "Maman de Sami" and doc["restaurant_ack_at"] is None
+    # ODS already has it when the customer reads « Reçue » (synchronous, inside the request)
+    assert doc["pickup_name"] == "Maman de Sami" and doc["restaurant_ack_at"] is not None
     order = await reload(Order, doc["id"])
     assert order.delivery_address == "Av. Habib Bourguiba, Sousse"  # the place where it is handed over
     assert float(order.delivery_fee) == 0 and order.courier_id is None
@@ -178,14 +186,15 @@ async def test_a_pickup_order_goes_to_ods_and_never_to_a_courier(client, world, 
 
     [confirmed] = await deliveries()
     data = confirmed.payload["data"]
-    assert confirmed.event == "vitrine.order_confirmed"
+    assert confirmed.event == "vitrine.order_confirmed" and confirmed.status == "delivered"
+    assert len(server.calls) == 1 and server.calls[0].headers["X-ODSD-Event"] == "vitrine.order_confirmed"
     assert data["fulfillment"] == "pickup" and data["pickup_code"] == doc["pickup_code"]
     assert data["courier"] is None and data["delivery_fee"] == 0 and data["pay_at_counter"] is True
     assert data["customer"] == {"first_name": "Maman de Sami", "badge": None}
     assert data["lines"][0]["ods_menu_id"] == 345 and data["items_total"] == 5.0
     assert data["extra_text"] == "Une serviette"
 
-    assert await run_job() == {"due": 1, "delivered": 1, "failed": 0}
+    assert await run_job() == {"due": 0, "delivered": 0, "failed": 0}  # never queued
     raw = server.calls[0].request.read().decode()
     for secret in ("22111333", "Rue de la plage", "Qa Client", QA_CUSTOMER):
         assert secret not in raw
@@ -340,20 +349,110 @@ async def test_the_customer_cancels_before_preparation_only(client, world, qa):
     assert r.status_code == 409 and r.json()["error"] == "pickup_in_preparation"
 
 
-async def test_ods_never_received_it(client, world, qa):
-    server = WebhookServer().install()
-    server.status = 500
+# --- all or nothing (owner 18/10: « confirmée = déjà chez le restaurateur ») ----
+
+
+def attempt(shop_id, ids, ref="cart-attempt-1"):
+    return pickup_order(shop_id, [{"product_id": ids[345], "qty": 2}], client_ref=ref)
+
+
+async def orders_count() -> int:
+    return len(await rows(select(Order)))
+
+
+def events(server) -> list:
+    return [(c.headers["X-ODSD-Event"], (c.body.get("data") or {}).get("reason")) for c in server.calls]
+
+
+async def test_ods_down_nothing_anywhere_then_the_retry_goes_through(client, world, qa, ods):
     _pw, shop_id, ids = await linked(client, world)
-    ref = await placed(client, qa, shop_id, ids)
-    for _ in range(partner_webhooks.MAX_ATTEMPTS):
-        await run_job()
-        async with SessionLocal() as s:
-            await s.execute(text("UPDATE partner_webhook_deliveries SET next_attempt_at = now()"))
-            await s.commit()
-    order = await reload(Order, ref)
-    assert order.status == "cancelled" and order.cancel_reason == "restaurant_unreachable"
-    told = (await notifications(qa, "order_cancelled"))[-1]
-    assert "n'a pas reçu votre commande" in told.body_fr
+    ods.status = 600  # ODS unreachable
+    r = await place(client, qa, attempt(shop_id, ids))
+    assert (
+        r.status_code == 503 and r.json()["error"] == "restaurant_unreachable" and r.json()["retry"] is True
+    )
+    assert await orders_count() == 0  # nothing at Delivery
+    # ODS may have it (no answer): told « not confirmed » at once; unreachable → queued (never a creation)
+    assert events(ods) == [("vitrine.order_confirmed", None), ("vitrine.order_cancelled", "not_confirmed")]
+    [queued] = await deliveries()
+    assert queued.event == "vitrine.order_cancelled" and queued.status == "pending"
+    # ODS is back: the same attempt (same ref) → the order, once; the queued « not confirmed » is obsolete
+    ods.status = 200
+    r = await place(client, qa, attempt(shop_id, ids))
+    assert r.status_code == 200, r.text
+    first_id = r.json()["order"]["id"]
+    async with SessionLocal() as s:
+        await s.execute(text("UPDATE partner_webhook_deliveries SET next_attempt_at = now()"))
+        await s.commit()
+    await run_job()
+    sent = events(ods)
+    assert sent.count(("vitrine.order_cancelled", "not_confirmed")) == 1  # the queued one never went out
+    rows_ = {d.event: d for d in await deliveries()}
+    assert rows_["vitrine.order_cancelled"].last_error == "obsolete"
+    # a double click / a retry after success: the same order, ODS not called again
+    calls = len(ods.calls)
+    again = await place(client, qa, attempt(shop_id, ids))
+    assert again.status_code == 200 and again.json()["order"]["id"] == first_id and len(ods.calls) == calls
+    assert await orders_count() == 1
+
+
+async def test_ods_slow_or_answer_lost_compensated_at_once_then_revived(client, world, qa, ods):
+    _pw, shop_id, ids = await linked(client, world)
+    ods.mode = "timeout"  # ODS slow, or it created the order and its answer was lost
+    calls = []
+
+    def lost_then_ok(request):
+        import json as _json
+
+        body = _json.loads(request.read())
+        calls.append(body["event"])
+        if body["event"] == "vitrine.order_confirmed":
+            raise httpx.ReadTimeout("lost", request=request)
+        return httpx.Response(200, json={"ok": True, "order_id": None})
+
+    partner_webhooks.set_transport(httpx.MockTransport(lost_then_ok))
+    r = await place(client, qa, attempt(shop_id, ids, "slow-1"))
+    assert r.status_code == 503 and await orders_count() == 0
+    assert calls == ["vitrine.order_confirmed", "vitrine.order_cancelled"]  # compensated right away
+    [comp] = await deliveries()
+    assert comp.status == "delivered" and comp.payload["data"]["reason"] == "not_confirmed"
+    ods.mode = None
+    ods.install()
+    r = await place(client, qa, attempt(shop_id, ids, "slow-1"))  # the retry: same reference, ODS revives it
+    assert r.status_code == 200 and await orders_count() == 1
+    assert r.json()["order"]["id"] == str(comp.payload["data"]["vitrine_ref"])
+
+
+async def test_ods_says_no_or_fails_on_its_side(client, world, qa, ods):
+    _pw, shop_id, ids = await linked(client, world)
+    ods.status = 401  # a clear « no »: nothing created at ODS, nothing to compensate
+    r = await place(client, qa, attempt(shop_id, ids, "no-1"))
+    assert r.status_code == 503 and events(ods) == [("vitrine.order_confirmed", None)]
+    ods.status, ods.mode = 200, "not_created"  # 200 but no order: never « Reçue »
+    r = await place(client, qa, attempt(shop_id, ids, "no-2"))
+    assert r.status_code == 503 and await orders_count() == 0
+
+
+async def test_a_delivered_vitrine_order_is_confirmed_in_ods_inside_the_acceptance(client, world, qa, ods):
+    _pw, shop_id, ids = await linked(client, world)
+    r = await place(client, qa, cart_order(shop_id, [{"product_id": ids[345], "qty": 1}]))
+    assert r.status_code == 200, r.text
+    order_id = r.json()["order"]["id"]
+    assert ods.calls == []  # a delivery: ODS hears of it only when an offer is accepted
+    q = await world.factory.user(email="vovine2891@sepole.com", full_name="Vovine", profile=False)
+    await world.make_courier(q, display_name="Vovine Livreur", phone_e164="+21655999888")
+    offer = await ok(client, q, "createOrderOffer", {"order_id": order_id, "fee": 4, "eta_minutes": 15})
+    ods.status = 600
+    r = await fn(client, qa, "acceptOrderOffer", {"order_id": order_id, "offer_id": offer["offer"]["id"]})
+    assert r.status_code == 503 and r.json()["error"] == "restaurant_unreachable"
+    order = await reload(Order, order_id)
+    assert order.status == "offers_received" and order.courier_id is None  # nothing changed
+    ods.status = 200
+    r = await fn(client, qa, "acceptOrderOffer", {"order_id": order_id, "offer_id": offer["offer"]["id"]})
+    assert r.status_code == 200, r.text
+    assert (await reload(Order, order_id)).status == "accepted"
+    confirmed = [d for d in await deliveries(order_id) if d.event == "vitrine.order_confirmed"]
+    assert len(confirmed) == 1 and confirmed[0].status == "delivered"
 
 
 async def test_cancelled_at_the_till_from_any_step_never_counts(client, world, qa):

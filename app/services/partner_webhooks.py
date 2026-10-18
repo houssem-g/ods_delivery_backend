@@ -243,17 +243,16 @@ def _url_allowed(url: str) -> bool:
     return url.startswith("https://") or (settings.is_local and url.startswith("http://"))
 
 
-async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, client: httpx.AsyncClient) -> bool:
-    """One attempt. Updates the row (delivered / rescheduled / failed); True when accepted (2xx)."""
+async def post_once(
+    session: AsyncSession, delivery: PartnerWebhookDelivery, client: httpx.AsyncClient
+) -> tuple[str | None, int | None, Any]:
+    """One signed POST of the row → (error, HTTP status, JSON body or None). Changes nothing."""
     from app.services import partner_orders
 
     partner = await session.get(Partner, delivery.partner_id)
-    now = datetime.now(UTC)
-    delivery.attempts += 1
     if partner is None or not partner.webhook_url or not partner.webhook_secret:
-        delivery.status, delivery.last_error = "failed", "webhook_not_configured"
-        await session.flush()
-        return False
+        return "webhook_not_configured", None, None
+    now = datetime.now(UTC)
     payload = dict(delivery.payload)
     data = dict(payload.get("data") or {})
     if delivery.order_id is not None:
@@ -267,13 +266,11 @@ async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, clien
     payload["data"] = data
     body = dumps(payload)
     timestamp = int(now.timestamp())
-    status: int | None = None
-    error: str | None = None
     try:
         secret = secret_box.decrypt(partner.webhook_secret) or ""
     except secret_box.SecretKeyError as exc:
         log.error("partner %s: webhook secret unreadable: %s", partner.id, exc)
-        secret, error = "", "secret_unreadable"
+        return "secret_unreadable", None, None
     headers = {
         "Content-Type": "application/json",
         EVENT_HEADER: delivery.event,
@@ -282,38 +279,46 @@ async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, clien
         SIGNATURE_HEADER: sign(secret, timestamp, body),
         "User-Agent": "ODS-Delivery-Webhooks/1.0",
     }
-    if error is None and not _url_allowed(partner.webhook_url):
-        error = "https_required"
-    if error is None:
-        try:
-            response = await client.post(partner.webhook_url, content=body, headers=headers)
-            status = response.status_code
-            if not 200 <= status < 300:
-                error = f"http_{status}"
-        except httpx.HTTPError as exc:
-            error = type(exc).__name__
+    if not _url_allowed(partner.webhook_url):
+        return "https_required", None, None
+    try:
+        response = await client.post(partner.webhook_url, content=body, headers=headers)
+    except httpx.HTTPError as exc:
+        return type(exc).__name__, None, None
+    try:
+        answer = response.json()
+    except ValueError:
+        answer = None
+    if not 200 <= response.status_code < 300:
+        return f"http_{response.status_code}", response.status_code, answer
+    return None, response.status_code, answer
+
+
+async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, client: httpx.AsyncClient) -> bool:
+    """One attempt of the queue. Updates the row (delivered / rescheduled / failed); True when accepted (2xx).
+
+    A Vitrine order's CREATION in ODS never goes through this queue: it is synchronous, inside the customer's
+    request (app/services/vitrine_sync.py). The queue carries the later steps, and the compensations."""
+    now = datetime.now(UTC)
+    delivery.attempts += 1
+    if delivery.event == "vitrine.order_cancelled" and (delivery.payload.get("data") or {}).get("reason") == (
+        "not_confirmed"
+    ):
+        from app.services import vitrine_sync
+
+        if await vitrine_sync.compensation_obsolete(session, delivery):  # the customer's retry went through
+            delivery.status, delivery.delivered_at, delivery.last_error = "delivered", now, "obsolete"
+            await session.flush()
+            return True
+    error, status, _answer = await post_once(session, delivery, client)
     delivery.last_status, delivery.last_error = status, error
     if error is None:
         delivery.status, delivery.delivered_at = "delivered", now
-    elif delivery.attempts >= MAX_ATTEMPTS:
+    elif error == "webhook_not_configured" or delivery.attempts >= MAX_ATTEMPTS:
         delivery.status = "failed"
     else:
         delivery.next_attempt_at = now + timedelta(minutes=BACKOFF_MINUTES[delivery.attempts - 1])
     await session.flush()
-    if delivery.event == "vitrine.order_confirmed" and delivery.order_id is not None:
-        # « Je viens chercher »: the customer sees « reçue » once ODS has it; never received → cancelled
-        from app.services import vitrine_pickup
-
-        try:
-            async with session.begin_nested():
-                if error is None:
-                    await vitrine_pickup.on_confirmation_delivered(
-                        session, await session.get(Order, delivery.order_id)
-                    )
-                elif delivery.status == "failed":
-                    await vitrine_pickup.on_confirmation_failed(session, delivery.order_id)
-        except Exception:
-            log.exception("pickup: confirmation outcome not applied for %s", delivery.order_id)
     return error is None
 
 

@@ -13,9 +13,9 @@ ods-audit/livraison-1610/vitrine/click-collect/CONTRAT.md.
 - The restaurant moves it, BY HAND, from ODS (`POST /api/partner/v1/vitrine-orders/{ref}/pickup`):
   preparing, ready, collected (paid at the counter), refused (before preparing), not_collected (« Pas venu »,
   counted in the « n'a pas payé » badge), notify (« Prévenir le client »: the « prête » notice again).
-  Owner 18/10: nothing automatic — no reminder, no minimum delay, no closing by time. The only automatic
-  cancellation is when ODS never received the order (its webhook failed for good): the customer must not go
-  to a counter that does not know him.
+  Owner 18/10: nothing automatic — no reminder, no minimum delay, no closing by time.
+- The order reaches ODS synchronously, inside the customer's request, all or nothing (vitrine_sync.py):
+  « Reçue » only once ODS has it; nothing is ever cancelled because ODS did not answer later.
 """
 
 import json
@@ -52,7 +52,6 @@ REFUSE_REASONS = {
     "other": (None, None),
 }
 NOT_COLLECTED = "not_collected"
-UNREACHABLE = "restaurant_unreachable"
 RESTAURANT_CANCELLED = (
     "restaurant_cancelled"  # cancelled at the till (or a test ended): any open step, never counted
 )
@@ -232,16 +231,14 @@ async def check_and_number(session: AsyncSession, order: Order, extras: dict[str
 
 
 async def after_start(session: AsyncSession, order: Order) -> None:
-    """place_order, once the order is 'awaiting_restaurant': the restaurant's ODS gets it now (queued; the
-    job sends it within 30 s, then retries 1 → 16 min)."""
-    from app.services import vitrine_orders
+    """place_order, the order written but NOT committed: the restaurant's ODS takes it now, or the
+    customer's request fails and nothing is kept (app/services/vitrine_sync.py)."""
+    from app.services import vitrine_orders, vitrine_sync
 
     partner = await vitrine_orders.linked_partner(session, order)
     if partner is None or not partner.webhook_url:
         raise OrderRefused(409, "pickup_unavailable", reason="not_linked")
-    await partner_webhooks.queue(
-        session, partner, vitrine_orders.CONFIRMED, order, await confirmation(session, order)
-    )
+    await vitrine_sync.confirm(session, partner, order, await confirmation(session, order))
 
 
 # --- what ODS receives ---------------------------------------------------------------------------------
@@ -395,14 +392,12 @@ async def _notify_cancelled(session: AsyncSession, order: Order, kind: str, why:
             "title_ar": f"تمّ إغلاق الطلب · رقم {order.pickup_code}",
             "body_ar": f"أغلق {shop} طلبك: لم تأتِ لاستلامه.",
         }
-    else:  # UNREACHABLE
+    else:
         texts = {
-            "title_fr": "Commande non reçue",
-            "body_fr": f"{shop} n'a pas reçu votre commande. Rien à payer. Vous pouvez l'appeler ou "
-            "commander "
-            "en livraison.",
-            "title_ar": "لم يصل الطلب",
-            "body_ar": f"لم يتلقَّ {shop} طلبك. لا شيء للدفع. يمكنك الاتصال به أو الطلب مع التوصيل.",
+            "title_fr": "Commande annulée",
+            "body_fr": f"Votre commande chez {shop} est annulée. Rien à payer.",
+            "title_ar": "أُلغي الطلب",
+            "body_ar": f"أُلغي طلبك لدى {shop}. لا شيء للدفع.",
         }
     await _tell(session, order, "order_cancelled", texts, reason=kind, fault_free=kind != NOT_COLLECTED)
 
@@ -471,25 +466,3 @@ async def apply_state(session: AsyncSession, partner: Partner, ref: str, raw: An
     await session.flush()
     emit(session, "Order", "update", order.id)
     return {"status": "updated", "order_status": order.status}
-
-
-# --- the confirmation's fate (partner_webhooks.deliver) ------------------------------------------------
-
-
-async def on_confirmation_delivered(session: AsyncSession, order: Order | None) -> None:
-    if order is not None and order.fulfillment == "pickup" and order.restaurant_ack_at is None:
-        order.restaurant_ack_at = datetime.now(UTC)
-        emit(session, "Order", "update", order.id)
-
-
-async def on_confirmation_failed(session: AsyncSession, order_id: Any) -> None:
-    """Every attempt failed (about 30 min): the restaurant never got the order — the customer is told,
-    nothing to pay. The only automatic step of « Je viens chercher » (owner 18/10: no reminder, no
-    closing by time)."""
-    order = await ot.lock_order(session, order_id)
-    if order is None or order.fulfillment != "pickup" or order.status != "awaiting_restaurant":
-        return
-    if order.restaurant_ack_at is not None:
-        return
-    await _cancel(session, order, UNREACHABLE, "system", "pickupUnreachable")
-    await _notify_cancelled(session, order, UNREACHABLE)

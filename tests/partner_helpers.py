@@ -109,6 +109,9 @@ class WebhookServer:
 
     status: int = 200
     calls: list[Captured] = field(default_factory=list)
+    # « Je viens chercher » / Vitrine creation (vitrine_sync): "timeout" = no answer in time (ODS slow, or the
+    # answer lost after ODS created the order); "not_created" = 200 {ok: false} (ODS failed on its side)
+    mode: str | None = None
 
     def transport(self) -> httpx.MockTransport:
         def handler(request: httpx.Request) -> httpx.Response:
@@ -116,7 +119,12 @@ class WebhookServer:
             self.calls.append(Captured(request=request, body=json.loads(raw) if raw else {}))
             if self.status >= 600:
                 raise httpx.ConnectError("refused", request=request)
-            return httpx.Response(self.status, json={"ok": self.status < 300})
+            if self.mode == "timeout":
+                raise httpx.ReadTimeout("no answer", request=request)
+            if self.mode == "not_created":
+                return httpx.Response(200, json={"ok": False, "error": "internal"})
+            # ODS answers the order it created / found again (vitrine.order_confirmed needs it)
+            return httpx.Response(self.status, json={"ok": self.status < 300, "order_id": 4242})
 
         return httpx.MockTransport(handler)
 

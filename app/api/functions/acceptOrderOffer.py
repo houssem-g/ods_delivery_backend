@@ -6,7 +6,8 @@ for no-response incidents any more (owner, 10/10/2026). The courier is notified 
 
 Body: { order_id, offer_id }. Returns { success, courier_user_id, offer }.
 Errors: order_not_found / offer_not_found (404), Forbidden (403),
-order_not_open / offer_not_pending / courier_unavailable (409).
+order_not_open / offer_not_pending / courier_unavailable (409), restaurant_unreachable (503: a
+Vitrine order the restaurant's ODS did not take — nothing changed, the customer accepts again).
 """
 
 from typing import Any
@@ -16,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.functions._common import answers_refusals, document
 from app.security.deps import CurrentUser
+from app.services import vitrine_sync
 from app.services.offers import accept_offer
 
 
@@ -23,7 +25,14 @@ from app.services.offers import accept_offer
 async def handle(
     payload: dict[str, Any], user: CurrentUser, session: AsyncSession, request: Request
 ) -> tuple[int, dict[str, Any]]:
-    _order, offer, courier_user = await accept_offer(session, user, payload)
+    try:
+        _order, offer, courier_user = await accept_offer(session, user, payload)
+    except vitrine_sync.ConfirmFailed as exc:
+        # a Vitrine order: the restaurant's ODS did not take it → acceptance undone, the customer tries again
+        await vitrine_sync.on_failure(session, exc)
+        return exc.status, exc.body()
+    if session.info.get("vitrine_confirmed"):
+        await vitrine_sync.commit_or_compensate(session)
     return 200, {
         "success": True,
         "courier_user_id": courier_user.email,

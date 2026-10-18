@@ -209,14 +209,18 @@ async def transition(
         except Exception:  # a webhook never fails the delivery step itself
             log.exception("partner webhook not queued: order %s %s -> %s", order.id, from_status, to_status)
     elif order.source == "vitrine":
-        # A Vitrine order of a shop linked to an ODS restaurant: the kitchen hears about it.
-        from app.services import vitrine_orders
+        # A Vitrine order of a shop linked to ODS: the kitchen hears of it. Its CREATION in ODS is
+        # synchronous and must fail the step when ODS does not take it (vitrine_sync.ConfirmFailed); the later
+        # events are queued and never fail the step.
+        from app.services import vitrine_orders, vitrine_sync
 
         try:
             async with session.begin_nested():
                 await vitrine_orders.on_transition(
                     session, order, from_status, to_status, reason, cancelled_by
                 )
+        except vitrine_sync.ConfirmFailed:
+            raise
         except Exception:
             log.exception("vitrine webhook not queued: order %s %s -> %s", order.id, from_status, to_status)
     return event

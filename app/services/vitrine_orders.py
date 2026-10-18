@@ -508,7 +508,11 @@ async def on_transition(
         if partner is None:
             partner = await linked_partner(session, order)
             if partner is not None:
-                events.append((CONFIRMED, await _confirmation(session, order)))
+                # the restaurant gets it NOW, inside the acceptance, or the acceptance fails (vitrine_sync)
+                from app.services import vitrine_sync
+
+                await vitrine_sync.confirm(session, partner, order, await _confirmation(session, order))
+                return
         else:  # a new courier after the first one dropped the delivery
             events.append(_updated(order, "assigned", courier=await _courier(session, order)))
     elif partner is None:

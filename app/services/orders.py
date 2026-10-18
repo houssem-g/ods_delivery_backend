@@ -532,6 +532,20 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     user = (await session.execute(select(User).where(User.id == user_id).with_for_update())).scalar_one()
     address, default_point = await default_address(session, user.id)
     vitrine_extras = None
+    pickup_id = None
+    v_raw = raw.get("vitrine") if isinstance(raw, dict) and isinstance(raw.get("vitrine"), dict) else {}
+    if v_raw.get("fulfillment") == "pickup":
+        # « Je viens chercher » (vitrine_sync.py): the id comes from the cart's attempt key: a retry or a
+        # double click finds the same order (at Delivery and at ODS) instead of making a second one
+        from app.services import vitrine_sync
+
+        client_ref = vitrine_sync.clean_client_ref(v_raw.get("client_ref")) or uuid.uuid4().hex
+        pickup_id = vitrine_sync.pickup_order_id(user.id, client_ref)
+        await vitrine_sync.lock_ref(session, pickup_id)
+        existing = await session.get(Order, pickup_id)
+        if existing is not None and existing.customer_id == user.id:
+            session.info["vitrine_existing"] = True
+            return existing
     if isinstance(raw, dict) and raw.get("vitrine") is not None:
         # A Vitrine cart (app/services/vitrine_orders.py): items, prices and shop rebuilt server side.
         from app.services import vitrine_orders
@@ -544,6 +558,10 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     if pickup:  # « Je viens chercher »: 2 open at most, no duplicate, the number of the day
         from app.services import vitrine_pickup
 
+        if pickup_id is not None:
+            built.order.id = pickup_id
+            for stop in built.stops:
+                stop.order_id = pickup_id
         await vitrine_pickup.check_and_number(session, built.order, vitrine_extras)
     open_count = (
         await session.execute(
@@ -570,7 +588,9 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
         await vitrine_orders.record_options(session, vitrine_extras)
     if pickup:
         await ot.start(session, built.order, user.id, "placeOrder", status="awaiting_restaurant")
-        await vitrine_pickup.after_start(session, built.order)
+        await vitrine_pickup.after_start(
+            session, built.order
+        )  # ODS has it now, or ConfirmFailed (rolled back)
         return built.order
     await ot.start(session, built.order, user.id, "placeOrder")
     return built.order

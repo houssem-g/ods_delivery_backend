@@ -26,6 +26,15 @@ from tests.vitrine_helpers import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _ods_answers():
+    """ODS answers « ok, order n° … »: a Vitrine order is created there synchronously, inside the
+    acceptance (app/services/vitrine_sync.py). A test installs its own server to look at the calls."""
+    from tests.partner_helpers import WebhookServer
+
+    return WebhookServer().install()
+
+
 @pytest.fixture
 async def world(factory):
     return await OrderWorld(factory).setup()
@@ -257,7 +266,8 @@ async def test_an_accepted_offer_sends_the_order_to_ods_then_every_step(client, 
     assert data["test"] is True and data["delivery_fee"] == 4
     assert data["courier"] == {**data["courier"], "first_name": "Vovine", "phone": "+21655999888"}
 
-    assert await run_job() == {"due": 1, "delivered": 1, "failed": 0}
+    # sent inside the acceptance (vitrine_sync), never queued
+    assert confirmed.status == "delivered" and await run_job() == {"due": 0, "delivered": 0, "failed": 0}
     [call] = server.calls
     assert (
         server.verify(call, pw.webhook_secret) and call.headers["X-ODSD-Event"] == "vitrine.order_confirmed"

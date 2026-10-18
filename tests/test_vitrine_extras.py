@@ -100,6 +100,15 @@ def test_resolve_and_text():
 # --- the whole path ----------------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _ods_answers():
+    """ODS answers « ok, order n° … »: a Vitrine order is created there synchronously, inside the
+    acceptance (app/services/vitrine_sync.py). A test installs its own server to look at the calls."""
+    from tests.partner_helpers import WebhookServer
+
+    return WebhookServer().install()
+
+
 @pytest.fixture
 async def world(factory):
     return await OrderWorld(factory).setup()
