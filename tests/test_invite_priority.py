@@ -320,3 +320,16 @@ async def test_his_offer_is_pinned_for_the_customer_and_on_the_board(client, wor
         await client.get(f"/api/entities/OrderOffer/{mine.json()['offer']['id']}", headers=auth(sami_user))
     ).json()
     assert own.get("from_your_courier") is None
+
+
+async def test_a_qa_campaign_account_order_is_always_a_test_order(client, world, factory, monkeypatch):
+    # the screen strips a leading « QA TEST » (parseItems): the server marks it back (QA team 19/10)
+    qa_cust = await factory.user(
+        email="qa-client9@example.test", full_name="QA Client", phone_e164="+21622999111"
+    )
+    monkeypatch.setattr(settings, "QA_ACCOUNTS", ["qa-client9@example.test"])
+    world.customer = qa_cust
+    body = await place(client, world, items_text="S1 lait 1 L")
+    order = await reload(Order, body["order"]["id"])
+    assert order.items_text.startswith("QA TEST ")
+    assert await notifications(world.courier_user, "new_order") == []  # never a real courier

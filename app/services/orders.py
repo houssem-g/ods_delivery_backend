@@ -59,6 +59,16 @@ def is_qa_account(email: str | None) -> bool:
     return (email or "").strip().lower() in {e.lower() for e in settings.QA_ACCOUNTS}
 
 
+TEST_MARK = "QA TEST "
+
+
+def is_synthetic_qa_account(email: str | None) -> bool:
+    """The temporary QA campaign accounts (qa-*@example.test listed in QA_ACCOUNTS): every order they
+    place is a test order."""
+    e = (email or "").strip().lower()
+    return e.startswith("qa-") and e.endswith("@example.test") and is_qa_account(e)
+
+
 def round3(value: float) -> Decimal:
     return Decimal(str(value)).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
 
@@ -395,6 +405,10 @@ def build_order(
     items_text = _text(o.get("items_text"), 2000)
     if not items_text:
         raise OrderRefused(400, "invalid_items")
+    if is_synthetic_qa_account(user.email) and not is_test_order(items_text):
+        # the screen strips a leading « QA TEST » (parseItems): a qa-*@example.test order must
+        # never reach the real couriers (QA team 19/10)
+        items_text = (TEST_MARK + items_text)[:2000]
     shop_name = _text(o.get("shop_name"), 200)
     if not shop_name:
         raise OrderRefused(400, "invalid_shop")
