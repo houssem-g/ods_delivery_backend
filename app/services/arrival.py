@@ -196,9 +196,8 @@ async def courier_origin(
 ) -> tuple[float, float] | None:
     """Where the courier starts from (module doc: the app's position, else the server's recent one)."""
     lat, lng = as_float(payload.get("from_lat")), as_float(payload.get("from_lng"))
-    if lat is not None and lng is not None and not within(lat, lng, ORDER_BOUNDS):
-        return None  # he is abroad (his address there): shop → customer only
-    sent = (lat, lng) if lat is not None and lng is not None else None
+    abroad = lat is not None and lng is not None and not within(lat, lng, ORDER_BOUNDS)
+    sent = (lat, lng) if lat is not None and lng is not None and not abroad else None
     stored = None
     if courier is not None:
         row = (
@@ -210,6 +209,12 @@ async def courier_origin(
         ).first()
         if row is not None and row[0] is not None and within(float(row[0]), float(row[1]), ORDER_BOUNDS):
             stored = (float(row[0]), float(row[1]), row[2])
+    if abroad:
+        # his address abroad (shop → customer only), unless the server saw him in Tunisia moments
+        # ago: then that fix (« abroad » would otherwise dodge the arrival and « annoncé »)
+        return (
+            (stored[0], stored[1]) if stored is not None and _fresh(stored[2], SPOOF_FIX_FRESH, now) else None
+        )
     if sent is not None:
         if (
             stored is not None

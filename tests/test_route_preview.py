@@ -75,6 +75,21 @@ async def test_courier_gets_the_road_route_and_it_is_cached(client, world, osrm_
 
 
 async def test_abroad_position_is_ignored(client, world, osrm_ok):
+    from datetime import timedelta
+
+    from sqlalchemy import update
+
+    from app.db import SessionLocal
+    from app.models import Courier
+    from tests.order_helpers import now
+
+    async with SessionLocal() as s:  # no recent fix in Tunisia: he really is abroad
+        await s.execute(
+            update(Courier)
+            .where(Courier.id == world.courier.id)
+            .values(last_seen_at=now() - timedelta(hours=2))
+        )
+        await s.commit()
     order = await world.order()
     body = (await ask(client, world.courier_user, order.id, PARIS)).json()
     assert body["success"] is True and body["to_shop"] is None and body["delivery"]["distance_km"] == 3.1

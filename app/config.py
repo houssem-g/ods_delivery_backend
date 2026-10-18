@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_AUTH_EMAIL: str = "6/minute"
     # getOfferRank per courier: the price sheet asks while he edits (debounced) + his offers list
     RATE_LIMIT_OFFER_RANK: str = "60/minute"
+    # getOfferEstimate per courier: the offer sheet asks once per order and ~100 m (routes cost OSRM calls)
+    RATE_LIMIT_OFFER_ESTIMATE: str = "20/minute"
     # getNetworkPulse: anonymous callers per IP (Welcome screen), signed-in callers per user
     RATE_LIMIT_PULSE_ANONYMOUS: str = "30/minute"
     RATE_LIMIT_PULSE: str = "60/minute"

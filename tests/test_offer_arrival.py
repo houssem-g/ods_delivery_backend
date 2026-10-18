@@ -166,13 +166,13 @@ async def test_estimate_position_rules(client, world, factory):
     # no position sent: the server's recent one (the shop itself) → 0 min to the shop
     body = (await call(client, world.courier_user, "getOfferEstimate", ask)).json()
     assert body["to_shop"] == {"distance_km": 0.0, "minutes": 0} and body["total_minutes"] == 12
-    # abroad (his address in Paris): shop → customer only, no total
+    # « abroad » while the server saw him at the shop a minute ago: that fix (no dodging « annoncé »)
     paris = (
         await call(
             client, world.courier_user, "getOfferEstimate", ask | {"from_lat": PARIS[0], "from_lng": PARIS[1]}
         )
     ).json()
-    assert paris["to_shop"] is None and paris["total_minutes"] is None and paris["delivery"]["minutes"] == 4
+    assert paris["to_shop"] == {"distance_km": 0.0, "minutes": 0} and paris["total_minutes"] == 12
     # a sent position 115 km from a fix 1 minute old is not his: the server's fix wins
     tunis = (
         await call(
@@ -188,6 +188,15 @@ async def test_estimate_position_rules(client, world, factory):
         )
     ).json()
     assert far["to_shop"]["distance_km"] > 100
+    # really abroad (his address in Paris, no recent fix here): shop → customer only, no total
+    abroad = (
+        await call(
+            client, world.courier_user, "getOfferEstimate", ask | {"from_lat": PARIS[0], "from_lng": PARIS[1]}
+        )
+    ).json()
+    assert (
+        abroad["to_shop"] is None and abroad["total_minutes"] is None and abroad["delivery"]["minutes"] == 4
+    )
     # and no position at all: no courier → shop line
     alone = (await call(client, world.courier_user, "getOfferEstimate", ask)).json()
     assert alone["to_shop"] is None and alone["total_minutes"] is None
@@ -369,6 +378,25 @@ async def test_an_offer_without_delay_ranks_last_on_arrival(client, world, facto
     ).json()
     assert body["eta_rank"] == 1 and [e["who"] for e in body["board"]] == ["me", "A"]
     assert body["board"][0]["fastest"] and body["board"][1]["cheapest"]
+
+
+async def test_board_leaves_out_the_couriers_the_customer_blocked(client, world, factory):
+    from app.models import UserBlock
+
+    order = await world.order()
+    await rival(world, factory, order, 0, "2", 10, 5)
+    blocked = await rival(world, factory, order, 1, "1", 5, 4)
+    async with SessionLocal() as s:
+        s.add(UserBlock(blocker_id=world.customer.id, blocked_id=blocked.user_id))
+        await s.commit()
+    body = (
+        await call(
+            client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 3, "eta": 20}
+        )
+    ).json()
+    assert (body["rank"], body["total"], body["eta_rank"]) == (2, 2, 2)
+    assert [(e["who"], e["fee"]) for e in body["board"]] == [("A", 2.0), ("me", 3.0)]
+    assert body["other_fees"] == [2.0]
 
 
 async def test_estimate_fields_are_for_the_offer_customer_only(client, world, factory):

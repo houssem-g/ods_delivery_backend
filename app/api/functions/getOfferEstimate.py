@@ -12,7 +12,7 @@ to_shop: {distance_km, minutes} | null (position unknown), wait: {minutes, sourc
 "default", samples, shops}, delivery: {distance_km, minutes}, total_minutes | null,
 announce_margin_minutes } or { success: false, reason: "no_location" }.
 Errors: order_id missing (400), courier_profile_missing (403), order not found / not readable (404),
-too_many_estimate_requests (429, RATE_LIMIT_OFFER_RANK per courier).
+too_many_estimate_requests (429, RATE_LIMIT_OFFER_ESTIMATE per courier).
 """
 
 from typing import Any
@@ -36,8 +36,8 @@ async def handle(
 ) -> tuple[int, dict[str, Any]]:
     if not payload.get("order_id"):
         return 400, {"error": "Missing required field: order_id"}
-    if not allow("getOfferEstimate", f"user:{user.id}", settings.RATE_LIMIT_OFFER_RANK):
-        return 429, {"error": "too_many_estimate_requests", "limit": settings.RATE_LIMIT_OFFER_RANK}
+    if not allow("getOfferEstimate", f"user:{user.id}", settings.RATE_LIMIT_OFFER_ESTIMATE):
+        return 429, {"error": "too_many_estimate_requests", "limit": settings.RATE_LIMIT_OFFER_ESTIMATE}
     courier = await courier_of_user(session, user.id)
     if courier is None:
         return 403, {"error": "courier_profile_missing"}

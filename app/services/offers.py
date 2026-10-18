@@ -11,11 +11,11 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import and_, delete, exists, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, courier_stats
+from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, UserBlock, courier_stats
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
 from app.services import arrival, credit, partner_webhooks, step_notices, text_filter
@@ -109,14 +109,26 @@ async def offer_rank(
     `board` (single order only): every pending offer as the customer sees them — sorted by arrival,
     then price — each `{who: "me" | "A" | "B" …, fee, eta_minutes, fastest, cheapest}`. The others are
     letters in the order they offered: never an id, a name, a phone, a distance or a position."""
+    # the offers the customer sees: a courier he blocked (or who blocked him) is on nobody's board
+    # (the OrderOffer entity's read rule), so the places and the badges are the ones he reads
+    customer = select(Order.customer_id).where(Order.id == order_id).scalar_subquery()
+    offerer = Courier.user_id  # joined below
+    blocks = UserBlock.__table__.c
     others = (
         OrderOffer.order_id == order_id,
         OrderOffer.status == "pending",
         OrderOffer.courier_id != courier_id,
+        ~exists().where(
+            or_(
+                and_(blocks.blocker_id == customer, blocks.blocked_id == offerer),
+                and_(blocks.blocker_id == offerer, blocks.blocked_id == customer),
+            )
+        ),
     )
     rows = (
         await session.execute(
             select(OrderOffer.proposed_fee, OrderOffer.eta_minutes, OrderOffer.created_at)
+            .join(Courier, Courier.id == OrderOffer.courier_id)
             .where(*others)
             .order_by(OrderOffer.created_at, OrderOffer.id)
         )
@@ -362,12 +374,20 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
 
     courier = await verified_courier(session, user)
     order_uuid = _as_uuid(order_id)
-    # the arrival from where he is (arrival.py), computed before the order's lock (OSRM may take seconds)
-    estimate = (
-        await arrival.offer_estimate(session, order_uuid, courier, payload, ot.now_utc())
+    # the cheap refusals first (no route computed for an offer that cannot go), again under the lock
+    peek = (
+        (await session.execute(select(Order.customer_id, Order.status).where(Order.id == order_uuid))).first()
         if order_uuid is not None
         else None
     )
+    if peek is None:
+        raise OrderRefused(404, "order_not_found")
+    if peek.customer_id == user.id:
+        raise OrderRefused(403, "own_order")
+    if peek.status not in ot.OPEN_STATUSES:
+        raise OrderRefused(409, "order_not_open", status=peek.status)
+    # the arrival from where he is (arrival.py), computed before the order's lock (OSRM may take seconds)
+    estimate = await arrival.offer_estimate(session, order_uuid, courier, payload, ot.now_utc())
     order = await ot.lock_order(session, order_id)
     if order is None:
         raise OrderRefused(404, "order_not_found")
