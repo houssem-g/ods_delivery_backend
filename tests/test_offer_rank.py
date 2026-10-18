@@ -55,7 +55,10 @@ async def test_rank_alone_and_by_typed_fee(client, world, factory):
     assert alone.json() == {
         "success": True, "rank": 1, "total": 1, "cheapest": True, "tied": 0, "my_offer": None,
         "other_fees": [], "lowest_other": None, "my_eta": None, "eta_rank": None, "eta_tied": 0,
-        "board": [{"who": "me", "fee": 5.0, "eta_minutes": None, "fastest": False, "cheapest": False}],
+        "board": [
+            {"who": "me", "fee": 5.0, "eta_minutes": None, "fastest": False, "cheapest": False,
+             "verified": False}
+        ],
     }  # fmt: skip
 
     await rivals(world, factory, order, "4", "6", "6", "9.5")

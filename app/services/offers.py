@@ -220,9 +220,20 @@ async def offer_rank(
     if mine is not None:
         before = sum(1 for r in rows if r[2] < mine.created_at)
         me["_key"] = _arrival_key(estimated, eta, float(fee), (0, before - 0.5))
-    # the badges by the true arrival / price; the customer's own courier on top of the list
+    # the badges by the true arrival / price; the customer's own courier on top of the list.
+    # « le + rapide » (owner 18/10/2026, 3rd decision): only an offer with a COMPUTED arrival, and only
+    # when no shown delay is shorter than its own (an unverified « 18 min » next to a computed 22 min:
+    # nobody is « le + rapide »)
     by_arrival = sorted(entries, key=lambda e: e["_key"])
-    fastest = by_arrival[0] if by_arrival[0]["_key"][0] < 2 else None
+    shown = [e["eta_minutes"] for e in entries if e["eta_minutes"] is not None]
+    first = by_arrival[0]
+    fastest = (
+        first
+        if first["_key"][0] == 0
+        and first["eta_minutes"] is not None
+        and first["eta_minutes"] <= min(shown, default=first["eta_minutes"])
+        else None
+    )
     cheapest = min(entries, key=lambda e: (e["fee"], e["_key"]))
     entries.sort(key=lambda e: (0 if e["pinned"] else 1, e["_key"]))
     multi = len(entries) > 1
@@ -233,6 +244,8 @@ async def offer_rank(
             "eta_minutes": e["eta_minutes"],
             "fastest": multi and e is fastest,
             "cheapest": multi and e is cheapest,
+            # its delay was checked against the server's computation (never for an offer without one)
+            "verified": e["_key"][0] == 0,
             **({"pinned": True} if e["pinned"] else {}),
         }
         for e in entries

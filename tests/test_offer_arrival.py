@@ -5,6 +5,7 @@ by the ranking (getOfferRank: arrival rank + the anonymous board). OSRM off unle
 
 import json
 from datetime import timedelta
+from decimal import Decimal
 
 import httpx
 import pytest
@@ -270,7 +271,7 @@ async def test_offer_stores_the_estimate_and_the_delay_never_goes_under_it(clien
 
 async def test_ranked_by_the_computed_arrival_never_the_typed_one(client, world, factory):
     order = await world.order()
-    typed_fast = await rival(world, factory, order, 0, "3", 5, 6)  # A: typed 5, no computation
+    typed_fast = await rival(world, factory, order, 0, "3", 5, 6, est=None)  # A: typed 5, no computation
     computed = await rival(world, factory, order, 1, "3", 30, 5)  # B: typed 30, computed 25
     async with SessionLocal() as s:
         await s.execute(
@@ -288,7 +289,10 @@ async def test_ranked_by_the_computed_arrival_never_the_typed_one(client, world,
     ).json()
     assert [e["who"] for e in body["board"]] == ["B", "me", "A"]
     assert [e["eta_minutes"] for e in body["board"]] == [30, 30, 5]  # the typed delays are shown
-    assert body["board"][0]["fastest"] and body["eta_rank"] == 2
+    assert body["eta_rank"] == 2
+    # A shows 5 min (unverified): nobody is « le + rapide » (a computed 30 next to a shown 5)
+    assert not any(e["fastest"] for e in body["board"])
+    assert [e["verified"] for e in body["board"]] == [True, True, False]
     # without his computation (position unknown), his typed delay ranks him after the computed ones
     blind = (
         await call(
@@ -327,7 +331,9 @@ async def test_offer_without_any_position_has_no_estimate(client, world):
 # --- the ranking: price AND arrival, anonymous ------------------------------------------------------
 
 
-async def rival(world, factory, order, n, fee, eta, minutes_ago):
+async def rival(world, factory, order, n, fee, eta, minutes_ago, est="same"):
+    """Another courier's pending offer; `est` its computed arrival (default: the same as its delay;
+    None: no computation, his position was unknown)."""
     user = await factory.user(email=f"rival{n}@example.test", full_name=f"Rival Person {n}", profile=False)
     courier = await world.make_courier(user, display_name=f"Rival Person {n}", phone_e164=f"+2165000000{n}")
     offer = await world.offer(order, courier, fee=fee)
@@ -335,7 +341,11 @@ async def rival(world, factory, order, n, fee, eta, minutes_ago):
         await s.execute(
             update(OrderOffer)
             .where(OrderOffer.id == offer.id)
-            .values(eta_minutes=eta, created_at=now() - timedelta(minutes=minutes_ago))
+            .values(
+                eta_minutes=eta,
+                estimated_eta_minutes=eta if est == "same" else est,
+                created_at=now() - timedelta(minutes=minutes_ago),
+            )
         )
         await s.commit()
     return courier
@@ -349,7 +359,10 @@ async def test_board_sorted_like_the_customer_sees_it_and_anonymous(client, worl
         await rival(world, factory, order, 2, "4", 35, 3),  # C
     ]
     r = await call(
-        client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 2.48, "eta": 22}
+        client,
+        world.courier_user,
+        "getOfferRank",
+        {"order_id": str(order.id), "fee": 2.48, "eta": 22, "estimate": 22},
     )
     body = r.json()
     assert (body["rank"], body["total"], body["eta_rank"], body["eta_tied"], body["my_eta"]) == (
@@ -360,10 +373,10 @@ async def test_board_sorted_like_the_customer_sees_it_and_anonymous(client, worl
         22,
     )
     assert body["board"] == [
-        {"who": "A", "fee": 3.5, "eta_minutes": 15, "fastest": True, "cheapest": False},
-        {"who": "me", "fee": 2.48, "eta_minutes": 22, "fastest": False, "cheapest": True},
-        {"who": "B", "fee": 2.5, "eta_minutes": 28, "fastest": False, "cheapest": False},
-        {"who": "C", "fee": 4.0, "eta_minutes": 35, "fastest": False, "cheapest": False},
+        {"who": "A", "fee": 3.5, "eta_minutes": 15, "fastest": True, "cheapest": False, "verified": True},
+        {"who": "me", "fee": 2.48, "eta_minutes": 22, "fastest": False, "cheapest": True, "verified": True},
+        {"who": "B", "fee": 2.5, "eta_minutes": 28, "fastest": False, "cheapest": False, "verified": True},
+        {"who": "C", "fee": 4.0, "eta_minutes": 35, "fastest": False, "cheapest": False, "verified": True},
     ]
     raw = r.text
     for c in rivals:  # never an id, a name, a phone or a position of another courier
@@ -373,7 +386,10 @@ async def test_board_sorted_like_the_customer_sees_it_and_anonymous(client, worl
     # a tie at the same minute: the cheaper first; ex æquo counted
     tie = (
         await call(
-            client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 3.6, "eta": 15}
+            client,
+            world.courier_user,
+            "getOfferRank",
+            {"order_id": str(order.id), "fee": 3.6, "eta": 15, "estimate": 15},
         )
     ).json()
     assert tie["eta_rank"] == 1 and tie["eta_tied"] == 1
@@ -381,7 +397,10 @@ async def test_board_sorted_like_the_customer_sees_it_and_anonymous(client, worl
     # last on both
     last = (
         await call(
-            client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 9, "eta": 50}
+            client,
+            world.courier_user,
+            "getOfferRank",
+            {"order_id": str(order.id), "fee": 9, "eta": 50, "estimate": 50},
         )
     ).json()
     assert (last["rank"], last["eta_rank"]) == (4, 4) and last["board"][-1]["who"] == "me"
@@ -396,16 +415,22 @@ async def test_board_alone_and_my_sent_offer_keeps_its_place(client, world, fact
     order = await world.order()
     alone = (
         await call(
-            client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 3, "eta": 20}
+            client,
+            world.courier_user,
+            "getOfferRank",
+            {"order_id": str(order.id), "fee": 3, "eta": 20, "estimate": 20},
         )
     ).json()
     assert alone["board"] == [
-        {"who": "me", "fee": 3.0, "eta_minutes": 20, "fastest": False, "cheapest": False}
+        {"who": "me", "fee": 3.0, "eta_minutes": 20, "fastest": False, "cheapest": False, "verified": True}
     ]
     assert (alone["eta_rank"], alone["total"]) == (1, 1)
 
     await rival(world, factory, order, 0, "3", 20, 10)  # A, earlier
     mine = await world.offer(order, fee="3")  # eta 20, now
+    async with SessionLocal() as s:
+        await s.execute(update(OrderOffer).where(OrderOffer.id == mine.id).values(estimated_eta_minutes=20))
+        await s.commit()
     await rival(world, factory, order, 1, "3", 20, -1)  # B, later than mine
     body = (await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id)})).json()
     assert body["my_eta"] == 20 and body["my_offer"]["id"] == str(mine.id)
@@ -420,14 +445,49 @@ async def test_board_alone_and_my_sent_offer_keeps_its_place(client, world, fact
 
 async def test_an_offer_without_delay_ranks_last_on_arrival(client, world, factory):
     order = await world.order()
-    await rival(world, factory, order, 0, "2", None, 5)
+    await rival(world, factory, order, 0, "2", None, 5, est=None)
     body = (
         await call(
-            client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 3, "eta": 40}
+            client,
+            world.courier_user,
+            "getOfferRank",
+            {"order_id": str(order.id), "fee": 3, "eta": 40, "estimate": 40},
         )
     ).json()
     assert body["eta_rank"] == 1 and [e["who"] for e in body["board"]] == ["me", "A"]
     assert body["board"][0]["fastest"] and body["board"][1]["cheapest"]
+
+
+async def test_fastest_only_among_verified_and_never_beaten_by_a_shown_delay(client, world, factory):
+    """The owner's capture (18/10/2026): him computed 22 min, « Livreur A » unverified 18 min, « Livreur
+    B » unverified 30 min → nobody « le + rapide »; with A computed 25 (shown 25), he is."""
+    order = await world.order()
+    await rival(world, factory, order, 0, "3", 18, 5, est=None)  # A: shows 18, not verified
+    await rival(world, factory, order, 1, "2.5", 30, 4, est=None)  # B: shows 30, not verified
+    ask = {"order_id": str(order.id), "fee": 4.48, "eta": 22, "estimate": 22}
+    body = (await call(client, world.courier_user, "getOfferRank", ask)).json()
+    assert [(e["who"], e["eta_minutes"], e["verified"]) for e in body["board"]] == [
+        ("me", 22, True), ("A", 18, False), ("B", 30, False),
+    ]  # fmt: skip
+    assert not any(e["fastest"] for e in body["board"]) and body["eta_rank"] == 1
+    async with SessionLocal() as s:  # A computed now: 25 shown, 25 computed
+        await s.execute(
+            update(OrderOffer)
+            .where(OrderOffer.proposed_fee == Decimal("3"))
+            .values(eta_minutes=25, estimated_eta_minutes=25)
+        )
+        await s.commit()
+    body = (await call(client, world.courier_user, "getOfferRank", ask)).json()
+    assert [e["who"] for e in body["board"] if e["fastest"]] == ["me"]
+    # an unverified offer is never « le + rapide », even alone with a delay
+    alone = await world.order()
+    await rival(world, factory, alone, 2, "3", 10, 5, est=None)
+    blind = (
+        await call(
+            client, world.courier_user, "getOfferRank", {"order_id": str(alone.id), "fee": 4, "eta": 30}
+        )
+    ).json()
+    assert not any(e["fastest"] for e in blind["board"])
 
 
 async def test_board_leaves_out_the_couriers_the_customer_blocked(client, world, factory):

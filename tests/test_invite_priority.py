@@ -281,7 +281,15 @@ async def test_his_offer_is_pinned_for_the_customer_and_on_the_board(client, wor
     assert mine.status_code == 200, mine.text
     # him during the window: alone, pinned
     assert mine.json()["board"] == [
-        {"who": "me", "fee": 9.0, "eta_minutes": 40, "fastest": False, "cheapest": False, "pinned": True}
+        {
+            "who": "me",
+            "fee": 9.0,
+            "eta_minutes": 40,
+            "fastest": False,
+            "cheapest": False,
+            "verified": True,
+            "pinned": True,
+        }
     ]
     await end_window(order_id)
     await invite_priority_release()
