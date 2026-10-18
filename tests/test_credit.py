@@ -39,7 +39,7 @@ async def ledger(courier, kind: str, amount: str, order_id=None) -> None:
         await s.commit()
 
 
-async def deliveries(world, n: int, kind: str = "commission_waived_quota") -> None:
+async def deliveries(world, n: int, kind: str = "commission_waived_launch") -> None:
     """n deliveries of this month, each with its commission entry."""
     for _ in range(n):
         order = await world.order(status="delivered", courier=world.courier, fee="5")
@@ -69,29 +69,38 @@ async def test_summary_before_the_launch_ends_shows_what_he_would_have_paid(clie
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["enforced"] is False and body["blocked"] is False
-    assert body["credit"] == "0.000" and body["month_deliveries"] == 22 and body["free_left"] == 0
-    assert body["would_have_paid"] == "0.500"  # 2 deliveries beyond the 20 free ones, 0.250 each
+    assert body["credit"] == "0.000" and body["month_deliveries"] == 22
+    assert body["free_left"] == 0 and body["free_per_month"] == 0  # kept, always 0, for installed apps
+    assert body["would_have_paid"] == "5.500"  # every delivery of the month, 0.250 each (no free quota)
     assert [t["bonus"] for t in body["suggested_topups"]] == ["0.000", "0.000"]
     assert (await call(client, world.customer, "getMyCredit")).json()["error"] == "courier_profile_missing"
 
 
-async def test_offer_refused_when_free_deliveries_used_and_credit_empty(client, world, enforced):
+async def test_offer_refused_from_the_first_delivery_when_credit_empty(client, world, enforced):
+    """From 2027 there is no free delivery any more: with no delivery yet this month and an empty
+    credit, the very first offer is refused; a credit covering one commission lets it through."""
     order = await world.order()
-    await deliveries(world, 19)
     r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
-    assert r.status_code == 200, r.text  # one free delivery left this month
-
-    await deliveries(world, 1)
-    other = await world.order()
-    r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(other.id), "fee": 5})
     assert r.status_code == 402 and r.json()["error"] == "credit_empty", r.text
-    assert r.json()["credit"] == "0.000"
+    assert r.json()["credit"] == "0.000" and r.json()["free_left"] == 0 and r.json()["commission"] == "0.250"
     summary = (await call(client, world.courier_user, "getMyCredit")).json()
-    assert summary["blocked"] is True and summary["low"] is True
+    assert summary["blocked"] is True and summary["low"] is True and summary["free_left"] == 0
 
-    await ledger(world.courier, "credit_topup", "-0.500")
-    r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(other.id), "fee": 5})
+    await ledger(world.courier, "credit_topup", "-0.249")
+    r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
+    assert r.status_code == 402, r.text  # under one commission
+    await ledger(world.courier, "credit_topup", "-0.001")
+    r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
     assert r.status_code == 200, r.text
+    summary = (await call(client, world.courier_user, "getMyCredit")).json()
+    assert summary["blocked"] is False and summary["deliveries_covered"] == 1
+
+
+async def test_legacy_quota_entries_give_no_free_delivery(client, world, enforced):
+    """Old 'commission_waived_quota' entries of the month are read (counted) but leave nothing free."""
+    await deliveries(world, 3, kind="commission_waived_quota")
+    summary = (await call(client, world.courier_user, "getMyCredit")).json()
+    assert summary["month_deliveries"] == 3 and summary["free_left"] == 0 and summary["blocked"] is True
 
 
 async def test_offer_never_refused_before_enforcement(client, world):
@@ -299,7 +308,6 @@ async def test_settings_are_shown_on_my_credit(client, world, factory):
 
 async def test_low_credit_alert_once_when_crossing(world, monkeypatch):
     monkeypatch.setattr(commission, "LAUNCH_FREE", False)
-    monkeypatch.setattr(commission, "FREE_DELIVERIES_PER_MONTH", 0)
     await ledger(world.courier, "credit_topup", "-1.000")  # 4 commissions of 0.250
     for expected in (0, 1, 1, 1):  # 0.750 (not under 3 commissions yet), 0.500 (crossed), 0.250, 0
         order = await world.order(status="delivered", courier=world.courier, fee="5")

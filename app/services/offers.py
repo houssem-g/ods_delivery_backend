@@ -513,7 +513,7 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     if await is_blocked(session, user.id, order.customer_id):
         raise OrderRefused(409, "blocked")
     refusal = await credit.offer_allowed(session, courier)
-    if refusal is not None:  # free deliveries used up and credit empty (decision D-10)
+    if refusal is not None:  # from 2027 the credit no longer covers one commission (decision D-10)
         raise OrderRefused(402, "credit_empty", **refusal)
     already = (
         await session.execute(

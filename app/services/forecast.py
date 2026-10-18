@@ -19,7 +19,7 @@ The month = fees already earned this month (real) + a simulation of the remainin
   4. Day factors learned across all couriers: weekday, public holiday, Ramadan, rain (Open-Meteo
      forecast for Sousse when available). They start at 1 (no effect) and move only with evidence.
   5. SIMULATIONS (default 2 000) of the remaining days -> 25th / 50th / 75th percentiles, then the ODS
-     commission of the month (after the launch: 0.250 DT beyond the 20 free deliveries) is taken off.
+     commission of the month (after the launch: 0.250 DT on every delivery) is taken off.
 
 Self-correction (job `earnings_forecasts`, every night):
   - a WEEK snapshot (the next 7 days) is stored for every forecastable courier;
@@ -61,7 +61,6 @@ from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
 from app.services.commission import (
     COMMISSION_PER_DELIVERY_TND,
-    FREE_DELIVERIES_PER_MONTH,
     LAUNCH_END_DATE,
     TUNIS,
 )
@@ -507,7 +506,7 @@ def has_signal(inp: Inputs) -> bool:
 def _commission(inp: Inputs, month_deliveries_total: float, month_first: date) -> float:
     if _start_of(month_first) < LAUNCH_END_DATE:
         return 0.0
-    return max(0.0, month_deliveries_total - FREE_DELIVERIES_PER_MONTH) * float(COMMISSION_PER_DELIVERY_TND)
+    return max(0.0, month_deliveries_total) * float(COMMISSION_PER_DELIVERY_TND)
 
 
 def _r3(x: float) -> str:

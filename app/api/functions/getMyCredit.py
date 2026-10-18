@@ -1,4 +1,4 @@
-"""getMyCredit — the courier's "Mon crédit" page: credit, free deliveries left, history, where to top up.
+"""getMyCredit — the courier's "Mon crédit" page: credit, deliveries it covers, history, where to top up.
 See app/services/credit.py (decision D-10: the courier's commission is prepaid)."""
 
 from typing import Any

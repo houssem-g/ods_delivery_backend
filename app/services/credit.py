@@ -1,11 +1,11 @@
 """Courier prepaid credit (decision D-10, 06/10/2026): the ODS commission is paid IN ADVANCE.
 
 Why: a weekly statement paid after the fact is spent before it is settled. The courier now tops up a
-credit first; every delivery that owes the commission (the 21st of the month onwards, from
-CREDIT_ENFORCED_FROM) takes COMMISSION_PER_DELIVERY_TND from it (the `commission_due` ledger entry
-written by app/services/commission.py at delivery). With the month's free deliveries used up and less
-than one commission left, he can no longer send offers (checked in app/services/offers.py, never in
-the middle of a delivery).
+credit first; from CREDIT_ENFORCED_FROM every delivery that owes the commission (each one with a
+delivery fee — no monthly free quota since 18/10/2026) takes COMMISSION_PER_DELIVERY_TND from it (the
+`commission_due` ledger entry written by app/services/commission.py at delivery). With less than one
+commission left, he can no longer send offers (checked in app/services/offers.py, never in the middle
+of a delivery).
 
 Money lives in courier_ledger_entries, sign convention of that table: positive = owed to ODS,
 negative = paid / credit. So   credit = -SUM(amount)   over BALANCE_KINDS (waived entries keep their
@@ -21,7 +21,8 @@ Primes (fondateur, recrutement) are paid in credit
 (grantCourierCredit, kind credit_prime). Nothing is refundable in cash.
 
 December 2026 is the "à blanc" month: the launch waives every commission (commission.py), and the
-summary shows what the courier WOULD have paid beyond his 20 free deliveries.
+summary shows what the courier WOULD have paid (0.250 DT per delivery of the month).
+`free_left` / `free_per_month` stay in the answers, always 0, for the apps already installed.
 """
 
 import uuid
@@ -39,7 +40,6 @@ from app.services import order_transitions as ot
 from app.services.commission import (
     COMMISSION_KINDS,
     COMMISSION_PER_DELIVERY_TND,
-    FREE_DELIVERIES_PER_MONTH,
     KIND_DUE,
     LAUNCH_END_DATE,
     month_bounds,
@@ -134,7 +134,7 @@ async def balance(session: AsyncSession, courier_id: uuid.UUID) -> Decimal:
 
 async def month_deliveries(session: AsyncSession, courier_id: uuid.UUID, now: datetime | None = None) -> int:
     """Deliveries of the courier's current calendar month (Tunis) that carried a commission entry
-    (a delivery without fee carries none and uses no free delivery), like commission.record_delivery."""
+    (a delivery without fee carries none), like commission.record_delivery."""
     start, end = month_bounds(now or ot.now_utc())
     return (
         await session.execute(
@@ -157,9 +157,6 @@ async def offer_allowed(
     """None when the courier may send an offer; else the refusal details (error `credit_empty`)."""
     now = now or ot.now_utc()
     if not is_enforced(now):
-        return None
-    used = await month_deliveries(session, courier.id, now)
-    if used < FREE_DELIVERIES_PER_MONTH:
         return None
     credit = await balance(session, courier.id)
     if credit >= COMMISSION_PER_DELIVERY_TND:
@@ -225,7 +222,6 @@ async def summary(session: AsyncSession, user: CurrentUser) -> dict[str, Any]:
     now = ot.now_utc()
     credit = await balance(session, courier.id)
     used = await month_deliveries(session, courier.id, now)
-    free_left = max(0, FREE_DELIVERIES_PER_MONTH - used)
     enforced = is_enforced(now)
     covered = int((max(credit, ZERO) / COMMISSION_PER_DELIVERY_TND).to_integral_value(rounding=ROUND_DOWN))
     blocked = await offer_allowed(session, courier, now) is not None
@@ -244,21 +240,20 @@ async def summary(session: AsyncSession, user: CurrentUser) -> dict[str, Any]:
             .order_by(CreditTopup.created_at.desc())
         )
     ).scalars()
-    beyond = max(0, used - FREE_DELIVERIES_PER_MONTH)
     return {
         "success": True,
         "credit": _dt(credit),
         "deliveries_covered": covered,
         "commission": _dt(COMMISSION_PER_DELIVERY_TND),
-        "free_per_month": FREE_DELIVERIES_PER_MONTH,
+        "free_per_month": 0,  # no monthly free quota since 18/10/2026; kept for the installed apps
         "month_deliveries": used,
-        "free_left": free_left,
+        "free_left": 0,
         "enforced": enforced,
         "enforced_from": legacy_datetime(CREDIT_ENFORCED_FROM),
         # December "à blanc": what the month WOULD cost once the launch offer ends.
-        "would_have_paid": None if enforced else _dt(COMMISSION_PER_DELIVERY_TND * beyond),
+        "would_have_paid": None if enforced else _dt(COMMISSION_PER_DELIVERY_TND * used),
         "blocked": blocked,
-        "low": enforced and free_left == 0 and covered < LOW_CREDIT_DELIVERIES,
+        "low": enforced and covered < LOW_CREDIT_DELIVERIES,
         "suggested_topups": [
             {"amount": _dt(a), "bonus": _dt(TOPUP_BONUS.get(a, ZERO))} for a in SUGGESTED_TOPUPS
         ],

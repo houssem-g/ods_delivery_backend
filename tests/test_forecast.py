@@ -190,7 +190,7 @@ async def test_commission_is_taken_after_the_launch(world, factory, monkeypatch)
         await delivered(world, ali, 0)
     body = await month_of(world)
     assert body["deliveries_so_far"] == 25
-    assert Decimal(body["commission_estimate"]) >= Decimal("1.250")  # (25 - 20) x 0.250 at least
+    assert Decimal(body["commission_estimate"]) >= Decimal("6.250")  # 25 x 0.250 at least (no free quota)
 
 
 async def test_simulation_is_reproducible_and_ordered(world):

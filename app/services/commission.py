@@ -2,18 +2,18 @@
 
 Business model (ods-delivery src/constants/commission.js, src/lib/commission.js):
 - a delivered order with a delivery fee carries the nominal commission
-  (COMMISSION_PER_DELIVERY_TND); no fee, no commission and no quota used;
+  (COMMISSION_PER_DELIVERY_TND); no fee, no commission;
 - a resold order (Offre Chaude) carries it only when the buyer paid the goods at their full price
-  (no discount, no price drop): otherwise ODS takes nothing and no quota is used (owner, 10/10/2026);
+  (no discount, no price drop): otherwise ODS takes nothing (owner, 10/10/2026);
 - delivered before LAUNCH_END_DATE (midnight 1 January 2027, Tunis): waived
   ('commission_waived_launch', legacy status 'offered_launch');
-- afterwards the first FREE_DELIVERIES_PER_MONTH deliveries of the courier's
-  calendar month (Africa/Tunis) are waived ('commission_waived_quota',
-  'free_quota'), each one beyond owes the commission ('commission_due', 'due').
+- afterwards EVERY delivery owes the commission ('commission_due', 'due') — owner, 18/10/2026: the
+  former « 20 premières courses du mois gratuites » quota is gone. Entries 'commission_waived_quota'
+  ('free_quota') are no longer written, but the old ones are still read (COMMISSION_KINDS, LEGACY_STATUS).
 Waived entries keep the nominal amount (the ledger says what was offered).
 Since decision D-10 (06/10/2026) the commission is PREPAID: a due entry is taken from the courier's
-credit at delivery (app/services/credit.py, which also blocks offers once the free deliveries are used
-and the credit is empty). The due entries are still grouped each Monday (04:00 Tunis) into a
+credit at delivery (app/services/credit.py, which also blocks offers once the credit no longer covers
+one commission). The due entries are still grouped each Monday (04:00 Tunis) into a
 statement per courier for the previous week(s), as a record.
 """
 
@@ -22,19 +22,18 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Courier, CourierLedgerEntry, CourierStatement, HotDeal, Order
 
 COMMISSION_PER_DELIVERY_TND = Decimal("0.250")  # 0.250 since 06/10/2026 (owner, decision D-11)
-FREE_DELIVERIES_PER_MONTH = 20
 LAUNCH_FREE = True
 TUNIS = ZoneInfo("Africa/Tunis")
 LAUNCH_END_DATE = datetime(2027, 1, 1, tzinfo=TUNIS)
 
 KIND_LAUNCH = "commission_waived_launch"
-KIND_QUOTA = "commission_waived_quota"
+KIND_QUOTA = "commission_waived_quota"  # legacy (monthly free quota, removed 18/10/2026): read only
 KIND_DUE = "commission_due"
 COMMISSION_KINDS = (KIND_LAUNCH, KIND_QUOTA, KIND_DUE)
 # courier_ledger_entries.kind -> legacy Order.ods_commission_status
@@ -58,7 +57,7 @@ async def record_delivery(
 ) -> CourierLedgerEntry | None:
     """Writes the order's commission entry (once). Called by the transition to 'delivered'.
 
-    The courier row is locked so two deliveries of the same courier rank one after the other.
+    The courier row is locked so two deliveries of the same courier take his credit one after the other.
     """
     if order.courier_id is None or not (order.delivery_fee and order.delivery_fee > 0):
         return None
@@ -74,24 +73,7 @@ async def record_delivery(
     if existing is not None:
         return existing
     await session.execute(select(Courier.id).where(Courier.id == order.courier_id).with_for_update())
-    if is_launch_offered(delivered_at):
-        kind = KIND_LAUNCH
-    else:
-        start, end = month_bounds(delivered_at)
-        rank = (
-            await session.execute(
-                select(func.count())
-                .select_from(CourierLedgerEntry)
-                .join(Order, Order.id == CourierLedgerEntry.order_id)
-                .where(
-                    CourierLedgerEntry.courier_id == order.courier_id,
-                    CourierLedgerEntry.kind.in_(COMMISSION_KINDS),
-                    Order.delivered_at >= start,
-                    Order.delivered_at < end,
-                )
-            )
-        ).scalar_one()
-        kind = KIND_QUOTA if rank < FREE_DELIVERIES_PER_MONTH else KIND_DUE
+    kind = KIND_LAUNCH if is_launch_offered(delivered_at) else KIND_DUE
     entry = CourierLedgerEntry(
         courier_id=order.courier_id, order_id=order.id, kind=kind, amount=COMMISSION_PER_DELIVERY_TND
     )

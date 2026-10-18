@@ -350,20 +350,51 @@ async def kinds(world) -> list[str]:
 async def test_launch_deliveries_are_waived(world):
     await deliver_at(world, datetime(2026, 12, 31, 22, 59, tzinfo=UTC))  # 23:59 in Tunis
     await deliver_at(world, datetime(2026, 12, 31, 23, 0, tzinfo=UTC))  # midnight in Tunis: paid era
-    assert await kinds(world) == ["commission_waived_launch", "commission_waived_quota"]
+    assert await kinds(world) == ["commission_waived_launch", "commission_due"]
 
 
-async def test_monthly_quota_then_due(world):
+async def test_2026_every_delivery_offered(world):
+    """Until 31/12/2026 everything is offered, however many deliveries in the month."""
+    november = datetime(2026, 11, 2, 8, tzinfo=TUNIS)
+    for i in range(25):
+        await deliver_at(world, november + timedelta(hours=i))
+    assert await kinds(world) == ["commission_waived_launch"] * 25
+
+
+async def test_2027_every_delivery_owes_the_commission(world):
+    """Owner 18/10/2026: no more « 20 premières courses du mois gratuites » — from the first delivery
+    of the month, each one owes 0.250 DT; a new month starts no free quota either."""
     march = datetime(2027, 3, 1, 8, tzinfo=TUNIS)
     for i in range(21):
         await deliver_at(world, march + timedelta(hours=i))
-    got = await kinds(world)
-    assert got.count("commission_waived_quota") == 20 and got[-1] == "commission_due"
     await deliver_at(world, datetime(2027, 4, 1, 0, 30, tzinfo=TUNIS))  # a new month in Tunis
-    assert (await kinds(world))[-1] == "commission_waived_quota"
+    got = await kinds(world)
+    assert got == ["commission_due"] * 22 and "commission_waived_quota" not in got
     assert all(
         e.amount == commission.COMMISSION_PER_DELIVERY_TND for e in await rows(select(CourierLedgerEntry))
     )
+
+
+async def test_legacy_quota_entry_is_still_read(world):
+    """An old 'commission_waived_quota' entry stays the order's commission: never a second one."""
+    order = await world.order(status="delivered", courier=world.courier, fee="5")
+    async with SessionLocal() as s:
+        s.add(
+            CourierLedgerEntry(
+                courier_id=world.courier.id,
+                order_id=order.id,
+                kind="commission_waived_quota",
+                amount=commission.COMMISSION_PER_DELIVERY_TND,
+            )
+        )
+        await s.commit()
+    async with SessionLocal() as s:
+        row = await s.get(Order, order.id)
+        again = await commission.record_delivery(s, row, datetime(2027, 3, 2, tzinfo=TUNIS))
+        await s.commit()
+    assert again is not None and again.kind == "commission_waived_quota"
+    assert await kinds(world) == ["commission_waived_quota"]
+    assert commission.LEGACY_STATUS["commission_waived_quota"] == "free_quota"
 
 
 async def test_no_fee_no_commission_and_idempotent(world):
