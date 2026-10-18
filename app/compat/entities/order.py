@@ -564,6 +564,15 @@ FIELDS: dict[str, LegacyField] = {
     "vitrine_shop_id": LegacyField(orders.c.vitrine_shop_id, "id"),
     "vitrine_cart": LegacyField(_vitrine_cart(), "object"),
     "vitrine_ods": LegacyField(_vitrine_ods(), "boolean"),
+    # « Je viens chercher » (app/services/vitrine_pickup.py): no courier, the customer collects it; the
+    # number said at the counter, the restaurant's steps, and whether its ODS has the order yet.
+    "fulfillment": LegacyField(orders.c.fulfillment, "string"),
+    "pickup_code": LegacyField(orders.c.pickup_code, "string", read_guard=customer_or_admin),
+    "pickup_name": LegacyField(orders.c.pickup_name, "string", read_guard=customer_or_admin),
+    "preparing_at": LegacyField(orders.c.preparing_at, "datetime"),
+    "ready_at": LegacyField(orders.c.ready_at, "datetime"),
+    "collected_at": LegacyField(orders.c.collected_at, "datetime"),
+    "restaurant_ack_at": LegacyField(orders.c.restaurant_ack_at, "datetime", read_guard=customer_or_admin),
 }
 ORDER_FIELDS = set(FIELDS) | {"geocode_status"}
 

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -200,27 +200,47 @@ async def reliability_extras(session: AsyncSession, customer_id: uuid.UUID, inci
     )
     total = delivered + max(0, incidents)
     pct = round(100 * delivered / total) if total else 100
+    recent_total, recent_unpaid = await recent_badge(session, customer_id)
+    return {
+        "delivered_orders": delivered,
+        "recent_orders": recent_total,
+        "recent_unpaid": recent_unpaid,
+        "reliability_pct": pct,
+        "avg_reply_seconds": await _median_reply_seconds(session, customer_id),
+    }
+
+
+async def recent_badge(session: AsyncSession, customer_id: uuid.UUID) -> tuple[int, int]:
+    """(finished orders among the last RECENT_ORDERS, how many unpaid): delivered, or left with a counted
+    no-response incident; « Je viens chercher » (vcc): collected, or closed « Pas venu » by the restaurant
+    (a test order never counts there)."""
     counted = (
         select(NoResponseCase.id)
         .where(NoResponseCase.order_id == Order.id, NoResponseCase.incident_counted.is_(True))
         .exists()
     )
+    not_collected = and_(
+        Order.fulfillment == "pickup",
+        Order.status == "cancelled",
+        Order.cancel_reason == "not_collected",
+        Order.items_text.op("!~*")(TEST_ORDER_SQL),
+    )
+    unpaid = or_(counted, not_collected)
+    real = or_(Order.fulfillment != "pickup", Order.items_text.op("!~*")(TEST_ORDER_SQL))
     recent = [
-        bool(unpaid)
-        for (unpaid,) in await session.execute(
-            select(counted)
-            .where(Order.customer_id == customer_id, or_(Order.status == "delivered", counted))
+        bool(flag)
+        for (flag,) in await session.execute(
+            select(unpaid)
+            .where(
+                Order.customer_id == customer_id,
+                real,
+                or_(Order.status.in_(("delivered", "collected")), unpaid),
+            )
             .order_by(Order.created_at.desc(), Order.id.desc())
             .limit(RECENT_ORDERS)
         )
     ]
-    return {
-        "delivered_orders": delivered,
-        "recent_orders": len(recent),
-        "recent_unpaid": sum(recent),
-        "reliability_pct": pct,
-        "avg_reply_seconds": await _median_reply_seconds(session, customer_id),
-    }
+    return len(recent), sum(recent)
 
 
 async def _median_reply_seconds(session: AsyncSession, customer_id: uuid.UUID) -> int | None:
@@ -518,8 +538,13 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
 
         raw, vitrine_extras = await vitrine_orders.prepare(session, user, raw)
     built = build_order(raw, user, address, default_point)
+    pickup = vitrine_extras is not None and vitrine_extras.get("fulfillment") == "pickup"
     if vitrine_extras is not None:
         vitrine_orders.apply_extras(built.order, built.stops, vitrine_extras)
+    if pickup:  # « Je viens chercher »: 2 open at most, no duplicate, the number of the day
+        from app.services import vitrine_pickup
+
+        await vitrine_pickup.check_and_number(session, built.order, vitrine_extras)
     open_count = (
         await session.execute(
             select(func.count())
@@ -543,5 +568,9 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     session.add_all(built.stops)
     if vitrine_extras is not None:
         await vitrine_orders.record_options(session, vitrine_extras)
+    if pickup:
+        await ot.start(session, built.order, user.id, "placeOrder", status="awaiting_restaurant")
+        await vitrine_pickup.after_start(session, built.order)
+        return built.order
     await ot.start(session, built.order, user.id, "placeOrder")
     return built.order

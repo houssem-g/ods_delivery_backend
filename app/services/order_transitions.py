@@ -32,13 +32,16 @@ OPEN_STATUSES = ("pending", "offers_received")
 LIVE_STATUSES = (
     "accepted", "at_shop", "price_confirmation_needed", "purchased", "on_the_way", "client_no_response",
 )  # fmt: skip
-TERMINAL_STATUSES = ("delivered", "cancelled")
+TERMINAL_STATUSES = ("delivered", "collected", "cancelled")
+# « Je viens chercher » (app/services/vitrine_pickup.py): the restaurant's steps, never a courier's
+PICKUP_STATUSES = ("awaiting_restaurant", "preparing", "ready", "collected")
 
 _BACK_TO_POOL_OR_CANCEL = frozenset({"pending", "cancelled"})
 
 ALLOWED: dict[str | None, frozenset[str]] = {
     # creation: placeOrder ('pending'); a hot-deal reservation creates an order already 'accepted'
-    None: frozenset({"pending", "accepted"}),
+    # (« Je viens chercher »: 'awaiting_restaurant', app/services/vitrine_pickup.py)
+    None: frozenset({"pending", "accepted", "awaiting_restaurant"}),
     # first offer (createOrderOffer); last offer withdrawn; offer accepted; cancelled / expired
     "pending": frozenset({"offers_received", "accepted", "cancelled"}),
     "offers_received": frozenset({"pending", "accepted", "cancelled"}),
@@ -55,6 +58,13 @@ ALLOWED: dict[str | None, frozenset[str]] = {
     "client_no_response": frozenset({"on_the_way", "delivered"}) | _BACK_TO_POOL_OR_CANCEL,
     "delivered": frozenset(),
     "cancelled": frozenset(),
+    # « Je viens chercher »: placeOrder creates it 'awaiting_restaurant'; ODS reports the kitchen's steps
+    # (a step may be skipped: the customer pays while it is still being prepared); the restaurant refuses
+    # before preparing, the customer cancels before that too; « Pas venu » closes a ready one.
+    "awaiting_restaurant": frozenset({"preparing", "ready", "collected", "cancelled"}),
+    "preparing": frozenset({"ready", "collected", "cancelled"}),
+    "ready": frozenset({"collected", "cancelled"}),
+    "collected": frozenset(),
 }
 COURIER_REQUIRED = frozenset(LIVE_STATUSES) | {"delivered"}
 
@@ -128,6 +138,8 @@ async def start(
     """Creation of a new (already added) order: its first status event."""
     if not can_transition(None, status):
         raise InvalidTransition(None, status)
+    if (getattr(order, "fulfillment", "delivery") == "pickup") != (status == "awaiting_restaurant"):
+        raise InvalidTransition(None, status)
     at = now_utc()
     order.status = status
     if status == "accepted":
@@ -159,6 +171,9 @@ async def transition(
     from_status = order.status
     if not can_transition(from_status, to_status):
         raise InvalidTransition(from_status, to_status)
+    pickup = getattr(order, "fulfillment", "delivery") == "pickup"
+    if to_status != "cancelled" and pickup != (to_status in PICKUP_STATUSES):
+        raise InvalidTransition(from_status, to_status)  # a courier step on a pickup order, or the reverse
     if to_status in COURIER_REQUIRED and order.courier_id is None:
         raise InvalidTransition(from_status, to_status)
     at = now_utc()
@@ -170,6 +185,12 @@ async def transition(
         order.delivered_at = at
     elif to_status == "cancelled":
         order.cancelled_at = at
+    elif to_status == "preparing":
+        order.preparing_at = at
+    elif to_status == "ready":
+        order.ready_at = at
+    elif to_status == "collected":
+        order.collected_at = at
     if to_status not in LIVE_STATUSES:
         await clear_live_position(session, order.id)
     event = _event(order, from_status, to_status, actor, source, reason, cancelled_by, location, at)

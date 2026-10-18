@@ -344,7 +344,9 @@ async def test_catalog_push_is_idempotent_and_upserts_by_ods_id(client, world, q
     same = await put_catalog(
         client, pw, catalog_body(version="sha256:v1-bis", generated_at="2026-10-17T09:00:00Z")
     )
-    assert same.json()["status"] == "unchanged" and same.json()["vitrine"] == {"shop_id": shop_id}
+    # (vcc 18/10: ODS also gets slug / status / public for « Mon lien »)
+    assert same.json()["status"] == "unchanged" and same.json()["vitrine"]["shop_id"] == shop_id
+    assert set(same.json()["vitrine"]) == {"shop_id", "slug", "status", "public"}
     assert {p.ods_menu_id: p.updated_at for p in await products_of(shop_id)} == before
     again = await reload(PartnerCatalog, pw.partner.id)
     assert again.received_at == snapshot.received_at and again.content_hash == snapshot.content_hash

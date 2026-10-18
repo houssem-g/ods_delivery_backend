@@ -190,6 +190,17 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     verified_no_response = False
     verified_stock_check = False
 
+    if cancelled_by == "customer" and order.fulfillment == "pickup":
+        # « Je viens chercher » (vitrine_pickup): free while the restaurant has not started; ODS is told
+        if order.customer_id != user.id:
+            raise OrderRefused(403, "Unauthorized")
+        if order.status != "awaiting_restaurant":
+            raise OrderRefused(409, "pickup_in_preparation", status=order.status, can_cancel=False)
+        order.cancel_reason, order.cancelled_by = "customer_cancelled", "customer"
+        await ot.transition(
+            session, order, "cancelled", user, "cancelOrder", "customer_cancelled", cancelled_by="customer"
+        )
+        return
     if cancelled_by == "customer":
         if order.customer_id != user.id:
             raise OrderRefused(403, "Unauthorized")

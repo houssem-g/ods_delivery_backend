@@ -39,6 +39,12 @@ async def handle(
     # The draft this order came from goes with it (same transaction: kept if the order fails).
     await order_drafts.remove(session, user.id, payload.get("draft_id"))
     dispatched = None
+    if order.fulfillment == "pickup":  # « Je viens chercher »: no courier at all, ODS got it (vitrine_pickup)
+        return 200, {
+            "success": True,
+            "order": await document(session, "Order", user, order.id),
+            "dispatched": 0,
+        }
     try:  # the order exists: a failed broadcast never fails it (couriers also list open orders)
         # (a QA order reaches the QA couriers only: app/services/dispatch.py)
         async with session.begin_nested():

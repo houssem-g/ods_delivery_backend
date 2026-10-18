@@ -1,13 +1,14 @@
 """Orders and everything hanging off an order (stops, events, offers, tracking, issues, ratings, chat)."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Identity,
@@ -60,7 +61,9 @@ class Order(Base):
         CheckConstraint("delivery_fee >= 0 AND delivery_fee <= 200", name="delivery_fee"),
         CheckConstraint("purchase_amount >= 0 AND purchase_amount <= 2000", name="purchase_amount"),
         CheckConstraint("payment_method IN ('cash')", name="payment_method"),
-        CheckConstraint("cancelled_by IN ('customer','courier','admin','system')", name="cancelled_by"),
+        CheckConstraint(
+            "cancelled_by IN ('customer','courier','admin','system','restaurant')", name="cancelled_by"
+        ),
         CheckConstraint("budget_max >= 0 AND budget_max <= 2000", name="budget_max"),
         CheckConstraint("jsonb_typeof(picked_items) = 'array'", name="picked_items"),
         CheckConstraint(
@@ -94,6 +97,28 @@ class Order(Base):
         CheckConstraint("source IN ('app','partner','vitrine')", name="source"),
         CheckConstraint("(source = 'vitrine') = (vitrine_shop_id IS NOT NULL)", name="vitrine_shop"),
         CheckConstraint("cart IS NULL OR jsonb_typeof(cart) = 'object'", name="cart"),
+        # « Je viens chercher » (vcc): only a Vitrine order is collected, and it lives in its own statuses
+        CheckConstraint("fulfillment IN ('delivery','pickup')", name="fulfillment"),
+        CheckConstraint("fulfillment = 'delivery' OR source = 'vitrine'", name="pickup_vitrine"),
+        CheckConstraint(
+            "fulfillment = 'pickup' OR status NOT IN ('awaiting_restaurant','preparing','ready','collected')",
+            name="delivery_statuses",
+        ),
+        CheckConstraint(
+            "fulfillment = 'delivery' OR "
+            "status IN ('awaiting_restaurant','preparing','ready','collected','cancelled')",
+            name="pickup_statuses",
+        ),
+        CheckConstraint("status <> 'collected' OR collected_at IS NOT NULL", name="collected_at"),
+        CheckConstraint("pickup_code IS NULL OR pickup_code ~ '^[0-9]{3}$'", name="pickup_code"),
+        Index(
+            "orders_pickup_code",
+            "vitrine_shop_id",
+            "pickup_day",
+            "pickup_code",
+            unique=True,
+            postgresql_where=text("pickup_code IS NOT NULL"),
+        ),
         Index(
             "orders_vitrine_shop",
             "vitrine_shop_id",
@@ -186,6 +211,18 @@ class Order(Base):
     )
     cart: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     vitrine_src: Mapped[str | None] = mapped_column(Text)
+    # « Je viens chercher » (app/services/vitrine_pickup.py): 'delivery' (every other order) or 'pickup'; the
+    # number the customer gives at the counter (unique per shop and Tunis day), the first name said there,
+    # the restaurant's steps (sent by ODS) and when ODS acknowledged the order (the webhook got a 2xx).
+    fulfillment: Mapped[str] = mapped_column(Text, nullable=False, server_default="delivery")
+    pickup_code: Mapped[str | None] = mapped_column(Text)
+    pickup_day: Mapped[date | None] = mapped_column(Date)
+    pickup_name: Mapped[str | None] = mapped_column(Text)
+    preparing_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    collected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    restaurant_ack_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ready_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

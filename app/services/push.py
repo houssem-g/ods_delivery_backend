@@ -44,7 +44,7 @@ COURIER_TYPES = {"new_order", "customer_responded", "customer_no_response_final"
 CUSTOMER_TYPES = {
     "new_offer", "order_confirmed", "order_preparing", "at_shop", "purchased", "on_the_way",
     "courier_on_way", "eta_update", "delivered", "order_delivered", "delivery_delayed",
-    "delivery_cancelled", "emergency_contact", "issue_reported", "vitrine_request",
+    "delivery_cancelled", "emergency_contact", "issue_reported", "vitrine_request", "pickup_ready",
 }  # fmt: skip
 
 

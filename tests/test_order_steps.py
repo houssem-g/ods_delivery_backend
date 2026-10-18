@@ -295,7 +295,11 @@ def test_matrix():
         *ot.LIVE_STATUSES,
         "delivered",
         "cancelled",
+        *ot.PICKUP_STATUSES,  # « Je viens chercher » (vcc 18/10): the restaurant's steps, never a courier's
     }
+    assert ot.can_transition(None, "awaiting_restaurant") and ot.can_transition("ready", "collected")
+    assert not ot.can_transition("ready", "pending")
+    assert not ot.can_transition("awaiting_restaurant", "accepted")
 
 
 async def test_transition_service(world):

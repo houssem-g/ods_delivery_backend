@@ -61,6 +61,7 @@ log = logging.getLogger("odsd.account_deletion")
 ACTIVE_STATUSES = (
     "pending", "offers_received", "accepted", "at_shop", "price_confirmation_needed", "purchased",
     "on_the_way", "client_no_response",
+    "awaiting_restaurant", "preparing", "ready",  # « Je viens chercher » (vcc)
 )  # fmt: skip
 DELETED_MESSAGE = "[message supprimé]"
 DELETED_COURIER_NAME = "Livreur supprimé"

@@ -45,6 +45,14 @@ class HoursIn(BaseModel):
     weekly: list[HoursRuleIn] = Field(default_factory=list, max_length=21)
 
 
+class PickupIn(BaseModel):
+    """« Je viens chercher » (vcc): « À emporter » on in ODS, and its usual preparation time (optional)."""
+
+    model_config = ConfigDict(extra="ignore")
+    enabled: bool = False
+    prep_minutes: int | None = Field(default=None, ge=5, le=120)
+
+
 class RestaurantIn(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: str = Field(min_length=1, max_length=200)
@@ -53,6 +61,7 @@ class RestaurantIn(BaseModel):
     lat: float | None = Field(default=None, ge=-90, le=90)
     lng: float | None = Field(default=None, ge=-180, le=180)
     hours: HoursIn | None = None
+    pickup: PickupIn | None = None
 
 
 class CategoryIn(BaseModel):
@@ -165,6 +174,8 @@ def normalized(body: CatalogIn) -> dict[str, Any]:
             "lat": restaurant.lat,
             "lng": restaurant.lng,
             "hours": hours,
+            # only when sent: a catalog without it keeps its fingerprint (an older ODS: never a pickup order)
+            **({"pickup": restaurant.pickup.model_dump()} if restaurant.pickup is not None else {}),
         },
         "categories": sorted(
             (
@@ -243,7 +254,7 @@ async def receive(session: AsyncSession, partner: Partner, raw: Any) -> dict[str
             .with_for_update()
         )
     ).scalar_one_or_none()
-    linked = {"shop_id": str(vitrine.shop_id)} if vitrine is not None else None
+    linked = await _linked(session, vitrine)
     if snapshot is not None and snapshot.content_hash == fingerprint:
         if now - snapshot.checked_at >= CHECKED_EVERY:
             snapshot.checked_at = now
@@ -272,6 +283,25 @@ async def receive(session: AsyncSession, partner: Partner, raw: Any) -> dict[str
         "catalog_version": snapshot.catalog_version,
         "products": snapshot.products_count,
         "vitrine": linked,
+    }
+
+
+async def _linked(session: AsyncSession, vitrine: Vitrine | None) -> dict[str, Any] | None:
+    """The answer's `vitrine`: ODS keeps slug / status / public for « Mon lien » (vcc §8)."""
+    if vitrine is None:
+        return None
+    shop = await session.get(Shop, vitrine.shop_id)
+    allowed = await vitrine_service.public_allowed(session)
+    public = (
+        shop is not None
+        and vitrine.status == "active"
+        and vitrine_service.effectively_public(shop, vitrine, allowed)
+    )
+    return {
+        "shop_id": str(vitrine.shop_id),
+        "slug": shop.slug if shop is not None else None,
+        "status": vitrine.status,
+        "public": public,
     }
 
 

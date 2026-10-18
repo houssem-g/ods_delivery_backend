@@ -300,6 +300,20 @@ async def deliver(session: AsyncSession, delivery: PartnerWebhookDelivery, clien
     else:
         delivery.next_attempt_at = now + timedelta(minutes=BACKOFF_MINUTES[delivery.attempts - 1])
     await session.flush()
+    if delivery.event == "vitrine.order_confirmed" and delivery.order_id is not None:
+        # « Je viens chercher »: the customer sees « reçue » once ODS has it; never received → cancelled
+        from app.services import vitrine_pickup
+
+        try:
+            async with session.begin_nested():
+                if error is None:
+                    await vitrine_pickup.on_confirmation_delivered(
+                        session, await session.get(Order, delivery.order_id)
+                    )
+                elif delivery.status == "failed":
+                    await vitrine_pickup.on_confirmation_failed(session, delivery.order_id)
+        except Exception:
+            log.exception("pickup: confirmation outcome not applied for %s", delivery.order_id)
     return error is None
 
 

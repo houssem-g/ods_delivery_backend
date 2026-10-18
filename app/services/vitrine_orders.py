@@ -37,7 +37,7 @@ from app.models import (
 from app.realtime.events import emit
 from app.security.deps import to_current_user
 from app.services import order_transitions as ot
-from app.services import partner_webhooks, vitrine_extras, vitrine_options
+from app.services import partner_webhooks, vitrine_extras, vitrine_options, vitrine_pickup
 from app.services import vitrine as vitrine_service
 from app.services.orders import MAX_BUDGET, MAX_QUANTITY, OrderRefused, is_test_order
 from app.services.places import lat_expr, lng_expr
@@ -314,6 +314,8 @@ async def prepare(
         },
         "src": (vitrine_service.clean(src, 32).lower() or None) if isinstance(src, str) else None,
     }
+    if vitrine_pickup.wanted(v):  # « Je viens chercher »: no courier, the restaurant's counter
+        extras.update(await vitrine_pickup.prepare(session, shop, vitrine, v, rebuilt, user.full_name))
     return rebuilt, extras
 
 
@@ -431,6 +433,8 @@ async def order_view(session: AsyncSession, order: Order) -> dict[str, Any]:
     return {
         "vitrine_ref": str(order.id),
         "status": order.status,
+        "fulfillment": order.fulfillment,
+        "pickup_code": order.pickup_code,
         "courier_state": COURIER_STATE.get(order.status, "none"),
         "test": is_test_order(order.items_text),
         "items_total": float((order.cart or {}).get("items_total") or order.estimated_price or 0),
@@ -493,6 +497,9 @@ async def on_transition(
     cancelled_by: str | None,
 ) -> None:
     """Called by order_transitions.transition() for a Vitrine order (locked, flushed)."""
+    if order.fulfillment == "pickup":
+        await vitrine_pickup.on_transition(session, order, from_status, to_status, reason, cancelled_by)
+        return
     partner = await confirmed_partner(session, order)
     events: list[tuple[str, dict[str, Any]]] = []
     if to_status == "accepted":

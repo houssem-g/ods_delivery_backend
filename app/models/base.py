@@ -33,7 +33,14 @@ ORDER_STATUSES = (
     "delivered",
     "cancelled",
     "client_no_response",
+    # « Je viens chercher » (click and collect, vcc 18/10/2026): an order of a Vitrine linked to ODS that
+    # the customer collects at the counter — no courier ever sees these (app/services/vitrine_pickup.py)
+    "awaiting_restaurant",
+    "preparing",
+    "ready",
+    "collected",
 )
+PICKUP_STATUSES = ("awaiting_restaurant", "preparing", "ready", "collected")
 OFFER_STATUSES = ("pending", "accepted", "rejected", "expired", "withdrawn")
 VEHICLE_TYPES = ("walking", "scooter", "car")
 PACKAGE_SIZES = ("petit", "moyen", "grand")

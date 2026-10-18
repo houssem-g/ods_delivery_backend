@@ -1255,6 +1255,8 @@ async def ordering_state(
 
 
 async def client_json(session: AsyncSession, shop: Shop, vitrine: Vitrine) -> dict[str, Any]:
+    from app.services import vitrine_pickup
+
     lat, lng = await _coords(session, shop)
     categories = await _active_rows(session, VitrineCategory, shop.id)
     products = await _active_rows(session, VitrineProduct, shop.id)
@@ -1286,6 +1288,7 @@ async def client_json(session: AsyncSession, shop: Shop, vitrine: Vitrine) -> di
         "catalog_updated_at": iso(updated),
         "catalog_stale": catalog_stale(vitrine, snapshot.checked_at if snapshot is not None else None),
         "ordering": await ordering_state(session, vitrine, state, sum(1 for p in products if p.available)),
+        "pickup": await vitrine_pickup.info(session, vitrine, state),
         "categories": [category_json(c) for c in categories],
         "products": [product_json(p, options=options.get(p.id)) for p in products],
     }
