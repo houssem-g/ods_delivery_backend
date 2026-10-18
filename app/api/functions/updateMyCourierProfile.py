@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.functions._common import answers_refusals, as_uuid, document
 from app.models import Courier, Order
 from app.security.deps import CurrentUser
+from app.services import onboarding_drafts
 from app.services.couriers import create_profile, update_profile
 
 
@@ -30,6 +31,8 @@ async def handle(
     action = payload.get("action") or "update"
     if action == "create":
         courier, ignored, existed = await create_profile(session, user, payload.get("fields"))
+        # The sign-up is done: its server-side draft (CourierOnboarding) has served.
+        await onboarding_drafts.remove(session, user.id, "courier")
         profile = await document(session, "CourierProfile", user, courier.id)
         if existed:
             return 200, {"success": True, "profile": profile, "existed": True}

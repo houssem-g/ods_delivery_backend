@@ -136,7 +136,7 @@ async def test_purge_job_is_idempotent(client, world):
         r = await client.post(
             "/api/admin/jobs/purge_order_drafts/run", headers={"x-cron-token": "test-cron-secret"}
         )
-        assert r.json()["result"] == {"drafts_deleted": expected}
+        assert r.json()["result"] == {"drafts_deleted": expected, "onboarding_drafts_deleted": 0}
     assert [str(d.id) for d in await drafts_in_db()] == [keep["id"]]
 
 

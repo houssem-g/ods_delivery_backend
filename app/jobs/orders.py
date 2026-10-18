@@ -15,6 +15,7 @@ from app.services import (
     expiry,
     invite_priority,
     offer_intents,
+    onboarding_drafts,
     order_drafts,
     stock_checks,
 )
@@ -44,10 +45,17 @@ async def expire_orphan_offers() -> dict[str, Any]:
     return {"offers_closed": closed, "offer_intents_deleted": intents}
 
 
-@job("purge_order_drafts", IntervalTrigger(hours=1), "order drafts past their 24 h → deleted")
+@job(
+    "purge_order_drafts",
+    IntervalTrigger(hours=1),
+    "order drafts past their 24 h and onboarding drafts past their 30 days → deleted",
+)
 async def purge_order_drafts() -> dict[str, Any]:
     async with transaction() as session:
-        return {"drafts_deleted": await order_drafts.purge_expired(session)}
+        return {
+            "drafts_deleted": await order_drafts.purge_expired(session),
+            "onboarding_drafts_deleted": await onboarding_drafts.purge_expired(session),
+        }
 
 
 @job(

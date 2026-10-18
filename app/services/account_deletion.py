@@ -38,6 +38,7 @@ from app.models import (
     HotDeal,
     Message,
     Notification,
+    OnboardingDraft,
     Order,
     OrderDraft,
     OrderIssue,
@@ -248,6 +249,7 @@ async def delete_account(session: AsyncSession, actor: CurrentUser) -> tuple[dic
     await session.execute(delete(EmailCode).where(EmailCode.user_id == user.id))
     await session.execute(delete(PhoneVerification).where(PhoneVerification.user_id == user.id))
     await session.execute(delete(OrderDraft).where(OrderDraft.user_id == user.id))
+    await session.execute(delete(OnboardingDraft).where(OnboardingDraft.user_id == user.id))
     await revoke_all_for_user(session, user.id)
     now = now_utc()
     user.email = deleted_email(user.id)

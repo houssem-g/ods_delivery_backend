@@ -545,6 +545,31 @@ class OrderDraft(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class OnboardingDraft(Base):
+    """The sign-up form a new account has not finished (courier onboarding, customer profile setup),
+    one per (user, kind), kept 30 days after its last save. Server side so that a phone that kills
+    the app while the camera or the e-mail app is open, a reload or another device resumes at the
+    same step with the same answers (owner 18/10/2026). Never a password: the service drops it."""
+
+    __tablename__ = "onboarding_drafts"
+    __table_args__ = (
+        CheckConstraint("kind IN ('courier','customer')", name="kind"),
+        Index("ix_onboarding_drafts_expires_at", "expires_at"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    kind: Mapped[str] = mapped_column(Text, primary_key=True)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = created_at()
+    # Written by the service (no trigger): expires_at = updated_at + 30 days.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class OfferIntent(Base):
     """ "Un livreur prépare une offre…": a courier has the offer sheet of an open order open.
     Refreshed by signalOfferIntent, deleted when he sends his offer or closes the sheet; rows
