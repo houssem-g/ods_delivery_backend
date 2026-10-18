@@ -33,46 +33,66 @@ def labels(name, description=None, category=None, ingredients=None, kind="restau
 
 COFFEE_AND_TEA = {
     "Espresso": ["Peu de sucre/Sans sucre"],
-    "Cappuccino": ["Peu de sucre/Sans sucre", "Sans cacao"],
-    "Cappuccino Chantilly": ["Peu de sucre/Sans sucre"],  # the chantilly IS the dish
-    "Latte Macchiato": ["Peu de sucre/Sans sucre"],  # never « sans lait » in a latte
-    "Chocolat Chaud": ["Sans chantilly"],
+    "Cappuccino": ["Peu de sucre/Sans sucre", "Peu de cacao/Sans cacao"],
+    "Cappuccino Chantilly": ["Peu de sucre/Sans sucre"],
+    "Latte Macchiato": ["Peu de sucre/Sans sucre"],
+    "Chocolat Chaud": ["Peu de chantilly/Sans chantilly"],
     "Iced Latte": ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons"],
-    "Thé à la Menthe": ["Peu de sucre/Sans sucre"],  # the mint IS the dish
-    "Thé aux Pignons": ["Peu de sucre/Sans sucre", "Sans menthe"],
+    "Thé à la Menthe": ["Peu de sucre/Sans sucre"],
+    "Thé aux Pignons": ["Peu de sucre/Sans sucre", "Peu de menthe/Sans menthe"],
     "Citronnade": ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons"],
     "Jus d'Orange": ["Peu de glaçons/Sans glaçons"],
-    "Banane Fraise": ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons", "Sans lait"],
+    "Banane Fraise": ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons", "Peu de lait/Sans lait"],
     "Milkshake Vanille": [],
     "Omelette Fromage": [],
-    "Crêpe Nutella": [],  # the batter's eggs and milk are never proposed
-    "Crêpe Jambon Fromage Champignons": ["Sans fromage", "Sans champignons"],  # the ham is the dish
+    "Crêpe Nutella": [],
+    "Crêpe Jambon Fromage Champignons": [
+        "Peu de fromage/Sans fromage",
+        "Peu de champignons/Sans champignons",
+    ],
     "Mini Sandwich Thon ou Omelette": ["Peu de harissa/Sans harissa"],
-    "Sandwich Thon, Œufs, Mayonnaise": ["Peu de mayonnaise/Sans mayonnaise", "Sans salade", "Sans œuf"],
+    "Sandwich Thon, Œufs, Mayonnaise": [
+        "Peu de harissa/Sans harissa",
+        "Peu de mayonnaise/Sans mayonnaise",
+        "Peu de salade/Sans salade",
+        "Peu d'œuf/Sans œuf",
+    ],
     "Sandwich Caprese": [],
-    "French Tacos Escalope": ["Sans frites", "Sans fromage"],
+    "French Tacos Escalope": [
+        "Peu de harissa/Sans harissa",
+        "Peu de frites/Sans frites",
+        "Peu de fromage/Sans fromage",
+    ],
     "Pizza Margherita": [],
-    "Pizza Thon et Jambon": ["Sans olives"],  # « huile d'olive » is not an olive
+    "Pizza Thon et Jambon": ["Peu d'olives/Sans olives"],
     "Pizza Quatre Fromages": [],
-    "Salade Burrata": ["Sans tomate", "Sans basilic", "Sans roquette"],
+    "Salade Burrata": [
+        "Peu de tomate/Sans tomate",
+        "Peu de basilic/Sans basilic",
+        "Peu de roquette/Sans roquette",
+    ],
     "Salade de Fruits": ["Peu de miel/Sans miel"],
-    "Penne Bolognaise": ["Sans oignon", "Sans fromage"],  # « double concentré de tomate » is no tomato
+    "Penne Bolognaise": ["Peu d'oignon/Sans oignon", "Peu de fromage/Sans fromage"],
     "Pâtes Cacio e Pepe": [],
     "Burger Maison + Frites": [
-        "Sans oignon",
+        "Peu d'oignon/Sans oignon",
         "Peu de mayonnaise/Sans mayonnaise",
-        "Sans salade",
-        "Sans fromage",
-        "Sans tomate",
+        "Peu de salade/Sans salade",
+        "Peu de fromage/Sans fromage",
+        "Peu de tomate/Sans tomate",
     ],
     "Crispy Chicken Burger Piquant": [
-        "Peu de harissa",
+        "Peu de harissa/Sans harissa",
         "Peu de mayonnaise/Sans mayonnaise",
-        "Sans frites",
-        "Sans salade",
+        "Peu de frites/Sans frites",
+        "Peu de salade/Sans salade",
     ],
-    "Double Cheese Burger": ["Sans oignon", "Peu de mayonnaise/Sans mayonnaise", "Sans frites"],
-    "Tiramisu Classique": [],  # the sugar is baked in
+    "Double Cheese Burger": [
+        "Peu d'oignon/Sans oignon",
+        "Peu de mayonnaise/Sans mayonnaise",
+        "Peu de frites/Sans frites",
+    ],
+    "Tiramisu Classique": [],
 }
 PACKAGING_AND_BASES = {
     "Serviette papier",
@@ -102,50 +122,92 @@ def test_coffee_and_tea_88_dishes():
 
 
 def test_a_tunisian_snack_without_recipes():
+    # every removal has « Peu » and « Sans »; harissa where a Tunisian counter serves it, said or not
     assert labels("Makloub thon", category="Makloub") == [
-        "Peu de harissa/Sans harissa", "Sans oignon", "Peu de mayonnaise/Sans mayonnaise", "Sans frites",
-        "Sans salade", "Sans fromage",
-    ]  # fmt: skip
-    # a description that lists the dish is its recipe: no template
+        "Peu de harissa/Sans harissa",
+        "Peu d'oignon/Sans oignon",
+        "Peu de mayonnaise/Sans mayonnaise",
+        "Peu de frites/Sans frites",
+        "Peu de salade/Sans salade",
+        "Peu de fromage/Sans fromage",
+    ]
     assert labels("Kaskrout thon", "Baguette, thon, harissa, olives, œuf, câpres") == [
-        "Peu de harissa/Sans harissa", "Sans olives", "Sans œuf", "Sans câpres",
-    ]  # fmt: skip
+        "Peu de harissa/Sans harissa",
+        "Peu d'olives/Sans olives",
+        "Peu d'œuf/Sans œuf",
+        "Peu de câpres/Sans câpres",
+    ]
     assert labels("Libanais poulet", "Poulet mariné, fromage, frites, sauce blanche, tomate") == [
-        "Sans frites", "Sans fromage", "Sans tomate", "Peu de sauce blanche/Sans sauce blanche",
-    ]  # fmt: skip
-    assert labels("Pizza margherita", "Sauce tomate, mozzarella, basilic") == []
+        "Peu de harissa/Sans harissa",
+        "Peu de frites/Sans frites",
+        "Peu de fromage/Sans fromage",
+        "Peu de tomate/Sans tomate",
+        "Peu de sauce blanche/Sans sauce blanche",
+    ]
     assert labels("Pizza 4 saisons", "Champignons, jambon, poivrons, olives, fromage") == [
-        "Sans olives", "Sans champignons", "Sans poivron",
-    ]  # fmt: skip
-    assert labels("Ojja merguez", "Œufs, sauce tomate, piment, merguez") == ["Peu de piment"]
-    assert labels("Lablabi")[:3] == ["Peu de harissa/Sans harissa", "Sans olives", "Sans thon"]
+        "Peu d'olives/Sans olives",
+        "Peu de champignons/Sans champignons",
+        "Peu de poivron/Sans poivron",
+    ]
+    assert labels("Ojja merguez", "Œufs, sauce tomate, piment, merguez") == [
+        "Peu de harissa/Sans harissa",
+        "Peu de piment/Sans piment",
+    ]
+    assert labels("Couscous agneau") == ["Peu de harissa/Sans harissa", "Peu de piment/Sans piment"]
+    assert labels("Baguette farcie merguez", "Merguez, frites, oignon") == [
+        "Peu de harissa/Sans harissa",
+        "Peu d'oignon/Sans oignon",
+        "Peu de frites/Sans frites",
+    ]
+    assert labels("Pizza margherita", "Sauce tomate, mozzarella, basilic") == []
+    assert labels("Pizza tunisienne") == ["Peu d'olives/Sans olives"]  # a pizza: harissa only when named
+    assert labels("Pizza piquante", "Sauce tomate, harissa, thon")[0] == "Peu de harissa/Sans harissa"
+    assert labels("Lablabi")[:3] == [
+        "Peu de harissa/Sans harissa",
+        "Peu d'olives/Sans olives",
+        "Peu de thon/Sans thon",
+    ]
+    assert labels("Burger maison")[0] == "Peu d'oignon/Sans oignon"  # a burger: no harissa unless « piquant »
+    assert labels("Burger piquant")[0] == "Peu de harissa/Sans harissa"
+    # never on a coffee, a drink, a dessert
     assert labels("Café direct", category="Boissons") == ["Peu de sucre/Sans sucre"]
     assert labels("Citronnade menthe 1 L") == ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons"]
     assert labels("Bambalouni") == ["Peu de sucre/Sans sucre"]
+    assert labels("Tiramisu") == [] and labels("Sandwich Caprese", "Mozzarella, tomate, basilic") == []
     for bottle in ("Coca-Cola 33 cl", "Eau minérale 1,5 L", "Boga cidre", "Canette Fanta", "Yaourt nature"):
         assert labels(bottle, category="Boissons") == [], bottle
-    assert labels("The Burger maison")[0] == "Sans oignon"  # a burger, never a tea
-    assert "Sans oignon" not in labels("Assiette grill sans oignons", "Kefta, frites, salade, sans oignons")
+    assert labels("The Burger maison")[0] == "Peu d'oignon/Sans oignon"  # a burger, never a tea
+    assert not any(
+        "oignon" in x for x in labels("Assiette grill sans oignons", "Kefta, frites, salade, sans oignons")
+    )
     # Arabic names
     assert labels("مقلوب دجاج", "دجاج، جبن، بطاطا مقلية، هريسة")[:2] == [
         "Peu de harissa/Sans harissa",
-        "Sans frites",
+        "Peu de frites/Sans frites",
     ]
     assert labels("عصير ليمون") == ["Peu de sucre/Sans sucre", "Peu de glaçons/Sans glaçons"]
     # a supermarket's products get nothing
     assert labels("Makloub thon", kind="supermarket") == []
     every = json.loads((DATA / "vitrine_options_snack.json").read_text())
-    assert all(len(labels(d["name"], d["description"], d["category"])) <= 6 for d in every)
+    for d in every:
+        options = vo.candidates(d["name"], d["description"], d["category"], None, "restaurant")
+        assert all(o["levels"] == ["less", "none"] for o in options), d["name"]
+        assert len(vo.rank(options)) <= 6
 
 
 def test_labels_fr_and_ar():
-    [harissa] = vo.candidates("Sandwich", "harissa, pain", ingredients=[{"name": "Harissa"}])
+    [harissa] = vo.candidates("Pizza", "harissa, pâte", ingredients=[{"name": "Harissa"}])
     assert harissa["labels"] == {
         "less": {"fr": "Peu de harissa", "ar": "قليل من الهريسة"},
         "none": {"fr": "Sans harissa", "ar": "بدون هريسة"},
     }
-    [ail] = vo.candidates("Sandwich", ingredients=[{"name": "Ail frais"}])
+    [ail] = vo.candidates("Pizza", ingredients=[{"name": "Ail frais"}])
     assert ail["labels"]["less"]["fr"] == "Peu d'ail" and ail["labels"]["none"]["ar"] == "بدون ثوم"
+    [oignon] = vo.candidates("Pizza", ingredients=[{"name": "Oignons"}])
+    assert oignon["levels"] == ["less", "none"]
+    assert oignon["labels"]["less"] == {"fr": "Peu d'oignon", "ar": "قليل من البصل"}
+    [oeuf] = vo.candidates("Pizza", ingredients=[{"name": "Œufs"}])
+    assert oeuf["labels"]["less"]["fr"] == "Peu d'œuf"
 
 
 def test_the_restaurant_decides_in_ods():
@@ -159,7 +221,10 @@ def test_the_restaurant_decides_in_ods():
     [custom] = [
         o for o in vo.candidates("Sandwich escalope", ingredients=recipe) if o["key"].startswith("o-")
     ]
-    assert custom["labels"]["none"]["fr"] == "Sans graines de nigelle" and custom["levels"] == ["none"]
+    assert custom["labels"]["none"]["fr"] == "Sans graines de nigelle" and custom["levels"] == [
+        "less",
+        "none",
+    ]
 
 
 def test_ranking_learns_from_orders_then_category():
@@ -267,9 +332,9 @@ async def test_the_recipe_travels_and_the_client_reads_the_options(client, world
     assert makloub["ingredients"][3] == {"name": "Oignons", "removable": False}
     assert keys_of(makloub) == [
         ("harissa", ["less", "none"]),
-        ("frites", ["none"]),
-        ("salade", ["none"]),
-        ("fromage", ["none"]),
+        ("frites", ["less", "none"]),
+        ("salade", ["less", "none"]),
+        ("fromage", ["less", "none"]),
     ]  # fmt: skip  (oignon: « ne peut pas être retiré » in ODS)
     assert keys_of(products[503]) == []
     seen = (await ok(client, qa, "getVitrine", {"shop_id": shop_id}))["vitrine"]["products"]
@@ -358,11 +423,12 @@ async def test_removals_are_checked_by_the_server(client, world, qa):
     async def place(lines):
         return await fn(client, qa, "placeOrder", cart_order(shop_id, lines))
 
-    # unknown to this dish (the oignon is « never » in ODS, the water has nothing), or a level not offered
+    # unknown to this dish (the oignon is « never » in ODS, the water has nothing, the sugar is no makloub's)
     for mods, pid in (
         ([{"key": "oignon", "level": "none"}], makloub),
+        ([{"key": "oignon", "level": "less"}], makloub),
         ([{"key": "sucre", "level": "none"}], eau),
-        ([{"key": "frites", "level": "less"}], makloub),
+        ([{"key": "sucre", "level": "less"}], makloub),
         ([{"key": "<script>", "level": "none"}], makloub),
     ):
         r = await place([{"product_id": pid, "qty": 1, "mods": mods}])
