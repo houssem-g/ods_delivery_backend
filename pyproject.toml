@@ -26,6 +26,7 @@ dependencies = [
     "prometheus-client>=0.20",
     "sentry-sdk[fastapi]>=2.10",
     "cryptography>=43",  # Fernet: partner webhook secrets at rest (app/security/secrets_box.py)
+    "pillow>=11.3,<13",  # Vitrine thumbnails (WebP 256 px, app/services/vitrine_thumbs.py)
 ]
 
 [dependency-groups]

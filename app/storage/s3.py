@@ -61,12 +61,14 @@ async def _run(func: Any, *args: Any, **kwargs: Any) -> Any:
         raise StorageUnavailable("object storage timed out") from exc
 
 
-async def put_object(key: str, body: bytes, content_type: str) -> None:
-    extra = (
+async def put_object(key: str, body: bytes, content_type: str, cache_control: str | None = None) -> None:
+    extra: dict[str, Any] = (
         {"ACL": settings.S3_PUBLIC_OBJECT_ACL}
         if settings.S3_PUBLIC_OBJECT_ACL and key.startswith("public/")
         else {}
     )
+    if cache_control:
+        extra["CacheControl"] = cache_control
     await _run(
         server_client().put_object,
         Bucket=settings.S3_BUCKET,
@@ -75,6 +77,21 @@ async def put_object(key: str, body: bytes, content_type: str) -> None:
         ContentType=content_type,
         **extra,
     )
+
+
+async def get_object(key: str, max_bytes: int) -> bytes:
+    """One of our objects, read by the API (at most `max_bytes`: a larger one raises ValueError)."""
+
+    def read() -> bytes:
+        answer = server_client().get_object(Bucket=settings.S3_BUCKET, Key=key)
+        if int(answer.get("ContentLength") or 0) > max_bytes:
+            raise ValueError("object too large")
+        return answer["Body"].read(max_bytes + 1)
+
+    body = await _run(read)
+    if len(body) > max_bytes:
+        raise ValueError("object too large")
+    return body
 
 
 async def delete_object(key: str) -> None:

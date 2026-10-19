@@ -43,7 +43,7 @@ from app.models.vitrine import MAX_PRODUCT_PRICE
 from app.security import secret_box
 from app.security.deps import CurrentUser
 from app.services import shops as shop_service
-from app.services import text_norm, vitrine_options
+from app.services import text_norm, vitrine_options, vitrine_thumbs
 from app.services.geo import ORDER_BOUNDS, within
 from app.services.orders import is_qa_account
 from app.services.places import lat_expr, lng_expr
@@ -441,6 +441,8 @@ def product_json(
         "description": product.description,
         "price": float(product.price),
         "photo_url": shop_service.photo_url_of(product.photo_key),
+        # the menu's small squares: a 256 px WebP (QA 19/10 M15); photo_url stays for the dish sheet
+        "thumb_url": vitrine_thumbs.thumb_url(product),
         "available": product.available,
         "position": product.position,
         "options": options if options is not None else {"remove": [], "extras": []},
@@ -1387,6 +1389,7 @@ async def list_nearby(session: AsyncSession, viewer: CurrentUser, payload: dict[
                         "name": p.name,
                         "price": float(p.price),
                         "photo_url": shop_service.photo_url_of(p.photo_key),
+                        "thumb_url": vitrine_thumbs.thumb_url(p),
                     }
                     for p in preview
                 ],

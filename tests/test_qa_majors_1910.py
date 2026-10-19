@@ -494,3 +494,117 @@ async def test_m12_no_reduction_even_one_minute(client, world):
     from tests.order_helpers import notifications
 
     assert "chez vous ≈ 20 min" in (await notifications(world.customer, "new_offer"))[-1].body_fr
+
+
+# --- M15: the menu shows 256 px WebP thumbnails, made once, cached in the bucket ------------------------
+
+
+def png(size=992) -> bytes:
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (size, size), (200, 120, 40)).save(out, "PNG")
+    return out.getvalue()
+
+
+async def test_m15_vitrine_thumbnails(client, world, monkeypatch):
+    import io
+
+    import httpx
+    from PIL import Image
+    from sqlalchemy import update
+
+    from app.config import settings
+    from app.db import SessionLocal
+    from app.models import VitrineProduct
+    from app.services import vitrine_thumbs
+    from app.storage import s3
+    from tests.order_helpers import reload
+    from tests.test_vitrine_orders import public_vitrine
+
+    shop_id, [cafe, croissant] = await public_vitrine(client, world.admin)
+    photo = "https://ods-bucket.example/menu_images/menu_1.png"
+    async with SessionLocal() as s:
+        await s.execute(update(VitrineProduct).where(VitrineProduct.id == cafe).values(photo_key=photo))
+        await s.execute(update(VitrineProduct).where(VitrineProduct.id == croissant).values(photo_key=photo))
+        await s.commit()
+
+    fetched, stored = [], {}
+    source = {"status": 200}
+
+    def answer(request):
+        fetched.append(str(request.url))
+        return httpx.Response(
+            source["status"], content=png(), headers={"content-type": "binary/octet-stream"}
+        )
+
+    async def public(host, port):
+        return True
+
+    async def put(key, body, content_type, cache_control=None):
+        stored[key] = (body, content_type, cache_control)
+
+    monkeypatch.setattr(vitrine_thumbs, "_transport", httpx.MockTransport(answer))
+    monkeypatch.setattr(vitrine_thumbs, "host_is_public", public)
+    monkeypatch.setattr(s3, "put_object", put)
+
+    menu = (await call(client, world.customer, "getVitrine", {"shop_id": shop_id})).json()["vitrine"]
+    dish = next(p for p in menu["products"] if p["id"] == cafe)
+    assert dish["photo_url"] == photo  # the original stays for the dish sheet
+    base = settings.API_PUBLIC_URL.rstrip("/")
+    assert dish["thumb_url"].startswith(f"{base}/api/public/vitrine/thumb/{cafe}?v=")
+
+    # the original can't be read: the original photo instead, nothing remembered, tried again later
+    source["status"] = 404
+    miss = await client.get(f"/api/public/vitrine/thumb/{cafe}")
+    assert miss.status_code == 302 and miss.headers["location"] == photo
+    assert (await reload(VitrineProduct, uuid.UUID(cafe))).photo_thumb_key is None
+
+    source["status"] = 200
+    first = await client.get(dish["thumb_url"].removeprefix(base))
+    assert first.status_code == 200 and first.headers["content-type"] == "image/webp"
+    assert "max-age" in first.headers["cache-control"]
+    image = Image.open(io.BytesIO(first.content))
+    assert image.format == "WEBP" and max(image.size) == 256 and len(first.content) < 30_000
+    [(key, (body, content_type, cache))] = stored.items()
+    assert key.startswith("public/vitrine-thumbs/") and content_type == "image/webp" and body == first.content
+    assert cache == vitrine_thumbs.CACHE_CONTROL
+    # remembered on every dish with that photo: the menu now points at the bucket, made once
+    for pid in (cafe, croissant):
+        assert (await reload(VitrineProduct, uuid.UUID(pid))).photo_thumb_key == key
+    menu = (await call(client, world.customer, "getVitrine", {"shop_id": shop_id})).json()["vitrine"]
+    assert {p["thumb_url"] for p in menu["products"]} == {s3.public_url(key)}
+    again = await client.get(f"/api/public/vitrine/thumb/{croissant}")
+    assert again.status_code == 302 and again.headers["location"] == s3.public_url(key)
+    assert len(fetched) == 2 and len(stored) == 1  # the 404 try, then one real fetch
+
+    # a new photo: a new thumbnail
+    async with SessionLocal() as s:
+        await s.execute(
+            update(VitrineProduct).where(VitrineProduct.id == cafe).values(photo_key=photo + "?v=2")
+        )
+        await s.commit()
+    menu = (await call(client, world.customer, "getVitrine", {"shop_id": shop_id})).json()["vitrine"]
+    assert next(p for p in menu["products"] if p["id"] == cafe)["thumb_url"].startswith(base)
+    assert (await client.get(f"/api/public/vitrine/thumb/{uuid.uuid4()}")).status_code == 404
+
+
+async def test_m15_thumbnail_source_is_read_with_care():
+    from app.services import vitrine_thumbs
+
+    assert await vitrine_thumbs.host_is_public("127.0.0.1", 443) is False
+    assert await vitrine_thumbs.host_is_public("169.254.169.254", 443) is False
+    assert await vitrine_thumbs.host_is_public("10.0.0.7", 443) is False
+    with pytest.raises(vitrine_thumbs.ThumbFailed):
+        await vitrine_thumbs.fetch_source("http://ods.example/a.png")  # https only
+    with pytest.raises(vitrine_thumbs.ThumbFailed):
+        await vitrine_thumbs.fetch_source("https://127.0.0.1/a.png")
+    with pytest.raises(vitrine_thumbs.ThumbFailed):
+        vitrine_thumbs.render(b"not an image")
+    import io
+
+    from PIL import Image
+
+    assert max(Image.open(io.BytesIO(vitrine_thumbs.render(png(64)))).size) == 64  # never enlarged

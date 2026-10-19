@@ -135,6 +135,9 @@ class VitrineProduct(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     # One of our public uploads (key) or an https URL (ODS photos).
     photo_key: Mapped[str | None] = mapped_column(Text)
+    # its 256 px WebP thumbnail in our bucket (QA 19/10 M15, app/services/vitrine_thumbs.py), made on the
+    # first request; valid while it is the key derived from the current photo_key (a new photo → a new one)
+    photo_thumb_key: Mapped[str | None] = mapped_column(Text)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     ods_menu_id: Mapped[int | None] = mapped_column(BigInteger)
