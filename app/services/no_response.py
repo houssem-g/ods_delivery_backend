@@ -20,8 +20,8 @@ The server owns the procedure; the screens only display it:
                       answers); MAX_REPORTS = 2 cases per order.
   customer_no_show    courier/admin (owner, 19/10/2026, QA M6): the customer answered the LAST
                       alert (« j'arrive ») but does not come. Once the last wait is over
-                      (prayer_times.wait_seconds after his answer: 3 min, 10 at a prayer / the iftar /
-                      Ramadan nights for a restaurant order — rule D3) and the courier is still within
+                      (prayer_times.no_show_wait_seconds after his answer: 3 min, 10 at a prayer / the
+                      iftar / Ramadan nights for EVERY order, owner 19/10) and the courier is still within
                       REPORT_MAX_DISTANCE_M of the door: a case is recorded as an expired, verified
                       no-response (messaging_status NO_SHOW, incident counted, no alert sent, never a
                       third alert), the order is parked in client_no_response and everything after it
@@ -649,7 +649,7 @@ def no_show_window(order: Order, cases: list[NoResponseCase], now: datetime) -> 
     last = cases[0]
     if last.status != "resolved" or last.resolution != "customer_confirmed" or last.resolved_at is None:
         return None
-    wait = prayer_times.wait_seconds(order.source, last.resolved_at)
+    wait = prayer_times.no_show_wait_seconds(last.resolved_at)  # every order (owner 19/10)
     until = last.resolved_at + timedelta(seconds=wait)
     return {
         "answered_at": last.resolved_at,

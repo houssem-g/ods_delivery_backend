@@ -174,3 +174,25 @@ async def test_no_show_needs_the_last_alert_answered(client, world):
     assert second.status_code == 200 and second.json()["stage"] == "waiting"
     assert [c.messaging_status != "no_show" for c in await the_cases(order)] == [True, True]
     assert await incidents(world.customer) == 0
+
+
+async def test_last_wait_is_10_min_at_a_prayer_for_every_order(client, world, monkeypatch):
+    """Owner 19/10: the 10-minute last wait (prayer / iftar / Ramadan nights) applies to every order in the
+    « pas venu » case — here a free-text shop order; the classic alert countdown stays 3 min for it."""
+    from app.services import prayer_times
+
+    monkeypatch.setattr(prayer_times, "slow_slot", lambda now, where=prayer_times.SOUSSE: "maghrib")
+    order = await on_the_way(world)
+    first = await call(client, world.courier_user, "report_no_response", order)
+    assert first.json()["timeout_seconds"] == 180  # classic no-response unchanged (D3: partners only)
+    await call(client, world.customer, "customer_confirms", order)
+    await call(client, world.courier_user, "report_no_response", order)
+    await call(client, world.customer, "customer_confirms", order)
+    early = await call(client, world.courier_user, "customer_no_show", order)
+    assert early.status_code == 409 and 590 <= early.json()["seconds_left"] <= 600
+    p = await policy(client, world, order)
+    assert p["no_show"]["wait_seconds"] == 600 and "dans 10 min" in p["message_fr"]
+    await time_passes(order, 300)  # 5 min: not yet
+    assert (await call(client, world.courier_user, "customer_no_show", order)).json()["error"] == "wait"
+    await time_passes(order, 310)
+    assert (await call(client, world.courier_user, "customer_no_show", order)).status_code == 200

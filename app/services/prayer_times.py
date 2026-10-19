@@ -124,6 +124,13 @@ def wait_seconds(source: str | None, now: datetime) -> int:
     return NORMAL_WAIT_SECONDS
 
 
+def no_show_wait_seconds(now: datetime) -> int:
+    """The last wait before « Le client n'est pas venu » (owner, 19/10/2026, QA M6): 10 min in a slow slot
+    (a prayer, the iftar, a Ramadan night) for EVERY order — free text, Vitrine, partner —, else 3 min.
+    The classic no-response countdown keeps wait_seconds (the slow slot for restaurant partners only)."""
+    return SLOW_WAIT_SECONDS if slow_slot(now) is not None else NORMAL_WAIT_SECONDS
+
+
 def describe(now: datetime) -> dict[str, Any]:
     """Debug helper: today's times (UTC) and the slot `now` is in."""
     return {
