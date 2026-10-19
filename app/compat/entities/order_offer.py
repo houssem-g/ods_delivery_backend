@@ -9,7 +9,7 @@ as an entity row, like a delete); admins too.
 import uuid
 from typing import Any
 
-from sqlalchemy import Text, and_, cast, exists, func, literal, not_, or_, select, true
+from sqlalchemy import Text, and_, case, cast, exists, func, literal, not_, null, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.registry import EntityDef, LegacyField, register
@@ -83,6 +83,35 @@ def _from_invite_courier() -> Any:
     )
 
 
+def _closed_reason() -> Any:
+    """Why a closed offer closed (QA 18/10 m53: « Votre offre a été refusée par le client » was shown when
+    the customer CANCELLED his order): 'blocked' (a block between the two), 'not_retained' (the customer
+    chose another courier), 'order_cancelled' (the customer cancelled the order), else 'rejected' /
+    'expired' (the status itself). Null while the offer is pending or accepted."""
+    other = OrderOffer.__table__.alias("closed_other_offer")
+    blocks = UserBlock.__table__
+    chosen_other = exists().where(
+        other.c.order_id == offers.c.order_id, other.c.id != offers.c.id, other.c.status == "accepted"
+    )
+    courier_user, customer = offer_courier.c.user_id, offer_order.c.customer_id
+    blocked = exists().where(
+        or_(
+            and_(blocks.c.blocker_id == courier_user, blocks.c.blocked_id == customer),
+            and_(blocks.c.blocker_id == customer, blocks.c.blocked_id == courier_user),
+        )
+    )
+    return case(
+        (offers.c.status.not_in(("rejected", "expired")), null()),
+        (blocked, literal("blocked")),
+        (chosen_other, literal("not_retained")),
+        (
+            and_(offer_order.c.status == "cancelled", offer_order.c.cancelled_by == "customer"),
+            literal("order_cancelled"),
+        ),
+        else_=cast(offers.c.status, Text),
+    )
+
+
 for_customer = {"read_guard": _customer_or_admin}
 
 FIELDS: dict[str, LegacyField] = {
@@ -99,6 +128,7 @@ FIELDS: dict[str, LegacyField] = {
     "distance_km": LegacyField(offers.c.distance_km, "number"),
     "message": LegacyField(offers.c.message, "string"),
     "status": LegacyField(cast(offers.c.status, Text), "string"),
+    "closed_reason": LegacyField(_closed_reason(), "string"),
     "created_via": LegacyField(literal("createOrderOffer"), "string"),
     # 18/10/2026 (app/services/arrival.py): the server's arrival when he offered, how far he was from
     # the shop, « annoncé » (his delay clearly under it). Only the offer's courier, its customer and

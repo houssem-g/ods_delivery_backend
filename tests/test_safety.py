@@ -203,7 +203,8 @@ async def test_customer_no_longer_sees_or_accepts_a_blocked_couriers_offer(clien
     res = await call(
         client, "acceptOrderOffer", parties.customer, {"order_id": str(order.id), "offer_id": str(offer.id)}
     )
-    assert res.status_code == 409 and res.json()["error"] == "blocked"
+    # the block rejected his pending offer (QA 18/10 m48): it can no longer be accepted
+    assert res.status_code == 409 and res.json()["error"] in ("blocked", "offer_not_pending")
 
 
 async def test_dispatch_skips_blocked_couriers(parties, monkeypatch):

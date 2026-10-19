@@ -288,6 +288,10 @@ async def test_update_offer_keeps_eta_and_message_unless_sent(client, world):
         "updateOrderOffer",
         {"offer_id": str(mine.id), "fee": 6, "message": "", "eta_minutes": 9999},
     )
+    assert r.status_code == 400 and r.json()["error"] == "invalid_eta"  # QA 18/10 c3: never ignored
+    r = await call(
+        client, world.courier_user, "updateOrderOffer", {"offer_id": str(mine.id), "fee": 6, "message": ""}
+    )
     assert r.json()["offer"]["message"] is None and r.json()["offer"]["eta_minutes"] == 20
 
 

@@ -24,7 +24,7 @@ from app.services.geo import as_float
 from app.services.notifications import notify
 from app.services.order_texts import minutes_ar, short_name
 from app.services.orders import OrderRefused, courier_of_user, dropped_by
-from app.services.safety import is_blocked
+from app.services.safety import blocked_with, is_blocked
 
 MAX_FEE_TND = Decimal("200")  # order_offers / orders CHECK
 MESSAGE_MAX = 300
@@ -45,6 +45,17 @@ def _parse_fee(value: Any) -> Decimal | None:
 def _parse_eta(value: Any) -> int | None:
     raw = as_float(value)
     return round(raw) if raw is not None and 1 <= round(raw) <= 600 else None
+
+
+def _eta_of(payload: dict[str, Any]) -> int | None:
+    """The delay he typed: none sent → None; sent but outside 1–600 min → 400 invalid_eta (QA 18/10 c3:
+    0 or 601 were answered 200 with the computed arrival, as getOfferRank already refuses them)."""
+    if payload.get("eta_minutes") is None:
+        return None
+    eta = _parse_eta(payload.get("eta_minutes"))
+    if eta is None:
+        raise OrderRefused(400, "invalid_eta", min=1, max=600)
+    return eta
 
 
 def _parse_message(value: Any) -> str | None:
@@ -239,7 +250,12 @@ async def offer_rank(
         and first["eta_minutes"] <= min(shown, default=first["eta_minutes"])
         else None
     )
-    cheapest = min(entries, key=lambda e: (e["fee"], e["_key"]))
+    # « le − cher » (QA 18/10 c4): on EVERY offer at the lowest price — two offers at 4.000 both carry
+    # it, never only the first one —, on none when every offer has the same price (nothing is cheaper)
+    lowest = min(e["fee"] for e in entries)
+    cheapest_ids = (
+        {id(e) for e in entries if e["fee"] == lowest} if any(e["fee"] != lowest for e in entries) else set()
+    )
     entries.sort(key=lambda e: (0 if e["pinned"] else 1, e["_key"]))
     multi = len(entries) > 1
     answer["board"] = [
@@ -248,7 +264,7 @@ async def offer_rank(
             "fee": e["fee"],
             "eta_minutes": e["eta_minutes"],
             "fastest": multi and e is fastest,
-            "cheapest": multi and e is cheapest,
+            "cheapest": multi and id(e) in cheapest_ids,
             # its delay was checked against the server's computation (never for an offer without one)
             "verified": e["_key"][0] == 0,
             **({"pinned": True} if e["pinned"] else {}),
@@ -270,6 +286,10 @@ async def _pending_offer_of(
             )
         )
     ).scalar_one_or_none()
+
+
+async def _customer_of(session: AsyncSession, order_id: uuid.UUID) -> uuid.UUID | None:
+    return (await session.execute(select(Order.customer_id).where(Order.id == order_id))).scalar_one_or_none()
 
 
 def _my_offer(offer: OrderOffer | None) -> dict[str, Any] | None:
@@ -307,7 +327,10 @@ async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, 
             )
         ).scalars()
         ranks = {}
+        blocked = await blocked_with(session, user.id)
         for offer in mine:
+            if blocked and await _customer_of(session, offer.order_id) in blocked:
+                continue  # m48: an order of a customer he blocked (or who blocked him) has no rank
             rank = await offer_rank(
                 session,
                 offer.order_id,
@@ -336,6 +359,9 @@ async def get_rank(session: AsyncSession, user: CurrentUser, payload: dict[str, 
         raise OrderRefused(403, "own_order")
     if order.status not in ot.OPEN_STATUSES:
         raise OrderRefused(409, "order_not_open", status=order.status)
+    if await is_blocked(session, user.id, order.customer_id):
+        # QA 18/10 m48: a block either way — no place « 1ʳᵉ sur 2 » on an order he can no longer serve
+        raise OrderRefused(409, "blocked")
     eta = None
     if payload.get("eta") is not None:
         eta = _parse_eta(payload.get("eta"))
@@ -399,7 +425,7 @@ async def update_offer(
         # nothing (« Offre modifiée », push) reaches that customer
         raise OrderRefused(409, "blocked")
 
-    eta = _parse_eta(payload.get("eta_minutes")) if "eta_minutes" in payload else None
+    eta = _eta_of(payload)
     message = _parse_message(payload.get("message")) if "message" in payload else None
     new_eta = eta if eta is not None else offer.eta_minutes
     new_message = (message or None) if message is not None else offer.message
@@ -469,7 +495,7 @@ async def create_offer(session: AsyncSession, user: CurrentUser, payload: dict[s
     fee = _parse_fee(payload.get("fee"))
     if fee is None:
         raise OrderRefused(400, "invalid_fee")
-    eta = _parse_eta(payload.get("eta_minutes"))
+    eta = _eta_of(payload)
     dist_raw = as_float(payload.get("distance_km"))
     distance = Decimal(str(round(dist_raw, 2))) if dist_raw is not None and 0 <= dist_raw <= 1000 else None
     message = _parse_message(payload.get("message")) or ""

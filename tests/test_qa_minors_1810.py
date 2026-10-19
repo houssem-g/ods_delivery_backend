@@ -72,3 +72,124 @@ async def test_m43_nothing_available_without_the_glued_text(client, world):
     assert (
         "(rayon vide)" in order_texts.stock_check_for_customer("rayon vide", None, None, True, 3)["body_fr"]
     )
+
+
+# --- c3: a typed delay outside 1-600 min is refused, never silently replaced by the computation -----------
+
+
+async def test_c3_offer_with_an_impossible_delay_is_refused(client, world):
+    order = await world.order()
+    for eta in (0, 601, "abc"):
+        r = await call(
+            client,
+            world.courier_user,
+            "createOrderOffer",
+            {"order_id": str(order.id), "fee": 5, "eta_minutes": eta},
+        )
+        assert r.status_code == 400 and r.json()["error"] == "invalid_eta", (eta, r.text)
+    ok = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
+    assert ok.status_code == 200, ok.text  # no delay at all: still the computed one (older apps)
+    offer_id = ok.json()["offer"]["id"] if "offer" in ok.json() else ok.json()["id"]
+    edit = await call(
+        client, world.courier_user, "updateOrderOffer", {"offer_id": offer_id, "fee": 6, "eta_minutes": 0}
+    )
+    assert edit.status_code == 400 and edit.json()["error"] == "invalid_eta"
+
+
+# --- c4: « le − cher » on every offer at the lowest price, on none when all prices are equal --------------
+
+
+async def test_c4_cheapest_badge_on_every_tied_offer(client, world, factory):
+    from tests.test_offer_rank import rivals
+
+    order = await world.order(status="offers_received")
+    await rivals(world, factory, order, "4", "4")
+    body = (
+        await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 6})
+    ).json()
+    assert sorted((e["fee"], e["cheapest"]) for e in body["board"]) == [
+        (4.0, True),
+        (4.0, True),
+        (6.0, False),
+    ]
+    same = (
+        await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 4})
+    ).json()
+    assert [e["cheapest"] for e in same["board"]] == [False, False, False]
+
+
+# --- m48: a block rejects the pending offers between the two; no rank on a blocked order ----------------
+
+
+async def test_m48_block_rejects_the_offer_and_the_rank(client, world):
+    order = await world.order(status="offers_received")
+    offer = await world.offer(order, fee="5")
+    r = await call(
+        client,
+        world.customer,
+        "blockUser",
+        {"order_id": str(order.id), "offer_courier_id": str(world.courier.id)},
+    )
+    assert r.status_code == 200, r.text
+    from app.models import Order as OrderRow
+    from app.models import OrderOffer
+    from tests.order_helpers import reload
+
+    assert (await reload(OrderOffer, offer.id)).status == "rejected"
+    assert (await reload(OrderRow, order.id)).status == "pending"  # no pending offer left
+    rank = await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 5})
+    assert rank.status_code in (404, 409)  # hidden from him, or 409 blocked — never « 1ʳᵉ sur 2 »
+    batch = await call(client, world.courier_user, "getOfferRank", {"order_ids": [str(order.id)]})
+    assert batch.json()["ranks"] == {}
+    mine = await client.get(f"/api/entities/OrderOffer/{offer.id}", headers=auth(world.courier_user))
+    assert mine.json()["closed_reason"] == "blocked"
+
+
+async def test_m48_rank_refused_while_blocked(client, world):
+    """The order still visible to him (the customer blocked by the courier side): 409 blocked."""
+    from app.services import offers as offers_service
+
+    order = await world.order(status="offers_received")
+    await world.offer(order, fee="5")
+    async with __import__("app.db", fromlist=["SessionLocal"]).SessionLocal() as s:
+        from app.models import UserBlock
+
+        s.add(UserBlock(blocker_id=world.courier_user.id, blocked_id=world.customer.id))
+        await s.commit()
+    assert offers_service  # the read rule may hide the order: both answers keep the rank away
+    r = await call(client, world.courier_user, "getOfferRank", {"order_id": str(order.id), "fee": 5})
+    assert r.status_code == 409 and r.json()["error"] == "blocked"
+
+
+# --- m53: why an offer closed — the customer cancelled ≠ the customer chose someone else ------------------
+
+
+async def test_m53_closed_reason_of_an_offer(client, world, factory):
+    from tests.test_offer_rank import rivals
+
+    cancelled = await world.order(status="offers_received")
+    mine = await world.offer(cancelled, fee="5")
+    r = await call(
+        client,
+        world.customer,
+        "cancelOrder",
+        {"order_id": str(cancelled.id), "cancelled_by": "customer", "reason": "changed_mind"},
+    )
+    assert r.status_code == 200, r.text
+    doc = (await client.get(f"/api/entities/OrderOffer/{mine.id}", headers=auth(world.courier_user))).json()
+    assert doc["status"] == "rejected" and doc["closed_reason"] == "order_cancelled"
+
+    chosen = await world.order(status="offers_received")
+    lost = await world.offer(chosen, fee="5")
+    [winner] = await rivals(world, factory, chosen, "4")
+    r = await call(
+        client, world.customer, "acceptOrderOffer", {"order_id": str(chosen.id), "offer_id": str(winner.id)}
+    )
+    assert r.status_code == 200, r.text
+    doc = (await client.get(f"/api/entities/OrderOffer/{lost.id}", headers=auth(world.courier_user))).json()
+    assert doc["status"] == "rejected" and doc["closed_reason"] == "not_retained"
+    pending = await world.offer(await world.order(status="offers_received"), fee="5")
+    doc = (
+        await client.get(f"/api/entities/OrderOffer/{pending.id}", headers=auth(world.courier_user))
+    ).json()
+    assert doc["closed_reason"] is None

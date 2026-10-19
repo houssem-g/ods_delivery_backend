@@ -440,7 +440,8 @@ async def test_board_alone_and_my_sent_offer_keeps_its_place(client, world, fact
     assert body["my_eta"] == 20 and body["my_offer"]["id"] == str(mine.id)
     assert [e["who"] for e in body["board"]] == ["A", "me", "B"]
     assert [e["fastest"] for e in body["board"]] == [True, False, False]
-    assert [e["cheapest"] for e in body["board"]] == [True, False, False]
+    # three offers at the same price: nobody is « le − cher » (QA 18/10 c4)
+    assert [e["cheapest"] for e in body["board"]] == [False, False, False]
 
     batch = (await call(client, world.courier_user, "getOfferRank", {"order_ids": [str(order.id)]})).json()
     one = batch["ranks"][str(order.id)]

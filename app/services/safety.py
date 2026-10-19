@@ -217,6 +217,32 @@ async def _block(session: AsyncSession, blocker: uuid.UUID, blocked: uuid.UUID) 
     return inserted.first() is not None
 
 
+async def _reject_offers_between(session: AsyncSession, user: CurrentUser, other: uuid.UUID) -> None:
+    """QA 18/10 m48: at the block, the pending offers one of them made on the other's open orders are
+    rejected (the courier's « Mes offres » no longer shows « 1ʳᵉ sur 2 » on an order he cannot serve);
+    an order left without a pending offer is « pending » again."""
+    from app.services import offers as offer_service  # offers imports this module
+    from app.services import order_transitions as ot
+
+    pairs = or_(
+        and_(Courier.user_id == user.id, Order.customer_id == other),
+        and_(Courier.user_id == other, Order.customer_id == user.id),
+    )
+    rows = (
+        await session.execute(
+            select(OrderOffer.id, OrderOffer.order_id)
+            .join(Courier, Courier.id == OrderOffer.courier_id)
+            .join(Order, Order.id == OrderOffer.order_id)
+            .where(OrderOffer.status == "pending", Order.status.in_(ot.OPEN_STATUSES), pairs)
+        )
+    ).all()
+    if not rows:
+        return
+    await offer_service.close_pending_offers(session, OrderOffer.id.in_([r[0] for r in rows]), "rejected")
+    for order_id in {r[1] for r in rows}:
+        await offer_service.demote_if_no_pending_offer(session, order_id, user, "blocked")
+
+
 def _signal(session: AsyncSession, *users: uuid.UUID) -> None:
     """Open screens of both users refresh (chat, offers, open orders)."""
     for user_id in users:
@@ -229,6 +255,8 @@ async def block_user(session: AsyncSession, user: CurrentUser, payload: dict[str
         return error
     assert target is not None
     created = await _block(session, user.id, target)
+    if created:
+        await _reject_offers_between(session, user, target)
     _signal(session, user.id, target)
     return 200, {
         "success": True,
