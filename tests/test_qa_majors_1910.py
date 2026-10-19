@@ -200,3 +200,50 @@ async def test_m6_policy_says_what_he_can_really_do(client, world):
     assert refused.status_code == 409
     back = await courier_cancel(client, world, order, "returned_to_shop")
     assert back.status_code == 200, back.text
+
+
+# --- M7: an Offre Chaude order never goes to the shop nor has its price rewritten -----------------------
+
+
+async def test_m7_hot_deal_order_refuses_shop_steps_and_keeps_its_price(client, world):
+    from datetime import timedelta
+    from decimal import Decimal
+
+    from app.db import SessionLocal
+    from app.models import HotDeal
+    from tests.order_helpers import now, reload
+
+    source = await world.order(status="cancelled", courier=world.courier, fee="5")
+    async with SessionLocal() as s:
+        deal = HotDeal(
+            original_order_id=source.id,
+            courier_id=world.courier.id,
+            items_text="x",
+            purchase_amount=Decimal("10"),
+            discount_percentage=Decimal("16"),
+            price=Decimal("8.4"),
+            expires_at=now() + timedelta(hours=2),
+            status="sold",
+            buyer_id=world.customer.id,
+        )
+        s.add(deal)
+        await s.commit()
+    order = await world.order(
+        status="accepted", courier=world.courier, fee="3", purchase="8.4", resale_deal_id=deal.id
+    )
+    await stops_at(order, "purchased")
+
+    async def patch(body):
+        return await client.patch(
+            f"/api/entities/Order/{order.id}", json=body, headers=auth(world.courier_user)
+        )
+
+    for status in ("at_shop", "price_confirmation_needed", "purchased"):
+        r = await patch({"status": status, "purchase_amount": 9})
+        assert r.status_code == 403, (status, r.text)
+    fresh = await reload(Order, order.id)
+    assert fresh.status == "accepted" and fresh.purchase_amount == Decimal("8.400")
+    # the real path still works, the price stays the reserved one
+    assert (await patch({"status": "on_the_way"})).status_code == 200
+    assert (await patch({"status": "delivered"})).status_code == 200
+    assert (await reload(Order, order.id)).purchase_amount == Decimal("8.400")

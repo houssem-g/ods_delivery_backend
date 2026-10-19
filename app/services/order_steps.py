@@ -4,7 +4,9 @@ handleStatusUpdate through MultiShopStatusButton), and the customer's geocode wr
 
 What the courier's app sends and what the server keeps of it:
 - `status`: only the next step of COURIER_STEPS (accepted → at_shop → purchased →
-  on_the_way → delivered; a hot deal goes accepted → on_the_way), or the same status
+  on_the_way → delivered; a hot deal goes accepted → on_the_way → delivered ONLY: at_shop,
+  price_confirmation_needed and purchased are refused, its shops never move and its purchase_amount
+  — the price the buyer reserved — is never rewritten, QA 19/10 M7), or the same status
   with shop progress (multi-shop "arrived at shop 2");
 - `shops[]`: per stop only `status` (forward only), `purchase_amount` (0 < x ≤ 2000, when
   the stop is bought), `receipt_photo_url` (one of our public uploads); names, addresses
@@ -46,6 +48,8 @@ COURIER_STEPS: dict[str, frozenset[str]] = {
     "on_the_way": frozenset({"delivered"}),
 }
 SHOPPING = ("accepted", "at_shop", "price_confirmation_needed")
+# a hot-deal order (resale_deal_id) goes accepted → on_the_way → delivered only (M7)
+HOT_DEAL_REFUSED = frozenset({"at_shop", "price_confirmation_needed", "purchased"})
 STOP_RANK = {"pending": 0, "en_route": 1, "at_shop": 2, "purchased": 3}
 MAX_PURCHASE = Decimal("2000")
 
@@ -225,6 +229,12 @@ async def courier_step(
     hot_deal = order.resale_deal_id is not None
     if from_status == "accepted" and to_status == "on_the_way" and not hot_deal:
         raise denied(f"Status change from {from_status} to {to_status} is not allowed")
+    if hot_deal and to_status != from_status and to_status in HOT_DEAL_REFUSED:
+        # QA 19/10 M7: the goods of an Offre Chaude are already bought, at the price the buyer reserved:
+        # no shop step, no « article indisponible », no second purchase rewriting purchase_amount
+        raise denied(f"Status change from {from_status} to {to_status} is not allowed for a hot deal")
+    if hot_deal and "shops" in data and len(stops) > 1 and _moves_a_stop(stops, data["shops"]):
+        raise denied("The shops of a hot deal are already bought")
 
     picked_changed = _apply_picked(order, data)
     shops_changed = False
@@ -248,7 +258,7 @@ async def courier_step(
             stop.purchase_amount = _amount(data.get("purchase_amount"), "purchase_amount")
             stop.receipt_key = await _receipt_key(session, data.get("receipt_photo_url"), user)
             stop.status, stop.completed_at = "purchased", ot.now_utc()
-    if stops:
+    if stops and not hot_deal:  # a hot deal's price is the reserved one, never recomputed (M7)
         if to_status == "purchased" and any(s.status != "purchased" for s in stops):
             raise bad("purchased: every shop of the order must be bought first")
         bought = [s.purchase_amount for s in stops if s.purchase_amount is not None]
