@@ -54,12 +54,14 @@ async def test_new_and_edited_offer_name_the_courier_the_same_way(client, world)
     r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 7})
     assert r.status_code == 200, r.text
     offer_id = r.json()["offer"]["id"]
+    first = await notifications(world.customer, "new_offer")
     r = await call(client, world.courier_user, "updateOrderOffer", {"offer_id": offer_id, "fee": 6.5})
     assert r.status_code == 200, r.text
 
+    # one notice per offer, brought up to date by the change (QA 18/10 m54)
     notes = await notifications(world.customer, "new_offer")
-    assert len(notes) == 2
-    for note in notes:
+    assert len(notes) == 1 and notes[0].title_fr == "Offre modifiée"
+    for note in first + notes:
         assert note.body_fr.startswith("QA L. "), note.body_fr
         assert note.body_ar.startswith("QA L. "), note.body_ar
         assert "QA Livreur 1" not in note.body_fr and "QA 1." not in note.body_fr

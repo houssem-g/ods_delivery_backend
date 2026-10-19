@@ -161,12 +161,13 @@ async def test_purge_step_deletes_expired_unsold_and_qa_deals(world):
         row.resale_deal_id = qa_sold.id
         await s.commit()
     metrics = await messaging_jobs.test_data_purge()
-    assert metrics["expired_deals_deleted"] == 2 and metrics["test_run_deals_deleted"] == 1
+    assert metrics["expired_deals_deleted"] == 2 and metrics["test_run_deals_deleted"] == 0
     assert metrics["failed_steps"] == 0 and "hot_deals" in metrics["steps"]
     left = {d.id for d in await rows(select(HotDeal))}
-    assert left == {sold.id, live.id, qa_live.id}
+    # a SOLD QA deal stays too (QA 18/10 c5): its buyer's order keeps pointing at it
+    assert left == {sold.id, live.id, qa_live.id, qa_sold.id}
     assert expired.id not in left and listed_past.id not in left
-    assert (await reload(Order, buyer_order.id)).resale_deal_id is None
+    assert (await reload(Order, buyer_order.id)).resale_deal_id == qa_sold.id
     again = await messaging_jobs.test_data_purge()
     assert again["expired_deals_deleted"] == 0 and again["test_run_deals_deleted"] == 0
 
