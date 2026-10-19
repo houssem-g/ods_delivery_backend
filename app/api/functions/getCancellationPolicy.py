@@ -2,6 +2,10 @@
 Parties and admins only.
 
 Body: { order_id, actor?: 'customer'|'courier' }. Returns { success, actor, order_id, status, policy }.
+Courier after the purchase (policy.after_purchase): policy.can_resell says whether createHotDeal would
+take the goods now; false → resale_refusal (wait | customer_answered | already_closed | nothing_bought |
+order_not_resellable), resale_after (ISO, when `wait`), and the message names only what is possible
+(finish the delivery, or « rendre au magasin », a late cancellation) — QA 19/10 M6.
 """
 
 from typing import Any
@@ -13,7 +17,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.functions._common import as_uuid
 from app.models import Order
 from app.security.deps import CurrentUser
-from app.services.cancellation import courier_policy, customer_policy, late_for_courier
+from app.services import order_transitions as ot
+from app.services.cancellation import (
+    after_purchase,
+    courier_policy,
+    customer_policy,
+    late_for_courier,
+    resale_possible,
+)
 from app.services.orders import is_assigned_courier
 
 
@@ -35,7 +46,8 @@ async def handle(
     ):
         return 403, {"error": "Forbidden"}
     if actor == "courier":
-        policy = courier_policy(order, late=await late_for_courier(session, order))
+        resale = await resale_possible(session, order, ot.now_utc()) if after_purchase(order) else None
+        policy = courier_policy(order, late=await late_for_courier(session, order), resale=resale)
     else:
         policy = customer_policy(order.status)
     return 200, {

@@ -151,3 +151,52 @@ async def test_m4_exceptions_are_kept(client, world):
     assert policy.json()["policy"]["penalty_applies"] is False
     assert (await courier_cancel(client, world, early)).status_code == 200
     assert await late_count(world) == before
+
+
+# --- M6: after two alerts the customer answered, the policy never offers « revendez » ------------------
+
+
+async def answered_twice(order, world):
+    from datetime import timedelta
+
+    from app.db import SessionLocal
+    from app.models import NoResponseCase
+    from tests.order_helpers import now
+
+    async with SessionLocal() as s:
+        for n in range(2):
+            start = now() - timedelta(minutes=20 - 5 * n)
+            s.add(
+                NoResponseCase(
+                    order_id=order.id,
+                    courier_id=world.courier.id,
+                    status="resolved",
+                    started_at=start,
+                    deadline_at=start + timedelta(minutes=3),
+                    resolved_at=start + timedelta(minutes=1),
+                    resolution="customer_confirmed",
+                )
+            )
+        await s.commit()
+
+
+async def test_m6_policy_says_what_he_can_really_do(client, world):
+    order = await world.order(status="on_the_way", courier=world.courier, fee="4", purchase="8.4")
+    ask = {"order_id": str(order.id), "actor": "courier"}
+    # bought, no alert at all: his own choice, the resale is possible (unchanged)
+    free = (await call(client, world.courier_user, "getCancellationPolicy", ask)).json()["policy"]
+    assert free["can_resell"] is True and "revendez-les" in free["message_fr"]
+
+    await answered_twice(order, world)
+    policy = (await call(client, world.courier_user, "getCancellationPolicy", ask)).json()["policy"]
+    assert policy["after_purchase"] is True and policy["can_resell"] is False
+    assert policy["resale_refusal"] == "customer_answered"
+    assert "revend" not in policy["message_fr"].lower()
+    assert "terminez la livraison" in policy["message_fr"] and "rendez les articles" in policy["message_fr"]
+    # the server agrees: the resale is refused, the return to the shop (+1 late) is the way out
+    refused = await call(
+        client, world.courier_user, "createHotDeal", {"order_id": str(order.id), "courier_choice": True}
+    )
+    assert refused.status_code == 409
+    back = await courier_cancel(client, world, order, "returned_to_shop")
+    assert back.status_code == 200, back.text

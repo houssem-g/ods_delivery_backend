@@ -115,6 +115,31 @@ def no_response_gate(order_status: str, case: NoResponseCase | None, now: dateti
     return {"ok": True}
 
 
+RESELLABLE = ("purchased", "on_the_way", "client_no_response")  # = hot_deals.RESELLABLE
+
+
+async def resale_possible(session: AsyncSession, order: Order, now: datetime) -> dict[str, Any]:
+    """Would createHotDeal take this order now (read only, the same gates)? {ok, reason?, deadline_at?}.
+    Without any « client ne répond pas » report: the courier's own choice after the purchase; with one:
+    only once its deadline passed with the customer silent (QA 19/10 M6: after two alerts the customer
+    answered, the goods can't be resold — the texts must not offer it)."""
+    if (order.purchase_amount or 0) <= 0:
+        return {"ok": False, "reason": "nothing_bought"}
+    case = (
+        await session.execute(
+            select(NoResponseCase)
+            .where(NoResponseCase.order_id == order.id)
+            .order_by(NoResponseCase.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if case is None and order.status != "client_no_response":
+        return {"ok": True} if after_purchase(order) else {"ok": False, "reason": "order_not_resellable"}
+    if order.status not in RESELLABLE:
+        return {"ok": False, "reason": "order_not_resellable"}
+    return no_response_gate(order.status, case, now)
+
+
 async def linked_hot_deal(session: AsyncSession, order: Order) -> HotDeal | None:
     conditions = [HotDeal.original_order_id == order.id, HotDeal.buyer_order_id == order.id]
     if order.resale_deal_id is not None:
@@ -483,25 +508,80 @@ def customer_policy(status: str) -> dict[str, Any]:
     }
 
 
-def courier_policy(order: Order, *, late: bool | None = None) -> dict[str, Any]:
-    """`late`: late_for_courier(order) (getCancellationPolicy computes it); None = by the status alone."""
+def _after_purchase_texts(resale: dict[str, Any] | None) -> dict[str, str]:
+    """What he can really do once the goods are paid (QA 19/10 M6: « revendez-les » was offered while
+    createHotDeal refused it — after two alerts the customer answered, nothing can be resold)."""
+    if resale is None or resale.get("ok"):
+        return {
+            "message_ar": "دفعت ثمن المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو أرجعها للمتجر.",
+            "message_fr": (
+                "Vous avez déjà payé les articles : revendez-les en Offre Chaude pour récupérer "
+                "votre argent, ou rendez-les au magasin."
+            ),
+        }
+    if resale.get("reason") == "wait":
+        return {
+            "message_ar": (
+                "دفعت ثمن المواد: يمكنك إعادة بيعها كعرض ساخن بعد انتهاء مهلة انتظار الحريف. "
+                "وإلا أرجعها للمتجر (يُحتسب إلغاءً متأخراً)."
+            ),
+            "message_fr": (
+                "Vous avez déjà payé les articles : la revente en Offre Chaude sera possible à la fin "
+                "du délai d'attente du client. Sinon, rendez-les au magasin (cela compte comme une "
+                "annulation tardive)."
+            ),
+        }
+    if resale.get("reason") == "customer_answered":
+        return {
+            "message_ar": (
+                "دفعت ثمن المواد والحريف ردّ: اتصل به وأكمل التوصيل. إن تعذّر ذلك، أرجع المواد "
+                "للمتجر (يُحتسب إلغاءً متأخراً)."
+            ),
+            "message_fr": (
+                "Vous avez déjà payé les articles et le client a répondu : appelez-le et terminez la "
+                "livraison. Si c'est impossible, rendez les articles au magasin (cela compte comme une "
+                "annulation tardive)."
+            ),
+        }
+    return {
+        "message_ar": (
+            "دفعت ثمن المواد ولم تعد إعادة البيع ممكنة: أكمل التوصيل أو أرجع المواد للمتجر "
+            "(يُحتسب إلغاءً متأخراً)."
+        ),
+        "message_fr": (
+            "Vous avez déjà payé les articles et la revente n'est plus possible : terminez la "
+            "livraison ou rendez les articles au magasin (cela compte comme une annulation tardive)."
+        ),
+    }
+
+
+def courier_policy(
+    order: Order, *, late: bool | None = None, resale: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """`late`: late_for_courier(order) (getCancellationPolicy computes it); None = by the status alone.
+    `resale`: resale_possible(order) after the purchase (None: not computed, resale offered)."""
     status = order.status
     penalty = late if late is not None else status in PENALTY_STATUSES
     if after_purchase(order):
         # No simple cancel: the courier's « Je ne peux pas terminer la course » opens the choice
-        # « Revendre en Offre Chaude » / « J'ai rendu les articles au magasin » (resell_or_return).
+        # « Revendre en Offre Chaude » / « J'ai rendu les articles au magasin » (resell_or_return);
+        # can_resell false (M6): only « rendre au magasin » (+1 late) or finishing the delivery is left.
+        can_resell = resale is None or bool(resale.get("ok"))
         return {
             "can_cancel": False,
             "is_delay_cancel": True,
             "penalty_applies": True,
             "after_purchase": True,
             "resell_or_return": True,
-            "reason_code": "courier_after_purchase",
-            "message_ar": "دفعت ثمن المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو أرجعها للمتجر.",
-            "message_fr": (
-                "Vous avez déjà payé les articles : revendez-les en Offre Chaude pour récupérer "
-                "votre argent, ou rendez-les au magasin."
+            "can_resell": can_resell,
+            **({} if can_resell else {"resale_refusal": resale.get("reason") if resale else None}),
+            **(
+                {"resale_after": resale["deadline_at"]}
+                if resale and not can_resell and resale.get("deadline_at")
+                else {}
             ),
+            "reason_code": "courier_after_purchase",
+            **_after_purchase_texts(resale),
         }
     return {
         "can_cancel": True,
