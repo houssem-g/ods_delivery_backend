@@ -263,20 +263,15 @@ async def test_m8_decay_plan_preview_and_reserved_price(client, world, factory):
     assert preview.status_code == 200, preview.text
     plan = preview.json()
     assert plan["preview"] is True and "deal_id" not in plan
-    assert (plan["start_price"], plan["floor_price"], plan["drop_step"], plan["drop_every_min"]) == (
-        10,
-        8,
-        0.5,
-        5,
-    )
-    assert [p["price"] for p in plan["price_schedule"]] == [10, 9.5, 9, 8.5, 8]
-    assert plan["price_schedule"][-1]["after_min"] == plan["floor_after_min"] == 20
+    # fixed price since 19/10/2026 (owner): no drop, no floor
+    assert plan["price"] == plan["start_price"] == 10 and plan["price_fixed"] is True
+    assert plan["floor_price"] is None and plan["drop_step"] is None and plan["price_schedule"] is None
     assert (await reload(Order, order.id)).status == "on_the_way"  # nothing created
     assert await rows(select(HotDeal.id).where(HotDeal.original_order_id == order.id)) == []
 
     made = await call(client, world.courier_user, "createHotDeal", ask)
     assert made.status_code == 200, made.text
-    assert made.json()["price_schedule"] == plan["price_schedule"] and made.json()["expires_at"]
+    assert made.json()["price"] == plan["price"] and made.json()["expires_at"]
 
     buyer = await factory.user(email="buyer2@example.test", full_name="Salma", phone_e164="+21698000111")
     r = await call(

@@ -550,3 +550,52 @@ async def test_p1_no_alert_left_after_two(client, world):
     assert (await order_doc(client, world.courier_user, order))["no_response_alerts_left"] == 0
     again = await no_response_call(client, world.courier_user, "report_no_response", order)
     assert again.status_code == 409 and again.json()["error"] == "too_many_reports"
+
+
+# --- Offre Chaude at a fixed price (owner 19/10/2026): R51 commission still right ----------------------
+
+
+async def test_fixed_price_resale_commission_r51(client, factory):
+    """No discount: the buyer pays the full price even 30 min later (no drop any more) → ODS's share;
+    with a discount → none."""
+    from datetime import UTC, datetime
+
+    from app.db import SessionLocal
+    from app.models import Order as OrderRow
+    from app.services import commission
+    from tests.test_hot_deals import fn, parked
+    from tests.test_hot_deals_aurora import backdate
+
+    world = await OrderWorld(factory).setup()
+    world.buyer = await factory.user(email="buyer@example.test", full_name="Salma", phone_e164="+21698111222")
+    charged = {}
+    for discount in (0, 20):
+        order = await parked(client, world, purchase="25")
+        made = await fn(
+            client,
+            world.courier_user,
+            "createHotDeal",
+            {"order_id": str(order.id), "discount_percentage": discount},
+        )
+        assert made.status_code == 200, made.text
+        from app.models import HotDeal
+
+        async with SessionLocal() as s:
+            deal = await s.get(HotDeal, __import__("uuid").UUID(made.json()["deal_id"]))
+        await backdate(deal, 30)
+        r = await fn(
+            client,
+            world.buyer,
+            "reserveHotDeal",
+            {"resale_order_id": str(deal.id), "delivery_address": "Rue 2"},
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["price"] == 25 * (100 - discount) / 100  # the published price, 30 min later
+        async with SessionLocal() as s:
+            row = await s.get(OrderRow, __import__("uuid").UUID(r.json()["order_id"]))
+            row.status, row.delivered_at = "delivered", datetime.now(UTC)
+            await s.flush()
+            entry = await commission.record_delivery(s, row, datetime.now(UTC))
+            charged[discount] = entry is not None
+            await s.rollback()
+    assert charged == {0: True, 20: False}

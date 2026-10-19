@@ -549,7 +549,7 @@ FIELDS: dict[str, LegacyField] = {
     "courier_net_earning": LegacyField(
         case((delivered, func.coalesce(orders.c.delivery_fee, 0)), else_=null()), "number"
     ),
-    # a delivered RESALE without a commission entry (bought with a discount or a price drop, R51) answers
+    # a delivered RESALE without a commission entry (bought with a discount, R51) answers
     # 0 / « none »: ODS took nothing, never the « offerte » of the launch (QA 18/10 m41)
     "ods_commission": LegacyField(
         case((_resale_without_commission(), literal(0)), else_=commission.c.amount), "number"

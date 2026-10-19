@@ -5,7 +5,8 @@ reserveHotDeal, listHotDeals and the ResaleOrder part of sweepExpiredTestData.
 createHotDeal (courier of the order): only goods already bought (purchased / on_the_way /
   client_no_response) of a reported order, only once the no-response deadline is past and the
   customer silent (the case is brought up to date first, like the live `status` call); prices,
-  goods and position come from the database, the client picks the discount (0-90 %, default 0)
+  goods and position come from the database, the client picks the discount (0-90 %, default 0;
+  R47, confirmed by the owner 19/10/2026)
   and the delivery fee (0.5-100, default 3); the photo must be one of the courier's own public
   uploads. The deal lives 2 h. The original order is cancelled (courier, 'client_no_response',
   note "Remis en vente"), the case resolved 'resold' with the incident counted, the customer
@@ -17,11 +18,12 @@ reserveHotDeal (any other signed-in user): deal row locked, so two buyers of the
   created 'accepted' with the deal's courier (ot.start), its total = discounted price + the
   deal's delivery fee; the courier is told (hot_deal_reserved, always pushed).
 listHotDeals: listed deals not expired, public fields only, nearest first (PostGIS), 0.1 km.
-Price decay (Aurora, 2026-09-29): a deal starts at start_price (the discounted price) and drops
-by drop_step every drop_every_min minutes down to floor_price (createHotDeal `floor_price`, ≥ 30 %
-of the start price; default max(start − 4 × drop_step, 30 % of start)). The current price is
-computed on read (`current_price`) and charged by reserveHotDeal at that instant. Deals made
-before have start = floor = price (no decay).
+Fixed price (owner, 19/10/2026): the price of a deal is the one the courier set when publishing
+(purchase − his discount), the same during its whole life — no automatic drop, no floor any more
+(the Aurora decay of 2026-09-29 is gone). New deals are written with start = floor = price and
+drop_step 0; the deals still listed when this shipped were frozen at their price of that moment
+(migration 4b7e2d9c1a58, and `freeze_listed` in the hourly expiry job as a safety net), never raised
+back. `current_price` keeps reading the old columns for the history of decayed deals.
 Alerts: customers who opted in (users.notify_hot_deals) and whose default address is within
 ALERT_RADIUS_KM of the pickup hear of a new deal (hot_deal_new), at most ALERT_MAX, never the
 courier nor the original customer, never for a QA deal.
@@ -76,9 +78,7 @@ log = logging.getLogger("odsd.hot_deals")
 
 RESELLABLE = frozenset({"purchased", "on_the_way", "client_no_response"})
 TTL = timedelta(hours=2)
-DROP_STEP = Decimal("0.500")  # the price decay of a new deal: −0.500 DT …
-DROP_EVERY_MIN = 5  # … every 5 minutes, down to its floor price
-MAX_DISCOUNT = 90
+MAX_DISCOUNT = 90  # % (R47, owner 19/10/2026: 90 — the screen's 50 is to be raised)
 FEE_BOUNDS = (0.5, 100.0)
 DEFAULT_FEE = 3.0
 MAX_ACTIVE_RESERVATIONS = 2
@@ -99,15 +99,13 @@ PUBLIC_FIELDS = (
     "id", "items_text", "shop_name", "purchase_amount", "discount_percentage", "discounted_price",
     "include_delivery", "delivery_fee", "photo_url", "expires_at", "status", "courier_name",
     "created_date", "sold_by_courier",
-    # Aurora (price decay, trust signals)
+    # Aurora (trust signals; the price fields of the former decay stay, fixed: floor / next = null)
     "original_price", "current_price", "start_price", "floor_price", "next_price", "next_drop_at",
     "discount_pct_now", "courier_rating", "courier_deliveries", "receipt_verified", "sealed",
     "purchased_at", "no_response_at", "listed_at",
     "own_order", "own_deal",  # for the reader only (QA 06/10 N11)
 )  # fmt: skip
 PURGE_BATCH = 500
-FLOOR_MIN_SHARE = Decimal("0.3")  # the floor price is at least 30 % of the start price
-DEFAULT_DROPS = 4  # default floor: 4 drops below the start (never under 30 %)
 ALERT_RADIUS_KM = 5
 ALERT_MAX = 200
 
@@ -140,34 +138,20 @@ def current_price(deal: HotDeal, now: datetime) -> Decimal:
     return max(floor, start - _drops(deal, now) * (deal.drop_step or Decimal(0)))
 
 
-def price_schedule(deal: HotDeal, now: datetime) -> tuple[Decimal, Decimal | None, datetime | None]:
-    """(current price, next price, when it drops); the next two are None at the floor."""
-    price = current_price(deal, now)
-    step = deal.drop_step or Decimal(0)
-    if step <= 0 or price <= deal.floor_price:
-        return price, None, None
-    every = timedelta(minutes=max(1, deal.drop_every_min or 1))
-    return price, max(deal.floor_price, price - step), deal.created_at + (_drops(deal, now) + 1) * every
-
-
-def decay_plan(start: Decimal, floor: Decimal) -> dict[str, Any]:
-    """What the courier is told before and after publishing (QA 19/10 M8): the start price, the floor, the
-    drop and its rhythm, and every step — {after_min, price} from 0 until the floor (or the deal's 2 h)."""
-    steps = [{"after_min": 0, "price": float(start)}]
-    price, minutes = start, 0
-    ttl_min = int(TTL.total_seconds() // 60)
-    while price > floor and minutes + DROP_EVERY_MIN < ttl_min:
-        minutes += DROP_EVERY_MIN
-        price = max(floor, price - DROP_STEP)
-        steps.append({"after_min": minutes, "price": float(price)})
+def price_plan(price: Decimal) -> dict[str, Any]:
+    """What createHotDeal answers about the price (preview and publication): the fixed price. The keys of
+    the former decay plan stay for the installed apps, null (their sheet then says « Le prix reste fixe »).
+    """
     return {
-        "start_price": float(start),
-        "floor_price": float(floor),
-        "drop_step": float(DROP_STEP),
-        "drop_every_min": DROP_EVERY_MIN,
-        "floor_after_min": minutes if price <= floor else None,
-        "expires_in_min": ttl_min,
-        "price_schedule": steps,
+        "price": float(price),
+        "price_fixed": True,
+        "start_price": float(price),
+        "floor_price": None,
+        "drop_step": None,
+        "drop_every_min": None,
+        "floor_after_min": None,
+        "expires_in_min": int(TTL.total_seconds() // 60),
+        "price_schedule": None,
     }
 
 
@@ -176,18 +160,6 @@ def current_price_sql(deals: Any) -> Any:
     minutes = func.extract("epoch", func.now() - deals.c.created_at) / 60
     drops = func.greatest(0, func.floor(minutes / func.greatest(deals.c.drop_every_min, 1)))
     return func.greatest(deals.c.floor_price, deals.c.start_price - drops * deals.c.drop_step)
-
-
-def _floor_price(payload: dict[str, Any], start: Decimal) -> Decimal | None:
-    """createHotDeal's floor: given (≥ 30 % of the start, ≤ the start) or the default; None = invalid."""
-    lowest = _money(start * FLOOR_MIN_SHARE)
-    if payload.get("floor_price") in (None, ""):
-        return _money(max(start - DEFAULT_DROPS * DROP_STEP, lowest))
-    number = js_number(payload.get("floor_price"))
-    if not math.isfinite(number):
-        return None
-    floor = _money(number)
-    return floor if lowest <= floor <= start else None
 
 
 def _bounded(payload: dict[str, Any], key: str, low: float, high: float, fallback: float) -> float:
@@ -268,17 +240,10 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
 
     discount = _bounded(payload, "discount_percentage", 0, MAX_DISCOUNT, 0)
     fee = _bounded(payload, "delivery_fee", *FEE_BOUNDS, DEFAULT_FEE)
-    start = _money(float(purchase) * (1 - discount / 100))
-    floor = _floor_price(payload, start)
-    if floor is None:
-        return 400, {
-            "error": "invalid_floor_price",
-            "min": float(_money(start * FLOOR_MIN_SHARE)),
-            "max": float(start),
-        }
+    start = _money(float(purchase) * (1 - discount / 100))  # THE price, fixed (owner 19/10/2026)
     if payload.get("preview") is True:
-        # the sheet's « le prix baissera de 0.500 DT toutes les 5 min jusqu'à … » before publishing (M8)
-        return 200, {"success": True, "preview": True, **decay_plan(start, floor)}
+        # the sheet shows the price before « Publier » (QA 19/10 M8): fixed, nothing created
+        return 200, {"success": True, "preview": True, **price_plan(start)}
     now = ot.now_utc()
     stop = await first_stop(session, order.id)
     # A restaurant ODS dish is resold by the courier, never under the restaurant's name (decision 10,
@@ -300,9 +265,9 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         discount_percentage=_money(discount),
         price=start,
         start_price=start,
-        floor_price=floor,
-        drop_step=DROP_STEP,
-        drop_every_min=DROP_EVERY_MIN,
+        floor_price=start,  # no floor: the price never moves (owner 19/10/2026)
+        drop_step=Decimal(0),
+        drop_every_min=5,
         include_delivery=True,
         delivery_fee=_money(fee),
         photo_key=await _photo_key(session, payload.get("photo_url"), user),
@@ -353,7 +318,7 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         return 200, {
             "success": True,
             "deal_id": str(deal.id),
-            **decay_plan(start, floor),
+            **price_plan(start),
             "expires_at": legacy_datetime(deal.expires_at),
             "alerted": alerted,
         }
@@ -382,7 +347,7 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
     return 200, {
         "success": True,
         "deal_id": str(deal.id),
-        **decay_plan(start, floor),
+        **price_plan(start),
         "expires_at": legacy_datetime(deal.expires_at),
         "alerted": alerted,
     }
@@ -531,7 +496,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
     fee = deal.delivery_fee or Decimal(0)
     if fee <= 0:
         return 500, {"error": "Invalid hot deal delivery fee"}
-    charged = current_price(deal, now)  # the decayed price at this instant
+    charged = current_price(deal, now)  # the deal's fixed price (drop_step 0 since 19/10/2026)
     lat = _coord(payload.get("delivery_lat"), BUYER_BOUNDS[0], BUYER_BOUNDS[1])
     lng = _coord(payload.get("delivery_lng"), BUYER_BOUNDS[2], BUYER_BOUNDS[3])
     order = Order(
@@ -542,7 +507,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         contact_phone_e164=contact_phone,
         delivery_address=address,
         delivery_location=point(lat, lng) if lat is not None and lng is not None else None,
-        # what the buyer reimburses: the current (decayed) price (the legacy total = price + fee)
+        # what the buyer reimburses: the deal's price (the legacy total = price + fee)
         purchase_amount=charged,
         delivery_fee=fee,
         payment_method="cash",
@@ -583,7 +548,7 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
             type_="hot_deal_reserved",
             title_ar="🔥 تم حجز العرض الساخن",
             title_fr="🔥 Offre Chaude réservée",
-            # the price obtained (QA 19/10 M8: the deal may have dropped since it was published)
+            # the price obtained (the deal's fixed price)
             body_ar=(
                 f"{who_ar} حجز العرض بـ {charged:.3f} د.ت (+ {fee:.3f} د.ت توصيل): {deal.items_text}. "
                 "ابدأ التوصيل."
@@ -719,7 +684,7 @@ async def list_deals(
         deal, courier_name, bought_at, reported_at, has_receipt, rating, deliveries = row[:7]
         customer_of_original, courier_user_id, original_source = row[7], row[8], row[9]
         km = row[10] if has_point else None
-        price, next_price, next_drop_at = price_schedule(deal, now)
+        price = current_price(deal, now)
         original = deal.purchase_amount
         deals.append(
             {
@@ -734,9 +699,10 @@ async def list_deals(
                 "discounted_price": _number(price),
                 "current_price": _number(price),
                 "start_price": _number(deal.start_price),
-                "floor_price": _number(deal.floor_price),
-                "next_price": _number(next_price),
-                "next_drop_at": legacy_datetime(next_drop_at) if next_drop_at else None,
+                # no floor, no next drop any more (owner 19/10/2026): kept null for the installed apps
+                "floor_price": None,
+                "next_price": None,
+                "next_drop_at": None,
                 "discount_pct_now": round(100 * (1 - price / original)) if original else None,
                 "include_delivery": deal.include_delivery,
                 "delivery_fee": _number(deal.delivery_fee),
@@ -765,9 +731,31 @@ async def list_deals(
 # ─────────────────────────── jobs ───────────────────────────
 
 
-async def expire_deals(session: AsyncSession, now: datetime | None = None) -> int:
-    """Listed deals past their expiry → expired (hourly)."""
+async def freeze_listed(session: AsyncSession, now: datetime | None = None) -> int:
+    """Listed deals still written with a drop (a deal published by an older server) keep their price of
+    this instant, for good: start = floor = price now, drop_step 0 (owner 19/10/2026, never raised back)."""
     now = now or ot.now_utc()
+    deals = list(
+        (
+            await session.execute(
+                select(HotDeal)
+                .where(HotDeal.status == "available", HotDeal.drop_step > 0)
+                .with_for_update(skip_locked=True)
+            )
+        ).scalars()
+    )
+    for deal in deals:
+        frozen = current_price(deal, now)
+        deal.price = deal.start_price = deal.floor_price = frozen
+        deal.drop_step = Decimal(0)
+        announce(session, deal, "available")
+    return len(deals)
+
+
+async def expire_deals(session: AsyncSession, now: datetime | None = None) -> int:
+    """Listed deals past their expiry → expired (hourly); the others' price frozen (freeze_listed)."""
+    now = now or ot.now_utc()
+    await freeze_listed(session, now)
     ids = list(
         (
             await session.execute(

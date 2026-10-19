@@ -6,7 +6,12 @@
 - notifications.type accepts 'offer_not_retained': the couriers whose offer the customer did not choose
   are told in the app, without a push (m38).
 
-Additive (columns with a default, a wider CHECK); downgrade drops the columns and the new notices.
+- Offres Chaudes at a fixed price (owner, 19/10/2026: no automatic drop any more): hot_deals.drop_step
+  defaults to 0, and every deal still listed is frozen at its price of this moment (start = floor =
+  price = the decayed price now, drop_step 0) — never raised back. Sold / expired deals are not touched.
+
+Additive (columns with a default, a wider CHECK, a default); downgrade drops the columns and the new
+notices and gives drop_step its 0.500 default back (the frozen deals stay frozen).
 
 Revision ID: 4b7e2d9c1a58
 Revises: 8e3a6c1f5b27
@@ -45,9 +50,28 @@ def upgrade() -> None:
         op.add_column("users", sa.Column(name, sa.Boolean(), server_default=sa.text("true"), nullable=False))
     op.drop_constraint(op.f("ck_notifications_type"), "notifications", type_="check")
     op.create_check_constraint(op.f("ck_notifications_type"), "notifications", f"type IN ({_in(NEW_TYPES)})")
+    op.alter_column("hot_deals", "drop_step", server_default="0")
+    op.execute(FREEZE_LISTED)
+
+
+# hot_deals.current_price, computed now, kept for good
+FREEZE_LISTED = """
+UPDATE hot_deals SET
+    price = frozen.now_price, start_price = frozen.now_price, floor_price = frozen.now_price, drop_step = 0
+FROM (
+    SELECT id, GREATEST(
+        floor_price,
+        start_price - GREATEST(0, FLOOR(EXTRACT(EPOCH FROM now() - created_at) / 60
+            / GREATEST(drop_every_min, 1))) * drop_step
+    ) AS now_price
+    FROM hot_deals WHERE status = 'available' AND drop_step > 0
+) AS frozen
+WHERE hot_deals.id = frozen.id
+"""
 
 
 def downgrade() -> None:
+    op.alter_column("hot_deals", "drop_step", server_default="0.500")
     op.execute(f"DELETE FROM notifications WHERE type NOT IN ({_in(OLD_TYPES)})")
     op.drop_constraint(op.f("ck_notifications_type"), "notifications", type_="check")
     op.create_check_constraint(op.f("ck_notifications_type"), "notifications", f"type IN ({_in(OLD_TYPES)})")

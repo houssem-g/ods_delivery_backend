@@ -95,11 +95,11 @@ class HotDeal(Base):
     purchase_amount: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     discount_percentage: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
-    # Price decay: current = max(floor, start - floor(minutes listed / drop_every_min) * drop_step)
-    # (app/services/hot_deals.current_price). price = start_price.
+    # Former price decay (gone 19/10/2026, fixed price): current = max(floor, start - floor(minutes listed /
+    # drop_every_min) * drop_step) — new deals have start = floor = price and drop_step 0.
     start_price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, default=_same_as_price)
     floor_price: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, default=_same_as_price)
-    drop_step: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, server_default="0.500")
+    drop_step: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False, server_default="0")
     drop_every_min: Mapped[int] = mapped_column(Integer, nullable=False, server_default="5")
     include_delivery: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     delivery_fee: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))

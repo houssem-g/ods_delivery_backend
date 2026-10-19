@@ -4,7 +4,8 @@ Business model (ods-delivery src/constants/commission.js, src/lib/commission.js)
 - a delivered order with a delivery fee carries the nominal commission
   (COMMISSION_PER_DELIVERY_TND); no fee, no commission;
 - a resold order (Offre Chaude) carries it only when the buyer paid the goods at their full price
-  (no discount, no price drop): otherwise ODS takes nothing (owner, 10/10/2026);
+  (no discount; the automatic price drop is gone since 19/10/2026): otherwise ODS takes nothing
+  (owner, 10/10/2026);
 - delivered before LAUNCH_END_DATE (midnight 1 January 2027, Tunis): waived
   ('commission_waived_launch', legacy status 'offered_launch');
 - afterwards EVERY delivery owes the commission ('commission_due', 'due') — owner, 18/10/2026: the

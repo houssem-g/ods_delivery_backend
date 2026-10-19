@@ -1,5 +1,6 @@
-"""Aurora hot deals: price decay (floor, current / next price, reserve at the current price), the
-listing's trust fields, the ResaleOrder decayed price and the opt-in "new hot deal" alerts."""
+"""Aurora hot deals: the fixed price (owner 19/10/2026: no automatic drop, no floor — the old decay only
+reads the history and is frozen for listed deals), the listing's trust fields, the ResaleOrder price
+and the opt-in "new hot deal" alerts."""
 
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -31,78 +32,58 @@ async def listed(client, user, deal: HotDeal) -> dict:
     return one
 
 
-def test_price_schedule():
+def test_an_old_decaying_deal_keeps_its_history_price():
+    """current_price still reads the columns of a deal decayed before 19/10/2026 (its history)."""
     t0 = datetime(2026, 9, 29, 12, 0, tzinfo=UTC)
     deal = HotDeal(
         start_price=Decimal("10"), floor_price=Decimal("8.2"), drop_step=Decimal("0.5"), drop_every_min=5,
         created_at=t0,
     )  # fmt: skip
-    assert hot_deals.price_schedule(deal, t0) == (Decimal("10"), Decimal("9.5"), t0 + timedelta(minutes=5))
-    assert hot_deals.current_price(deal, t0 + timedelta(minutes=4, seconds=59)) == Decimal("10")
-    at_11 = t0 + timedelta(minutes=11)
-    assert hot_deals.price_schedule(deal, at_11) == (
-        Decimal("9.0"),
-        Decimal("8.5"),
-        t0 + timedelta(minutes=15),
+    assert hot_deals.current_price(deal, t0 + timedelta(minutes=11)) == Decimal("9.0")
+    fixed = HotDeal(
+        start_price=Decimal("10"), floor_price=Decimal("10"), drop_step=Decimal("0"), created_at=t0
     )
-    near_floor = t0 + timedelta(minutes=15)
-    assert hot_deals.price_schedule(deal, near_floor) == (
-        Decimal("8.5"),
-        Decimal("8.2"),
-        t0 + timedelta(minutes=20),
-    )
-    assert hot_deals.price_schedule(deal, t0 + timedelta(hours=1)) == (Decimal("8.2"), None, None)
-    flat = HotDeal(
-        start_price=Decimal("7"),
-        floor_price=Decimal("7"),
-        drop_step=Decimal("0.5"),
-        drop_every_min=5,
-        created_at=t0,
-    )
-    assert hot_deals.price_schedule(flat, t0 + timedelta(hours=1)) == (Decimal("7"), None, None)
+    assert hot_deals.current_price(fixed, t0 + timedelta(hours=2)) == Decimal("10")
 
 
-async def test_create_deal_floor_default_and_bounds(client, world):
+async def test_create_deal_at_a_fixed_price(client, world):
     order = await parked(client, world, purchase="25")
-    for bad in (5.9, 20.1, "abc"):  # start = 20 (20 % off 25): floor in [6, 20]
-        r = await fn(
-            client, world.courier_user, "createHotDeal",
-            {"order_id": str(order.id), "discount_percentage": 20, "floor_price": bad},
-        )  # fmt: skip
-        if bad == "abc":
-            assert r.status_code == 400 and r.json()["error"] == "invalid_floor_price"
-        else:
-            assert r.status_code == 400 and r.json() == {
-                "error": "invalid_floor_price",
-                "min": 6.0,
-                "max": 20.0,
-            }
     r = await fn(
-        client, world.courier_user, "createHotDeal", {"order_id": str(order.id), "discount_percentage": 20}
+        client,
+        world.courier_user,
+        "createHotDeal",
+        {"order_id": str(order.id), "discount_percentage": 20, "floor_price": 6},  # an older app's floor
     )
     assert r.status_code == 200, r.text
-    assert r.json()["start_price"] == 20 and r.json()["floor_price"] == 18  # 20 − 4 × 0.5
-    deal = await reload(HotDeal, uuid.UUID(r.json()["deal_id"]))
-    assert (deal.price, deal.start_price, deal.floor_price) == (
+    body = r.json()
+    assert body["price"] == body["start_price"] == 20 and body["price_fixed"] is True
+    for gone in ("floor_price", "drop_step", "drop_every_min", "floor_after_min", "price_schedule"):
+        assert body[gone] is None, gone
+    deal = await reload(HotDeal, uuid.UUID(body["deal_id"]))
+    assert (deal.price, deal.start_price, deal.floor_price, deal.drop_step) == (
         Decimal("20.000"),
         Decimal("20.000"),
-        Decimal("18.000"),
+        Decimal("20.000"),
+        Decimal("0"),
     )
-    assert (deal.drop_step, deal.drop_every_min) == (Decimal("0.500"), 5)
 
 
-async def test_small_deal_floor_is_thirty_percent(client, world):
-    order = await parked(client, world, purchase="2")
-    r = await fn(client, world.courier_user, "createHotDeal", {"order_id": str(order.id)})
-    assert r.json()["start_price"] == 2 and r.json()["floor_price"] == 0.6
-    order2 = await parked(client, world, purchase="10")
-    r = await fn(client, world.courier_user, "createHotDeal", {"order_id": str(order2.id), "floor_price": 3})
-    assert r.status_code == 200 and r.json()["floor_price"] == 3
+async def test_discount_up_to_ninety_percent(client, world):
+    """R47, confirmed by the owner 19/10/2026: up to 90 % (never capped at 50 on the server)."""
+    order = await parked(client, world, purchase="10")
+    r = await fn(
+        client, world.courier_user, "createHotDeal", {"order_id": str(order.id), "discount_percentage": 90}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["price"] == 1  # 10 − 90 %, fixed
+    deal = await reload(HotDeal, uuid.UUID(r.json()["deal_id"]))
+    assert deal.discount_percentage == Decimal("90") and deal.floor_price == deal.price == Decimal("1.000")
+    assert hot_deals.MAX_DISCOUNT == 90
 
 
-async def test_listing_shows_the_decay_and_the_trust_fields(client, world):
+async def test_listing_shows_the_fixed_price_and_the_trust_fields(client, world):
     source_purchase = "20"
-    deal = await a_deal(world, start_price=Decimal("18"), floor_price=Decimal("16"))
+    deal = await a_deal(world)  # 18, drop_step 0 (the column's default since 19/10/2026)
     async with SessionLocal() as s:
         s.add(
             OrderStatusEvent(
@@ -119,13 +100,13 @@ async def test_listing_shows_the_decay_and_the_trust_fields(client, world):
         )
         s.add(OrderRating(order_id=deal.original_order_id, courier_id=world.courier.id, rating=4))
         await s.commit()
-    await backdate(deal, 12)  # two drops
+    await backdate(deal, 12)  # formerly two drops: the price does not move any more
     one = await listed(client, world.buyer, deal)
     assert one["original_price"] == one["purchase_amount"] == float(source_purchase)
-    assert one["start_price"] == 18 and one["floor_price"] == 16
-    assert one["current_price"] == one["discounted_price"] == 17
-    assert one["next_price"] == 16.5 and one["next_drop_at"] is not None
-    assert one["discount_pct_now"] == 15  # 17 instead of 20
+    assert one["start_price"] == 18 and one["floor_price"] is None
+    assert one["current_price"] == one["discounted_price"] == 18
+    assert one["next_price"] is None and one["next_drop_at"] is None
+    assert one["discount_pct_now"] == 10  # 18 instead of 20
     assert one["courier_name"] == "Karim T." and one["courier_rating"] == 4 and one["courier_deliveries"] == 0
     assert one["receipt_verified"] is True and one["sealed"] is False
     assert one["purchased_at"] is not None and one["listed_at"] == one["created_date"]
@@ -133,18 +114,19 @@ async def test_listing_shows_the_decay_and_the_trust_fields(client, world):
     for field in ("courier_phone", "courier_lat", "buyer_id"):
         assert field not in one
 
-    await backdate(deal, 60)
-    floor = await listed(client, world.buyer, deal)
-    assert floor["current_price"] == 16 and floor["next_price"] is None and floor["next_drop_at"] is None
+    await backdate(deal, 110)
+    later = await listed(client, world.buyer, deal)
+    assert later["current_price"] == 18 and later["next_price"] is None and later["next_drop_at"] is None
 
-    # the ResaleOrder entity reads the same decayed price
+    # the ResaleOrder entity reads the same fixed price, no floor
     doc = (await client.get(f"/api/entities/ResaleOrder/{deal.id}", headers=auth(world.buyer))).json()
-    assert doc["discounted_price"] == doc["current_price"] == 16 and doc["start_price"] == 18
+    assert doc["discounted_price"] == doc["current_price"] == 18 and doc["start_price"] == 18
+    assert doc["floor_price"] is None
 
 
-async def test_reserve_charges_the_current_price(client, world):
-    deal = await a_deal(world, start_price=Decimal("18"), floor_price=Decimal("15"))
-    await backdate(deal, 11)
+async def test_reserve_charges_the_fixed_price(client, world):
+    deal = await a_deal(world, start_price=Decimal("17"), floor_price=Decimal("17"), price=Decimal("17"))
+    await backdate(deal, 11)  # formerly two drops: still 17
     r = await fn(
         client, world.buyer, "reserveHotDeal", {"resale_order_id": str(deal.id), "delivery_address": "Rue 2"}
     )
@@ -233,7 +215,28 @@ async def test_user_profile_opt_in(client, world):
     assert bad.status_code == 400
 
 
-async def test_the_decay_counts_from_the_listing(client, world):
-    deal = await a_deal(world, start_price=Decimal("18"), floor_price=Decimal("16"))
-    await backdate(deal, 6)
-    assert (await listed(client, world.buyer, deal))["current_price"] == 17.5
+async def test_listed_decaying_deals_are_frozen_never_raised(world):
+    """A deal published with a drop (older server) keeps the price it has when the job runs, for good."""
+    deal = await a_deal(world, start_price=Decimal("18"), floor_price=Decimal("16"), drop_step=Decimal("0.5"))
+    sold_before = await a_deal(
+        world,
+        start_price=Decimal("18"),
+        floor_price=Decimal("16"),
+        drop_step=Decimal("0.5"),
+        status="sold",
+        buyer_id=world.customer.id,
+    )
+    await backdate(deal, 11)  # two drops: 17
+    async with SessionLocal() as s:
+        await hot_deals.expire_deals(s)
+        await s.commit()
+    frozen = await reload(HotDeal, deal.id)
+    assert (frozen.price, frozen.start_price, frozen.floor_price, frozen.drop_step) == (
+        Decimal("17.000"),
+        Decimal("17.000"),
+        Decimal("17.000"),
+        Decimal("0.000"),
+    )
+    await backdate(deal, 60)
+    assert hot_deals.current_price(await reload(HotDeal, deal.id), datetime.now(UTC)) == Decimal("17.000")
+    assert (await reload(HotDeal, sold_before.id)).drop_step == Decimal("0.500")  # history untouched

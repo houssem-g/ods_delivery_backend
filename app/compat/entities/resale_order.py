@@ -11,7 +11,7 @@ subscriber (for all but admins the row is gone), see `app.services.hot_deals.ann
 
 from typing import Any
 
-from sqlalchemy import Boolean, and_, false, not_, true
+from sqlalchemy import Boolean, Numeric, and_, cast, false, not_, null, true
 
 from app.compat.entities.shop import photo_expr
 from app.compat.registry import EntityDef, LegacyField, register
@@ -54,11 +54,12 @@ FIELDS: dict[str, LegacyField] = {
     "items_text": LegacyField(deals.c.items_text, "string"),
     "purchase_amount": LegacyField(deals.c.purchase_amount, "number"),
     "discount_percentage": LegacyField(deals.c.discount_percentage, "number"),
-    # the decayed price while listed (app/services/hot_deals.current_price), the start price after
+    # the deal's price (fixed since 19/10/2026; the decayed one for older deals: hot_deals.current_price)
     "discounted_price": LegacyField(current_price_sql(deals), "number"),
     "current_price": LegacyField(current_price_sql(deals), "number"),
     "start_price": LegacyField(deals.c.start_price, "number"),
-    "floor_price": LegacyField(deals.c.floor_price, "number"),
+    # no floor any more (owner 19/10/2026: fixed price), kept null for the installed apps
+    "floor_price": LegacyField(cast(null(), Numeric), "number"),
     "include_delivery": LegacyField(deals.c.include_delivery, "boolean"),
     "delivery_fee": LegacyField(deals.c.delivery_fee, "number"),
     "shop_name": LegacyField(deals.c.shop_name, "string"),
