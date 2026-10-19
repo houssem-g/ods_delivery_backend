@@ -267,7 +267,7 @@ async def test_offer_stores_the_estimate_and_the_delay_never_goes_under_it(clien
     ).status_code == 200
     # the customer reads the typed delay, « chez vous ≈ 23 min »
     note = (await notifications(world.customer, "new_offer"))[-1]
-    assert "chez vous ≈ 23 min" in note.body_fr and "الوصول إليك ≈ 23 دق" in note.body_ar
+    assert "chez vous ≈ 23 min" in note.body_fr and "الوصول إليك حوالي 23 دقيقة" in note.body_ar
 
 
 async def test_ranked_by_the_computed_arrival_never_the_typed_one(client, world, factory):

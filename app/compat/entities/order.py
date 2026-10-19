@@ -61,7 +61,7 @@ from app.models import (
     courier_stats,
 )
 from app.security.deps import CurrentUser
-from app.services import invite_priority, order_steps
+from app.services import invite_priority, order_steps, stock_checks
 from app.services import order_transitions as ot
 from app.services.commission import COMMISSION_KINDS, LEGACY_STATUS
 from app.services.geo import lat_of, lng_of
@@ -223,7 +223,10 @@ def _stock_check_entry(c: Any) -> Any:
     return func.jsonb_build_object(
         "id", cast(c.c.id, Text),
         "status", c.c.status,
-        "missing_text", c.c.missing_text,
+        "missing_text", case(
+            (and_(c.c.nothing_available, c.c.missing_text == stock_checks.NOTHING_TEXT), literal("")),
+            else_=c.c.missing_text,
+        ),
         "substitute_text", c.c.substitute_text,
         "substitute_price", c.c.substitute_price,
         "missing_price", c.c.missing_price,

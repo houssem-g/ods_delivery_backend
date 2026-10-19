@@ -750,6 +750,10 @@ async def customer_no_show(session: AsyncSession, order: Order, actor: CurrentUs
         metadata={
             "is_emergency": True,
             "stage": "no_show",
+            # verif prod 19/10 (P3): what the courier may really do now — a shop order is resold or
+            # kept, never « rapporté » (the return exists only for a restaurant order)
+            "restaurant_order": _restaurant(order),
+            "courier_options": ["return", "resell"] if _restaurant(order) else ["resell", "keep"],
             "incidents": incidents,
             "recipient_role": "customer",
             "case_id": str(case.id),

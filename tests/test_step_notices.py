@@ -71,7 +71,7 @@ async def test_new_offer_is_sent_once_per_offer(client, world):
     [note] = await notifications(world.customer, "new_offer")
     assert note.title_fr == "Nouvelle offre" and note.title_ar == "عرض جديد"
     assert note.body_fr == "Karim T. propose : Achats + 4.110 DT · chez vous ≈ 25 min"
-    assert note.body_ar == "Karim T. يقترح: المشتريات + 4.110 د.ت · الوصول إليك ≈ 25 دق"
+    assert note.body_ar == "Karim T. يقترح: المشتريات + 4.110 د.ت · الوصول إليك حوالي 25 دقيقة"
     assert note.data["offer_id"] == offer_id and note.data["proposed_fee"] == 4.11
     assert len(await pushes(world.customer)) == 1
 

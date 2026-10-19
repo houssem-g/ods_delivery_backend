@@ -90,6 +90,16 @@ def photo_url(key: str | None) -> str | None:
     return f"{settings.public_files_base_url}/{key}" if key else None
 
 
+# « Rien n'est disponible » without the courier's own words: the column needs a text, but this FR / AR
+# pair glued together was shown as is in both languages (QA 18/10 m43). It is answered as "" and every
+# screen and notice words the case from `nothing_available` in the reader's language.
+NOTHING_TEXT = "Rien n'est disponible / لا يتوفر أي منتج"
+
+
+def missing_text_shown(text: str | None, nothing_available: bool) -> str:
+    return "" if nothing_available and (text or "") == NOTHING_TEXT else (text or "")
+
+
 def view(check: OrderStockCheck, now: datetime | None = None) -> dict[str, Any]:
     """The check as the functions answer it (the Order document carries the same keys)."""
     now = now or ot.now_utc()
@@ -98,7 +108,7 @@ def view(check: OrderStockCheck, now: datetime | None = None) -> dict[str, Any]:
         "id": str(check.id),
         "order_id": str(check.order_id),
         "status": check.status,
-        "missing_text": check.missing_text,
+        "missing_text": missing_text_shown(check.missing_text, check.nothing_available),
         "substitute_text": check.substitute_text,
         "substitute_price": float(check.substitute_price) if check.substitute_price is not None else None,
         "missing_price": float(check.missing_price) if check.missing_price is not None else None,
@@ -236,7 +246,7 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
     if not missing:
         if not nothing:
             raise OrderRefused(400, "missing_text_required")
-        missing = "Rien n'est disponible / لا يتوفر أي منتج"
+        missing = NOTHING_TEXT  # stored (the column is never empty), never shown (missing_text_shown)
     substitute = None if nothing else (_clean(payload.get("substitute_text")) or None)
     price = None if nothing else _price(payload.get("substitute_price"))
     if price is not None and substitute is None:
@@ -304,7 +314,7 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
         sender_id=user.id,
         recipient_id=order.customer_id,
         sender_role="courier",
-        body=order_texts.stock_check_chat(missing, substitute, price, nothing),
+        body=order_texts.stock_check_chat(missing_text_shown(missing, nothing), substitute, price, nothing),
     )
     minutes = round(WAIT_SECONDS / 60)
     await notify_always_pushed(
@@ -323,7 +333,9 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
             "nothing_available": nothing,
             "has_substitute": substitute is not None,
         },
-        **order_texts.stock_check_for_customer(missing, substitute, price, nothing, minutes),
+        **order_texts.stock_check_for_customer(
+            missing_text_shown(missing, nothing), substitute, price, nothing, minutes
+        ),
     )
     admins = (
         await session.execute(select(User.id).where(User.role == "admin", User.deleted_at.is_(None)))
@@ -337,7 +349,7 @@ async def report(session: AsyncSession, user: CurrentUser, payload: dict[str, An
             push=False,
             metadata={
                 "issue_type": "stock_check",
-                "description": missing,
+                "description": missing_text_shown(missing, nothing),
                 "substitute": substitute or "",
                 "nothing_available": nothing,
                 "courier_id": str(courier.id),

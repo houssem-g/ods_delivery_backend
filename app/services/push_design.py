@@ -411,9 +411,13 @@ def _new_offer(msg: Any, card: OrderCard, lang: str) -> tuple[list[str], str, li
     m = msg.metadata
     name = iso(short_name(m.get("courier_name")), lang) or ("Un livreur" if lang == "fr" else "مندوب")
     eta = m.get("eta_minutes")
-    eta_t = (f"≈ {eta} min" if lang == "fr" else f"≈ {eta} دق") if eta else ""
+    eta_t = (f"≈ {eta} min" if lang == "fr" else f"≈ {minutes_ar(eta)}") if eta else ""
     # the arrival at his door, the shop's wait included (owner 18/10/2026): the body's last line
-    arrival = (f"Chez vous ≈ {eta} min." if lang == "fr" else f"الوصول إليك ≈ {eta} دق.") if eta else ""
+    arrival = (
+        (f"Chez vous ≈ {eta} min." if lang == "fr" else f"الوصول إليك حوالي {minutes_ar(eta)}.")
+        if eta
+        else ""
+    )
     fee = m.get("proposed_fee")
     edited = m.get("kind") == "offer_updated"
     if card.offers >= 2 and not edited and card.best_fee is not None:

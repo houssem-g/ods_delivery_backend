@@ -575,16 +575,17 @@ def _after_purchase_texts(resale: dict[str, Any] | None, restaurant: bool) -> di
             ),
         }
     if no_show is not None:
-        left = max(1, -(-int(no_show.get("seconds_left") or 0) // 60))
+        # no duration in the words (verif prod 19/10, P2: « dans 3 min » while the screen counted 2:27):
+        # the screen counts down from `no_show.wait_until` / `seconds_left`
         return {
             "message_ar": (
-                f"ردّ الحريف: اتصل به وأكمل التوصيل. إن لم يأتِ، ابقَ في المكان (أقل من 300 م): بعد "
-                f"{left} دق يمكنك التصريح بأن « الحريف لم يأتِ »، دون عقوبة."
+                "ردّ الحريف: اتصل به وأكمل التوصيل. إن لم يأتِ، ابقَ في المكان (أقل من 300 م): عند انتهاء "
+                "العدّ التنازلي يمكنك التصريح بأن « الحريف لم يأتِ »، دون عقوبة."
             ),
             "message_fr": (
                 "Le client a répondu : appelez-le et terminez la livraison. S'il ne vient pas, restez sur "
-                f"place (à moins de 300 m) : dans {left} min vous pourrez déclarer « Le client n'est pas "
-                "venu », sans pénalité."
+                "place (à moins de 300 m) : à la fin du compte à rebours, vous pourrez déclarer « Le client "
+                "n'est pas venu », sans pénalité."
             ),
         }
     if resale.get("reason") == "customer_answered":

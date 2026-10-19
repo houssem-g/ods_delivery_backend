@@ -299,15 +299,17 @@ def stock_check_for_customer(
     missing: str, substitute: str | None, price: object, nothing_available: bool, minutes: int
 ) -> Text:
     if nothing_available:
+        # the courier's own words only when he wrote some (QA 18/10 m43: never the FR / AR pair glued)
+        words = f" ({_short(missing)})" if missing else ""
         return {
             "title_ar": "🛒 لا يتوفر أي منتج من طلبك في المتجر",
             "title_fr": "🛒 Aucun article de votre commande n'est disponible",
             "body_ar": (
-                f"لم يجد المندوب طلبك ({_short(missing)}). أجب خلال {minutes_ar(minutes)}: "
+                f"لم يجد المندوب طلبك{words}. أجب خلال {minutes_ar(minutes)}: "
                 "ألغِ الطلب دون مصاريف أو اتصل به."
             ),
             "body_fr": (
-                f"Le livreur ne trouve pas votre commande ({_short(missing)}). Répondez sous {minutes} min : "
+                f"Le livreur ne trouve pas votre commande{words}. Répondez sous {minutes} min : "
                 "annuler sans frais ou l'appeler."
             ),
         }
@@ -342,6 +344,8 @@ def stock_check_chat(missing: str, substitute: str | None, price: object, nothin
     """The line the report leaves in the order chat: French on the first line, Arabic on the
     second (one row serves both sides; the app shows only the reader's line, QA 06/10 B51)."""
     if nothing_available:
+        if not missing:
+            return "🛒 Rien n'est disponible au magasin\n🛒 لا يتوفر أي منتج في المتجر"
         return (
             f"🛒 Rien n'est disponible au magasin : {_short(missing, 200)}\n"
             f"🛒 لا يتوفر أي منتج في المتجر: {_short(missing, 200)}"
@@ -494,7 +498,8 @@ def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | Non
     name_ar = short_name(courier_name) or "مندوب"
     # « chez vous ≈ 22 min »: the arrival at his door, the shop's wait included (owner 18/10/2026)
     eta_fr = f" · chez vous ≈ {eta} min" if eta else ""
-    eta_ar = f" · الوصول إليك ≈ {eta} دق" if eta else ""
+    # Arabic: « حوالي » and the noun that agrees with the number, never « ≈ 25 دق » (QA 18/10 m7)
+    eta_ar = f" · الوصول إليك حوالي {minutes_ar(eta)}" if eta else ""
     return {
         "title_ar": "عرض جديد",
         "title_fr": "Nouvelle offre",
@@ -505,13 +510,40 @@ def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | Non
     }
 
 
+def articles_count(n: int, lang: str) -> str:
+    """« 3 articles » / « 3 منتجات » (the Arabic noun agrees with the number)."""
+    if lang == "fr":
+        return "1 article" if n == 1 else f"{n} articles"
+    if n == 1:
+        return "منتج واحد"
+    if n == 2:
+        return "منتجان"
+    return f"{n} منتجات" if n <= 10 else f"{n} منتجاً"
+
+
+def _items_summary(items: str | None) -> tuple[str, str]:
+    """The articles as a courier reads them in a notice: never « QA TEST [Vitrine] Coffee and Tea 1× …
+    — 3.200 DT » (QA 18/10 m14): the test words, the « [Vitrine] » line, the prices and the total line
+    go (the push's own cleaning, push_design), one line is shown as is, several as « N articles »."""
+    from app.services.push_design import _text_lines  # push_design imports this module
+
+    lines = _text_lines(items)
+    if len(lines) == 1:
+        return _short(lines[0], 80), _short(lines[0], 80)
+    if not lines:
+        return "", ""
+    return articles_count(len(lines), "fr"), articles_count(len(lines), "ar")
+
+
 def offer_accepted_for_courier(shop_name: str | None, items: str | None) -> Text:
     """The title already says « Offre acceptée »: the body goes straight to the shop and the
     articles, never the title again (QA 06/10, R24: « Offre acceptée — Offre acceptée — … »)."""
-    shop = _short(shop_name, 60)
-    what = _short(items, 80)
-    detail_fr = f"{shop} : {what}" if shop and what else (shop or what)
-    detail_ar = f"{shop}: {what}" if shop and what else (shop or what)
+    from app.services.push_design import strip_test
+
+    shop = _short(strip_test(shop_name or ""), 60)
+    what_fr, what_ar = _items_summary(items)
+    detail_fr = f"{shop} : {what_fr}" if shop and what_fr else (shop or what_fr)
+    detail_ar = f"{shop}: {what_ar}" if shop and what_ar else (shop or what_ar)
     return {
         "title_ar": "🎉 تم قبول عرضك",
         "title_fr": "🎉 Offre acceptée",
@@ -573,7 +605,10 @@ def on_the_way(eta: int | None, shop_name: str | None = None, total: object = No
     return {
         "title_ar": title_ar,
         "title_fr": title_fr,
-        "body_ar": f"الوصول خلال ~{eta} دقيقة. {cash_ar}" if eta else f"المندوب يتجه نحوك الآن. {cash_ar}",
+        # « حوالي » and the agreeing noun (« 5 دقائق »), never « ~5 دقيقة » (QA 18/10 m7)
+        "body_ar": f"الوصول خلال حوالي {minutes_ar(eta)}. {cash_ar}"
+        if eta
+        else f"المندوب يتجه نحوك الآن. {cash_ar}",
         "body_fr": f"Arrivée dans ~{eta} min. {cash_fr}" if eta else f"Le livreur arrive. {cash_fr}",
     }
 

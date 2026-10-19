@@ -17,6 +17,15 @@ async def world(factory):
     return await OrderWorld(factory).setup()
 
 
+@pytest.fixture(autouse=True)
+def outside_a_prayer(monkeypatch):
+    """The 3-minute cases must not depend on the hour the suite runs (at a real prayer the last wait is
+    10 min); the prayer test sets its own slot."""
+    from app.services import prayer_times
+
+    monkeypatch.setattr(prayer_times, "slow_slot", lambda now, where=prayer_times.SOUSSE: None)
+
+
 async def answered_both(client, world, order) -> None:
     """Two alerts, the customer answers « j'arrive » to both (back on the way each time)."""
     for _ in range(2):
@@ -63,7 +72,10 @@ async def test_no_show_after_the_last_wait_at_the_door(client, world):
     assert 170 <= early.json()["seconds_left"] <= 180
     p = await policy(client, world, order)
     assert p["can_resell"] is False and p["can_declare_no_show"] is False
-    assert p["no_show"]["max_distance_m"] == 300 and "dans 3 min" in p["message_fr"]
+    # verif prod 19/10 (P2): the words never freeze a duration, the screen counts from no_show
+    assert p["no_show"]["max_distance_m"] == 300 and "compte à rebours" in p["message_fr"]
+    assert " min " not in p["message_fr"] and "دق" not in p["message_ar"]
+    assert 170 <= p["no_show"]["seconds_left"] <= 180 and p["no_show"]["wait_until"]
     status = (await call(client, world.courier_user, "status", order)).json()
     assert status["no_show"]["ready"] is False and status["can_realert"] is False
 
@@ -89,6 +101,9 @@ async def test_no_show_after_the_last_wait_at_the_door(client, world):
     assert case.messaging_status == "no_show" and case.incident_counted and case.status == "expired"
     told = (await notifications(world.customer, "emergency_contact"))[-1]
     assert told.data["stage"] == "no_show" and "pas venu" in told.title_fr
+    # verif prod 19/10 (P3): a shop order is resold or kept, never « rapporté »
+    assert told.data["restaurant_order"] is False and told.data["courier_options"] == ["resell", "keep"]
+    assert "rapporter" not in told.body_fr
 
     # never a third alert (R36)
     again = await call(client, world.courier_user, "realert_no_response", order)
@@ -191,7 +206,7 @@ async def test_last_wait_is_10_min_at_a_prayer_for_every_order(client, world, mo
     early = await call(client, world.courier_user, "customer_no_show", order)
     assert early.status_code == 409 and 590 <= early.json()["seconds_left"] <= 600
     p = await policy(client, world, order)
-    assert p["no_show"]["wait_seconds"] == 600 and "dans 10 min" in p["message_fr"]
+    assert p["no_show"]["wait_seconds"] == 600 and "compte à rebours" in p["message_fr"]  # P2: no duration
     await time_passes(order, 300)  # 5 min: not yet
     assert (await call(client, world.courier_user, "customer_no_show", order)).json()["error"] == "wait"
     await time_passes(order, 310)

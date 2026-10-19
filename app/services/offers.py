@@ -22,7 +22,7 @@ from app.services import arrival, credit, invite_priority, partner_webhooks, ste
 from app.services import order_transitions as ot
 from app.services.geo import as_float
 from app.services.notifications import notify
-from app.services.order_texts import short_name
+from app.services.order_texts import minutes_ar, short_name
 from app.services.orders import OrderRefused, courier_of_user, dropped_by
 from app.services.safety import is_blocked
 
@@ -434,7 +434,7 @@ async def update_offer(
     name_ar = short_name(courier.display_name) or "المندوب"
     shown = arrival.offer_arrival(offer.estimated_eta_minutes, new_eta)  # what the customer reads (M12)
     delay_fr = f" · chez vous ≈ {shown} min" if shown else ""
-    delay_ar = f" · الوصول إليك ≈ {shown} دق" if shown else ""
+    delay_ar = f" · الوصول إليك حوالي {minutes_ar(shown)}" if shown else ""
     await notify(
         session,
         user_id=order.customer_id,
