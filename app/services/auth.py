@@ -217,20 +217,34 @@ async def change_password(session: AsyncSession, user: User, current: str, new: 
 
 
 async def link_google(session: AsyncSession, profile: GoogleProfile) -> User:
-    """Sign in with Google: by google_sub, else link to the account with the same verified e-mail."""
+    """« Continuer avec Google » (owner 19/10/2026: an account without code nor password).
+
+    By google_sub; else the account with the same e-mail, which Google has verified, is linked
+    (never a second account for one address); else a new account. Pre-registration takeover
+    guard: an address nobody had confirmed may carry a password typed by someone else, so that
+    password and its sessions are dropped before Google's owner of the address gets the account.
+    """
     if not profile.email_verified:
         raise ApiError(403, "google_email_unverified", "Google did not verify this e-mail")
     user = (await session.execute(select(User).where(User.google_sub == profile.sub))).scalar_one_or_none()
     if user is None:
         user = await find_user_by_email(session, profile.email)
         if user is None:
-            user = User(email=profile.email, full_name=profile.name)
+            user = User(email=profile.email.strip(), full_name=(profile.name or "").strip())
             session.add(user)
+        elif user.google_sub is not None and user.google_sub != profile.sub:
+            # Another Google account was linked to this address: never swap it silently.
+            raise ApiError(409, "google_account_mismatch", "Another Google account is linked to this e-mail")
+        elif user.email_verified_at is None and user.deleted_at is None:
+            user.password_hash = None
+            await session.flush()
+            await revoke_all_for_user(session, user.id)
         user.google_sub = profile.sub
     if user.deleted_at is not None or user.disabled_at is not None:
         raise ApiError(403, "account_disabled", "This account is disabled")
     user.email_verified_at = user.email_verified_at or now_utc()
+    user.email_unreachable_at = None
     if not user.full_name and profile.name:
-        user.full_name = profile.name
+        user.full_name = profile.name.strip()
     await session.flush()
     return user

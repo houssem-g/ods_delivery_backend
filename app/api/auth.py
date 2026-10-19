@@ -3,14 +3,16 @@ HttpOnly cookie `odsd_refresh` (path /api/auth)."""
 
 import secrets
 from datetime import UTC, datetime, timedelta
+from html import escape
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import jwt
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from jwt import PyJWTError as JWTError
 from pydantic import AliasChoices, BaseModel, Field
+from slowapi.util import get_remote_address
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +37,7 @@ from app.security.tokens import (
 from app.services import auth as svc
 from app.services import couriers, device_keys
 from app.services import email_reachability as reach
+from app.services import google_handoff as handoffs
 from app.services.email import send_code_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -42,6 +45,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 AUTH_LIMIT = settings.RATE_LIMIT_AUTH
 EMAIL_LIMIT = settings.RATE_LIMIT_AUTH_EMAIL
 EMAIL_CHECK_LIMIT = settings.RATE_LIMIT_EMAIL_CHECK
+HANDOFF_LIMIT = settings.RATE_LIMIT_AUTH_HANDOFF
 NEUTRAL = {"success": True, "message": "If an account exists for this e-mail, a code was sent."}
 OAUTH_NONCE_COOKIE = "odsd_oauth_nonce"
 
@@ -516,6 +520,8 @@ async def google_callback(
         claims = jwt.decode(state or "", settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
         return _redirect(_with_query(failure, {"auth_error": "google_state"}))
+    if claims.get("type") == "google_state" and claims.get("handoff"):
+        return await _google_callback_for_app(request, session, str(claims["handoff"]), code, error)
     nonce = request.cookies.get(OAUTH_NONCE_COOKIE)
     if (
         claims.get("type") != "google_state"
@@ -544,3 +550,162 @@ async def google_callback(
 
 def _redirect(url: str) -> RedirectResponse:
     return RedirectResponse(url, status_code=302)
+
+
+@router.get("/providers")
+async def providers() -> dict[str, bool]:
+    """Which « Continuer avec … » buttons the app shows (a provider without its keys stays hidden)."""
+    return {"google": settings.google_enabled}
+
+
+# --- Google from the phone app (services/google_handoff.py) ----------------------------------
+
+
+class HandoffClaimBody(BaseModel):
+    handoff: str = Field(max_length=64)
+    secret: str = Field(max_length=128)
+
+
+@router.post("/google/app-start")
+@limiter.limit(AUTH_LIMIT, key_func=ip_key)
+async def google_app_start(request: Request, session: AsyncSession = Depends(get_session)) -> dict[str, str]:
+    """The app opens `authorize_url` (the phone's browser) and keeps `secret` to claim its session."""
+    if not settings.google_enabled:
+        raise ApiError(503, "google_disabled", "Google sign-in is not available")
+    started = await handoffs.start(session, get_remote_address(request))
+    await session.commit()
+    state = jwt.encode(
+        {
+            "type": "google_state",
+            "handoff": started.id,
+            "exp": int((now_utc() + handoffs.TTL).timestamp()),
+        },
+        settings.JWT_SECRET,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+    return {
+        "handoff": started.id,
+        "secret": started.secret,
+        "authorize_url": google_oauth.authorization_url(state),
+        "expires_in": str(int(handoffs.TTL.total_seconds())),
+    }
+
+
+@router.post("/google/app-claim")
+@limiter.limit(HANDOFF_LIMIT, key_func=ip_key)
+async def google_app_claim(
+    request: Request, body: HandoffClaimBody, session: AsyncSession = Depends(get_session)
+) -> JSONResponse:
+    """202 {status: pending} until the browser is done; then the session (once), or {error}."""
+    result = await handoffs.claim(session, body.handoff, body.secret)
+    if result.state == "pending":
+        return JSONResponse({"status": "pending"}, status_code=202)
+    if result.state == "error":
+        await session.commit()
+        return JSONResponse(
+            {"error": result.error, "message": "Google sign-in did not finish"}, status_code=400
+        )
+    user = await session.get(User, result.user_id)
+    if user is None or user.deleted_at is not None or user.disabled_at is not None:
+        await session.commit()
+        return JSONResponse(
+            {"error": "account_disabled", "message": "This account is disabled"}, status_code=403
+        )
+    signed = await svc.sign_in(session, user)
+    await couriers.follow_session(session, user.id, online=True)
+    await session.commit()
+    return _signed_in_response(signed)
+
+
+async def _google_callback_for_app(
+    request: Request, session: AsyncSession, handoff_id: str, code: str | None, error: str | None
+) -> HTMLResponse:
+    row = await handoffs.open_for_callback(session, handoff_id, get_remote_address(request))
+    if isinstance(row, str):
+        await session.rollback()
+        return _app_page(row)
+    outcome = "done"
+    if error or not code:
+        outcome = "google_cancelled"
+    else:
+        try:
+            profile = await google_oauth.fetch_profile(code)
+            user = await svc.link_google(session, profile)
+        except google_oauth.GoogleAuthError:
+            outcome = "google_failed"
+        except ApiError as exc:
+            await session.rollback()
+            row = await handoffs.open_for_callback(session, handoff_id, get_remote_address(request))
+            if isinstance(row, str):
+                return _app_page(row)
+            outcome = exc.error
+    if outcome == "done":
+        handoffs.complete(row, user_id=user.id)
+    else:
+        handoffs.complete(row, error=outcome)
+    await session.commit()
+    return _app_page(outcome)
+
+
+# The browser page after Google, for the phone app: FR + standard Arabic, plain words.
+_APP_PAGE_TEXT = {
+    "done": (
+        "C’est fait !",
+        "Revenez dans l’application ODS Delivery : vous y êtes connecté(e).",
+        "تمّ بنجاح!",
+        "يُرجى العودة إلى تطبيق ODS Delivery، فقد تمّ تسجيل دخولكم.",
+    ),
+    "handoff_other_device": (
+        "Connexion non terminée",
+        "Pour votre sécurité, terminez la connexion sur le téléphone où vous avez touché "
+        "« Continuer avec Google », sur le même réseau (Wi-Fi ou données mobiles).",
+        "لم يكتمل تسجيل الدخول",
+        "حفاظاً على أمانكم، يُرجى إكمال تسجيل الدخول على الهاتف الذي ضغطتم فيه "
+        "على « المتابعة مع Google »، وعلى الشبكة نفسها (Wi-Fi أو بيانات الهاتف).",
+    ),
+    "handoff_expired": (
+        "Ce lien a expiré",
+        "Revenez dans l’application et touchez à nouveau « Continuer avec Google ».",
+        "انتهت صلاحية هذا الرابط",
+        "يُرجى العودة إلى التطبيق والضغط من جديد على « المتابعة مع Google ».",
+    ),
+    "google_cancelled": (
+        "Connexion annulée",
+        "Revenez dans l’application pour réessayer ou utiliser votre e-mail.",
+        "تمّ إلغاء تسجيل الدخول",
+        "يُرجى العودة إلى التطبيق للمحاولة من جديد أو لاستعمال بريدكم الإلكتروني.",
+    ),
+    "error": (
+        "La connexion Google n’a pas abouti",
+        "Revenez dans l’application et réessayez, ou utilisez votre e-mail.",
+        "تعذّر تسجيل الدخول عبر Google",
+        "يُرجى العودة إلى التطبيق والمحاولة من جديد، أو استعمال بريدكم الإلكتروني.",
+    ),
+}
+
+
+def _app_page(outcome: str) -> HTMLResponse:
+    key = (
+        outcome
+        if outcome in _APP_PAGE_TEXT
+        else ("handoff_expired" if outcome == "handoff_used" else "error")
+    )
+    fr_title, fr_text, ar_title, ar_text = (escape(t) for t in _APP_PAGE_TEXT[key])
+    ok = key == "done"
+    html = f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>ODS Delivery</title><style>
+body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#070B14;color:#fff;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;box-sizing:border-box}}
+main{{max-width:420px;width:100%;background:#0E1626;border:1px solid rgba(255,255,255,.12);
+border-radius:24px;padding:24px}}
+.mark{{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;
+font-size:28px;
+background:{"rgba(0,217,165,.18)" if ok else "rgba(251,191,36,.16)"};color:{"#00D9A5" if ok else "#FDE68A"}}}
+h1{{font-size:20px;margin:0 0 6px;text-align:center}}
+p{{font-size:15px;line-height:1.5;margin:0;color:rgba(255,255,255,.78);text-align:center}}
+hr{{border:0;border-top:1px solid rgba(255,255,255,.1);margin:18px 0}}</style></head>
+<body><main data-outcome="{escape(key)}"><div class="mark" aria-hidden="true">{"✓" if ok else "!"}</div>
+<h1>{fr_title}</h1><p>{fr_text}</p><hr><div dir="rtl" lang="ar"><h1>{ar_title}</h1><p>{ar_text}</p></div>
+</main></body></html>"""
+    return HTMLResponse(html, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})

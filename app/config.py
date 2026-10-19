@@ -61,7 +61,9 @@ class Settings(BaseSettings):
     JWT_SECRET: str = LOCAL_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_MINUTES: int = 60
-    REFRESH_TOKEN_DAYS: int = 30
+    # Sliding session (owner 19/10/2026): every refresh (each opening of the app) issues a token
+    # valid this long again, so only 10 days WITHOUT opening the app sign the person out.
+    REFRESH_TOKEN_DAYS: int = 10
     REFRESH_COOKIE_NAME: str = "odsd_refresh"
     REFRESH_COOKIE_PATH: str = "/api/auth"
     COOKIE_SECURE: bool = False
@@ -75,6 +77,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
     GOOGLE_REDIRECT_URI: str = "http://localhost:8110/api/auth/google/callback"
+    # Phone app « Continuer avec Google »: the app polls its handoff every ~2 s for up to 10 min.
+    RATE_LIMIT_AUTH_HANDOFF: str = "90/minute"
 
     # --- rate limiting --------------------------------------------------------
     RATE_LIMIT_ENABLED: bool = True
@@ -181,6 +185,9 @@ class Settings(BaseSettings):
     SCHEDULER_LOCK_KEY: int = 5_318_008_110
     SCHEDULER_LEADER_RETRY_SECONDS: int = 30
     CRON_SECRET: str | None = None
+    # An online courier who has not opened the app (no position, ping or switch) for this long is
+    # put offline (owner 19/10/2026: 4 h; was 15 min). He stays signed in (REFRESH_TOKEN_DAYS).
+    COURIER_PRESENCE_TIMEOUT_MINUTES: int = 240
 
     # --- observability ----------------------------------------------------------
     # GET /api/metrics (Prometheus) answers 404 while this is empty; callers send it in X-Metrics-Token.

@@ -130,6 +130,26 @@ class RevokedAccessToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
 
 
+class AuthHandoff(Base):
+    """« Continuer avec Google » from the phone app (owner 19/10/2026). Google refuses its sign-in
+    inside the app's WebView, so the app opens it in the phone's browser and waits: the browser's
+    callback stores the account here, the app (which alone holds `secret`) claims the session.
+    Single use, 10 minutes."""
+
+    __tablename__ = "auth_handoffs"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    secret_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    client_ip: Mapped[str | None] = mapped_column(Text)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    error: Mapped[str | None] = mapped_column(Text)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_at: Mapped[datetime] = created_at()
+
+
 class DeviceKey(Base):
     """« Se connecter avec l'empreinte / le visage »: a secret kept by the phone in its secure
     storage (Android Keystore / iOS Keychain), released only after the phone's biometric check.

@@ -3,6 +3,7 @@
 from app.models.base import Base
 from app.models.catalog import GeocodeCache, Place, Shop, ShopMenuItem, ShopReview
 from app.models.identity import (
+    AuthHandoff,
     Courier,
     CourierDocument,
     DeviceKey,
@@ -61,6 +62,7 @@ from app.models.vitrine import (
 __all__ = [
     "AppSetting",
     "AuditLog",
+    "AuthHandoff",
     "Base",
     "Courier",
     "CourierClientEstimate",

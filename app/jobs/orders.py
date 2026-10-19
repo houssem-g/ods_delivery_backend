@@ -99,7 +99,11 @@ async def invite_priority_release() -> dict[str, Any]:
     return {"due": len(due), "released": released, "errors": errors}
 
 
-@job("courier_presence_expiry", IntervalTrigger(minutes=5), "online couriers silent for 15 min → offline")
+@job(
+    "courier_presence_expiry",
+    IntervalTrigger(minutes=5),
+    "online couriers silent for 4 h (COURIER_PRESENCE_TIMEOUT_MINUTES) → offline",
+)
 async def courier_presence_expiry() -> dict[str, Any]:
     async with transaction() as session:
         return {"set_offline": await couriers.expire_presence(session)}

@@ -189,12 +189,20 @@ async def test_orphan_offers(world):
 
 
 async def test_presence_expiry(client, world, factory):
+    """Owner 19/10/2026: online until 4 h without opening the app (was 15 min)."""
     quiet_user = await factory.user(email="quiet@example.test", profile=False)
-    quiet = await world.make_courier(quiet_user, last_seen_at=datetime.now(UTC) - timedelta(minutes=16))
+    quiet = await world.make_courier(quiet_user, last_seen_at=datetime.now(UTC) - timedelta(minutes=241))
     never_user = await factory.user(email="never@example.test", profile=False)
     never = await world.make_courier(never_user, last_seen_at=None)
+    # 20 min, then 3 h 59 in the background: still online (the 15-min rule is gone)
+    recent_user = await factory.user(email="recent@example.test", profile=False)
+    recent = await world.make_courier(recent_user, last_seen_at=datetime.now(UTC) - timedelta(minutes=20))
+    almost_user = await factory.user(email="almost@example.test", profile=False)
+    almost = await world.make_courier(almost_user, last_seen_at=datetime.now(UTC) - timedelta(minutes=239))
     response = await client.post("/api/admin/jobs/courier_presence_expiry/run", headers=auth(world.admin))
     assert response.json()["result"] == {"set_offline": 2}
+    assert (await reload(Courier, recent.id)).is_online is True
+    assert (await reload(Courier, almost.id)).is_online is True
     assert (await reload(Courier, quiet.id)).is_online is False
     assert (await reload(Courier, never.id)).is_online is False
     assert (await reload(Courier, world.courier.id)).is_online is True

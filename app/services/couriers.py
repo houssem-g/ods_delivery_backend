@@ -16,6 +16,7 @@ from sqlalchemy import Date, Integer, case, cast, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.errors import ApiError
 from app.models import Courier, File, NoResponseCase, Order, OrderStatusEvent, OrderTracking, UserAddress
 from app.realtime.events import emit
@@ -26,7 +27,6 @@ from app.services.phones import InvalidPhone, to_e164
 
 VEHICLES = ("walking", "scooter", "car")
 SIZES = ("petit", "moyen", "grand")
-PRESENCE_TIMEOUT = timedelta(minutes=15)
 RUNNING_EXPIRE = timedelta(hours=48)  # same activity rule as expire_stale_orders
 MAX_LIVE_ORDERS = 5
 
@@ -498,9 +498,9 @@ def online_seconds_today_expr(table: Any) -> Any:
 
 
 async def expire_presence(session: AsyncSession) -> int:
-    """Online couriers without a heartbeat (position, online switch) for 15 minutes → offline.
-    Their session ends at their last heartbeat."""
-    cutoff = ot.now_utc() - PRESENCE_TIMEOUT
+    """Online couriers without a heartbeat (position, presence ping, online switch) for
+    COURIER_PRESENCE_TIMEOUT_MINUTES (4 h) → offline. Their session ends at their last heartbeat."""
+    cutoff = ot.now_utc() - timedelta(minutes=settings.COURIER_PRESENCE_TIMEOUT_MINUTES)
     end = func.coalesce(Courier.last_seen_at, func.now())
     elapsed = _sql_seconds(Courier.online_since, end)
     ids = list(

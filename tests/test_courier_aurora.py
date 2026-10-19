@@ -117,8 +117,8 @@ async def test_presence_expiry_closes_the_session_at_the_last_heartbeat(world):
     await set_courier(
         world.courier,
         is_online=True,
-        online_since=now() - timedelta(minutes=20),
-        last_seen_at=now() - timedelta(minutes=16),
+        online_since=now() - timedelta(minutes=245),
+        last_seen_at=now() - timedelta(minutes=241),
         online_day=courier_service.tunis_day(now()),
         online_seconds=100,
     )
@@ -126,7 +126,7 @@ async def test_presence_expiry_closes_the_session_at_the_last_heartbeat(world):
         assert await courier_service.expire_presence(session) == 1
     row = await reload(Courier, world.courier.id)
     assert row.is_online is False and row.online_since is None
-    assert 100 + 235 <= row.online_seconds <= 100 + 245  # 4 minutes online, not 20
+    assert 100 + 235 <= row.online_seconds <= 100 + 245  # 4 minutes online, not 245
     assert row.online_day == courier_service.tunis_day(now())
 
 
