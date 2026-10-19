@@ -40,6 +40,11 @@ log = logging.getLogger("odsd.vitrine_thumbs")
 THUMB_PX = 256
 WEBP_QUALITY = 72
 PREFIX = "public/vitrine-thumbs/"
+# ODS's photo bucket: inside the DO cluster the Spaces name resolves to a VPC address (10.114.x), so the
+# « public host » check would refuse it; these exact names are trusted (prod 19/10)
+TRUSTED_PHOTO_HOSTS = frozenset(
+    {"ods-bucket.fra1.digitaloceanspaces.com", "ods-bucket.fra1.cdn.digitaloceanspaces.com"}
+)
 MAX_SOURCE_BYTES = 15 * 1024 * 1024
 MAX_SOURCE_PIXELS = 40_000_000  # 6300 × 6300: a bigger « photo » is refused (decompression bomb)
 FETCH_TIMEOUT_SECONDS = 10.0
@@ -87,7 +92,8 @@ async def fetch_source(url: str) -> bytes:
     parts = urlsplit(url)
     if parts.scheme != "https" or not parts.hostname:
         raise ThumbFailed("not an https URL")
-    if not await host_is_public(parts.hostname, parts.port or 443):
+    trusted = parts.hostname.lower() in TRUSTED_PHOTO_HOSTS and parts.port in (None, 443)
+    if not trusted and not await host_is_public(parts.hostname, parts.port or 443):
         raise ThumbFailed("host not public")
     try:
         return await _download(url)

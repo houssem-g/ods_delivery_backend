@@ -609,3 +609,22 @@ async def test_m15_thumbnail_source_is_read_with_care():
     from PIL import Image
 
     assert max(Image.open(io.BytesIO(vitrine_thumbs.render(png(64)))).size) == 64  # never enlarged
+
+
+async def test_ods_bucket_is_trusted_even_on_a_private_vpc_address(monkeypatch):
+    # in the DO cluster the Spaces name resolves to 10.114.x: the ODS bucket must still be fetched
+    from app.services import vitrine_thumbs
+
+    async def private(host, port):
+        return False
+
+    async def fake_download(url):
+        return b"img"
+
+    monkeypatch.setattr(vitrine_thumbs, "host_is_public", private)
+    monkeypatch.setattr(vitrine_thumbs, "_download", fake_download)
+    assert await vitrine_thumbs.fetch_source("https://ods-bucket.fra1.digitaloceanspaces.com/a.png") == b"img"
+    with pytest.raises(vitrine_thumbs.ThumbFailed):
+        await vitrine_thumbs.fetch_source("https://evil.example.com/a.png")
+    with pytest.raises(vitrine_thumbs.ThumbFailed):
+        await vitrine_thumbs.fetch_source("https://ods-bucket.fra1.digitaloceanspaces.com:8443/a.png")
