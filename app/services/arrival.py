@@ -360,10 +360,13 @@ def is_announced(eta_minutes: int | None, estimated_minutes: int | None) -> bool
 async def offer_estimate(
     session: AsyncSession, order_id: uuid.UUID, courier: Courier, payload: dict[str, Any], now: datetime
 ) -> Arrival | None:
-    """The arrival stored on an offer; never fails the offer (None when it cannot be computed)."""
+    """The arrival stored on an offer; never fails the offer (None when it cannot be computed, his
+    position unknown included: an Arrival without its courier → shop leg has no total)."""
     try:
         async with session.begin_nested():  # a failed read never poisons the offer's transaction
             origin = await courier_origin(session, courier, payload, now)
+            if origin is None:
+                return None
             return await arrival(session, order_id, courier.vehicle, origin)
     except Exception:  # an estimate never blocks an offer
         log.warning("offer estimate failed", exc_info=True)

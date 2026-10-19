@@ -97,10 +97,13 @@ def _check_eta_floor(eta: int, computed: int | None) -> None:
 
 def _store_estimate(offer: OrderOffer, estimate: arrival.Arrival | None) -> None:
     """The computed arrival on the offer. Without a new estimate (no position, OSRM and straight line both
-    impossible) the stored one is kept. « annoncé » (a delay under the computation) no longer exists: the
-    customer always reads arrival.offer_arrival, never under the computation (owner 19/10/2026)."""
-    if estimate is not None:
-        offer.estimated_eta_minutes = _bounded(estimate.total_min)
+    impossible) the stored one is kept — an Arrival without its courier → shop leg (origin unknown) is no
+    new estimate either: it would wipe the time and make the offer « non vérifié » (QA 19/10, price edited
+    without a position). « annoncé » (a delay under the computation) no longer exists: the customer always
+    reads arrival.offer_arrival, never under the computation (owner 19/10/2026)."""
+    computed = _bounded(estimate.total_min) if estimate is not None else None
+    if estimate is not None and computed is not None:
+        offer.estimated_eta_minutes = computed
         offer.to_shop_km = (
             Decimal(str(estimate.to_shop_km))
             if estimate.to_shop_km is not None and 0 <= estimate.to_shop_km <= 1000
