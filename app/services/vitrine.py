@@ -53,6 +53,7 @@ PUBLIC_ALLOWED = "public_allowed"
 STALE_AFTER = timedelta(hours=26)
 RESTORE_WINDOW = timedelta(days=30)
 TUNIS = ZoneInfo("Africa/Tunis")
+SEARCH_NAMES_MAX = 300  # dish names a nearby Vitrine carries for the client's search (listVitrinesNearby)
 STATUSES = ("draft", "active", "paused", "archived")
 SOURCES = ("manual", "ods")
 VISIBILITIES = ("qa", "public")
@@ -644,7 +645,35 @@ async def list_vitrines(session: AsyncSession, admin: CurrentUser, payload: dict
     if not payload.get("include_archived"):
         stmt = stmt.where(Vitrine.status != "archived")
     rows = (await session.execute(stmt)).all()
-    return {"success": True, "vitrines": [await vitrine_json(session, s, v) for s, v in rows]}
+    months = await _orders_this_month(session, [s.id for s, _v in rows])
+    out = []
+    for shop, vitrine in rows:
+        doc = await vitrine_json(session, shop, vitrine)
+        doc["orders_month"] = months.get(shop.id, 0)  # QA 18/10 c1: the card's « commandes ce mois »
+        out.append(doc)
+    return {"success": True, "vitrines": out}
+
+
+async def _orders_this_month(session: AsyncSession, shop_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Orders placed this calendar month (Tunis) through each Vitrine, test orders left out — the count the
+    merchant's page shows for a public Vitrine (vitrine_stats.merchant_stats « orders_placed »)."""
+    from app.models import Order
+    from app.services.orders import TEST_ORDER_SQL
+
+    if not shop_ids:
+        return {}
+    local = datetime.now(TUNIS)
+    start = datetime(local.year, local.month, 1, tzinfo=TUNIS)
+    rows = await session.execute(
+        select(Order.vitrine_shop_id, func.count())
+        .where(
+            Order.vitrine_shop_id.in_(shop_ids),
+            Order.created_at >= start,
+            Order.items_text.op("!~*")(TEST_ORDER_SQL),
+        )
+        .group_by(Order.vitrine_shop_id)
+    )
+    return {shop_id: int(n) for shop_id, n in rows.all()}
 
 
 async def get_admin(session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1366,10 +1395,36 @@ async def list_nearby(session: AsyncSession, viewer: CurrentUser, payload: dict[
             )
         ).scalars()
         state = open_state(vitrine.hours)
+        # QA 18/10 m32: « burger », « cappuccino » found nothing (the search read 3 preview dishes only)
+        names = list(
+            (
+                await session.execute(
+                    select(VitrineProduct.name)
+                    .where(
+                        VitrineProduct.shop_id == shop.id,
+                        VitrineProduct.archived_at.is_(None),
+                        VitrineProduct.available.is_(True),
+                    )
+                    .order_by(VitrineProduct.position, VitrineProduct.created_at)
+                    .limit(SEARCH_NAMES_MAX)
+                )
+            ).scalars()
+        )
+        categories = list(
+            (
+                await session.execute(
+                    select(VitrineCategory.name).where(
+                        VitrineCategory.shop_id == shop.id, VitrineCategory.archived_at.is_(None)
+                    )
+                )
+            ).scalars()
+        )
         out.append(
             {
                 "shop_id": str(shop.id),
                 "slug": shop.slug,
+                "search_names": names,
+                "search_categories": categories,
                 "name": shop.name,
                 "category": shop.categories[0] if shop.categories else None,
                 "lat": s_lat,

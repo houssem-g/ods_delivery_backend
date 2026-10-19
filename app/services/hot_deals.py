@@ -785,12 +785,15 @@ async def expire_deals(session: AsyncSession, now: datetime | None = None) -> in
 
 async def purge_deals(session: AsyncSession, now: datetime | None = None) -> dict[str, int]:
     """sweepExpiredTestData: expired deals never sold, and QA deals once expired, are deleted
-    (a sold deal stays: the buyer's order points at it). Its test-run rows ('test:' ids) can't
+    (a sold deal stays, a QA one too: the buyer's order points at it). Its test-run rows ('test:' ids) can't
     exist here (real FK): the QA deals (items "QA TEST" / "PW-") take their place."""
     now = now or ot.now_utc()
     expired = and_(HotDeal.expires_at < now, HotDeal.status != "sold")
     qa = and_(
         HotDeal.expires_at < now,
+        # a SOLD QA deal stays too (QA 18/10 c5): deleting it set the buyer order's resale_deal_id to NULL,
+        # and its delivery was counted again as a regular one (commission, earnings)
+        HotDeal.status != "sold",
         HotDeal.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL),
     )
     due = (

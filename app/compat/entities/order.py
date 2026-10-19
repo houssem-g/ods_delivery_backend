@@ -65,6 +65,7 @@ from app.services import invite_priority, order_steps, stock_checks
 from app.services import order_transitions as ot
 from app.services.commission import COMMISSION_KINDS, LEGACY_STATUS
 from app.services.geo import lat_of, lng_of
+from app.services.no_response import MAX_REPORTS
 from app.services.offer_intents import INTENT_TTL
 from app.services.orders import RECENT_ORDERS, TEST_ORDER_SQL, is_qa_account
 from app.services.partner_orders import COURIER_NOTE_AR, COURIER_NOTE_FR
@@ -463,6 +464,18 @@ def _vitrine_ods() -> Any:
 
 
 delivered = orders.c.status == "delivered"
+
+
+def _resale_without_commission() -> Any:
+    return and_(delivered, orders.c.resale_deal_id.is_not(None), commission.c.kind.is_(None))
+
+
+def _alerts_left() -> Any:
+    """Urgent alerts the courier may still send on this order (no_response.MAX_REPORTS minus the cases):
+    0 = « Le client ne répond pas » is no longer offered (verif prod 19/10, P1)."""
+    return func.greatest(0, MAX_REPORTS - _case_count())
+
+
 purchase_plus_fee = orders.c.purchase_amount + func.coalesce(orders.c.delivery_fee, 0)
 guarded = {"read_guard": party_or_admin}
 
@@ -509,6 +522,10 @@ FIELDS: dict[str, LegacyField] = {
     ),
     "scheduled_time": LegacyField(orders.c.scheduled_for, "datetime"),
     "status": LegacyField(cast(orders.c.status, Text), "string"),
+    # QA 18/10 m17: a QA / Playwright order (« QA TEST », « PW- »), so the admin can leave them out
+    "is_test_order": LegacyField(
+        func.coalesce(orders.c.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL), false()), "boolean"
+    ),
     "purchase_amount": LegacyField(orders.c.purchase_amount, "number"),
     "price_confirmed_by_customer": LegacyField(orders.c.price_confirmed_at.is_not(None), "boolean"),
     "delivery_fee": LegacyField(orders.c.delivery_fee, "number"),
@@ -532,10 +549,15 @@ FIELDS: dict[str, LegacyField] = {
     "courier_net_earning": LegacyField(
         case((delivered, func.coalesce(orders.c.delivery_fee, 0)), else_=null()), "number"
     ),
-    "ods_commission": LegacyField(commission.c.amount, "number"),
+    # a delivered RESALE without a commission entry (bought with a discount or a price drop, R51) answers
+    # 0 / « none »: ODS took nothing, never the « offerte » of the launch (QA 18/10 m41)
+    "ods_commission": LegacyField(
+        case((_resale_without_commission(), literal(0)), else_=commission.c.amount), "number"
+    ),
     "ods_commission_status": LegacyField(
         case(
             *[(commission.c.kind == kind, literal(status)) for kind, status in LEGACY_STATUS.items()],
+            (_resale_without_commission(), literal("none")),
             else_=null(),
         ),
         "string",
@@ -563,6 +585,7 @@ FIELDS: dict[str, LegacyField] = {
     "no_response_case_id": LegacyField(latest_case.c.id, "id"),
     "no_response_channels": LegacyField(latest_case.c.channels, "object"),
     "no_response_attempts": LegacyField(_case_count(), "integer"),
+    "no_response_alerts_left": LegacyField(_alerts_left(), "integer", **guarded),
     "no_response_incident_counted": LegacyField(latest_case.c.incident_counted, "boolean"),
     "reported_issues": LegacyField(_issues(), "array", **guarded),
     # "Article indisponible" (app/services/stock_checks.py): the latest check and all of them.

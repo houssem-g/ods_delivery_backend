@@ -44,6 +44,7 @@ PACKAGE_SIZES = ("petit", "moyen", "grand")
 MAX_STOPS = 5
 MAX_QUANTITY = 100  # orders.quantity CHECK
 MAX_BUDGET = Decimal("2000")  # orders.budget_max CHECK
+ITEMS_MAX = 2000  # characters of items_text (the « QA TEST » mark of a QA account included)
 
 
 def unavailable_policy(value: Any) -> str:
@@ -402,13 +403,16 @@ def build_order(
     `order_contact_phone` rule — a partner (restaurant ODS) order is placed by the restaurant's
     technical user, and the couriers must call the restaurant's CUSTOMER, never that account."""
     o = raw if isinstance(raw, dict) else {}
-    items_text = _text(o.get("items_text"), 2000)
+    items_text = _text(o.get("items_text"), 20 * ITEMS_MAX)  # the real length, for the answer
     if not items_text:
         raise OrderRefused(400, "invalid_items")
     if is_synthetic_qa_account(user.email) and not is_test_order(items_text):
         # the screen strips a leading « QA TEST » (parseItems): a qa-*@example.test order must
         # never reach the real couriers (QA team 19/10)
-        items_text = (TEST_MARK + items_text)[:2000]
+        items_text = TEST_MARK + items_text
+    if len(items_text) > ITEMS_MAX:
+        # QA 18/10 m21: a longer list was cut in silence (57 articles lost): refused, the screen says why
+        raise OrderRefused(400, "items_too_long", max=ITEMS_MAX, length=len(items_text))
     shop_name = _text(o.get("shop_name"), 200)
     if not shop_name:
         raise OrderRefused(400, "invalid_shop")

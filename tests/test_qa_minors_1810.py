@@ -395,3 +395,158 @@ async def test_m30_language_change_follows_on_the_devices(client, world):
     assert r.status_code == 200
     [token] = await rows(select(DeviceToken).where(DeviceToken.token == "tok-lang"))
     assert token.locale == "fr"
+
+
+# --- m37: the forecast's correction applies to the number of deliveries too --------------------------------
+
+
+async def test_m37_bias_corrects_the_deliveries_with_the_amounts(client, world):
+    from decimal import Decimal
+
+    from app.db import SessionLocal
+    from app.models import Courier, ForecastFactor
+    from app.services import forecast
+
+    r = await call(
+        client,
+        world.courier_user,
+        "saveMyCourierActivity",
+        {"weekly_deliveries": 30, "active_days": 5, "regular_clients": 0},
+    )
+    assert r.status_code == 200, r.text
+
+    async def month() -> dict[str, Any]:
+        async with SessionLocal() as s:
+            return await forecast.month_forecast(s, await s.get(Courier, world.courier.id), seed=7)
+
+    raw = await month()
+    async with SessionLocal() as s:
+        s.add(ForecastFactor(key="bias_global", value=Decimal("0.5"), weight=Decimal("10")))
+        await s.commit()
+    corrected = await month()
+    assert raw["expected_deliveries"] > 4
+    assert corrected["expected_deliveries"] == pytest.approx(raw["expected_deliveries"] * 0.5, abs=0.2)
+    # the amount per delivery stays what it was: never « 8 livraisons de plus pour +3,7 DT »
+    per_raw = Decimal(raw["mid"]) / Decimal(str(raw["expected_deliveries"]))
+    per_corrected = Decimal(corrected["mid"]) / Decimal(str(corrected["expected_deliveries"]))
+    assert abs(per_raw - per_corrected) / per_raw < Decimal("0.1")
+
+
+# --- m21: a list longer than 2000 characters is refused, never cut in silence -----------------------------
+
+
+async def test_m21_items_too_long_is_refused(client, world):
+    from tests.test_qa_majors_1910 import order_form
+
+    long = "\n".join(f"{n}x article numéro {n}" for n in range(1, 120))
+    assert len(long) > 2000
+    r = await call(client, world.customer, "placeOrder", {"order": order_form(items_text=long)})
+    assert r.status_code == 400 and r.json()["error"] == "items_too_long" and r.json()["max"] == 2000
+    ok = await call(client, world.customer, "placeOrder", {"order": order_form(items_text=long[:1990])})
+    assert ok.status_code == 200, ok.text
+
+
+# --- c5: the purge never deletes a SOLD QA deal (its buyer's delivery was counted again) -------------------
+
+
+async def test_c5_purge_keeps_a_sold_qa_deal(world):
+    from datetime import UTC, datetime, timedelta
+
+    from app.db import SessionLocal
+    from app.models import HotDeal
+    from app.services import hot_deals
+    from tests.order_helpers import reload
+    from tests.test_hot_deals import a_deal
+
+    past = datetime.now(UTC) - timedelta(hours=3)
+    sold = await a_deal(
+        world, items_text="QA TEST Pain x3", status="sold", buyer_id=world.customer.id, expires_at=past
+    )
+    unsold = await a_deal(world, items_text="QA TEST Lait", status="expired", expires_at=past)
+    async with SessionLocal() as s:
+        counts = await hot_deals.purge_deals(s)
+        await s.commit()
+    assert await reload(HotDeal, sold.id) is not None
+    assert await reload(HotDeal, unsold.id) is None and counts["test_run_deals_deleted"] == 1
+
+
+# --- c1 / m32: the admin's « commandes ce mois », every dish name for the client's search ------------------
+
+
+async def test_c1_m32_vitrine_lists(client, world):
+    from tests.order_helpers import SOUSSE_SHOP
+    from tests.test_vitrine_orders import public_vitrine
+    from tests.vitrine_helpers import cart_order, manual_vitrine
+
+    shop_id, [cafe, _croissant] = await public_vitrine(client, world.admin)
+    empty_id, _ = await manual_vitrine(client, world.admin, name="Chez Sami", products=(("Burger", 9.0),))
+    r = await call(
+        client, world.customer, "placeOrder", cart_order(shop_id, [{"product_id": cafe, "qty": 1}])
+    )
+    assert r.status_code == 200, r.text
+    listed = (await call(client, world.admin, "listVitrines")).json()["vitrines"]
+    months = {v["shop_id"]: v["orders_month"] for v in listed}
+    assert months[shop_id] == 1 and months[empty_id] == 0
+
+    near = (
+        await call(
+            client, world.customer, "listVitrinesNearby", {"lat": SOUSSE_SHOP[0], "lng": SOUSSE_SHOP[1]}
+        )
+    ).json()["vitrines"]
+    mine = next(v for v in near if v["shop_id"] == shop_id)
+    assert mine["search_names"] == ["Café crème", "Croissant"] and isinstance(mine["search_categories"], list)
+
+
+# --- m17: the admin can leave the QA orders out -------------------------------------------------------------
+
+
+async def test_m17_is_test_order_flag(client, world):
+    qa = await world.order(items="QA TEST 2x Pain")
+    real = await world.order(items="2x Pain")
+    assert (await order_doc(client, world.admin, qa))["is_test_order"] is True
+    assert (await order_doc(client, world.admin, real))["is_test_order"] is False
+    only_real = await client.get(
+        "/api/entities/Order", params={"q": '{"is_test_order": false}'}, headers=auth(world.admin)
+    )
+    assert [d["id"] for d in only_real.json()] == [str(real.id)]
+
+
+# --- m41: a resale bought with a discount carries no commission, never « offerte » --------------------------
+
+
+async def test_m41_discounted_resale_says_no_commission(client, world):
+    from decimal import Decimal
+
+    from app.db import SessionLocal
+    from app.models import Order as OrderRow
+    from tests.test_hot_deals import a_deal
+
+    deal = await a_deal(
+        world, status="sold", buyer_id=world.customer.id, purchase_amount=Decimal("20"), price=Decimal("15")
+    )
+    resale = await world.order(status="delivered", courier=world.courier, fee="3", purchase="15")
+    plain = await world.order(status="delivered", courier=world.courier, fee="3", purchase="15")
+    async with SessionLocal() as s:
+        row = await s.get(OrderRow, resale.id)
+        row.resale_deal_id = deal.id
+        await s.commit()
+    doc = await order_doc(client, world.courier_user, resale)
+    assert doc["ods_commission_status"] == "none" and doc["ods_commission"] == 0
+    other = await order_doc(client, world.courier_user, plain)  # no ledger row written by the test: unchanged
+    assert other["ods_commission_status"] is None
+
+
+# --- P1: after the two alerts, « Le client ne répond pas » is no longer offered -----------------------------
+
+
+async def test_p1_no_alert_left_after_two(client, world):
+    from tests.test_no_response import call as no_response_call
+    from tests.test_no_response import on_the_way
+    from tests.test_no_show_1910 import answered_both
+
+    order = await on_the_way(world)
+    assert (await order_doc(client, world.courier_user, order))["no_response_alerts_left"] == 2
+    await answered_both(client, world, order)
+    assert (await order_doc(client, world.courier_user, order))["no_response_alerts_left"] == 0
+    again = await no_response_call(client, world.courier_user, "report_no_response", order)
+    assert again.status_code == 409 and again.json()["error"] == "too_many_reports"

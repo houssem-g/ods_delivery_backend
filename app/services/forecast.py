@@ -578,7 +578,11 @@ async def month_forecast(
     # today is partly done: half of it is still ahead
     sim = simulate(inp, days, seed=seed)
     base = inp.month_fees
-    expected_total = inp.month_deliveries + sim["expected_deliveries"]
+    # QA 18/10 m37: the courier's bias corrects the amounts (simulate) AND the number of deliveries, else
+    # « ≈ 8 livraisons de plus pour +3,7 DT ». Applied here only: the weekly snapshots keep the raw
+    # counts the day factors are learned on (relearn).
+    ahead = sim["expected_deliveries"] * inp.bias
+    expected_total = inp.month_deliveries + ahead
     commission = _commission(inp, expected_total, first)
     learning = inp.evaluations >= MIN_EVALUATIONS_FOR_STATUS and (inp.mean_error or 0) > MAX_ERROR
     low, mid, high = (
@@ -600,8 +604,8 @@ async def month_forecast(
         "mid": _r3(max(base - commission, mid)),
         "high": _r3(max(base - commission, high)),
         "expected_deliveries": round(expected_total, 1),
-        "from_clients": round(sim["expected_client_deliveries"], 1),
-        "from_others": round(sim["expected_open_deliveries"], 1),
+        "from_clients": round(sim["expected_client_deliveries"] * inp.bias, 1),
+        "from_others": round(sim["expected_open_deliveries"] * inp.bias, 1),
         "commission_estimate": _r3(commission),
         "status": "learning"
         if learning
