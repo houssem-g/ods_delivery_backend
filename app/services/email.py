@@ -54,7 +54,32 @@ async def send_code_email(
     link = None
     if link_token:
         link = f"{settings.PUBLIC_APP_URL.rstrip('/')}/Welcome?{urlencode({'reset_token': link_token})}"
+    from app.services import email_reachability
+
     try:
         await send_email(to, code_email(purpose, code, language, settings.EMAIL_CODE_TTL_MINUTES, link))
-    except Exception:
-        log.exception("sending the %s code e-mail failed", purpose)
+    except Exception as exc:
+        refusal = recipient_refusal(exc)
+        if refusal is None:
+            log.exception("sending the %s code e-mail failed", purpose)
+            return
+        # The server refused the address itself: the code screen says « vérifiez votre adresse ».
+        log.warning("the mail server refused the address of a %s code: %s", purpose, refusal)
+        await email_reachability.mark_unreachable(to, refusal)
+        return
+    await email_reachability.mark_reachable(to)
+
+
+def recipient_refusal(exc: BaseException) -> str | None:
+    """« 550 5.1.1 … » when the SMTP server refused the recipient for good (RCPT TO 5xx), else None:
+    a 4xx, a refused sender (throttling), the connection… are our side, never the person's address."""
+    if isinstance(exc, aiosmtplib.SMTPRecipientsRefused):
+        refused = list(exc.recipients)
+    elif isinstance(exc, aiosmtplib.SMTPRecipientRefused):
+        refused = [exc]
+    else:
+        return None
+    for item in refused:
+        if 500 <= int(getattr(item, "code", 0) or 0) < 600:
+            return f"{item.code} {item.message}".strip()
+    return None

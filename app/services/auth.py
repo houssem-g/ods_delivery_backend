@@ -151,6 +151,8 @@ async def verify_email(session: AsyncSession, email: str, code: str) -> User:
     ):
         raise ApiError(400, "invalid_code", "Invalid or expired code")
     user.email_verified_at = user.email_verified_at or now_utc()
+    user.email_unreachable_at = None  # the code arrived after all
+    user.email_unreachable_reason = None
     return user
 
 

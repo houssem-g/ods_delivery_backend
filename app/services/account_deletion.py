@@ -254,6 +254,8 @@ async def delete_account(session: AsyncSession, actor: CurrentUser) -> tuple[dic
     now = now_utc()
     user.email = deleted_email(user.id)
     user.email_verified_at = None
+    user.email_unreachable_at = None
+    user.email_unreachable_reason = None
     user.full_name = DELETED_USER_NAME
     user.phone_e164 = None
     user.phone_verified_at = None

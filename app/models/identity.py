@@ -50,6 +50,10 @@ class User(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     email: Mapped[str] = mapped_column(CITEXT, nullable=False, unique=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The mail server refused this address when we sent a code (owner 19/10/2026): the code screen
+    # says « vérifiez votre adresse ». Cleared by the next accepted send (services/email_reachability.py).
+    email_unreachable_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    email_unreachable_reason: Mapped[str | None] = mapped_column(Text)
     # NULL until the user (re)defines a password (imported accounts, Google-only accounts).
     password_hash: Mapped[str | None] = mapped_column(Text)
     google_sub: Mapped[str | None] = mapped_column(Text, unique=True)

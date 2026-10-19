@@ -21,7 +21,7 @@ from app.errors import ApiError
 from app.integrations import google_oauth
 from app.models import RevokedAccessToken, User
 from app.rate_limit import ip_key, limiter
-from app.security.deps import CurrentUser, bearer_token, current_user
+from app.security.deps import CurrentUser, bearer_token, current_user, find_user_by_email
 from app.security.tokens import (
     InvalidToken,
     RefreshReused,
@@ -34,12 +34,14 @@ from app.security.tokens import (
 )
 from app.services import auth as svc
 from app.services import couriers, device_keys
+from app.services import email_reachability as reach
 from app.services.email import send_code_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 AUTH_LIMIT = settings.RATE_LIMIT_AUTH
 EMAIL_LIMIT = settings.RATE_LIMIT_AUTH_EMAIL
+EMAIL_CHECK_LIMIT = settings.RATE_LIMIT_EMAIL_CHECK
 NEUTRAL = {"success": True, "message": "If an account exists for this e-mail, a code was sent."}
 OAUTH_NONCE_COOKIE = "odsd_oauth_nonce"
 
@@ -57,6 +59,8 @@ class RegisterBody(BaseModel):
     email: str = Field(max_length=320, pattern=EMAIL_PATTERN)
     password: str = Field(max_length=200)
     full_name: str = Field(min_length=1, max_length=200)
+    # « Non, mon adresse est correcte »: the person keeps an address that looked like a typo.
+    keep_email: bool = Field(default=False, validation_alias=AliasChoices("keep_email", "keepEmail"))
 
 
 class EmailBody(BaseModel):
@@ -152,6 +156,7 @@ async def login(
 async def register(
     request: Request, body: RegisterBody, tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)
 ) -> Any:
+    await _refuse_unreachable_new_address(session, body.email, keep_typo=body.keep_email)
     try:
         pending = await svc.register(session, body.email, body.password, body.full_name)
     except svc.AuthRefusal as exc:
@@ -159,6 +164,55 @@ async def register(
     await session.commit()
     _schedule(tasks, pending)
     return {"success": True, "verification_required": True, "email": body.email}
+
+
+async def _refuse_unreachable_new_address(session: AsyncSession, email: str, *, keep_typo: bool) -> None:
+    """Sign-up (owner 19/10/2026): an address we cannot reach is said BEFORE any code is sent, and a
+    frequent typo of a common provider is offered (« Vouliez-vous dire … ? »). An address already
+    registered keeps its usual answers (taken, account setup): never blocked here."""
+    existing = await find_user_by_email(session, email)
+    if existing is not None and (
+        existing.email_verified_at is not None or existing.password_hash is None or existing.deleted_at
+    ):
+        return
+    verdict = await reach.check(email)
+    if not verdict.ok:
+        raise ApiError(
+            422,
+            "email_unreachable",
+            reach.MESSAGE_UNREACHABLE,
+            reason=verdict.reason,
+            suggestion=verdict.suggestion,
+        )
+    if verdict.suggestion and not keep_typo:
+        raise ApiError(422, "email_typo", reach.MESSAGE_TYPO, suggestion=verdict.suggestion)
+
+
+@router.post("/check-email")
+@limiter.limit(EMAIL_CHECK_LIMIT, key_func=ip_key)
+async def check_email(request: Request, body: EmailBody) -> dict[str, Any]:
+    """While the address is typed: {ok, reason: syntax | no_mail, suggestion}. Domain-only (no account
+    is looked up): the same answer for every address of a domain."""
+    return (await reach.check(body.email)).body()
+
+
+@router.post("/email-status")
+@limiter.limit(EMAIL_CHECK_LIMIT, key_func=ip_key)
+async def email_status(
+    request: Request, body: EmailBody, session: AsyncSession = Depends(get_session)
+) -> dict[str, Any]:
+    """The code screen asks it (now and then every 15 s): did the mail server refuse this address, or
+    does its domain not take mail? Only unverified accounts can carry a refusal."""
+    user = await find_user_by_email(session, body.email)
+    if (
+        user is not None
+        and user.deleted_at is None
+        and user.email_verified_at is None
+        and user.email_unreachable_at is not None
+    ):
+        return {"unreachable": True, "reason": "smtp_refused", "suggestion": reach.suggest(body.email)}
+    verdict = await reach.check(body.email)
+    return {"unreachable": not verdict.ok, "reason": verdict.reason, "suggestion": verdict.suggestion}
 
 
 @router.post("/verify-otp")
@@ -182,6 +236,16 @@ async def verify_otp(
 async def resend_otp(
     request: Request, body: EmailBody, tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)
 ) -> dict[str, Any]:
+    # A domain that takes no mail: said instead of sending (domain-only, so no account enumeration).
+    verdict = await reach.check(body.email)
+    if not verdict.ok:
+        raise ApiError(
+            422,
+            "email_unreachable",
+            reach.MESSAGE_UNREACHABLE,
+            reason=verdict.reason,
+            suggestion=verdict.suggestion,
+        )
     pending = await svc.resend_code(session, body.email)
     await session.commit()
     _schedule(tasks, pending)

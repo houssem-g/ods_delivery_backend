@@ -89,7 +89,7 @@ from app.integrations import osm
 from app.main import app as fastapi_app
 from app.models import Base
 from app.rate_limit import limiter
-from app.services import arrival, partner_webhooks
+from app.services import arrival, email_reachability, partner_webhooks
 from app.services import email as email_service
 from tests.factories import Factory
 
@@ -133,6 +133,19 @@ def no_osm_network():
     yield
     osm.set_transport(httpx.MockTransport(_refuse_network))
     partner_webhooks.set_transport(httpx.MockTransport(_refuse_network))
+
+
+async def _dns_never_answers(domain: str) -> bool | None:
+    return None
+
+
+@pytest.fixture(autouse=True)
+def no_dns_network():
+    """The sign-up e-mail check never asks a real DNS: silent by default (= never blocks); the
+    reachability tests install their own answers."""
+    email_reachability.set_lookup(_dns_never_answers)
+    yield
+    email_reachability.set_lookup(_dns_never_answers)
 
 
 @pytest.fixture

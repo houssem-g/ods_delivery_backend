@@ -81,6 +81,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEFAULT: str = "300/minute"
     RATE_LIMIT_AUTH: str = "20/minute"
     RATE_LIMIT_AUTH_EMAIL: str = "6/minute"
+    # /api/auth/check-email and /api/auth/email-status per IP (the code screen asks every 15 s)
+    RATE_LIMIT_EMAIL_CHECK: str = "30/minute"
     # getOfferRank per courier: the price sheet asks while he edits (debounced) + his offers list
     RATE_LIMIT_OFFER_RANK: str = "60/minute"
     # getOfferEstimate per courier: the offer sheet asks once per order and ~100 m (routes cost OSRM calls)
@@ -106,6 +108,10 @@ class Settings(BaseSettings):
     SMTP_STARTTLS: bool = False
     SMTP_TLS: bool = False
     SMTP_TIMEOUT_SECONDS: float = 10.0
+    # Sign-up and code resend: the domain must accept mail (MX, else A/AAAA). A DNS that does not
+    # answer within the timeout never blocks (app/services/email_reachability.py).
+    EMAIL_DNS_CHECK: bool = True
+    EMAIL_DNS_TIMEOUT_SECONDS: float = 2.0
 
     # --- object storage (S3 / MinIO / DO Spaces) ------------------------------
     S3_ENDPOINT_URL: str = "http://localhost:9110"
