@@ -18,6 +18,15 @@ The server owns the procedure; the screens only display it:
                       (new case, new countdown, reminders again). The incident moves from the
                       first case to the new one and stays counted (withdrawn only if the customer
                       answers); MAX_REPORTS = 2 cases per order.
+  customer_no_show    courier/admin (owner, 19/10/2026, QA M6): the customer answered the LAST
+                      alert (« j'arrive ») but does not come. Once the last wait is over
+                      (prayer_times.wait_seconds after his answer: 3 min, 10 at a prayer / the iftar /
+                      Ramadan nights for a restaurant order — rule D3) and the courier is still within
+                      REPORT_MAX_DISTANCE_M of the door: a case is recorded as an expired, verified
+                      no-response (messaging_status NO_SHOW, incident counted, no alert sent, never a
+                      third alert), the order is parked in client_no_response and everything after it
+                      is the usual verified no-response: Offre Chaude, keep the goods, the restaurant
+                      return (deposit refunded, ride paid), no penalty, late answer voids the incident.
   sweep               the 5-minute job (app/jobs/incidents.py), never an HTTP action.
   reminders           while a case waits, the customer's phone rings again every
                       REMINDER_EVERY (push only, Android channel `urgent_alarm`): one alert is
@@ -77,6 +86,8 @@ MAX_REMINDERS = 3  # at 45, 90 and 135 s; the "last chance" alert follows at the
 # A refusal answered with a status >= 400 whose writes must still be committed (the router
 # rolls back otherwise): set on session.info by the flows, read by the function modules.
 COMMIT_REFUSAL = "odsd_commit_refusal"
+NO_SHOW = "no_show"  # messaging_status of the case « Le client n'est pas venu » records (no alert sent)
+RESTAURANT_SOURCES = ("partner", "vitrine")  # the meal goes back to the restaurant (decision 2, 16/10)
 
 Result = tuple[int, dict[str, Any]]
 
@@ -581,8 +592,10 @@ async def return_deadline(
     """A restaurant ODS order only (`source = partner`): the time before which the courier brings
     the closed dish back for the deposit and the ride to be paid (decision 2). The procedure ends
     at `final_at` once the case expired, else at its deadline; None for app orders."""
-    if order.source != "partner" or case is None:
-        return None
+    if case is None or not (
+        order.source == "partner" or (case.messaging_status == NO_SHOW and _restaurant(order))
+    ):
+        return None  # the no-show of a Vitrine restaurant order returns to the restaurant too (M6)
     end = case.final_at if case.status == "expired" and case.final_at is not None else case.deadline_at
     if end is None:
         return None
@@ -602,10 +615,148 @@ async def view(
     now: datetime,
     reports: int | None = None,
 ) -> dict[str, Any]:
-    """build_view + `return_deadline_at` for the restaurant orders (NoResponsePanel reads it)."""
+    """build_view + `return_deadline_at` for the restaurant orders (NoResponsePanel reads it) + `no_show`
+    (the last wait after the customer answered the last alert, None when it does not apply)."""
     out = build_view(order, case, now, reports)
     out["return_deadline_at"] = js_iso(await return_deadline(session, order, case, now))
+    out["no_show"] = no_show_json(no_show_window(order, await plain_cases(session, order.id), now))
+    out["no_show_recorded"] = case is not None and case.messaging_status == NO_SHOW
     return out
+
+
+# --- « Le client n'est pas venu » (owner, 19/10/2026, QA M6) ----------------------------------------
+
+
+async def plain_cases(session: AsyncSession, order_id: uuid.UUID) -> list[NoResponseCase]:
+    """The order's cases, newest first, read without a lock (screens, policies)."""
+    return list(
+        (
+            await session.execute(
+                select(NoResponseCase)
+                .where(NoResponseCase.order_id == order_id)
+                .order_by(NoResponseCase.created_at.desc(), NoResponseCase.id.desc())
+            )
+        ).scalars()
+    )
+
+
+def no_show_window(order: Order, cases: list[NoResponseCase], now: datetime) -> dict[str, Any] | None:
+    """The last wait: no alert left (MAX_REPORTS cases) and the latest one answered by the customer, the
+    goods on the way. None when the rule does not apply. `ready`: the wait is over (the courier may then
+    declare « Le client n'est pas venu », at the door)."""
+    if order.status != "on_the_way" or len(cases) < MAX_REPORTS:
+        return None
+    last = cases[0]
+    if last.status != "resolved" or last.resolution != "customer_confirmed" or last.resolved_at is None:
+        return None
+    wait = prayer_times.wait_seconds(order.source, last.resolved_at)
+    until = last.resolved_at + timedelta(seconds=wait)
+    return {
+        "answered_at": last.resolved_at,
+        "wait_until": until,
+        "wait_seconds": wait,
+        "seconds_left": max(0, math.ceil((until - now).total_seconds())),
+        "ready": now >= until,
+    }
+
+
+def no_show_json(window: dict[str, Any] | None) -> dict[str, Any] | None:
+    if window is None:
+        return None
+    return {
+        "answered_at": js_iso(window["answered_at"]),
+        "wait_until": js_iso(window["wait_until"]),
+        "wait_seconds": window["wait_seconds"],
+        "seconds_left": window["seconds_left"],
+        "ready": window["ready"],
+        "max_distance_m": REPORT_MAX_DISTANCE_M,
+    }
+
+
+async def no_show_for(session: AsyncSession, order: Order, now: datetime) -> dict[str, Any] | None:
+    """no_show_json of the order now (cancellation.resale_possible, getCancellationPolicy)."""
+    return no_show_json(no_show_window(order, await plain_cases(session, order.id), now))
+
+
+def _restaurant(order: Order) -> bool:
+    return order.source in RESTAURANT_SOURCES
+
+
+async def customer_no_show(session: AsyncSession, order: Order, actor: CurrentUser) -> Result:
+    """The courier: « Le client n'est pas venu » (rules in the module docstring)."""
+    if order.status in ("cancelled", "delivered"):
+        return 409, {"error": "too_late", "reason": order.status, "status": order.status}
+    now = ot.now_utc()
+    cases = await _cases(session, order.id)
+    window = no_show_window(order, cases, now)
+    if window is None:
+        return 409, {"error": "no_show_not_applicable", "status": order.status}
+    if not window["ready"]:
+        return 409, {
+            "error": "wait",
+            "deadline_at": js_iso(window["wait_until"]),
+            "seconds_left": window["seconds_left"],
+        }
+    if not actor.is_admin and order.delivery_location is not None:
+        distance = await _courier_distance_m(session, order)  # the same check as the alert's (B34)
+        if distance is None:
+            return 409, {"error": "position_unknown", "max_m": REPORT_MAX_DISTANCE_M}
+        if distance > REPORT_MAX_DISTANCE_M:
+            return 409, {"error": "too_far", "distance_m": round(distance), "max_m": REPORT_MAX_DISTANCE_M}
+    if await _live_deal(session, order.id) is not None:
+        return 409, {"error": "too_late", "reason": "resold", "status": order.status}
+
+    # recorded as a verified no-response: expired at once, the incident counted (no alert is sent)
+    case = NoResponseCase(
+        order_id=order.id,
+        courier_id=order.courier_id,
+        status="expired",
+        purchase_amount=order.purchase_amount or 0,
+        started_at=window["answered_at"],
+        deadline_at=window["wait_until"],
+        final_at=now,
+        incident_counted=True,
+        messaging_status=NO_SHOW,
+        channels={"in_app": False, "no_show": True},
+    )
+    session.add(case)
+    await session.flush()
+    _touch(session, case, created=True)
+    await ot.transition(session, order, "client_no_response", actor, SOURCE, NO_SHOW)
+    incidents = await mirror_incidents(session, order.customer_id)
+    waited = round(window["wait_seconds"] / 60)
+    if _restaurant(order):
+        then_fr = "le rapporter au restaurant ou le revendre"
+        then_ar = "إرجاعه إلى المطعم أو إعادة بيعه"
+    else:
+        then_fr = "revendre vos articles ou les garder"
+        then_ar = "إعادة بيع مشترياتك أو الاحتفاظ بها"
+    await notify_and_push(
+        session,
+        user_id=order.customer_id,
+        order_id=order.id,
+        type_="emergency_contact",
+        title_ar="❌ لم تأتِ لاستلام طلبك",
+        title_fr="❌ Vous n'êtes pas venu chercher votre commande",
+        body_ar=(
+            f"انتظرك المندوب {minutes_ar(waited)} إضافية بعد ردّك. سُجّلت حادثة عدم دفع، ويمكنه الآن "
+            f"{then_ar}. اتصل به فوراً إن كنت لا تزال تريده: إن سلّمك الطلب تُسحب الحادثة."
+        ),
+        body_fr=(
+            f"Le livreur vous a attendu encore {waited} min après votre réponse. Un incident est "
+            f"enregistré et il peut maintenant {then_fr}. Appelez-le tout de suite si vous la voulez "
+            "encore : s'il vous la livre, l'incident est retiré."
+        ),
+        metadata={
+            "is_emergency": True,
+            "stage": "no_show",
+            "incidents": incidents,
+            "recipient_role": "customer",
+            "case_id": str(case.id),
+        },
+    )
+    reports = len(cases) + 1
+    return 200, {"success": True, **await view(session, order, case, now, reports)}
 
 
 async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Result:
@@ -836,6 +987,19 @@ async def answered(session: AsyncSession, order: Order, how: str, actor: Current
         courier_user = await _courier_user(session, order)
         if courier_user is not None:
             name = order.contact_name or ""
+            # no alert left (M6, owner 19/10): if he still does not come, the last wait then « pas venu »
+            last = no_show_window(order, await plain_cases(session, order.id), now)
+            extra_fr = extra_ar = ""
+            if last is not None:
+                mins = round(last["wait_seconds"] / 60)
+                extra_fr = (
+                    f" S'il ne vient pas, attendez {mins} min sur place : vous pourrez alors déclarer "
+                    "« Le client n'est pas venu », sans pénalité."
+                )
+                extra_ar = (
+                    f" إن لم يأتِ، انتظر {minutes_ar(mins)} في المكان: يمكنك بعدها التصريح "
+                    "بأن « الحريف لم يأتِ » دون عقوبة."
+                )
             await notify_and_push(
                 session,
                 user_id=courier_user,
@@ -843,14 +1007,16 @@ async def answered(session: AsyncSession, order: Order, how: str, actor: Current
                 type_="customer_responded",
                 title_ar="✅ ردّ الحريف!",
                 title_fr="✅ Le client a répondu !",
-                body_ar=f"أكّد الحريف {name} أنه متاح. اتصل به وأكمل التوصيل.",
+                body_ar=f"أكّد الحريف {name} أنه متاح. اتصل به وأكمل التوصيل.{extra_ar}",
                 body_fr=(
-                    f"Le client {name} a confirmé qu'il est disponible. Appelez-le et terminez la livraison."
+                    f"Le client {name} a confirmé qu'il est disponible. Appelez-le et terminez la "
+                    f"livraison.{extra_fr}"
                 ),
                 metadata={
                     "customer_available": True,
                     "action_type": "retry_contact",
                     "recipient_role": "courier",
+                    **({"no_show_after": js_iso(last["wait_until"])} if last is not None else {}),
                 },
             )
     return 200, {
@@ -886,6 +1052,8 @@ async def route(session: AsyncSession, user: CurrentUser, payload: dict[str, Any
         return await answered(session, order, "customer_confirmed", user)
     if action == "realert_no_response":
         return await realert(session, order, user) if is_courier else (403, {"error": "Forbidden"})
+    if action == "customer_no_show":
+        return await customer_no_show(session, order, user) if is_courier else (403, {"error": "Forbidden"})
     if action == "courier_resume":
         if not is_courier:
             return 403, {"error": "Forbidden"}

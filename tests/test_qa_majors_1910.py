@@ -191,8 +191,9 @@ async def test_m6_policy_says_what_he_can_really_do(client, world):
     policy = (await call(client, world.courier_user, "getCancellationPolicy", ask)).json()["policy"]
     assert policy["after_purchase"] is True and policy["can_resell"] is False
     assert policy["resale_refusal"] == "customer_answered"
-    assert "revend" not in policy["message_fr"].lower()
-    assert "terminez la livraison" in policy["message_fr"] and "rendez les articles" in policy["message_fr"]
+    assert "revendez" not in policy["message_fr"].lower()
+    # the owner's rule (19/10): the last wait is over → « Le client n'est pas venu » is what is offered
+    assert policy["can_declare_no_show"] is True and "Le client n'est pas venu" in policy["message_fr"]
     # the server agrees: the resale is refused, the return to the shop (+1 late) is the way out
     refused = await call(
         client, world.courier_user, "createHotDeal", {"order_id": str(order.id), "courier_choice": True}

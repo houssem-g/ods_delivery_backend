@@ -119,17 +119,19 @@ RESELLABLE = ("purchased", "on_the_way", "client_no_response")  # = hot_deals.RE
 
 
 async def resale_possible(session: AsyncSession, order: Order, now: datetime) -> dict[str, Any]:
-    """Would createHotDeal take this order now (read only, the same gates)? {ok, reason?, deadline_at?}.
-    Without any « client ne répond pas » report: the courier's own choice after the purchase; with one:
-    only once its deadline passed with the customer silent (QA 19/10 M6: after two alerts the customer
-    answered, the goods can't be resold — the texts must not offer it)."""
+    """Would createHotDeal take this order now (read only, the same gates)? {ok, reason?, deadline_at?,
+    verified?, no_show?}. Without any « client ne répond pas » report: the courier's own choice after the
+    purchase; with one: only once its deadline passed with the customer silent (`verified`: a verified
+    no-response — leaving is then free). The customer answered the last alert (`customer_answered`):
+    `no_show` = the last wait (owner 19/10/2026, QA M6: then « Le client n'est pas venu » opens the same
+    choices), from no_response.no_show_for."""
     if (order.purchase_amount or 0) <= 0:
         return {"ok": False, "reason": "nothing_bought"}
     case = (
         await session.execute(
             select(NoResponseCase)
             .where(NoResponseCase.order_id == order.id)
-            .order_by(NoResponseCase.created_at.desc())
+            .order_by(NoResponseCase.created_at.desc(), NoResponseCase.id.desc())
             .limit(1)
         )
     ).scalar_one_or_none()
@@ -137,7 +139,16 @@ async def resale_possible(session: AsyncSession, order: Order, now: datetime) ->
         return {"ok": True} if after_purchase(order) else {"ok": False, "reason": "order_not_resellable"}
     if order.status not in RESELLABLE:
         return {"ok": False, "reason": "order_not_resellable"}
-    return no_response_gate(order.status, case, now)
+    gate = no_response_gate(order.status, case, now)
+    if gate["ok"]:
+        return {**gate, "verified": True}
+    if gate.get("reason") == "customer_answered":
+        from app.services import no_response
+
+        window = await no_response.no_show_for(session, order, now)
+        if window is not None:
+            return {**gate, "no_show": window}
+    return gate
 
 
 async def linked_hot_deal(session: AsyncSession, order: Order) -> HotDeal | None:
@@ -508,49 +519,93 @@ def customer_policy(status: str) -> dict[str, Any]:
     }
 
 
-def _after_purchase_texts(resale: dict[str, Any] | None) -> dict[str, str]:
-    """What he can really do once the goods are paid (QA 19/10 M6: « revendez-les » was offered while
-    createHotDeal refused it — after two alerts the customer answered, nothing can be resold)."""
-    if resale is None or resale.get("ok"):
+def _after_purchase_texts(resale: dict[str, Any] | None, restaurant: bool) -> dict[str, str]:
+    """What he can really do once the goods are paid, at this instant (QA 19/10 M6 and the owner's rule
+    of 19/10: « revendez-les » was offered while createHotDeal refused it)."""
+    back_fr = "rapportez le plat au restaurant" if restaurant else "rendez-les au magasin"
+    back_ar = "أرجع الطبق إلى المطعم" if restaurant else "أرجعها للمتجر"
+    if resale is None or (resale.get("ok") and not resale.get("verified")):
         return {
-            "message_ar": "دفعت ثمن المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو أرجعها للمتجر.",
+            "message_ar": f"دفعت ثمن المواد: أعد بيعها كعرض ساخن لاسترجاع مالك، أو {back_ar}.",
             "message_fr": (
                 "Vous avez déjà payé les articles : revendez-les en Offre Chaude pour récupérer "
-                "votre argent, ou rendez-les au magasin."
+                f"votre argent, ou {back_fr}."
+            ),
+        }
+    if resale.get("verified"):  # verified no-response or « Le client n'est pas venu »: all free
+        if restaurant:
+            return {
+                "message_ar": (
+                    "الحريف لم يردّ أو لم يأتِ: أرجع الطبق مغلقاً إلى المطعم خلال 30 دقيقة (يُردّ لك ما "
+                    "دفعته وتُدفع أجرتك)، أو أعد بيعه كعرض ساخن. دون عقوبة."
+                ),
+                "message_fr": (
+                    "Le client n'a pas répondu ou n'est pas venu : rapportez le plat fermé au restaurant "
+                    "sous 30 min (avance rendue, course payée) ou revendez-le en Offre Chaude. Sans pénalité."
+                ),
+            }
+        return {
+            "message_ar": "الحريف لم يردّ أو لم يأتِ: أعد بيع المواد كعرض ساخن أو احتفظ بها. دون عقوبة.",
+            "message_fr": (
+                "Le client n'a pas répondu ou n'est pas venu : revendez les articles en Offre Chaude ou "
+                "gardez-les. Sans pénalité."
             ),
         }
     if resale.get("reason") == "wait":
         return {
             "message_ar": (
                 "دفعت ثمن المواد: يمكنك إعادة بيعها كعرض ساخن بعد انتهاء مهلة انتظار الحريف. "
-                "وإلا أرجعها للمتجر (يُحتسب إلغاءً متأخراً)."
+                f"وإلا {back_ar} (يُحتسب إلغاءً متأخراً)."
             ),
             "message_fr": (
                 "Vous avez déjà payé les articles : la revente en Offre Chaude sera possible à la fin "
-                "du délai d'attente du client. Sinon, rendez-les au magasin (cela compte comme une "
-                "annulation tardive)."
+                f"du délai d'attente du client. Sinon, {back_fr} (cela compte comme une annulation tardive)."
+            ),
+        }
+    no_show = resale.get("no_show")
+    if no_show is not None and no_show.get("ready"):
+        return {
+            "message_ar": (
+                "ردّ الحريف لكنه لم يأتِ: من مكانك (أقل من 300 م) صرّح بأن « الحريف لم يأتِ »، دون عقوبة، "
+                "ثم اختر ما تفعله بالطلب."
+            ),
+            "message_fr": (
+                "Le client a répondu mais n'est pas venu : sur place (à moins de 300 m), déclarez « Le "
+                "client n'est pas venu », sans pénalité, puis choisissez quoi faire de la commande."
+            ),
+        }
+    if no_show is not None:
+        left = max(1, -(-int(no_show.get("seconds_left") or 0) // 60))
+        return {
+            "message_ar": (
+                f"ردّ الحريف: اتصل به وأكمل التوصيل. إن لم يأتِ، ابقَ في المكان (أقل من 300 م): بعد "
+                f"{left} دق يمكنك التصريح بأن « الحريف لم يأتِ »، دون عقوبة."
+            ),
+            "message_fr": (
+                "Le client a répondu : appelez-le et terminez la livraison. S'il ne vient pas, restez sur "
+                f"place (à moins de 300 m) : dans {left} min vous pourrez déclarer « Le client n'est pas "
+                "venu », sans pénalité."
             ),
         }
     if resale.get("reason") == "customer_answered":
         return {
             "message_ar": (
-                "دفعت ثمن المواد والحريف ردّ: اتصل به وأكمل التوصيل. إن تعذّر ذلك، أرجع المواد "
-                "للمتجر (يُحتسب إلغاءً متأخراً)."
+                "دفعت ثمن المواد والحريف ردّ: اتصل به وأكمل التوصيل. إن لم يأتِ، أعد التنبيه من "
+                f"« الحريف لا يردّ ». وإلا {back_ar} (يُحتسب إلغاءً متأخراً)."
             ),
             "message_fr": (
                 "Vous avez déjà payé les articles et le client a répondu : appelez-le et terminez la "
-                "livraison. Si c'est impossible, rendez les articles au magasin (cela compte comme une "
-                "annulation tardive)."
+                "livraison. S'il ne vient pas, relancez-le avec « Le client ne répond pas ». Sinon, "
+                f"{back_fr} (cela compte comme une annulation tardive)."
             ),
         }
     return {
         "message_ar": (
-            "دفعت ثمن المواد ولم تعد إعادة البيع ممكنة: أكمل التوصيل أو أرجع المواد للمتجر "
-            "(يُحتسب إلغاءً متأخراً)."
+            f"دفعت ثمن المواد ولم تعد إعادة البيع ممكنة: أكمل التوصيل أو {back_ar} (يُحتسب إلغاءً متأخراً)."
         ),
         "message_fr": (
             "Vous avez déjà payé les articles et la revente n'est plus possible : terminez la "
-            "livraison ou rendez les articles au magasin (cela compte comme une annulation tardive)."
+            f"livraison ou {back_fr} (cela compte comme une annulation tardive)."
         ),
     }
 
@@ -567,21 +622,29 @@ def courier_policy(
         # « Revendre en Offre Chaude » / « J'ai rendu les articles au magasin » (resell_or_return);
         # can_resell false (M6): only « rendre au magasin » (+1 late) or finishing the delivery is left.
         can_resell = resale is None or bool(resale.get("ok"))
+        verified = bool(resale and resale.get("verified"))
+        no_show = resale.get("no_show") if resale else None
         return {
             "can_cancel": False,
             "is_delay_cancel": True,
-            "penalty_applies": True,
+            # a verified no-response (or « pas venu »): leaving with client_no_response /
+            # goods_returned_to_shop is free (no late cancellation)
+            "penalty_applies": not verified,
             "after_purchase": True,
             "resell_or_return": True,
             "can_resell": can_resell,
+            "no_response_verified": verified,
             **({} if can_resell else {"resale_refusal": resale.get("reason") if resale else None}),
             **(
                 {"resale_after": resale["deadline_at"]}
                 if resale and not can_resell and resale.get("deadline_at")
                 else {}
             ),
+            # owner 19/10 (M6): the last wait, then « Le client n'est pas venu »
+            **({"no_show": no_show, "can_declare_no_show": bool(no_show["ready"])} if no_show else {}),
+            "restaurant_order": order.source in ("partner", "vitrine"),
             "reason_code": "courier_after_purchase",
-            **_after_purchase_texts(resale),
+            **_after_purchase_texts(resale, order.source in ("partner", "vitrine")),
         }
     return {
         "can_cancel": True,
