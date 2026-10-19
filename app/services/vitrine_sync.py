@@ -62,6 +62,12 @@ def pickup_order_id(customer_id: Any, client_ref: Any) -> uuid.UUID:
     return uuid.uuid5(REF_NAMESPACE, f"pickup:{customer_id}:{client_ref}")
 
 
+def delivery_order_id(customer_id: Any, client_ref: Any) -> uuid.UUID:
+    """The order id of a delivered order (free text or Vitrine) from the customer and the app's attempt key:
+    a retry after a lost answer finds the same order (QA 19/10 M3)."""
+    return uuid.uuid5(REF_NAMESPACE, f"delivery:{customer_id}:{client_ref}")
+
+
 def clean_client_ref(value: Any) -> str | None:
     text = str(value or "").strip()
     return text[:CLIENT_REF_MAX] if text and all(c.isalnum() or c in "-_" for c in text) else None

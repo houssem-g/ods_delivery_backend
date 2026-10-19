@@ -19,6 +19,11 @@ A customer signed up through a courier's invite link: that courier alone is told
 « Je viens chercher » (order.vitrine.fulfillment = pickup, client_ref = the cart's attempt key): the
 restaurant's ODS takes it inside this request (app/services/vitrine_sync.py), else 503
 restaurant_unreachable and nothing is kept; the same client_ref again answers the same order.
+Delivered orders too (free text or Vitrine, QA 19/10 M3): `order.client_ref` (or `order.vitrine.client_ref`)
+= the app's attempt key ([A-Za-z0-9_-], ≤ 64 chars, a new one per new order, the SAME one for a retry of
+that order); the same key again from the same customer answers the order it made, as is
+({ success, order, dispatched: 0, existing: true }), never a second order nor a second broadcast.
+Without client_ref every call places a new order (older apps).
 """
 
 import logging
@@ -56,6 +61,13 @@ async def handle(
             "success": True,
             "order": await document(session, "Order", user, order.id),
             "dispatched": 0,
+        }
+    if session.info.pop("order_existing", False):  # a retry of the same attempt: the order it made
+        return 200, {
+            "success": True,
+            "order": await document(session, "Order", user, order.id),
+            "dispatched": 0,
+            "existing": True,
         }
     # The draft this order came from goes with it (same transaction: kept if the order fails).
     await order_drafts.remove(session, user.id, payload.get("draft_id"))
