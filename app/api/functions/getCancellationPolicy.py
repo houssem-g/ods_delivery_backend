@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.functions._common import as_uuid
 from app.models import Order
 from app.security.deps import CurrentUser
-from app.services.cancellation import courier_policy, customer_policy
+from app.services.cancellation import courier_policy, customer_policy, late_for_courier
 from app.services.orders import is_assigned_courier
 
 
@@ -34,7 +34,10 @@ async def handle(
         user.is_admin or order.customer_id == user.id or await is_assigned_courier(session, order, user.id)
     ):
         return 403, {"error": "Forbidden"}
-    policy = courier_policy(order) if actor == "courier" else customer_policy(order.status)
+    if actor == "courier":
+        policy = courier_policy(order, late=await late_for_courier(session, order))
+    else:
+        policy = customer_policy(order.status)
     return 200, {
         "success": True,
         "actor": actor,

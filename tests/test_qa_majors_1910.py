@@ -5,7 +5,7 @@ import uuid
 import pytest
 from sqlalchemy import select
 
-from app.models import Order
+from app.models import Courier, Order
 from tests.factories import auth
 from tests.order_helpers import SOUSSE_HOME, SOUSSE_SHOP, OrderWorld, device, notifications, rows
 
@@ -87,3 +87,67 @@ async def test_m3_vitrine_delivery_retry_is_idempotent(client, world):
     assert again.status_code == 200 and again.json()["existing"] is True
     assert again.json()["order"]["id"] == first.json()["order"]["id"]
     assert await count_orders(world.customer) == 1
+
+
+# --- M4: cancelling during « article indisponible » is a late cancellation -------------------------------
+
+
+async def stops_at(order, status):
+    from sqlalchemy import update
+
+    from app.db import SessionLocal
+    from app.models import OrderStop
+
+    async with SessionLocal() as s:
+        await s.execute(update(OrderStop).where(OrderStop.order_id == order.id).values(status=status))
+        await s.commit()
+
+
+async def courier_cancel(client, world, order, reason="vehicle_issue"):
+    return await call(
+        client,
+        world.courier_user,
+        "cancelOrder",
+        {
+            "order_id": str(order.id),
+            "cancelled_by": "courier",
+            "courier_id": str(world.courier.id),
+            "reason": reason,
+        },
+    )
+
+
+async def late_count(world) -> int:
+    from tests.order_helpers import reload
+
+    return (await reload(Courier, world.courier.id)).late_cancellations
+
+
+async def test_m4_price_confirmation_needed_counts_as_late(client, world):
+    order = await world.order(status="price_confirmation_needed", courier=world.courier, fee="4")
+    await stops_at(order, "at_shop")
+    policy = await call(
+        client, world.courier_user, "getCancellationPolicy", {"order_id": str(order.id), "actor": "courier"}
+    )
+    assert policy.json()["policy"]["penalty_applies"] is True
+    assert policy.json()["policy"]["reason_code"] == "courier_late_cancel_penalty"
+    before = await late_count(world)
+    r = await courier_cancel(client, world, order)
+    assert r.status_code == 200, r.text
+    assert await late_count(world) == before + 1
+
+
+async def test_m4_exceptions_are_kept(client, world):
+    before = await late_count(world)
+    # « magasin fermé » during the question: no penalty (owner 06/10)
+    closed = await world.order(status="price_confirmation_needed", courier=world.courier, fee="4")
+    await stops_at(closed, "at_shop")
+    assert (await courier_cancel(client, world, closed, "shop_closed")).status_code == 200
+    # a Vitrine restaurant's « plat manquant » before he reached the shop: he was not at the shop
+    early = await world.order(status="price_confirmation_needed", courier=world.courier, fee="4")
+    policy = await call(
+        client, world.courier_user, "getCancellationPolicy", {"order_id": str(early.id), "actor": "courier"}
+    )
+    assert policy.json()["policy"]["penalty_applies"] is False
+    assert (await courier_cancel(client, world, early)).status_code == 200
+    assert await late_count(world) == before

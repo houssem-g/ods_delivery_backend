@@ -52,6 +52,11 @@ COURIER_CANCELLABLE = (
     "client_no_response",
 )
 PENALTY_STATUSES = ("at_shop", "purchased", "on_the_way", "client_no_response")
+# QA 19/10 M4: « article indisponible » (price_confirmation_needed) is still at the shop: a late
+# cancellation like at_shop (exceptions kept: an expired question R45, « magasin fermé »). Only a
+# Vitrine restaurant's « plat manquant » reported before he reached the shop (no stop at the shop yet)
+# is not late — he was not at the shop.
+AT_SHOP_STOPS = ("at_shop", "purchased")
 # Owner's rules (06/10, QA B26/B31):
 # - after the purchase the courier can't just cancel (the order would go to a 2nd courier who buys
 #   the same items again): he resells (createHotDeal courier_choice) or returns the goods to the shop;
@@ -125,6 +130,22 @@ async def linked_hot_deal(session: AsyncSession, order: Order) -> HotDeal | None
         if deal.id == order.resale_deal_id or deal.buyer_order_id == order.id:
             return deal
     return deals[0] if deals else None
+
+
+async def late_for_courier(session: AsyncSession, order: Order) -> bool:
+    """A courier cancelling now makes a late cancellation (R32): at the shop or later (M4)."""
+    if order.status in PENALTY_STATUSES:
+        return True
+    if order.status != "price_confirmation_needed":
+        return False
+    reached = (
+        await session.execute(
+            select(OrderStop.id)
+            .where(OrderStop.order_id == order.id, OrderStop.status.in_(AT_SHOP_STOPS))
+            .limit(1)
+        )
+    ).first()
+    return reached is not None
 
 
 async def _reset_stops(session: AsyncSession, order: Order) -> None:
@@ -228,7 +249,7 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
         if paid and reason in NO_RESPONSE_REASONS and not verified_no_response:
             raise OrderRefused(409, "after_purchase_resell_or_return", status=order.status)
         if (
-            (order.status in PENALTY_STATUSES or paid)
+            (paid or await late_for_courier(session, order))
             and not verified_no_response
             and not verified_stock_check
             and not shop_closed
@@ -462,9 +483,10 @@ def customer_policy(status: str) -> dict[str, Any]:
     }
 
 
-def courier_policy(order: Order) -> dict[str, Any]:
+def courier_policy(order: Order, *, late: bool | None = None) -> dict[str, Any]:
+    """`late`: late_for_courier(order) (getCancellationPolicy computes it); None = by the status alone."""
     status = order.status
-    penalty = status in PENALTY_STATUSES
+    penalty = late if late is not None else status in PENALTY_STATUSES
     if after_purchase(order):
         # No simple cancel: the courier's « Je ne peux pas terminer la course » opens the choice
         # « Revendre en Offre Chaude » / « J'ai rendu les articles au magasin » (resell_or_return).
