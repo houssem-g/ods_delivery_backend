@@ -697,7 +697,8 @@ def _app_page(outcome: str) -> HTMLResponse:
 <title>ODS Delivery</title><style>
 body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#070B14;color:#fff;
 font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px;box-sizing:border-box}}
-main{{max-width:420px;width:100%;background:#0E1626;border:1px solid rgba(255,255,255,.12);
+main{{box-sizing:border-box;max-width:420px;width:100%;background:#0E1626;
+border:1px solid rgba(255,255,255,.12);
 border-radius:24px;padding:24px}}
 .mark{{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;
 font-size:28px;
