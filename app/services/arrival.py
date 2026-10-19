@@ -338,6 +338,16 @@ async def arrival(
     )
 
 
+def offer_arrival(estimated_minutes: int | None, eta_minutes: int | None) -> int | None:
+    """THE arrival time of an offer (owner's rule, 19/10/2026, QA M12): the time the courier announced
+    when he RAISED it above the computation, else the computation — never less than the computation
+    (createOrderOffer / updateOrderOffer refuse a lower one, without any margin). Ranked on, sorted on,
+    shown to the customer. No computation (his position unknown): his announced time (« non vérifié »)."""
+    if estimated_minutes is None:
+        return eta_minutes
+    return max(estimated_minutes, eta_minutes) if eta_minutes is not None else estimated_minutes
+
+
 def is_announced(eta_minutes: int | None, estimated_minutes: int | None) -> bool:
     """The courier promised clearly less than the computation: the customer reads « annoncé »."""
     return (

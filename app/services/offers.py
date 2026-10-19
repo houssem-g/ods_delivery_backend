@@ -56,22 +56,19 @@ def _bounded(minutes: int | None) -> int | None:
     return minutes if minutes is not None and 0 <= minutes <= 600 else None
 
 
-ETA_FLOOR_MARGIN = 2  # minutes he may announce under the computation (owner 18/10/2026: add, never remove)
-
-
 def _check_eta_floor(eta: int, computed: int | None) -> None:
-    """The courier may ADD time to the computed arrival, never remove it (owner, 18/10/2026): a delay
-    more than ETA_FLOOR_MARGIN under the computation is refused (400 eta_below_computed, the app
-    words it in French / Arabic with `min_eta`). No computation (position unknown): no floor."""
-    if computed is not None and eta < computed - ETA_FLOOR_MARGIN:
-        raise OrderRefused(
-            400, "eta_below_computed", min_eta=max(1, computed - ETA_FLOOR_MARGIN), computed=computed
-        )
+    """The courier may ADD time to the computed arrival, never remove any, not even one minute (owner,
+    19/10/2026, QA M12 — the 2-minute tolerance is gone): a delay under the computation is refused
+    (400 eta_below_computed, the app words it in French / Arabic with `min_eta` = the computation).
+    No computation (position unknown): no floor."""
+    if computed is not None and eta < computed:
+        raise OrderRefused(400, "eta_below_computed", min_eta=max(1, computed), computed=computed)
 
 
 def _store_estimate(offer: OrderOffer, estimate: arrival.Arrival | None) -> None:
-    """The computed arrival on the offer and « annoncé » (his delay clearly under it). Without a new
-    estimate (no position, OSRM and straight line both impossible) the stored one is kept."""
+    """The computed arrival on the offer. Without a new estimate (no position, OSRM and straight line both
+    impossible) the stored one is kept. « annoncé » (a delay under the computation) no longer exists: the
+    customer always reads arrival.offer_arrival, never under the computation (owner 19/10/2026)."""
     if estimate is not None:
         offer.estimated_eta_minutes = _bounded(estimate.total_min)
         offer.to_shop_km = (
@@ -79,7 +76,7 @@ def _store_estimate(offer: OrderOffer, estimate: arrival.Arrival | None) -> None
             if estimate.to_shop_km is not None and 0 <= estimate.to_shop_km <= 1000
             else None
         )
-    offer.eta_announced = arrival.is_announced(offer.eta_minutes, offer.estimated_eta_minutes)
+    offer.eta_announced = False
 
 
 async def verified_courier(session: AsyncSession, user: CurrentUser) -> Courier:
@@ -97,19 +94,19 @@ def _letter(n: int) -> str:
 
 
 def _arrival(estimated: int | None, eta: int | None) -> tuple[int, int]:
-    """The arrival an offer is RANKED by (owner 18/10/2026, 2nd decision): the server's computation
-    only, never the delay the courier typed. An offer without a computation (his position unknown,
-    an offer older than the computation) comes after every computed one, ordered by its typed
-    delay — it stays comparable, but a typed number never beats a measured one. No delay at all:
-    last."""
+    """The arrival an offer is RANKED by (owner 19/10/2026, QA M12): arrival.offer_arrival — the time he
+    announced if he raised it above the computation, else the computation; the same time the customer
+    reads. An offer without a computation (his position unknown, an offer older than the computation)
+    comes after every computed one, ordered by its typed delay — it stays comparable, but a typed number
+    never beats a measured one. No delay at all: last."""
     if estimated is not None:
-        return (0, estimated)
+        return (0, arrival.offer_arrival(estimated, eta) or 0)
     return (1, eta) if eta is not None else (2, 0)
 
 
 def _arrival_key(estimated: int | None, eta: int | None, fee: float, created: Any) -> tuple:
-    """How the customer's offers list is sorted: the soonest COMPUTED arrival first, then the
-    cheaper, then the earlier offer (src/lib/offerBoard.js compareByArrival, the same rule)."""
+    """How the « by arrival » order goes: the soonest arrival with a computation first, then the cheaper,
+    then the earlier offer (src/lib/offerBoard.js compareByArrival must follow the same rule)."""
     return (*_arrival(estimated, eta), fee, created)
 
 
@@ -129,10 +126,13 @@ async def offer_rank(
     `other_fees`: the other pending prices, ascending, anonymous (never an id or a name): the owner
     wants couriers to see the prices to beat (2026-09-30), `lowest_other` the cheapest.
 
-    Arrival (owner 18/10/2026): ranked by the server's computed arrival only (`estimated`: his own,
-    the others' stored `estimated_eta_minutes`; _arrival): eta_rank = 1 + others arriving strictly
-    sooner, eta_tied the others at the same place; None without any delay of his. The board shows
-    the typed delays (what the customer reads, never under the computation − ETA_FLOOR_MARGIN).
+    Arrival (owner 19/10/2026, QA M12): ONE arrival per offer, arrival.offer_arrival(computed, announced)
+    — his announced time when he raised it above the computation, else the computation (`estimated`: his
+    own, the others' stored `estimated_eta_minutes`); offers without a computation after the computed ones
+    (_arrival). eta_rank = 1 + others arriving strictly sooner, eta_tied the others at the same place;
+    None without any delay of his. eta_rank_shown / eta_tied_shown are the SAME numbers (one rank
+    everywhere, kept for older apps); `my_arrival` his arrival. The board shows each offer's arrival
+    (`eta_minutes` = what the customer reads).
     `board` (single order only): every pending offer as the customer sees them — sorted by arrival,
     then price — each `{who: "me" | "A" | "B" …, fee, eta_minutes, fastest, cheapest}`. The others are
     letters in the order they offered: never an id, a name, a phone, a distance or a position.
@@ -180,6 +180,7 @@ async def offer_rank(
         "other_fees": fees,
         "lowest_other": fees[0] if fees else None,
         "my_eta": eta,
+        "my_arrival": arrival.offer_arrival(estimated, eta),
         "eta_rank": None,
         "eta_tied": 0,
     }
@@ -188,13 +189,9 @@ async def offer_rank(
         places = [_arrival(r[3], r[1]) for r in rows]
         answer["eta_rank"] = 1 + sum(1 for p in places if p < mine_place)
         answer["eta_tied"] = sum(1 for p in places if p == mine_place)
-    # the place he READS (owner 18/10/2026, 4th round: « jamais une phrase sans rang »): among every
-    # delay shown on the board, unverified ones included (they stay marked « non vérifié » and never
-    # get « le + rapide »); eta_rank above keeps the verified-first order of the lists
-    answer["eta_rank_shown"] = (
-        1 + sum(1 for r in rows if r[1] is not None and r[1] < eta) if eta is not None else None
-    )
-    answer["eta_tied_shown"] = sum(1 for r in rows if r[1] == eta) if eta is not None else 0
+    # the place he READS is the same one (owner 19/10/2026, QA M12: « 1er » read, 2nd ranked before)
+    answer["eta_rank_shown"] = answer["eta_rank"]
+    answer["eta_tied_shown"] = answer["eta_tied"]
     answer["my_verified"] = estimated is not None
     if not board:
         return answer
@@ -210,7 +207,7 @@ async def offer_rank(
             {
                 "who": who,
                 "fee": float(f),
-                "eta_minutes": e,
+                "eta_minutes": arrival.offer_arrival(est, e),
                 "pinned": pinned,
                 "_key": _arrival_key(est, e, float(f), (0, len(entries))),
             }
@@ -219,7 +216,7 @@ async def offer_rank(
     me = {
         "who": "me",
         "fee": float(fee),
-        "eta_minutes": eta,
+        "eta_minutes": arrival.offer_arrival(estimated, eta),
         "pinned": pinned_id is not None and courier_id == pinned_id,
         "_key": _arrival_key(estimated, eta, float(fee), (1, 0)),
     }
@@ -228,10 +225,10 @@ async def offer_rank(
     if mine is not None:
         before = sum(1 for r in rows if r[2] < mine.created_at)
         me["_key"] = _arrival_key(estimated, eta, float(fee), (0, before - 0.5))
-    # the badges by the true arrival / price; the customer's own courier on top of the list.
-    # « le + rapide » (owner 18/10/2026, 3rd decision): only an offer with a COMPUTED arrival, and only
-    # when no shown delay is shorter than its own (an unverified « 18 min » next to a computed 22 min:
-    # nobody is « le + rapide »)
+    # the badges by the arrival / price; the customer's own courier on top of the list.
+    # « le + rapide » (owner 18/10/2026, 3rd decision, kept 19/10): only an offer with a COMPUTED arrival,
+    # and only when no shown arrival is shorter than its own (an unverified « 18 min » next to a computed
+    # 22 min: nobody is « le + rapide »)
     by_arrival = sorted(entries, key=lambda e: e["_key"])
     shown = [e["eta_minutes"] for e in entries if e["eta_minutes"] is not None]
     first = by_arrival[0]
@@ -435,8 +432,9 @@ async def update_offer(
     # the same name as on the new offer (QA R30): one function for every customer notification
     name = short_name(courier.display_name) or "Le livreur"
     name_ar = short_name(courier.display_name) or "المندوب"
-    delay_fr = f" · chez vous ≈ {new_eta} min" if new_eta else ""
-    delay_ar = f" · الوصول إليك ≈ {new_eta} دق" if new_eta else ""
+    shown = arrival.offer_arrival(offer.estimated_eta_minutes, new_eta)  # what the customer reads (M12)
+    delay_fr = f" · chez vous ≈ {shown} min" if shown else ""
+    delay_ar = f" · الوصول إليك ≈ {shown} دق" if shown else ""
     await notify(
         session,
         user_id=order.customer_id,
@@ -453,7 +451,7 @@ async def update_offer(
             "courier_name": courier.display_name,
             "proposed_fee": float(fee),
             "previous_fee": float(previous_fee),
-            "eta_minutes": new_eta,
+            "eta_minutes": shown,
             "recipient_role": "customer",
         },
         push=not pushed_lately,
@@ -625,7 +623,8 @@ async def accept_offer(
     order.courier_id = courier.id
     order.delivery_fee = selected.proposed_fee
     order.distance_km = selected.distance_km if selected.distance_km is not None else order.distance_km
-    order.eta_minutes = selected.eta_minutes
+    # the arrival the customer chose on (M12): never under the computation (punctuality is judged on it)
+    order.eta_minutes = arrival.offer_arrival(selected.estimated_eta_minutes, selected.eta_minutes)
     await ot.clear_live_position(session, order.id)  # a new courier: never a former one's position
     await session.flush()
     await ot.transition(session, order, "accepted", user, "acceptOrderOffer")

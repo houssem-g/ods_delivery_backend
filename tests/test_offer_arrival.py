@@ -221,27 +221,28 @@ async def test_multi_shop_order_waits_at_each_shop(client, world):
 
 
 async def test_offer_stores_the_estimate_and_the_delay_never_goes_under_it(client, world):
-    """Owner 18/10/2026: he may ADD time to the computation, never remove more than 2 min."""
+    """Owner 19/10/2026 (QA M12): he may ADD time to the computation, never remove any, not one minute."""
     order = await world.order()
     at = {"from_lat": NEAR[0], "from_lng": NEAR[1]}
-    short = await call(
-        client,
-        world.courier_user,
-        "createOrderOffer",
-        {"order_id": str(order.id), "fee": 4, "eta_minutes": 12, **at},
-    )
-    assert short.status_code == 400
-    assert short.json() == {"error": "eta_below_computed", "min_eta": 13, "computed": 15}
+    for typed in (12, 14):  # the former 2-minute tolerance is gone
+        short = await call(
+            client,
+            world.courier_user,
+            "createOrderOffer",
+            {"order_id": str(order.id), "fee": 4, "eta_minutes": typed, **at},
+        )
+        assert short.status_code == 400
+        assert short.json() == {"error": "eta_below_computed", "min_eta": 15, "computed": 15}
     sent = await call(
         client,
         world.courier_user,
         "createOrderOffer",
-        {"order_id": str(order.id), "fee": 4, "eta_minutes": 13, **at},
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 15, **at},
     )
     assert sent.status_code == 200, sent.text
     offer = sent.json()["offer"]
-    assert offer["estimated_eta_minutes"] == 15 and offer["to_shop_km"] == 1.17 and offer["eta_minutes"] == 13
-    assert offer["eta_announced"] is False
+    assert offer["estimated_eta_minutes"] == 15 and offer["to_shop_km"] == 1.17 and offer["eta_minutes"] == 15
+    assert offer["eta_announced"] is False and offer["arrival_minutes"] == 15 and offer["arrival_verified"]
     row = await reload(OrderOffer, offer["id"])
     assert row.estimated_eta_minutes == 15
 
@@ -249,10 +250,10 @@ async def test_offer_stores_the_estimate_and_the_delay_never_goes_under_it(clien
         client,
         world.courier_user,
         "updateOrderOffer",
-        {"offer_id": offer["id"], "fee": 4, "eta_minutes": 10, **at},
+        {"offer_id": offer["id"], "fee": 4, "eta_minutes": 14, **at},
     )
     assert refused.status_code == 400 and refused.json()["error"] == "eta_below_computed"
-    assert (await reload(OrderOffer, offer["id"])).eta_minutes == 13  # nothing changed
+    assert (await reload(OrderOffer, offer["id"])).eta_minutes == 15  # nothing changed
     changed = await call(
         client,
         world.courier_user,
@@ -288,8 +289,10 @@ async def test_ranked_by_the_computed_arrival_never_the_typed_one(client, world,
         )
     ).json()
     assert [e["who"] for e in body["board"]] == ["B", "me", "A"]
-    assert [e["eta_minutes"] for e in body["board"]] == [30, 30, 5]  # the typed delays are shown
-    assert body["eta_rank"] == 2
+    # each offer's arrival: B raised its 25 to 30, mine 28 → 30, A has no computation (its typed 5)
+    assert [e["eta_minutes"] for e in body["board"]] == [30, 30, 5]
+    assert (body["eta_rank"], body["eta_tied"], body["my_arrival"]) == (1, 1, 30)  # ex æquo with B
+    assert (body["eta_rank_shown"], body["eta_tied_shown"]) == (1, 1)  # one rank (QA M12)
     # A shows 5 min (unverified): nobody is « le + rapide » (a computed 30 next to a shown 5)
     assert not any(e["fastest"] for e in body["board"])
     assert [e["verified"] for e in body["board"]] == [True, True, False]
@@ -300,6 +303,7 @@ async def test_ranked_by_the_computed_arrival_never_the_typed_one(client, world,
         )
     ).json()
     assert [e["who"] for e in blind["board"]] == ["B", "me", "A"] and blind["eta_rank"] == 2
+    assert blind["eta_rank_shown"] == 2
 
 
 async def test_older_app_without_delay_gets_the_computed_one(client, world):
@@ -470,8 +474,8 @@ async def test_fastest_only_among_verified_and_never_beaten_by_a_shown_delay(cli
         ("me", 22, True), ("A", 18, False), ("B", 30, False),
     ]  # fmt: skip
     assert not any(e["fastest"] for e in body["board"]) and body["eta_rank"] == 1
-    # the place he reads counts every shown delay: 2nd of 3 (A's unverified 18 min is shorter)
-    assert (body["eta_rank_shown"], body["total"], body["my_verified"]) == (2, 3, True)
+    # one rank everywhere (owner 19/10/2026, QA M12): the computed ones first, he is 1st of 3
+    assert (body["eta_rank_shown"], body["total"], body["my_verified"]) == (1, 3, True)
     async with SessionLocal() as s:  # A computed now: 25 shown, 25 computed
         await s.execute(
             update(OrderOffer)

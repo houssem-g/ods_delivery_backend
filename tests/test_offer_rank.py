@@ -54,7 +54,8 @@ async def test_rank_alone_and_by_typed_fee(client, world, factory):
     assert alone.status_code == 200, alone.text
     assert alone.json() == {
         "success": True, "rank": 1, "total": 1, "cheapest": True, "tied": 0, "my_offer": None,
-        "other_fees": [], "lowest_other": None, "my_eta": None, "eta_rank": None, "eta_tied": 0,
+        "other_fees": [], "lowest_other": None, "my_eta": None, "my_arrival": None, "eta_rank": None,
+        "eta_tied": 0,
         "eta_rank_shown": None, "eta_tied_shown": 0, "my_verified": False,
         "board": [
             {"who": "me", "fee": 5.0, "eta_minutes": None, "fastest": False, "cheapest": False,
@@ -107,6 +108,7 @@ async def test_rank_of_my_offer_ignores_closed_offers_and_names_nobody(client, w
         "other_fees",
         "lowest_other",
         "my_eta",
+        "my_arrival",
         "eta_rank",
         "eta_tied",
         "eta_rank_shown",

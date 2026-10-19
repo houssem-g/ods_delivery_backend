@@ -4,9 +4,11 @@ The offer is built from his own profile.
 Body: { order_id, fee, eta_minutes?, distance_km?, message?, from_lat?, from_lng? } — `from`: the
 courier's position the app used (else the server's recent one); the server computes his arrival
 (app/services/arrival.py) and stores it on the offer (estimated_eta_minutes, to_shop_km,
-eta_announced); without eta_minutes (an older app) the computed arrival is the delay; a delay
-more than 2 min under the computation is refused (400 eta_below_computed, min_eta, computed).
-Returns { success, offer, rank, total, cheapest, tied, eta_rank, board… } (getOfferRank).
+eta_announced, always false now); without eta_minutes (an older app) the computed arrival is the delay; a
+delay under the computation, even by one minute, is refused (400 eta_below_computed, min_eta = computed,
+computed — owner 19/10/2026, QA M12). The offer's arrival (OrderOffer.arrival_minutes) = his delay if he
+raised it above the computation, else the computation.
+Returns { success, offer, rank, total, cheapest, tied, eta_rank, my_arrival, board… } (getOfferRank).
 Errors: invalid_fee (400), courier_profile_missing / courier_not_verified / own_order (403),
 order_not_found (404 — also during another courier's 60 s invite-link head start,
 app/services/invite_priority.py), order_not_open / offer_already_sent (409).

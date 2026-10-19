@@ -410,3 +410,87 @@ async def test_m11_closed_signal_to_the_couriers_who_saw_it(client, world, facto
     [signal] = [e for e in seen if e[1] == "signal"]
     assert signal[3] == [str(other_user.id)]  # Karim, busy with the first order, was not told of it
     assert signal[4]["reason"] == "cancelled" and str(world.customer.id) not in signal[3]
+
+
+# --- M12: one arrival per offer (announced if raised, else computed), one rank everywhere ---------------
+
+
+async def test_m12_the_qa_capture_ranks_on_one_arrival(client, world, factory):
+    """C1-1: courier 2 computed 27 announced 35, courier 1 computed 29 announced 29 → the customer saw 35
+    above 29, no « + rapide », and courier 2 read « 1er » while ranked 2nd."""
+    from sqlalchemy import update
+
+    from app.db import SessionLocal
+    from app.models import OrderOffer
+    from tests.order_helpers import reload
+    from tests.test_offer_arrival import rival
+
+    order = await world.order(status="offers_received")
+    one = await rival(world, factory, order, 1, "5", 29, 3, est=29)  # A: computed 29, announced 29
+    me = {"order_id": str(order.id), "fee": 4, "eta": 35, "estimate": 27}  # computed 27, raised to 35
+    body = (await call(client, world.courier_user, "getOfferRank", me)).json()
+    assert body["my_arrival"] == 35
+    assert (body["eta_rank"], body["eta_rank_shown"], body["eta_tied"], body["eta_tied_shown"]) == (
+        2,
+        2,
+        0,
+        0,
+    )
+    assert [(e["who"], e["eta_minutes"], e["fastest"]) for e in body["board"]] == [
+        ("A", 29, True),
+        ("me", 35, False),
+    ]
+    # an older offer typed under its computation (the former 2-min tolerance): it arrives at the computation
+    async with SessionLocal() as s:
+        await s.execute(
+            update(OrderOffer)
+            .where(OrderOffer.courier_id == one.id)
+            .values(eta_minutes=27, estimated_eta_minutes=29)
+        )
+        await s.commit()
+    # the customer's list reads the same arrival on each offer
+    offers = (
+        await client.get(
+            "/api/entities/OrderOffer",
+            params={"q": f'{{"order_id":"{order.id}"}}'},
+            headers=auth(world.customer),
+        )
+    ).json()
+    [a] = offers
+    assert (a["eta_minutes"], a["estimated_eta_minutes"], a["arrival_minutes"], a["arrival_verified"]) == (
+        27,
+        29,
+        29,
+        True,
+    )
+    # accepted: the order's arrival is the offer's (never under the computation)
+    r = await call(
+        client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": a["id"]}
+    )
+    assert r.status_code == 200, r.text
+    assert (await reload(Order, order.id)).eta_minutes == 29
+
+
+async def test_m12_no_reduction_even_one_minute(client, world):
+    from tests.test_offer_arrival import NEAR
+
+    order = await world.order()
+    at = {"from_lat": NEAR[0], "from_lng": NEAR[1]}  # computed 15 min
+    short = await call(
+        client,
+        world.courier_user,
+        "createOrderOffer",
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 14, **at},
+    )
+    assert short.status_code == 400 and short.json()["min_eta"] == 15
+    raised = await call(
+        client,
+        world.courier_user,
+        "createOrderOffer",
+        {"order_id": str(order.id), "fee": 4, "eta_minutes": 20, **at},
+    )
+    assert raised.status_code == 200 and raised.json()["my_arrival"] == 20
+    assert raised.json()["offer"]["arrival_minutes"] == 20
+    from tests.order_helpers import notifications
+
+    assert "chez vous ≈ 20 min" in (await notifications(world.customer, "new_offer"))[-1].body_fr

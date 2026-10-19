@@ -33,6 +33,7 @@ from app.models import Courier, NoResponseCase, Order, OrderOffer, OrderStop, Pa
 from app.security.partner import PartnerContext
 from app.services import cancellation, launch_mode, partner_stats, tracking
 from app.services import order_transitions as ot
+from app.services.arrival import offer_arrival
 from app.services.dispatch import dispatch_order
 from app.services.geo import ORDER_BOUNDS, within
 from app.services.offers import accept_offer
@@ -440,7 +441,7 @@ async def offer_view(session: AsyncSession, offer: OrderOffer) -> dict[str, Any]
     return {
         "offer_id": str(offer.id),
         "fee": num(offer.proposed_fee),
-        "eta_minutes": offer.eta_minutes,
+        "eta_minutes": offer_arrival(offer.estimated_eta_minutes, offer.eta_minutes),  # M12
         "distance_km": num(offer.distance_km),
         "message": offer.message,
         "status": offer.status,

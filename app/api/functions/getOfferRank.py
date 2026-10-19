@@ -9,6 +9,11 @@ tied = others at the same price (they share the rank).
 Body { order_ids: [...] (≤ 20) } instead: his pending offers on those open orders in one call
 (the "Mes offres" list) → { success, ranks: { <order_id>: {rank, total, cheapest, tied, my_offer} } }.
 The other couriers' prices come back anonymous (other_fees): never an id or a name.
+Arrival (owner 19/10/2026, QA M12): `eta` (the delay he types), `estimate` (his computed arrival) → one
+arrival per offer = his delay if raised above the computation, else the computation (`my_arrival`);
+eta_rank / eta_tied = his place among the offers by arrival (computed ones first); eta_rank_shown /
+eta_tied_shown are the same numbers (one rank); board[].eta_minutes = each offer's arrival as the
+customer reads it, board[].verified = it has a computation, board[].fastest only for a verified one.
 Errors: invalid_fee / invalid_order_ids (400), courier_profile_missing / courier_not_verified /
 own_order (403), order_not_found / offer_not_found (404, no fee and no pending offer),
 order_not_open (409), too_many_rank_requests (429, RATE_LIMIT_OFFER_RANK per courier: probing

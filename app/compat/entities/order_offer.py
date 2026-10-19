@@ -106,6 +106,13 @@ FIELDS: dict[str, LegacyField] = {
     "estimated_eta_minutes": LegacyField(offers.c.estimated_eta_minutes, "integer"),
     "to_shop_km": LegacyField(offers.c.to_shop_km, "number"),
     "eta_announced": LegacyField(offers.c.eta_announced, "boolean"),
+    # 19/10/2026 (owner, QA M12): THE arrival of the offer — his announced time if he raised it above the
+    # computation, else the computation (GREATEST skips a missing one: no computation → his announced time).
+    # What the customer reads, ranks and sorts by arrival on; `arrival_verified` = a computation exists.
+    "arrival_minutes": LegacyField(
+        func.greatest(offers.c.estimated_eta_minutes, offers.c.eta_minutes), "integer"
+    ),
+    "arrival_verified": LegacyField(offers.c.estimated_eta_minutes.is_not(None), "boolean"),
     # Aurora offer card, for the order's customer (and admins).
     "courier_ratings_count": LegacyField(_stat(courier_stats.c.ratings_count), "integer", **for_customer),
     "courier_deliveries": LegacyField(_stat(courier_stats.c.total_deliveries), "integer", **for_customer),
