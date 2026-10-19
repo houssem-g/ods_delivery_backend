@@ -309,3 +309,45 @@ async def test_m9_blocked_courier_cannot_update_his_offer(client, world):
     assert (await reload(OrderOffer, offer.id)).proposed_fee == Decimal("5")
     assert await notifications(world.customer, "new_offer") == []
     assert await pushes(world.customer) == []
+
+
+# --- M10: « Tout lire » marks every unread notification, not only the 50 loaded -------------------------
+
+
+async def test_m10_mark_all_read_reaches_every_row(client, world, monkeypatch):
+    from app.db import SessionLocal
+    from app.models import Notification
+    from app.services import notifications as notif_service
+
+    seen = []
+    original = notif_service.emit
+
+    def record(session, entity, type_, id_, audience=None, data=None):
+        seen.append((entity, type_, data))
+        original(session, entity, type_, id_, audience, data)
+
+    monkeypatch.setattr(notif_service, "emit", record)
+    async with SessionLocal() as s:
+        for n in range(130):
+            s.add(
+                Notification(user_id=world.courier_user.id, type="new_order", title_fr=f"n{n}", body_fr="x")
+            )
+        s.add(Notification(user_id=world.customer.id, type="new_offer", title_fr="other", body_fr="x"))
+        await s.commit()
+
+    r = await call(client, world.courier_user, "markNotificationsRead", {"all": True})
+    assert r.status_code == 200 and r.json() == {"success": True, "marked": 130, "unread": 0}
+    unread = await rows(
+        select(Notification.id).where(
+            Notification.user_id == world.courier_user.id, Notification.read_at.is_(None)
+        )
+    )
+    assert unread == []
+    others = await rows(select(Notification.read_at).where(Notification.user_id == world.customer.id))
+    assert others == [None]  # someone else's rows never change
+    # many rows: one re-count signal to his screens instead of 130 row events
+    assert seen == [("Notification", "signal", {"kind": "all_read"})]
+    again = await call(client, world.courier_user, "markNotificationsRead", {"all": True})
+    assert again.json() == {"success": True, "marked": 0, "unread": 0}
+    # the batch by ids still works as before
+    assert (await call(client, world.courier_user, "markNotificationsRead", {"ids": []})).status_code == 400

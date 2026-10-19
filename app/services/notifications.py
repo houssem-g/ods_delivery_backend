@@ -304,6 +304,31 @@ async def retire_acceptance_notices(session: AsyncSession, order_id: uuid.UUID, 
     return len(retired)
 
 
+MARK_ALL_ROW_EVENTS = 100  # « Tout lire »: one realtime update per row up to this many, then the signal only
+
+
+async def mark_all_read(session: AsyncSession, user: Any) -> tuple[int, dict[str, Any]]:
+    """« Tout lire » (QA 19/10 M10): EVERY unread notification of the caller, not only the rows his page
+    loaded (50) — the bell goes back to 0. His open screens hear a Notification signal {kind: "all_read"}
+    (a re-count), plus one update per row when there are few."""
+    marked = list(
+        (
+            await session.execute(
+                update(Notification)
+                .where(Notification.user_id == user.id, Notification.read_at.is_(None))
+                .values(read_at=now_utc())
+                .returning(Notification.id)
+            )
+        ).scalars()
+    )
+    if len(marked) <= MARK_ALL_ROW_EVENTS:
+        for notice_id in marked:
+            emit(session, "Notification", "update", notice_id)
+    if marked:
+        emit(session, "Notification", "signal", user.id, audience=[user.id], data={"kind": "all_read"})
+    return 200, {"success": True, "marked": len(marked), "unread": 0}
+
+
 async def mark_read(session: AsyncSession, user: Any, raw_ids: Any) -> tuple[int, dict[str, Any]]:
     """The caller's own unread rows among `raw_ids` (1..500) marked read in one statement (QA 06/10
     B59: the Notifications page sent one request per row). Junk / foreign ids are ignored."""
