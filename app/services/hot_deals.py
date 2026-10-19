@@ -76,6 +76,8 @@ log = logging.getLogger("odsd.hot_deals")
 
 RESELLABLE = frozenset({"purchased", "on_the_way", "client_no_response"})
 TTL = timedelta(hours=2)
+DROP_STEP = Decimal("0.500")  # the price decay of a new deal: −0.500 DT …
+DROP_EVERY_MIN = 5  # … every 5 minutes, down to its floor price
 MAX_DISCOUNT = 90
 FEE_BOUNDS = (0.5, 100.0)
 DEFAULT_FEE = 3.0
@@ -148,6 +150,27 @@ def price_schedule(deal: HotDeal, now: datetime) -> tuple[Decimal, Decimal | Non
     return price, max(deal.floor_price, price - step), deal.created_at + (_drops(deal, now) + 1) * every
 
 
+def decay_plan(start: Decimal, floor: Decimal) -> dict[str, Any]:
+    """What the courier is told before and after publishing (QA 19/10 M8): the start price, the floor, the
+    drop and its rhythm, and every step — {after_min, price} from 0 until the floor (or the deal's 2 h)."""
+    steps = [{"after_min": 0, "price": float(start)}]
+    price, minutes = start, 0
+    ttl_min = int(TTL.total_seconds() // 60)
+    while price > floor and minutes + DROP_EVERY_MIN < ttl_min:
+        minutes += DROP_EVERY_MIN
+        price = max(floor, price - DROP_STEP)
+        steps.append({"after_min": minutes, "price": float(price)})
+    return {
+        "start_price": float(start),
+        "floor_price": float(floor),
+        "drop_step": float(DROP_STEP),
+        "drop_every_min": DROP_EVERY_MIN,
+        "floor_after_min": minutes if price <= floor else None,
+        "expires_in_min": ttl_min,
+        "price_schedule": steps,
+    }
+
+
 def current_price_sql(deals: Any) -> Any:
     """current_price in SQL (the ResaleOrder entity)."""
     minutes = func.extract("epoch", func.now() - deals.c.created_at) / 60
@@ -159,8 +182,7 @@ def _floor_price(payload: dict[str, Any], start: Decimal) -> Decimal | None:
     """createHotDeal's floor: given (≥ 30 % of the start, ≤ the start) or the default; None = invalid."""
     lowest = _money(start * FLOOR_MIN_SHARE)
     if payload.get("floor_price") in (None, ""):
-        step = Decimal("0.500")
-        return _money(max(start - DEFAULT_DROPS * step, lowest))
+        return _money(max(start - DEFAULT_DROPS * DROP_STEP, lowest))
     number = js_number(payload.get("floor_price"))
     if not math.isfinite(number):
         return None
@@ -254,6 +276,9 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
             "min": float(_money(start * FLOOR_MIN_SHARE)),
             "max": float(start),
         }
+    if payload.get("preview") is True:
+        # the sheet's « le prix baissera de 0.500 DT toutes les 5 min jusqu'à … » before publishing (M8)
+        return 200, {"success": True, "preview": True, **decay_plan(start, floor)}
     now = ot.now_utc()
     stop = await first_stop(session, order.id)
     # A restaurant ODS dish is resold by the courier, never under the restaurant's name (decision 10,
@@ -276,8 +301,8 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         price=start,
         start_price=start,
         floor_price=floor,
-        drop_step=Decimal("0.500"),
-        drop_every_min=5,
+        drop_step=DROP_STEP,
+        drop_every_min=DROP_EVERY_MIN,
         include_delivery=True,
         delivery_fee=_money(fee),
         photo_key=await _photo_key(session, payload.get("photo_url"), user),
@@ -328,8 +353,8 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
         return 200, {
             "success": True,
             "deal_id": str(deal.id),
-            "start_price": float(start),
-            "floor_price": float(floor),
+            **decay_plan(start, floor),
+            "expires_at": legacy_datetime(deal.expires_at),
             "alerted": alerted,
         }
     await notify_always_pushed(
@@ -357,8 +382,8 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
     return 200, {
         "success": True,
         "deal_id": str(deal.id),
-        "start_price": float(start),
-        "floor_price": float(floor),
+        **decay_plan(start, floor),
+        "expires_at": legacy_datetime(deal.expires_at),
         "alerted": alerted,
     }
 
@@ -558,12 +583,23 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
             type_="hot_deal_reserved",
             title_ar="🔥 تم حجز العرض الساخن",
             title_fr="🔥 Offre Chaude réservée",
-            body_ar=f"{who_ar} حجز العرض: {deal.items_text}. ابدأ التوصيل.",
-            body_fr=f"{who_fr} a réservé l'offre : {deal.items_text}. Lancez la livraison.",
+            # the price obtained (QA 19/10 M8: the deal may have dropped since it was published)
+            body_ar=(
+                f"{who_ar} حجز العرض بـ {charged:.3f} د.ت (+ {fee:.3f} د.ت توصيل): {deal.items_text}. "
+                "ابدأ التوصيل."
+            ),
+            body_fr=(
+                f"{who_fr} a réservé l'offre à {charged:.3f} DT (+ {fee:.3f} DT de livraison) : "
+                f"{deal.items_text}. Lancez la livraison."
+            ),
             metadata={
                 "resale_order_id": str(deal.id),
                 "delivery_address": address,
                 "recipient_role": "courier",
+                "price": float(charged),
+                "delivery_fee": float(fee),
+                "start_price": float(deal.start_price or charged),
+                "purchase_amount": float(deal.purchase_amount),
             },
         )
     return 200, {

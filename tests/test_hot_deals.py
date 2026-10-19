@@ -322,11 +322,14 @@ async def test_reserve_creates_the_buyers_order(client, world):
     assert sold.status == "sold" and sold.buyer_id == world.buyer.id and sold.buyer_order_id == order.id
     [told] = await notifications(world.courier_user, "hot_deal_reserved")
     assert told.order_id == order.id and "Salma" in told.body_fr and "Pain x3" in told.body_fr
-    assert told.data == {
+    assert {k: told.data[k] for k in ("resale_order_id", "delivery_address", "recipient_role")} == {
         "resale_order_id": str(deal.id),
         "delivery_address": "Rue X",
         "recipient_role": "courier",
     }
+    # the price obtained (QA 19/10 M8)
+    assert told.data["price"] == 18 and told.data["delivery_fee"] == 4
+    assert "à 18.000 DT (+ 4.000 DT de livraison)" in told.body_fr and "18.000 د.ت" in told.body_ar
     hidden = await client.get(f"/api/entities/ResaleOrder/{deal.id}", headers=auth(world.buyer))
     assert hidden.status_code == 404  # no longer listed
     admin = (await client.get(f"/api/entities/ResaleOrder/{deal.id}", headers=auth(world.admin))).json()

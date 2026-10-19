@@ -247,3 +247,43 @@ async def test_m7_hot_deal_order_refuses_shop_steps_and_keeps_its_price(client, 
     assert (await patch({"status": "on_the_way"})).status_code == 200
     assert (await patch({"status": "delivered"})).status_code == 200
     assert (await reload(Order, order.id)).purchase_amount == Decimal("8.400")
+
+
+# --- M8: the decay is announced, the reserved notice says the price obtained ---------------------------
+
+
+async def test_m8_decay_plan_preview_and_reserved_price(client, world, factory):
+    from app.models import HotDeal
+    from tests.order_helpers import notifications, reload
+
+    order = await world.order(status="on_the_way", courier=world.courier, fee="4", purchase="10")
+    ask = {"order_id": str(order.id), "courier_choice": True}
+    preview = await call(client, world.courier_user, "createHotDeal", {**ask, "preview": True})
+    assert preview.status_code == 200, preview.text
+    plan = preview.json()
+    assert plan["preview"] is True and "deal_id" not in plan
+    assert (plan["start_price"], plan["floor_price"], plan["drop_step"], plan["drop_every_min"]) == (
+        10,
+        8,
+        0.5,
+        5,
+    )
+    assert [p["price"] for p in plan["price_schedule"]] == [10, 9.5, 9, 8.5, 8]
+    assert plan["price_schedule"][-1]["after_min"] == plan["floor_after_min"] == 20
+    assert (await reload(Order, order.id)).status == "on_the_way"  # nothing created
+    assert await rows(select(HotDeal.id).where(HotDeal.original_order_id == order.id)) == []
+
+    made = await call(client, world.courier_user, "createHotDeal", ask)
+    assert made.status_code == 200, made.text
+    assert made.json()["price_schedule"] == plan["price_schedule"] and made.json()["expires_at"]
+
+    buyer = await factory.user(email="buyer2@example.test", full_name="Salma", phone_e164="+21698000111")
+    r = await call(
+        client,
+        buyer,
+        "reserveHotDeal",
+        {"resale_order_id": made.json()["deal_id"], "delivery_address": "Rue X"},
+    )
+    assert r.status_code == 200, r.text
+    [told] = await notifications(world.courier_user, "hot_deal_reserved")
+    assert "à 10.000 DT" in told.body_fr and told.data["price"] == 10
