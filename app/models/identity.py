@@ -68,6 +68,15 @@ class User(Base):
     notify_incoming_orders: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     notify_chat: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     push_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    # the customer's three detailed switches (QA 18/10 m52): « Livreur en route » (on_the_way),
+    # « Changements d'heure d'arrivée » (eta_update, delivery_delayed), « Confirmation de livraison »
+    notify_delivery_updates: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("true")
+    )
+    notify_eta_updates: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    notify_delivery_confirmations: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("true")
+    )
     # Opt-in: a new hot deal near the default address (createHotDeal, type hot_deal_new).
     notify_hot_deals: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     whatsapp_opt_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

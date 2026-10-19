@@ -58,6 +58,9 @@ async def test_list_shape_and_dates(client, people):
         "incoming_orders": True,
         "chat_messages": True,
         "push_notifications_enabled": True,
+        "delivery_updates": True,  # QA 18/10 m52: the three detailed switches are stored too
+        "eta_updates": True,
+        "delivery_confirmations": True,
     }
     assert ali["is_active"] is True and ali["total_orders"] == 0 and ali["no_response_incidents"] == 0
 

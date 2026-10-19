@@ -61,6 +61,15 @@ PREFERENCE_KEY_COLUMN = {
     "incoming_orders": "notify_incoming_orders",
     "chat_messages": "notify_chat",
 }
+# QA 18/10 m52: the customer's detailed switches, ON TOP of « Suivi de mes commandes »
+# (order_status_changes): stored type -> (legacy key, users column). « Confirmation de livraison » is read
+# by step_notices (the delivered notice is otherwise always pushed).
+DETAIL_PREFERENCE_KEY: dict[str, tuple[str, str]] = {
+    "on_the_way": ("delivery_updates", "notify_delivery_updates"),
+    "eta_update": ("eta_updates", "notify_eta_updates"),
+    "delivery_delayed": ("eta_updates", "notify_eta_updates"),
+    "delivered": ("delivery_confirmations", "notify_delivery_confirmations"),
+}
 # Preference column of each STORED type (kept for callers that import it).
 PREFERENCE_COLUMN: dict[str, str | None] = {
     t: PREFERENCE_KEY_COLUMN[k] for t, k in LEGACY_PREFERENCE_KEY.items() if t in NOTIFICATION_TYPES
@@ -103,6 +112,9 @@ def push_skip_reason(user: User | None, type_as_sent: str) -> str | None:
     key = LEGACY_PREFERENCE_KEY.get(type_as_sent) or LEGACY_PREFERENCE_KEY.get(canonical_type(type_as_sent))
     if key and not getattr(user, PREFERENCE_KEY_COLUMN[key]):
         return f"{key}_disabled"
+    detail = DETAIL_PREFERENCE_KEY.get(canonical_type(type_as_sent))
+    if detail and not getattr(user, detail[1]):
+        return f"{detail[0]}_disabled"
     return None
 
 
@@ -186,6 +198,38 @@ async def notify_detailed(
     session.add(row)
     await session.flush()
     emit(session, "Notification", "create", row.id)
+    return await _deliver(session, row, type_, push, push_card)
+
+
+async def renotify(
+    session: AsyncSession,
+    row: Notification,
+    *,
+    title_ar: str,
+    title_fr: str,
+    body_ar: str = "",
+    body_fr: str = "",
+    metadata: dict[str, Any] | None = None,
+    push: bool = True,
+) -> NotifyResult:
+    """The same notice, brought up to date instead of a second one (QA 18/10 m54: an offer and its price
+    change rang the bell twice for one card): new texts and data, unread again, on top of the list
+    (created_at = now), its realtime « update »; pushed like `notify` (preferences, WhatsApp fallback)."""
+    row.title_ar, row.title_fr = _cap(title_ar, TITLE_MAX), _cap(title_fr, TITLE_MAX)
+    row.body_ar, row.body_fr = _cap(body_ar, BODY_MAX), _cap(body_fr, BODY_MAX)
+    row.data = metadata or {}
+    row.read_at = None
+    row.created_at = now_utc()
+    await session.flush()
+    emit(session, "Notification", "update", row.id)
+    return await _deliver(session, row, row.type, push, None)
+
+
+async def _deliver(
+    session: AsyncSession, row: Notification, type_: str, push: bool, push_card: Any
+) -> NotifyResult:
+    """The push (and its WhatsApp fallback) of a written notice."""
+    stored_type, user_id, order_id = row.type, row.user_id, row.order_id
     if not push:
         return NotifyResult(row, push_skipped=None)
     user = (await session.execute(select(User).where(User.id == user_id))).scalar_one_or_none()

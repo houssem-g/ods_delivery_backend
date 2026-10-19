@@ -259,3 +259,139 @@ async def test_m39_app_settings_editor_for_admins_only(client, world):
     assert seen["updated_by"] is None
     admin = (await client.get("/api/entities/AppSettings/main", headers=auth(world.admin))).json()
     assert admin["updated_by"] == "admin@example.test"
+
+
+# --- m38: the couriers the customer did not choose are told, in the app only ------------------------------
+
+
+async def test_m38_not_retained_couriers_are_told_without_a_push(client, world, factory):
+    from tests.order_helpers import device, pushes
+    from tests.test_offer_rank import rivals
+
+    order = await world.order(status="offers_received")
+    mine = await world.offer(order, fee="5")
+    [loser] = await rivals(world, factory, order, "6")
+    from app.models import Courier
+    from tests.order_helpers import reload
+
+    loser_user_id = (await reload(Courier, loser.courier_id)).user_id
+    from app.models import User
+
+    loser_user = await reload(User, loser_user_id)
+    await device(loser_user)
+    r = await call(
+        client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": str(mine.id)}
+    )
+    assert r.status_code == 200, r.text
+    [note] = await notifications(loser_user, "offer_not_retained")
+    assert note.title_fr == "Offre non retenue" and "autre offre" in note.body_fr and note.body_ar
+    assert note.order_id == order.id and note.data["recipient_role"] == "courier"
+    assert await pushes(loser_user) == []  # nothing for him to do: no push
+    assert await notifications(world.courier_user, "offer_not_retained") == []  # the chosen one
+
+
+# --- m52: « Livreur en route », « Changements d'heure », « Confirmation de livraison » really apply --------
+
+
+async def test_m52_detailed_switches_are_stored_and_applied(client, world):
+    from app.db import SessionLocal
+    from app.models import Order as OrderRow
+    from app.services import step_notices
+    from tests.order_helpers import device, pushes
+
+    r = await client.patch(
+        f"/api/entities/UserProfile/{world.customer.id}",
+        json={"notification_preferences": {"delivery_updates": False, "delivery_confirmations": False}},
+        headers=auth(world.customer),
+    )
+    assert r.status_code == 200, r.text
+    prefs = r.json()["notification_preferences"]
+    assert prefs["delivery_updates"] is False and prefs["delivery_confirmations"] is False
+    assert prefs["eta_updates"] is True and prefs["order_status_changes"] is True
+    await device(world.customer)
+    order = await world.order(status="on_the_way", courier=world.courier, fee="5", purchase="10")
+    async with SessionLocal() as s:
+        row = await s.get(OrderRow, order.id)
+        assert await step_notices.courier_step(s, row, "purchased", "on_the_way")
+        row.status, row.delivered_at = "delivered", row.updated_at
+        assert await step_notices.courier_step(s, row, "on_the_way", "delivered")
+        await s.commit()
+    assert len(await notifications(world.customer, "on_the_way")) == 1  # the in-app rows stay
+    assert len(await notifications(world.customer, "delivered")) == 1
+    assert await pushes(world.customer) == []  # both pushes turned off
+    from app.services.notifications import push_skip_reason
+
+    async with SessionLocal() as s:
+        from app.models import User
+
+        user = await s.get(User, world.customer.id)
+        assert push_skip_reason(user, "on_the_way") == "delivery_updates_disabled"
+        assert push_skip_reason(user, "eta_update") is None
+        user.notify_eta_updates = False
+        assert push_skip_reason(user, "delivery_delayed") == "eta_updates_disabled"
+
+
+# --- m54: a new offer then a price change = ONE unread notice (the bell said +2 for one card) -------------
+
+
+async def test_m54_one_unread_notice_per_offer(client, world):
+    order = await world.order()
+    r = await call(client, world.courier_user, "createOrderOffer", {"order_id": str(order.id), "fee": 5})
+    assert r.status_code == 200, r.text
+    offer_id = r.json()["offer"]["id"]
+    edit = await call(client, world.courier_user, "updateOrderOffer", {"offer_id": offer_id, "fee": 4})
+    assert edit.status_code == 200, edit.text
+    [note] = await notifications(world.customer, "new_offer")
+    assert note.title_fr == "Offre modifiée" and note.read_at is None and note.data["edits"] == 1
+    assert note.data["offer_id"] == offer_id and note.data["proposed_fee"] == 4.0
+    unread = await client.get(
+        "/api/entities/Notification", params={"q": '{"is_read": false}'}, headers=auth(world.customer)
+    )
+    assert len(unread.json()) == 1
+
+
+# --- m9: a notification says whether its order is still open ---------------------------------------------
+
+
+async def test_m9_notification_carries_the_order_status(client, world):
+    from app.db import SessionLocal
+    from app.services.notifications import notify
+
+    order = await world.order(status="cancelled")
+    async with SessionLocal() as s:
+        await notify(
+            s, user_id=world.courier_user.id, type_="new_order", title_ar="a", title_fr="f", order_id=order.id
+        )
+        await notify(s, user_id=world.courier_user.id, type_="account_verified", title_ar="a", title_fr="f")
+        await s.commit()
+    docs = (await client.get("/api/entities/Notification", headers=auth(world.courier_user))).json()
+    by_type = {d["type"]: d for d in docs}
+    assert by_type["new_order"]["order_status"] == "cancelled" and by_type["new_order"]["order_open"] is False
+    assert (
+        by_type["account_verified"]["order_status"] is None
+        and by_type["account_verified"]["order_open"] is None
+    )
+
+
+# --- m30: changing the language moves the phone's pushes to it ---------------------------------------------
+
+
+async def test_m30_language_change_follows_on_the_devices(client, world):
+    from sqlalchemy import select
+
+    from app.models import DeviceToken
+    from tests.order_helpers import device, rows
+
+    await device(world.customer, token="tok-lang")
+    r = await client.patch("/api/auth/me", json={"language": "ar"}, headers=auth(world.customer))
+    assert r.status_code == 200, r.text
+    [token] = await rows(select(DeviceToken).where(DeviceToken.token == "tok-lang"))
+    assert token.locale == "ar"
+    r = await client.patch(
+        f"/api/entities/UserProfile/{world.customer.id}",
+        json={"language": "fr"},
+        headers=auth(world.customer),
+    )
+    assert r.status_code == 200
+    [token] = await rows(select(DeviceToken).where(DeviceToken.token == "tok-lang"))
+    assert token.locale == "fr"

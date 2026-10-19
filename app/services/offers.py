@@ -7,7 +7,7 @@ cancellation of the same order run one after the other; the partial unique index
 """
 
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -18,10 +18,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, User, UserBlock, courier_stats
 from app.realtime.events import emit
 from app.security.deps import CurrentUser
-from app.services import arrival, credit, invite_priority, partner_webhooks, step_notices, text_filter
+from app.services import (
+    arrival,
+    credit,
+    invite_priority,
+    order_texts,
+    partner_webhooks,
+    step_notices,
+    text_filter,
+)
 from app.services import order_transitions as ot
 from app.services.geo import as_float
-from app.services.notifications import notify
+from app.services.notifications import notify, renotify
 from app.services.order_texts import minutes_ar, short_name
 from app.services.orders import OrderRefused, courier_of_user, dropped_by
 from app.services.safety import blocked_with, is_blocked
@@ -56,6 +64,17 @@ def _eta_of(payload: dict[str, Any]) -> int | None:
     if eta is None:
         raise OrderRefused(400, "invalid_eta", min=1, max=600)
     return eta
+
+
+def _int(value: Any) -> int:
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def _when(value: Any) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(value)) if value else None
+    except ValueError:
+        return None
 
 
 def _parse_message(value: Any) -> str | None:
@@ -438,18 +457,40 @@ async def update_offer(
             session, order.id, courier.id, fee, offer.eta_minutes, estimated=offer.estimated_eta_minutes
         )
 
+    # ONE notice per offer (QA 18/10 m54: an offer and its price change rang the bell twice for one card):
+    # the customer's latest notice of this offer (« Nouvelle offre » or « Offre modifiée ») is brought up
+    # to date, unread again. Its data counts the edits (MAX_EDITS) and dates the last pushed one.
     updates = Notification.__table__.c
-    edits = select(func.count()).where(
-        updates.order_id == order.id,
-        updates.type == "new_offer",
-        updates.data["kind"].astext == OFFER_UPDATED,
-        updates.data["offer_id"].astext == str(offer.id),
-    )
-    if (await session.execute(edits)).scalar_one() >= MAX_EDITS:
+    notice = (
+        await session.execute(
+            select(Notification)
+            .where(
+                Notification.user_id == order.customer_id,
+                Notification.order_id == order.id,
+                Notification.type == "new_offer",
+                updates.data["offer_id"].astext == str(offer.id),
+            )
+            .order_by(Notification.created_at.desc(), Notification.id.desc())
+            .limit(1)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    legacy_edits = (  # one row per edit before 19/10/2026
+        await session.execute(
+            select(func.count()).where(
+                updates.order_id == order.id,
+                updates.type == "new_offer",
+                updates.data["kind"].astext == OFFER_UPDATED,
+                updates.data["offer_id"].astext == str(offer.id),
+            )
+        )
+    ).scalar_one()
+    edits_done = max(legacy_edits, _int((notice.data or {}).get("edits")) if notice is not None else 0)
+    if edits_done >= MAX_EDITS:
         raise OrderRefused(429, "too_many_edits", max=MAX_EDITS)
-    pushed_lately = (
-        await session.execute(edits.where(updates.created_at >= ot.now_utc() - EDIT_PUSH_EVERY))
-    ).scalar_one() > 0
+    now = ot.now_utc()
+    last_push = _when((notice.data or {}).get("edit_pushed_at")) if notice is not None else None
+    pushed_lately = last_push is not None and last_push >= now - EDIT_PUSH_EVERY
 
     offer.proposed_fee, offer.eta_minutes, offer.message = fee, new_eta, new_message
     _store_estimate(offer, estimate)
@@ -461,27 +502,36 @@ async def update_offer(
     shown = arrival.offer_arrival(offer.estimated_eta_minutes, new_eta)  # what the customer reads (M12)
     delay_fr = f" · chez vous ≈ {shown} min" if shown else ""
     delay_ar = f" · الوصول إليك حوالي {minutes_ar(shown)}" if shown else ""
-    await notify(
-        session,
-        user_id=order.customer_id,
-        type_="new_offer",
-        title_fr="Offre modifiée",
-        title_ar="تم تعديل العرض",
-        body_fr=f"{name} a modifié son offre : {fee:.3f} DT{delay_fr}",
-        body_ar=f"{name_ar} عدّل عرضه: {fee:.3f} د.ت{delay_ar}",
-        order_id=order.id,
-        metadata={
-            "kind": OFFER_UPDATED,
-            "offer_id": str(offer.id),
-            "courier_id": str(courier.id),
-            "courier_name": courier.display_name,
-            "proposed_fee": float(fee),
-            "previous_fee": float(previous_fee),
-            "eta_minutes": shown,
-            "recipient_role": "customer",
-        },
-        push=not pushed_lately,
-    )
+    texts = {
+        "title_fr": "Offre modifiée",
+        "title_ar": "تم تعديل العرض",
+        "body_fr": f"{name} a modifié son offre : {fee:.3f} DT{delay_fr}",
+        "body_ar": f"{name_ar} عدّل عرضه: {fee:.3f} د.ت{delay_ar}",
+    }
+    metadata = {
+        "kind": OFFER_UPDATED,
+        "offer_id": str(offer.id),
+        "courier_id": str(courier.id),
+        "courier_name": courier.display_name,
+        "proposed_fee": float(fee),
+        "previous_fee": float(previous_fee),
+        "eta_minutes": shown,
+        "recipient_role": "customer",
+        "edits": edits_done + 1,
+        "edit_pushed_at": now.isoformat() if not pushed_lately else (notice.data or {}).get("edit_pushed_at"),
+    }
+    if notice is not None:
+        await renotify(session, notice, metadata=metadata, push=not pushed_lately, **texts)
+    else:
+        await notify(
+            session,
+            user_id=order.customer_id,
+            type_="new_offer",
+            order_id=order.id,
+            metadata=metadata,
+            push=not pushed_lately,
+            **texts,
+        )
     await partner_webhooks.on_offer(session, order, offer, "updated", previous_fee)
     return offer, await offer_rank(
         session, order.id, courier.id, fee, new_eta, estimated=offer.estimated_eta_minutes
@@ -642,10 +692,12 @@ async def accept_offer(
     now = ot.now_utc()
     selected.status, selected.decided_at = "accepted", now
     emit(session, "OrderOffer", "update", selected.id)
+    not_retained = []
     for other in offers:
         if other.id != selected.id and other.status == "pending":
             other.status, other.decided_at = "rejected", now
             emit(session, "OrderOffer", "update", other.id)
+            not_retained.append(other.courier_id)
     order.courier_id = courier.id
     order.delivery_fee = selected.proposed_fee
     order.distance_km = selected.distance_km if selected.distance_km is not None else order.distance_km
@@ -655,7 +707,27 @@ async def accept_offer(
     await session.flush()
     await ot.transition(session, order, "accepted", user, "acceptOrderOffer")
     await step_notices.offer_accepted(session, order, selected, courier_user.id)
+    await _tell_not_retained(session, order, not_retained)
     return order, selected, courier_user
+
+
+async def _tell_not_retained(session: AsyncSession, order: Order, courier_ids: list[uuid.UUID]) -> None:
+    """QA 18/10 m38: the couriers the customer did not choose hear it in the app (no push: nothing for
+    them to do) — the screen said « les autres livreurs sont prévenus » and nobody was."""
+    if not courier_ids:
+        return
+    shop = await step_notices._stop_name(session, order.id, 0)
+    users = (await session.execute(select(Courier.user_id).where(Courier.id.in_(courier_ids)))).scalars()
+    for user_id in set(users):
+        await notify(
+            session,
+            user_id=user_id,
+            type_="offer_not_retained",
+            order_id=order.id,
+            push=False,
+            metadata={"recipient_role": "courier", "order_id": str(order.id), "reason": "not_retained"},
+            **order_texts.offer_not_retained(shop),
+        )
 
 
 async def withdraw_offer(session: AsyncSession, user: CurrentUser, offer_id: str) -> list[uuid.UUID]:

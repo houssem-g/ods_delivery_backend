@@ -6,11 +6,12 @@ from datetime import timedelta
 
 import pytest
 
-from app.models import OrderOffer
+from app.db import SessionLocal
+from app.models import Notification, OrderOffer
 from app.services import offers as offers_service
 from app.services.offers import MAX_EDITS
 from tests.factories import auth
-from tests.order_helpers import OrderWorld, age, device, notifications, now, pushes, reload
+from tests.order_helpers import OrderWorld, device, notifications, now, pushes, reload
 
 
 @pytest.fixture
@@ -247,11 +248,15 @@ async def test_update_offer_push_is_throttled_and_edits_are_capped(client, world
     assert (
         await call(client, world.courier_user, "updateOrderOffer", {**payload, "fee": 5})
     ).status_code == 200
-    assert len(await notifications(world.customer, "new_offer")) == 2
+    # ONE notice per offer, brought up to date (QA 18/10 m54)
+    [note] = await notifications(world.customer, "new_offer")
+    assert note.data["edits"] == 2 and note.data["proposed_fee"] == 5.0 and note.read_at is None
     assert len(await pushes(world.customer)) == 1  # the second change within 2 minutes: in-app only
 
-    for note in await notifications(world.customer, "new_offer"):
-        await age("notifications", note.id, created_at=now() - timedelta(minutes=3))
+    async with SessionLocal() as s:  # the last pushed change was 3 minutes ago
+        row = await s.get(Notification, note.id)
+        row.data = {**row.data, "edit_pushed_at": (now() - timedelta(minutes=3)).isoformat()}
+        await s.commit()
     assert (
         await call(client, world.courier_user, "updateOrderOffer", {**payload, "fee": 4})
     ).status_code == 200
@@ -260,7 +265,8 @@ async def test_update_offer_push_is_throttled_and_edits_are_capped(client, world
     # the same values again: answered, nothing written, not counted
     same = await call(client, world.courier_user, "updateOrderOffer", {**payload, "fee": 4})
     assert same.status_code == 200 and same.json()["offer"]["proposed_fee"] == 4
-    assert len(await notifications(world.customer, "new_offer")) == 3
+    [note] = await notifications(world.customer, "new_offer")
+    assert note.data["edits"] == 3
 
     for n in range(MAX_EDITS - 3):
         r = await call(client, world.courier_user, "updateOrderOffer", {**payload, "fee": 10 + n})

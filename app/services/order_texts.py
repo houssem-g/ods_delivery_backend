@@ -147,6 +147,17 @@ def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool
     }
 
 
+def offer_not_retained(shop_name: str | None) -> Text:
+    """To a courier whose offer the customer did not choose (QA 18/10 m38): in the app only."""
+    shop = f" ({_short(shop_name, 40)})" if shop_name else ""
+    return {
+        "title_ar": "لم يُختر عرضك",
+        "title_fr": "Offre non retenue",
+        "body_ar": f"اختار الحريف عرضاً آخر لهذا الطلب{shop}.",
+        "body_fr": f"Le client a choisi une autre offre pour cette commande{shop}.",
+    }
+
+
 def released_after_block(shop_name: str | None) -> Text:
     """To the courier the customer blocked: the order is taken back (before the purchase)."""
     shop = f" ({shop_name})" if shop_name else ""

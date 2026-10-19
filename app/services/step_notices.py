@@ -23,7 +23,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Courier, Order, OrderOffer, OrderStop
+from app.models import Courier, Order, OrderOffer, OrderStop, User
 from app.security.tokens import now_utc
 from app.services import order_texts, tracking
 from app.services.notifications import notify, recent_duplicate
@@ -59,6 +59,8 @@ async def _send(
             kwargs = {"user_id": user_id, "order_id": order_id, "type_": type_, "metadata": metadata, **text}
             if mode == "always":
                 await notify_always_pushed(session, **kwargs)
+            elif mode == "row":  # the in-app row only (the user turned this push off)
+                await notify(session, push=False, **kwargs)
             elif mode == "push":
                 await notify_and_push(session, **kwargs)
             else:
@@ -144,9 +146,18 @@ async def courier_step(session: AsyncSession, order: Order, from_status: str, to
             text = order_texts.on_the_way(await tracking.ride_eta_minutes(session, order), shop, total)
         else:
             text = order_texts.delivered(total, shop)
+    mode = "prefs"
+    if to_status == "delivered":
+        # always pushed, unless the customer turned « Confirmation de livraison » off (QA 18/10 m52)
+        wants = (
+            await session.execute(
+                select(User.notify_delivery_confirmations).where(User.id == order.customer_id)
+            )
+        ).scalar_one_or_none()
+        mode = "row" if wants is False else "always"
     return await _send(
         session,
-        mode="always" if to_status == "delivered" else "prefs",
+        mode=mode,
         user_id=order.customer_id,
         order_id=order.id,
         type_=to_status,

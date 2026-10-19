@@ -15,7 +15,7 @@ import json
 import uuid
 from typing import Any
 
-from sqlalchemy import select, true
+from sqlalchemy import Text, case, cast, null, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.payload import coerce_payload
@@ -25,6 +25,7 @@ from app.models import Notification, Order, User
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc
 from app.services.notifications import canonical_type, notify
+from app.services.order_transitions import OPEN_STATUSES
 
 notifications = Notification.__table__
 recipient = User.__table__.alias("notification_user")
@@ -33,6 +34,13 @@ CREATE_FIELDS = frozenset(
     {"user_id", "order_id", "type", "title_ar", "title_fr", "body_ar", "body_fr", "metadata"}
 )
 METADATA_MAX = 2000  # bytes of JSON, same cap as sendNotificationIfEnabled
+
+
+def _order_status() -> Any:
+    linked = Order.__table__.alias("notification_order")
+    return (
+        select(cast(linked.c.status, Text)).where(linked.c.id == notifications.c.order_id).scalar_subquery()
+    )
 
 
 def _read_policy(user: CurrentUser) -> Any:
@@ -137,6 +145,13 @@ ENTITY = register(
             "body_fr": LegacyField(notifications.c.body_fr, "string"),
             "metadata": LegacyField(notifications.c.data, "object"),
             "is_read": LegacyField(notifications.c.read_at.is_not(None), "boolean"),
+            # QA 18/10 m9: the linked order's status NOW, so an old « Nouvelle commande » card of an order
+            # already taken or cancelled no longer offers « Accepter » (null without an order)
+            "order_status": LegacyField(_order_status(), "string"),
+            "order_open": LegacyField(
+                case((notifications.c.order_id.is_(None), null()), else_=_order_status().in_(OPEN_STATUSES)),
+                "boolean",
+            ),
         },
         read_policy=_read_policy,
         create=create,

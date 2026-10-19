@@ -361,6 +361,9 @@ async def update_me(
         row.full_name = body.full_name.strip()
     if body.language is not None:
         row.language = body.language
+        from app.services.device_tokens import follow_language
+
+        await follow_language(session, row.id, body.language)  # QA 18/10 m30: the pushes follow
     await session.commit()
     await session.refresh(row)
     return svc.serialize_me(row)

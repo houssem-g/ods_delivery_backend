@@ -24,6 +24,17 @@ PLATFORMS = ("web", "android", "ios")
 PROVIDERS = ("fcm", "webpush")
 
 
+async def follow_language(session: AsyncSession, user_id: Any, language: str) -> None:
+    """The user changed the app's language (Profil): his phones' pushes follow it at once (the push text
+    is chosen by the token's locale, QA 18/10 m30), without waiting for the app to register again."""
+    if language in ("ar", "fr"):
+        await session.execute(
+            update(DeviceToken)
+            .where(DeviceToken.user_id == user_id, DeviceToken.is_active.is_(True))
+            .values(locale=language)
+        )
+
+
 def endpoint_hash(token: str) -> str:
     """The legacy DeviceToken.endpoint_hash: sha256(token) as hex, first 32 characters."""
     return hashlib.sha256(token.encode()).hexdigest()[:32]

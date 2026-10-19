@@ -39,6 +39,10 @@ PREFERENCE_COLUMNS = {
     "incoming_orders": "notify_incoming_orders",
     "chat_messages": "notify_chat",
     "push_notifications_enabled": "push_enabled",
+    # QA 18/10 m52: stored and applied (app/services/notifications.DETAIL_PREFERENCE_KEY)
+    "delivery_updates": "notify_delivery_updates",
+    "eta_updates": "notify_eta_updates",
+    "delivery_confirmations": "notify_delivery_confirmations",
 }
 ADDRESS_FIELDS = ("default_address", "country", "default_lat", "default_lng", "governorate", "city")
 REFERRAL_FIELDS = ("referred_by_courier_id", "referred_by_code", "referred_at")
@@ -218,6 +222,9 @@ async def _apply(session: AsyncSession, actor: CurrentUser, user: User, values: 
         if values["language"] not in ("ar", "fr"):
             raise _bad("language: expected ar or fr")
         user.language = values["language"]
+        from app.services.device_tokens import follow_language  # (imports compat entities)
+
+        await follow_language(session, user.id, user.language)
     if "notification_preferences" in values:
         _apply_preferences(user, values["notification_preferences"])
     if "notify_hot_deals" in values:
