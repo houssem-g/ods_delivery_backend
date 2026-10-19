@@ -8,3 +8,8 @@ useDefault = true
 description = "SQLAlchemy table_valued(...) column names are not API keys"
 regexTarget = "line"
 regexes = ['''\.table_valued\(''']
+
+[[allowlists]]
+description = "LOCAL_PARTNER_SECRET_KEY: base64 of « local-dev-only-partner-key-32by! », a dev-only Fernet key refused outside local/test (app/config.py)"
+regexTarget = "secret"
+regexes = ['''^bG9jYWwtZGV2LW9ubHktcGFydG5lci1rZXktMzJieSE=$''']
