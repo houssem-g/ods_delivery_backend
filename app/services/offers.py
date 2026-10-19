@@ -397,6 +397,10 @@ async def update_offer(
         raise OrderRefused(409, "offer_not_pending")
     if order.status not in ot.OPEN_STATUSES:
         raise OrderRefused(409, "order_not_open", status=order.status)
+    if await is_blocked(session, user.id, order.customer_id):
+        # QA 19/10 M9: a block either way — his offer is off the customer's list, it can't change and
+        # nothing (« Offre modifiée », push) reaches that customer
+        raise OrderRefused(409, "blocked")
 
     eta = _parse_eta(payload.get("eta_minutes")) if "eta_minutes" in payload else None
     message = _parse_message(payload.get("message")) if "message" in payload else None

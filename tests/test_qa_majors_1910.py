@@ -287,3 +287,25 @@ async def test_m8_decay_plan_preview_and_reserved_price(client, world, factory):
     assert r.status_code == 200, r.text
     [told] = await notifications(world.courier_user, "hot_deal_reserved")
     assert "à 10.000 DT" in told.body_fr and told.data["price"] == 10
+
+
+# --- M9: a courier the customer blocked can't change his offer, the customer hears nothing -------------
+
+
+async def test_m9_blocked_courier_cannot_update_his_offer(client, world):
+    from decimal import Decimal
+
+    from app.db import SessionLocal
+    from app.models import OrderOffer, UserBlock
+    from tests.order_helpers import notifications, pushes, reload
+
+    order = await world.order(status="offers_received")
+    offer = await world.offer(order, fee="5")
+    async with SessionLocal() as s:
+        s.add(UserBlock(blocker_id=world.customer.id, blocked_id=world.courier_user.id))
+        await s.commit()
+    r = await call(client, world.courier_user, "updateOrderOffer", {"offer_id": str(offer.id), "fee": 4})
+    assert r.status_code == 409 and r.json()["error"] == "blocked"
+    assert (await reload(OrderOffer, offer.id)).proposed_fee == Decimal("5")
+    assert await notifications(world.customer, "new_offer") == []
+    assert await pushes(world.customer) == []

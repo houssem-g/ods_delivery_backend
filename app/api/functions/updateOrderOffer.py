@@ -10,8 +10,9 @@ The customer's OrderOffers screen hears the OrderOffer update event; he is notif
 (type new_offer, data.kind = "offer_updated": "Karim a modifié son offre : 6.500 DT"), pushed at
 most once per offer every 2 minutes. An unchanged offer is answered without any notice.
 Errors: Missing offer_id / invalid_fee (400), courier_profile_missing / courier_not_verified
-(403), offer_not_found (404, also someone else's offer), offer_not_pending / order_not_open
-(409), too_many_edits (429, 10 changes per offer).
+(403), offer_not_found (404, also someone else's offer), offer_not_pending / order_not_open /
+blocked (409: the customer blocked him or he blocked the customer — nothing changes, nobody is told),
+too_many_edits (429, 10 changes per offer).
 """
 
 from typing import Any
