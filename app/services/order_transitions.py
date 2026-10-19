@@ -18,10 +18,10 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Order, OrderStatusEvent, OrderTracking
+from app.models import Courier, Notification, OfferIntent, Order, OrderOffer, OrderStatusEvent, OrderTracking
 from app.realtime.events import emit
 from app.services import commission, partner_webhooks
 
@@ -164,6 +164,53 @@ def punctuality_late_minutes(
     return max(-PUNCTUALITY_BOUND, min(PUNCTUALITY_BOUND, late))
 
 
+ORDER_CLOSED = "order_closed"  # the Order signal's data.kind (QA 19/10 M11)
+
+
+async def announce_closed(session: AsyncSession, order: Order, to_status: str) -> None:
+    """An open order was taken by a courier or cancelled (QA 19/10 M11): the couriers who saw it can no
+    longer read the row, so its `update` never reached them (the card stayed ~48 s, the « Nouvelle
+    commande » alert up to 75 s). They get an Order `signal` instead — the order id only, no personal data:
+    {kind: "order_closed", id, status: "closed", reason: "taken" | "cancelled"}. Who saw it: the couriers
+    told of it (new_order notifications), those who offered or were preparing an offer; never the customer
+    nor the courier who took it (he reads the row)."""
+    told = select(Notification.user_id).where(
+        Notification.order_id == order.id, Notification.type == "new_order"
+    )
+    offered = (
+        select(Courier.user_id)
+        .join(OrderOffer, OrderOffer.courier_id == Courier.id)
+        .where(OrderOffer.order_id == order.id)
+    )
+    preparing = (
+        select(Courier.user_id)
+        .join(OfferIntent, OfferIntent.courier_id == Courier.id)
+        .where(OfferIntent.order_id == order.id)
+    )
+    users = set((await session.execute(union(told, offered, preparing))).scalars())
+    users.discard(order.customer_id)
+    if order.courier_id is not None:
+        taker = (
+            await session.execute(select(Courier.user_id).where(Courier.id == order.courier_id))
+        ).scalar_one_or_none()
+        users.discard(taker)
+    if not users:
+        return
+    emit(
+        session,
+        "Order",
+        "signal",
+        order.id,
+        audience=users,
+        data={
+            "kind": ORDER_CLOSED,
+            "id": str(order.id),
+            "status": "closed",
+            "reason": "cancelled" if to_status == "cancelled" else "taken",
+        },
+    )
+
+
 async def transition(
     session: AsyncSession,
     order: Order,
@@ -214,6 +261,8 @@ async def transition(
     if to_status == "delivered":
         await commission.record_delivery(session, order, at)
     emit(session, "Order", "update", order.id)
+    if from_status in OPEN_STATUSES and to_status not in OPEN_STATUSES:
+        await announce_closed(session, order, to_status)
     if order.partner_id is not None:
         # A restaurant ODS order (Lot 2): the partner hears about it (queued, sent by the job).
         try:

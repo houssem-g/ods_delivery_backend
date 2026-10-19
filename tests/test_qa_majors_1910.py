@@ -351,3 +351,62 @@ async def test_m10_mark_all_read_reaches_every_row(client, world, monkeypatch):
     assert again.json() == {"success": True, "marked": 0, "unread": 0}
     # the batch by ids still works as before
     assert (await call(client, world.courier_user, "markNotificationsRead", {"ids": []})).status_code == 400
+
+
+# --- M11: the couriers who saw an order hear at once that it is closed (id only) ------------------------
+
+
+async def test_m11_closed_signal_to_the_couriers_who_saw_it(client, world, factory, monkeypatch):
+    from app.services import order_transitions
+
+    seen = []
+    original = order_transitions.emit
+
+    def record(session, entity, type_, id_, audience=None, data=None):
+        seen.append((entity, type_, str(id_), sorted(str(a) for a in audience or ()), data))
+        original(session, entity, type_, id_, audience, data)
+
+    monkeypatch.setattr(order_transitions, "emit", record)
+    await device(world.courier_user)
+    other_user = await factory.user(email="sami@example.test", full_name="Sami", profile=False)
+    other = await world.make_courier(other_user, display_name="Sami B", phone_e164="+21655000999")
+    placed = await call(client, world.customer, "placeOrder", {"order": order_form()})
+    order_id = placed.json()["order"]["id"]
+    # Karim and Sami were told; Sami offers, Karim's offer is accepted: Sami hears « closed », Karim not
+    mine = await call(client, world.courier_user, "createOrderOffer", {"order_id": order_id, "fee": 4})
+    theirs = await call(client, other_user, "createOrderOffer", {"order_id": order_id, "fee": 5})
+    assert mine.status_code == theirs.status_code == 200
+    seen.clear()
+    r = await call(
+        client,
+        world.customer,
+        "acceptOrderOffer",
+        {"order_id": order_id, "offer_id": mine.json()["offer"]["id"]},
+    )
+    assert r.status_code == 200, r.text
+    signals = [e for e in seen if e[1] == "signal"]
+    assert signals == [
+        (
+            "Order",
+            "signal",
+            order_id,
+            [str(other_user.id)],
+            {"kind": "order_closed", "id": order_id, "status": "closed", "reason": "taken"},
+        )
+    ]
+    assert other  # (his courier profile)
+
+    # a cancelled open order: everyone told hears it, never the customer
+    seen.clear()
+    second = (await call(client, world.customer, "placeOrder", {"order": order_form()})).json()["order"]["id"]
+    seen.clear()
+    cancel = await call(
+        client,
+        world.customer,
+        "cancelOrder",
+        {"order_id": second, "cancelled_by": "customer", "reason": "changed_mind"},
+    )
+    assert cancel.status_code == 200, cancel.text
+    [signal] = [e for e in seen if e[1] == "signal"]
+    assert signal[3] == [str(other_user.id)]  # Karim, busy with the first order, was not told of it
+    assert signal[4]["reason"] == "cancelled" and str(world.customer.id) not in signal[3]
