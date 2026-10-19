@@ -171,7 +171,9 @@ async def test_create_order_builds_the_order_as_place_order_and_dispatches(clien
     assert doc["estimated_price"] == 8.8 and doc["budget_max"] == 8.8
     assert doc["partner_customer_recent_orders"] == 0 and doc["partner_customer_recent_unpaid"] == 0
     assert doc["partner_returns_refused"] == 0 and doc["partner_return_outcome"] is None
-    assert doc["customer_name"] == "Amel" and doc["shop_name"] == "Coffee and Tea"
+    # QA 18/10 m39: a courier bidding on the open order does not read the customer's name (his own once
+    # he is the order's courier)
+    assert doc["customer_name"] is None and doc["shop_name"] == "Coffee and Tea"
     # an app order carries none of it
     app_order = await world.order()
     doc = (await client.get(f"/api/entities/Order/{app_order.id}", headers=auth(world.courier_user))).json()

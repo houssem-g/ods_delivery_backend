@@ -4,7 +4,8 @@ One transaction under the order lock: the offer accepted, the others rejected, t
 assigned with the fee of the offer (never a client value), accepted_at set. No customer is refused
 for no-response incidents any more (owner, 10/10/2026). The courier is notified here (order_accepted).
 
-Body: { order_id, offer_id }. Returns { success, courier_user_id, offer }.
+Body: { order_id, offer_id }. Returns { success, courier_user_id, offer } — courier_user_id is the
+courier PROFILE id (the e-mail for an admin).
 Errors: order_not_found / offer_not_found (404), Forbidden (403),
 order_not_open / offer_not_pending / courier_unavailable (409), restaurant_unreachable (503: a
 Vitrine order the restaurant's ODS did not take — nothing changed, the customer accepts again).
@@ -35,6 +36,9 @@ async def handle(
         await vitrine_sync.commit_or_compensate(session)
     return 200, {
         "success": True,
-        "courier_user_id": courier_user.email,
+        # QA 18/10 m39: never the courier's e-mail to the customer. His courier profile id instead: the
+        # installed apps send it back to sendNotificationIfEnabled, which maps a profile id to its owner
+        # (and skips the duplicate « Offre acceptée » the server already sent). Admins: the e-mail.
+        "courier_user_id": courier_user.email if user.is_admin else str(offer.courier_id),
         "offer": await document(session, "OrderOffer", user, offer.id),
     }

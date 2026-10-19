@@ -193,3 +193,69 @@ async def test_m53_closed_reason_of_an_offer(client, world, factory):
         await client.get(f"/api/entities/OrderOffer/{pending.id}", headers=auth(world.courier_user))
     ).json()
     assert doc["closed_reason"] is None
+
+
+# --- m39 / m49: no e-mail of the other side, no preferred_courier_id for the other couriers --------------
+
+
+async def test_m39_m49_no_emails_nor_referral_for_strangers(client, world, factory):
+    other_user = await factory.user(email="other-courier@example.test", full_name="Sami", profile=False)
+    other = await world.make_courier(other_user, display_name="Sami")
+    order = await world.order(status="offers_received", preferred_courier_id=world.courier.id)
+    offer = await world.offer(order, fee="5")
+
+    bidder = await order_doc(client, other_user, order)  # an open order another courier may bid on
+    assert bidder["customer_id"] is None and bidder["created_by"] is None and bidder["customer_name"] is None
+    assert bidder["preferred_courier_id"] is None  # m49
+    his = await order_doc(client, world.courier_user, order)  # the referred courier keeps his badge
+    assert his["preferred_courier_id"] == str(world.courier.id) and his["customer_id"] is None
+    mine = await order_doc(client, world.customer, order)
+    assert mine["customer_id"] == "cust@example.test" and mine["created_by"] == "cust@example.test"
+    assert mine["preferred_courier_id"] == str(world.courier.id)
+
+    seen_by_customer = (
+        await client.get(f"/api/entities/OrderOffer/{offer.id}", headers=auth(world.customer))
+    ).json()
+    assert seen_by_customer["courier_user_id"] is None and seen_by_customer["created_by"] is None
+    seen_by_courier = (
+        await client.get(f"/api/entities/OrderOffer/{offer.id}", headers=auth(world.courier_user))
+    ).json()
+    assert (
+        seen_by_courier["customer_id"] is None
+        and seen_by_courier["courier_user_id"] == "courier@example.test"
+    )
+    # a hidden field cannot be probed by a filter either
+    probe = await client.get(
+        "/api/entities/Order", params={"q": '{"customer_id": "cust@example.test"}'}, headers=auth(other_user)
+    )
+    assert probe.status_code == 200 and probe.json() == []
+
+    # acceptOrderOffer: the courier's profile id, not his e-mail
+    r = await call(
+        client, world.customer, "acceptOrderOffer", {"order_id": str(order.id), "offer_id": str(offer.id)}
+    )
+    assert r.status_code == 200 and r.json()["courier_user_id"] == str(world.courier.id)
+    accepted = await order_doc(client, world.customer, order)
+    assert accepted["courier_user_id"] is None  # the customer never reads the courier's e-mail
+    assert (await order_doc(client, world.courier_user, order))["customer_id"] == "cust@example.test"  # party
+    assert other  # (the other courier no longer reads the order once it is taken)
+
+
+async def test_m39_app_settings_editor_for_admins_only(client, world):
+    from sqlalchemy import text
+
+    from app.db import SessionLocal
+
+    async with SessionLocal() as s:
+        await s.execute(
+            text(
+                "INSERT INTO app_settings (key, value, updated_by) VALUES ('main', '{}'::jsonb, :a) "
+                "ON CONFLICT (key) DO UPDATE SET updated_by = :a"
+            ),
+            {"a": world.admin.id},
+        )
+        await s.commit()
+    seen = (await client.get("/api/entities/AppSettings/main", headers=auth(world.customer))).json()
+    assert seen["updated_by"] is None
+    admin = (await client.get("/api/entities/AppSettings/main", headers=auth(world.admin))).json()
+    assert admin["updated_by"] == "admin@example.test"

@@ -49,7 +49,8 @@ def _builtin(entity: EntityDef, name: str) -> LegacyField:
         ),
     }
     expr, type_ = exprs[name]
-    return LegacyField(expr=expr, type=type_)
+    guard = entity.created_by_guard if name == "created_by" else None
+    return LegacyField(expr=expr, type=type_, read_guard=guard)
 
 
 def resolve_field(entity: EntityDef, name: str) -> LegacyField:
@@ -168,9 +169,11 @@ def _columns(entity: EntityDef, user: CurrentUser) -> list[Any]:
         entity.id_expr.label("id"),
         entity.created_expr.label("created_date"),
         entity.updated_expr.label("updated_date"),
-        (entity.created_by_expr if entity.created_by_expr is not None else cast(null(), String)).label(
-            "created_by"
-        ),
+        (
+            visible_expr(_builtin(entity, "created_by"), user)
+            if entity.created_by_expr is not None
+            else cast(null(), String)
+        ).label("created_by"),
     ]
     cols += [visible_expr(spec, user).label(name) for name, spec in entity.fields.items()]
     return cols

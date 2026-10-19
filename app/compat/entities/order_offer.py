@@ -112,13 +112,19 @@ def _closed_reason() -> Any:
     )
 
 
+def _courier_or_admin(user: CurrentUser) -> Any:
+    return true() if user.is_admin else offer_courier.c.user_id == user.id
+
+
 for_customer = {"read_guard": _customer_or_admin}
+# QA 18/10 m39: the courier never reads the customer's e-mail, the customer never the courier's
+for_courier = {"read_guard": _courier_or_admin}
 
 FIELDS: dict[str, LegacyField] = {
     "order_id": LegacyField(offers.c.order_id, "id"),
-    "customer_id": LegacyField(offer_customer.c.email, "string"),
+    "customer_id": LegacyField(offer_customer.c.email, "string", **for_customer),
     "courier_id": LegacyField(offers.c.courier_id, "id"),
-    "courier_user_id": LegacyField(offer_courier_user.c.email, "string"),
+    "courier_user_id": LegacyField(offer_courier_user.c.email, "string", **for_courier),
     "courier_name": LegacyField(offer_courier.c.display_name, "string"),
     "courier_photo": LegacyField(cast(literal(None), Text), "string"),
     "courier_rating": LegacyField(offers.c.courier_rating_snapshot, "number"),
@@ -175,6 +181,7 @@ ENTITY = register(
         created_expr=offers.c.created_at,
         updated_expr=offers.c.updated_at,
         created_by_expr=offer_courier_user.c.email,
+        created_by_guard=_courier_or_admin,
         fields=FIELDS,
         read_policy=read_policy,
         base_where=offers.c.status != "withdrawn",

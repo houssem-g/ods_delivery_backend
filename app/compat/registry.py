@@ -53,6 +53,8 @@ class EntityDef:
     # Rows that exist as this entity at all (e.g. users that have a customer profile).
     base_where: ColumnElement[bool] = field(default_factory=true)
     created_by_expr: ColumnElement[Any] | None = None
+    # hides `created_by` (NULL) from users for whom it is false, like LegacyField.read_guard
+    created_by_guard: Guard | None = None
     create: CreateHook | None = None
     update: UpdateHook | None = None
     delete: DeleteHook | None = None

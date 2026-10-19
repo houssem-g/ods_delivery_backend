@@ -312,6 +312,20 @@ def customer_or_admin(user: CurrentUser) -> Any:
     return true() if user.is_admin else orders.c.customer_id == user.id
 
 
+def courier_self_or_admin(user: CurrentUser) -> Any:
+    """The order's courier himself (his own e-mail: « is this my delivery? »), admins."""
+    return true() if user.is_admin else courier_user.c.id == user.id
+
+
+def referral_party(user: CurrentUser) -> Any:
+    """preferred_courier_id (the courier the customer signed up with): the customer, THAT courier (his
+    « Votre client » badge compares it with his own id), admins — never the other couriers (QA 18/10 m49)."""
+    if user.is_admin:
+        return true()
+    his = exists().where(couriers.c.id == orders.c.preferred_courier_id, couriers.c.user_id == user.id)
+    return or_(orders.c.customer_id == user.id, his)
+
+
 def priority_party(user: CurrentUser) -> Any:
     """The customer, the invite-link courier who has the head start, admins (invite_priority)."""
     if user.is_admin:
@@ -453,11 +467,14 @@ purchase_plus_fee = orders.c.purchase_amount + func.coalesce(orders.c.delivery_f
 guarded = {"read_guard": party_or_admin}
 
 FIELDS: dict[str, LegacyField] = {
-    "customer_id": LegacyField(customer.c.email, "string"),
-    "customer_name": LegacyField(orders.c.contact_name, "string"),
+    # QA 18/10 m39: the customer's e-mail and name only for the order's parties (and admins), never for
+    # the couriers bidding on an open order (« own order » checks still work: the customer reads his own)
+    "customer_id": LegacyField(customer.c.email, "string", **guarded),
+    "customer_name": LegacyField(orders.c.contact_name, "string", **guarded),
     "customer_phone": LegacyField(orders.c.contact_phone_e164, "string", read_guard=contact_of_party),
     "courier_id": LegacyField(orders.c.courier_id, "id"),
-    "courier_user_id": LegacyField(courier_user.c.email, "string"),
+    # the courier's e-mail: himself and admins only (m39; the customer's chat notices are sent by the server)
+    "courier_user_id": LegacyField(courier_user.c.email, "string", read_guard=courier_self_or_admin),
     "courier_name": LegacyField(courier.c.display_name, "string"),
     "courier_phone": LegacyField(courier.c.phone_e164, "string", read_guard=contact_reachable),
     "courier_photo": LegacyField(cast(null(), Text), "string"),
@@ -553,7 +570,7 @@ FIELDS: dict[str, LegacyField] = {
     "stock_checks": LegacyField(_stock_checks(), "array", **guarded),
     "has_issues": LegacyField(exists().where(issues.c.order_id == orders.c.id), "boolean", **guarded),
     "status_history": LegacyField(_history(), "array"),
-    "preferred_courier_id": LegacyField(orders.c.preferred_courier_id, "id"),
+    "preferred_courier_id": LegacyField(orders.c.preferred_courier_id, "id", read_guard=referral_party),
     # the invite-link head start while it runs (app/services/invite_priority.py), else null: for the
     # customer (« Votre livreur Amine a 60 s pour vous répondre en premier »), that courier, admins
     "priority_until": LegacyField(
@@ -657,6 +674,7 @@ ENTITY = register(
         created_expr=orders.c.created_at,
         updated_expr=orders.c.updated_at,
         created_by_expr=customer.c.email,
+        created_by_guard=party_or_admin,  # m39: the customer's e-mail
         fields=FIELDS,
         read_policy=read_policy,
         update=update,

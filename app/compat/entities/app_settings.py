@@ -7,7 +7,7 @@ The legacy id is the key, so `AppSettings.update('main', …)` works.
 
 from typing import Any
 
-from sqlalchemy import select, true
+from sqlalchemy import false, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.payload import coerce_payload
@@ -88,7 +88,10 @@ ENTITY = register(
             "key": LegacyField(settings_table.c.key, "string"),
             "support_phone": LegacyField(settings_table.c.value["support_phone"].astext, "string"),
             "support_whatsapp": LegacyField(settings_table.c.value["support_whatsapp"].astext, "string"),
-            "updated_by": LegacyField(editor.c.email, "string"),
+            # QA 18/10 m39: the admin's e-mail for admins only (everybody reads the support numbers)
+            "updated_by": LegacyField(
+                editor.c.email, "string", read_guard=lambda u: true() if u.is_admin else false()
+            ),
         },
         read_policy=lambda _user: true(),
         create=create,

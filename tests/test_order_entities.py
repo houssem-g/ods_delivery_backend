@@ -70,7 +70,7 @@ async def test_order_legacy_shape_for_the_customer(client, world):
     assert ISO_UTC.match(doc["created_date"]) and ISO_UTC.match(doc["updated_date"])
     assert doc["customer_id"] == "cust@example.test" and doc["customer_phone"] == "+21622111222"
     assert doc["courier_id"] == str(world.courier.id)
-    assert doc["courier_user_id"] == "courier@example.test"
+    assert doc["courier_user_id"] is None  # QA 18/10 m39: the courier's e-mail is his own business
     assert doc["courier_name"] == "Karim Trabelsi" and doc["courier_phone"] == "+21655123456"
     assert doc["courier_live_lat"] == pytest.approx(35.82) and doc["courier_live_at"]
     assert doc["shop_name"] == "Monoprix" and doc["shop_lat"] == pytest.approx(SOUSSE_SHOP[0])
@@ -251,7 +251,7 @@ async def test_offer_reads_and_withdrawal(client, world, factory):
     )
     assert ids(customer_view) == sorted([str(offer.id), str(other_offer.id)])
     doc = next(d for d in customer_view.json() if d["id"] == str(offer.id))
-    assert doc["customer_id"] == "cust@example.test" and doc["courier_user_id"] == "courier@example.test"
+    assert doc["customer_id"] == "cust@example.test" and doc["courier_user_id"] is None  # m39
     assert doc["courier_name"] == "Karim Trabelsi" and doc["courier_vehicle"] == "scooter"
     assert (
         doc["proposed_fee"] == 5 and doc["created_via"] == "createOrderOffer" and doc["courier_photo"] is None

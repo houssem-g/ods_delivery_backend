@@ -350,7 +350,7 @@ async def test_create_offer(client, world, factory):
     assert offer["proposed_fee"] == 6.123 and offer["eta_minutes"] == 25 and offer["distance_km"] == 3.46
     assert offer["courier_id"] == str(world.courier.id) and offer["status"] == "pending"
     assert offer["message"] == "Salut" and offer["courier_rating"] == 5
-    assert offer["customer_id"] == "cust@example.test"
+    assert offer["customer_id"] is None  # QA 18/10 m39: the courier never reads the customer's e-mail
     doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.customer))).json()
     assert doc["status"] == "offers_received" and doc["status_history"][-1]["source"] == "createOrderOffer"
     # the customer is told by the server (the app's own notice that follows is a duplicate)
@@ -415,7 +415,8 @@ async def test_accept_offer(client, world, factory):
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["courier_user_id"] == "courier@example.test" and body["offer"]["status"] == "accepted"
+    # QA 18/10 m39: the courier's profile id (never his e-mail) for the customer
+    assert body["courier_user_id"] == str(world.courier.id) and body["offer"]["status"] == "accepted"
     doc = (await client.get(f"/api/entities/Order/{order.id}", headers=auth(world.customer))).json()
     assert doc["status"] == "accepted" and doc["courier_id"] == str(world.courier.id)
     assert doc["delivery_fee"] == 7.5 and doc["eta_minutes"] == 20 and doc["distance_km"] == 1.5
