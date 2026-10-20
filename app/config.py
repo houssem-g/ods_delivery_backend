@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     EMAIL_CODE_MAX_ATTEMPTS: int = 5
     EMAIL_CODE_RESEND_SECONDS: int = 60
     PASSWORD_MIN_LENGTH: int = 8
+    # Super admins (owner 20/10/2026): the only accounts that may make someone admin or remove an
+    # admin (setUserAdmin). Comma-separated e-mails, compared case-insensitively; the account must
+    # also be admin itself. Never removable from the app.
+    SUPER_ADMIN_EMAILS: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["contact@ordering-dashboard-solution.com"]
+    )
     BCRYPT_ROUNDS: int = 12
 
     GOOGLE_CLIENT_ID: str | None = None
@@ -251,9 +257,10 @@ class Settings(BaseSettings):
                 data[name] = [o.strip() for o in raw.split(",") if o.strip()]
         if isinstance(data, dict) and not str(data.get("PARTNER_SECRET_KEY", "x")).strip():
             data.pop("PARTNER_SECRET_KEY")  # empty in .env = the local key (refused outside local)
-        qa = data.get("QA_ACCOUNTS") if isinstance(data, dict) else None
-        if isinstance(qa, str):
-            data["QA_ACCOUNTS"] = [e.strip().lower() for e in qa.split(",") if e.strip()]
+        for name in ("QA_ACCOUNTS", "SUPER_ADMIN_EMAILS"):
+            raw = data.get(name) if isinstance(data, dict) else None
+            if isinstance(raw, str):
+                data[name] = [e.strip().lower() for e in raw.split(",") if e.strip()]
         return data
 
     @model_validator(mode="after")

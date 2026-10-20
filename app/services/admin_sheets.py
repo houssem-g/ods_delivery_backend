@@ -36,6 +36,7 @@ from app.security.deps import CurrentUser
 from app.services import credit
 from app.services.commission import COMMISSION_KINDS, KIND_DUE, LEGACY_STATUS
 from app.services.orders import active_incidents, is_test_order, recent_badge
+from app.services.super_admin import is_super_admin_email
 
 Result = tuple[int, dict[str, Any]]
 
@@ -237,6 +238,8 @@ async def customer_sheet(session: AsyncSession, user: CurrentUser | None, payloa
             "deleted": person.deleted_at is not None,
             "is_test_account": test_customer,
             "courier_id": str(own_courier.id) if own_courier else None,
+            "account_role": person.role,
+            "is_super_admin": is_super_admin_email(person.email) and person.role == "admin",
             "invited_by": {"id": str(inviter.id), "name": inviter.display_name} if inviter else None,
         },
         "reliability": {
@@ -414,6 +417,10 @@ async def courier_sheet(session: AsyncSession, user: CurrentUser | None, payload
             ),
             "is_active": bool(account and account.disabled_at is None and account.deleted_at is None),
             "is_test_account": test_courier,
+            "account_role": account.role if account else None,
+            "is_super_admin": bool(
+                account and account.role == "admin" and is_super_admin_email(account.email)
+            ),
         },
         "totals": {
             "orders": len(rows),

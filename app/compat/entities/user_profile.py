@@ -27,6 +27,7 @@ from app.models import Courier, User, UserAddress, customer_stats
 from app.security.deps import CurrentUser
 from app.security.tokens import now_utc, revoke_all_for_user
 from app.services.phones import TUNISIA_PREFIX, InvalidPhone, to_e164
+from app.services.super_admin import is_super_admin
 
 users = User.__table__
 addr = UserAddress.__table__
@@ -242,6 +243,9 @@ async def _apply(session: AsyncSession, actor: CurrentUser, user: User, values: 
     if "is_active" in values:
         if not values["is_active"] and user.id == actor.id:
             raise _bad("is_active: an admin cannot disable his own account")
+        if not values["is_active"] and is_super_admin(user):
+            # the super admin alone manages admins (owner 20/10): no other admin can lock him out
+            raise ApiError(403, "permission_denied", "is_active: a super admin cannot be disabled")
         if values["is_active"]:
             user.disabled_at = None
         elif user.disabled_at is None:

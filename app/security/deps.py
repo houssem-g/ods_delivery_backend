@@ -15,7 +15,7 @@ from app.security.tokens import InvalidToken, decode_access_token
 
 @dataclass(frozen=True)
 class CurrentUser:
-    """The signed-in user as policies see it. Admin = users.role = 'admin'."""
+    """The signed-in user as policies see it. Admin: users.role == 'admin' (given only by setUserAdmin)."""
 
     id: uuid.UUID
     email: str

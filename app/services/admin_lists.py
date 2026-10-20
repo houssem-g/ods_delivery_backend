@@ -55,6 +55,7 @@ from app.services.admin_sheets import _forbidden, _money, _test_user_sql
 from app.services.commission import COMMISSION_KINDS, KIND_DUE, LEGACY_STATUS
 from app.services.credit import BALANCE_KINDS
 from app.services.orders import TEST_ORDER_SQL, is_test_order
+from app.services.super_admin import is_super_admin_email
 
 Result = tuple[int, dict[str, Any]]
 TUNIS = ZoneInfo("Africa/Tunis")
@@ -878,6 +879,7 @@ async def list_users(session: AsyncSession, user: CurrentUser | None, payload: d
             "signup": "google" if u.google_sub else "email",
             "is_active": u.disabled_at is None,
             "is_test_account": bool(test),
+            "is_super_admin": is_super_admin_email(u.email) and u.role == "admin",
         }
         for u, test, n, n_done, total, n_unpaid, last, inv_id, inv_name, courier_id in rows
     ]

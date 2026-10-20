@@ -26,6 +26,7 @@ from app.security.tokens import (
     now_utc,
     revoke_all_for_user,
 )
+from app.services.super_admin import is_super_admin
 
 # Longer than any typed code: only an e-mailed link token.
 LINK_TOKEN_MIN_LENGTH = 20
@@ -63,6 +64,8 @@ def serialize_me(user: User) -> dict[str, Any]:
         "email": user.email,
         "full_name": user.full_name,
         "role": "admin" if user.role == "admin" else "user",
+        # the only account(s) that may give or remove the admin role (owner 20/10, setUserAdmin)
+        "is_super_admin": is_super_admin(user),
         "is_verified": user.email_verified_at is not None,
         "disabled": user.disabled_at is not None,
         "language": user.language,
