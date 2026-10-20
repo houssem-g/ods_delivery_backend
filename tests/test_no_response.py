@@ -754,8 +754,13 @@ async def test_no_response_case_entity(client, world):
         r = await client.get(url, headers=auth(reader))
         assert r.status_code == 200
         d = r.json()
-        assert d["order_id"] == str(order.id) and d["customer_id"] == "cust@example.test"
-        assert d["courier_user_id"] == "courier@example.test" and d["courier_id"] == str(world.courier.id)
+        # QA 20/10 d7-M1: each e-mail to its owner (and admins) only, never to the other party
+        mine_c = reader in (world.customer, world.admin)
+        mine_k = reader in (world.courier_user, world.admin)
+        assert d["order_id"] == str(order.id)
+        assert d["customer_id"] == ("cust@example.test" if mine_c else None)
+        assert d["courier_user_id"] == ("courier@example.test" if mine_k else None)
+        assert d["courier_id"] == str(world.courier.id)
         assert d["status"] == "waiting" and d["push_devices"] == 0 and d["incident_counted"] is False
     assert (await client.get(url, headers=auth(world.stranger))).status_code == 404
     listed = await client.get(

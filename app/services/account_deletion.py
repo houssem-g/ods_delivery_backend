@@ -143,6 +143,7 @@ async def _anonymize_courier(session: AsyncSession, courier: Courier, counts: di
     courier.is_online = False
     courier.vehicle_model = courier.vehicle_plate = None
     courier.last_location = None
+    courier.location_at = None
     courier.last_seen_at = None
     courier.referral_code = None
     courier.service_governorate = courier.service_city = None

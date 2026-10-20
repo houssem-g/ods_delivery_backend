@@ -209,7 +209,8 @@ def build_view(
         "resolution": case.resolution if case is not None else None,
         "order_status": order.status or "unknown",
         "channels": {
-            "in_app": case is not None,
+            # a « pas venu » record sends no alert at all (QA 20/10 m5, d3): in_app false
+            "in_app": case is not None and channels.get("in_app") is not False,
             "push_devices": int(channels.get("push_devices") or 0),
             "whatsapp": channels.get("whatsapp"),
             "sms": channels.get("sms"),
@@ -538,7 +539,7 @@ async def _courier_distance_m(session: AsyncSession, order: Order) -> float | No
     )
     last = (
         select(Courier.last_location)
-        .where(Courier.id == order.courier_id, Courier.last_seen_at >= since)
+        .where(Courier.id == order.courier_id, Courier.location_at >= since)
         .scalar_subquery()
     )
     target = select(Order.delivery_location).where(Order.id == order.id).scalar_subquery()
@@ -618,13 +619,22 @@ async def view(
     """build_view + `return_deadline_at` for the restaurant orders (NoResponsePanel reads it) + `no_show`
     (the last wait after the customer answered the last alert, None when it does not apply)."""
     out = build_view(order, case, now, reports)
+    cases = await plain_cases(session, order.id)
+    if out["reports"] is None:
+        # the alerts sent so far, always said (QA 20/10 m5: customer_confirms answered reports null)
+        out["reports"] = alerts_sent(cases)
     out["return_deadline_at"] = js_iso(await return_deadline(session, order, case, now))
-    out["no_show"] = no_show_json(no_show_window(order, await plain_cases(session, order.id), now))
+    out["no_show"] = no_show_json(no_show_window(order, cases, now))
     out["no_show_recorded"] = case is not None and case.messaging_status == NO_SHOW
     return out
 
 
 # --- « Le client n'est pas venu » (owner, 19/10/2026, QA M6) ----------------------------------------
+
+
+def alerts_sent(cases: list[NoResponseCase]) -> int:
+    """The no-response alerts of an order (its « pas venu » record is no alert): 0 … MAX_REPORTS."""
+    return sum(1 for c in cases if c.messaging_status != NO_SHOW)
 
 
 async def plain_cases(session: AsyncSession, order_id: uuid.UUID) -> list[NoResponseCase]:
@@ -759,8 +769,8 @@ async def customer_no_show(session: AsyncSession, order: Order, actor: CurrentUs
             "case_id": str(case.id),
         },
     )
-    reports = len(cases) + 1
-    return 200, {"success": True, **await view(session, order, case, now, reports)}
+    # the « pas venu » record is no alert (QA 20/10 m5: « reports 3 » with max_reports 2)
+    return 200, {"success": True, **await view(session, order, case, now, alerts_sent(cases))}
 
 
 async def report(session: AsyncSession, order: Order, actor: CurrentUser) -> Result:

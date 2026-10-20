@@ -188,7 +188,10 @@ async def test_users_list(client, world):
     by_email = {u["email"]: u for u in body["users"]}
     assert "qa-client-1@example.test" not in by_email and "qa-courier-1@example.test" not in by_email
     amira = by_email["amira@gmail.com"]
-    assert (amira["orders"], amira["delivered"], amira["spent"], amira["unpaid"]) == (3, 1, 16.5, 1)
+    # QA 20/10 d6-admin-2: her « QA TEST » order is out of her figures while the test box is on
+    assert (amira["orders"], amira["delivered"], amira["spent"], amira["unpaid"]) == (2, 1, 16.5, 1)
+    every = (await call(client, "listAdminUsers", world["admin"], {"hide_tests": False})).json()
+    assert next(u for u in every["users"] if u["email"] == "amira@gmail.com")["orders"] == 3
     assert amira["signup"] == "email" and amira["role"] == "customer" and amira["last_activity"]
     nour = by_email["nour@gmail.com"]
     assert nour["signup"] == "google" and nour["invited_by"] == {"id": str(world["sami"].id), "name": "Sami"}

@@ -14,6 +14,7 @@ partner that got the confirmation. Same queue, signature and retries as the Lot 
 (app/services/partner_webhooks.py); `data.order` is the Vitrine view (no customer data at all).
 """
 
+import unicodedata
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any
@@ -97,11 +98,12 @@ def _lines(raw: Any) -> list[dict[str, Any]]:
         qty = line.get("qty")
         mods = vitrine_options.parse_mods(line.get("mods"))
         adds = vitrine_extras.parse(line.get("extras"))
+        # the refusal says what is wrong (QA 20/10 D4-6: a bad removal level answered « max_lines »)
         if product_id is None or mods is None or adds is None:
-            raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
+            raise OrderRefused(400, "invalid_cart", reason="invalid_line")
         identity = (product_id, vitrine_options.signature(mods), vitrine_extras.signature(adds))
         if identity in seen:
-            raise OrderRefused(400, "invalid_cart", max_lines=MAX_LINES)
+            raise OrderRefused(400, "invalid_cart", reason="duplicate_line")
         if isinstance(qty, bool) or not isinstance(qty, int) or not 1 <= qty <= MAX_LINE_QTY:
             raise OrderRefused(400, "invalid_cart", max_qty=MAX_LINE_QTY)
         seen.add(identity)
@@ -219,6 +221,16 @@ async def prepare(
         added.append(chosen)
     if stale:
         raise OrderRefused(409, "options_changed", lines=stale)
+    # « Sans fromage » with « + Fromage » on the same line (QA 20/10 D4-2): the kitchen ticket would say
+    # both and the customer would pay for a cheese he removes — refused (the app never lets him pick both)
+    conflicts = []
+    for line, mods, chosen in zip(lines, resolved, added, strict=True):
+        clash = _removed_and_added(mods, options.get(line["product_id"], []), chosen)
+        if clash:
+            product = products[line["product_id"]]
+            conflicts.append({"product_id": str(product.id), "name": product.name, "keys": clash})
+    if conflicts:
+        raise OrderRefused(400, "options_conflict", lines=conflicts)
     # the price the customer saw for one: the dish + its extras (never the client's figure)
     changed: dict[str, dict[str, Any]] = {}
     for line, chosen in zip(lines, added, strict=True):
@@ -317,6 +329,32 @@ async def prepare(
     if vitrine_pickup.wanted(v):  # « Je viens chercher »: no courier, the restaurant's counter
         extras.update(await vitrine_pickup.prepare(session, shop, vitrine, v, rebuilt, user.full_name))
     return rebuilt, extras
+
+
+def _same_thing(name: Any) -> str:
+    """« Fromage », « fromages », « FROMAGE » → « fromage » (accents and a plural s ignored)."""
+    text = name.get("fr") if isinstance(name, dict) else name
+    plain = "".join(
+        ch for ch in unicodedata.normalize("NFD", str(text or "")) if unicodedata.category(ch) != "Mn"
+    )
+    word = " ".join(plain.lower().split())
+    return word[:-1] if word.endswith("s") and len(word) > 3 else word
+
+
+def _removed_and_added(
+    mods: list[dict[str, Any]], options: list[dict[str, Any]], chosen: list[dict[str, Any]]
+) -> list[str]:
+    """The keys of a removal « Sans X » and of a paid extra « + X » on the same line (empty: none)."""
+    names = {o["key"]: _same_thing(o.get("name")) for o in options}
+    removed = {
+        names.get(m["key"]): m["key"] for m in mods if m.get("level") == "none" and names.get(m["key"])
+    }
+    clash: list[str] = []
+    for extra in chosen:
+        key = removed.get(_same_thing(extra.get("name")))
+        if key:
+            clash += [key, extra["key"]]
+    return list(dict.fromkeys(clash))
 
 
 async def _options_of(session: AsyncSession, shop: Shop, products: list[VitrineProduct]) -> dict[Any, list]:

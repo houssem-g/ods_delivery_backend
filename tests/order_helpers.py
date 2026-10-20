@@ -61,6 +61,10 @@ class OrderWorld:
             "phone_e164": "+21655123456",
         }
         defaults.update(fields)
+        # the position's age follows the seeded heartbeat unless given (couriers.location_at, QA 20/10 m4)
+        defaults.setdefault(
+            "location_at", defaults["last_seen_at"] if defaults["last_location"] is not None else None
+        )
         return await self.factory.courier(user, **defaults)
 
     async def order(

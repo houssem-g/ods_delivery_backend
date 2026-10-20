@@ -148,7 +148,7 @@ async def test_one_open_request_per_phone_without_revealing_it(client, world, fa
     row = (await rows(select(VitrineRequest)))[0]
     assert row.duplicate_attempts == 2 and row.last_duplicate_at is not None
     assert row.user_id == world.customer.id  # never handed to another account
-    seen = (await ok(client, world.admin, "listVitrineRequests", {}))["requests"][0]
+    seen = (await ok(client, world.admin, "listVitrineRequests", {"hide_tests": False}))["requests"][0]
     assert seen["duplicate_attempts"] == 2
     # the requester sees his request in « Ma carte »
     listed = await ok(client, world.customer, "listMyVitrineRequests", {})
@@ -193,7 +193,7 @@ async def test_photo_of_the_menu_is_a_private_upload_of_the_requester(client, wo
     )
     assert r.json()["error"] == "invalid_photo"
     await ok(client, world.customer, "submitVitrineRequest", request_body(menu_photo_key=key))
-    seen = (await ok(client, world.admin, "listVitrineRequests", {}))["requests"][0]
+    seen = (await ok(client, world.admin, "listVitrineRequests", {"hide_tests": False}))["requests"][0]
     assert seen["menu_photo_url"] and key in seen["menu_photo_url"]
     assert seen["account"]["email"] == world.customer.email
     mine = (await ok(client, world.customer, "listMyVitrineRequests", {}))["requests"][0]
@@ -300,7 +300,7 @@ async def test_request_sent_by_ods_and_linked_to_an_existing_vitrine(client, wor
     claims = await rows(select(VitrineRequest).where(VitrineRequest.ods_verified.is_(False)))
     assert len(claims) == 2 and all(c.ods_restaurant_id == 1 and c.client_hash for c in claims)
     assert fake["request"]["status"] == "pending"
-    inbox = (await ok(client, world.admin, "listVitrineRequests", {}))["requests"]
+    inbox = (await ok(client, world.admin, "listVitrineRequests", {"hide_tests": False}))["requests"]
     seen = next(r for r in inbox if r["ods_verified"])
     assert seen["partner"]["id"] == str(pw.partner.id) and seen["partner"]["vitrine_shop_id"] is None
     assert all(r["partner"] is None for r in inbox if not r["ods_verified"])  # a claim shows no partner

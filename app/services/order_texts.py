@@ -108,6 +108,23 @@ def cancelled_by_customer(shop_name: str | None, reason: str) -> Text:
     }
 
 
+def hot_deal_buyer_cancelled(shop_name: str | None, reason: str, back_on_sale: bool) -> Text:
+    """The buyer of an Offre Chaude cancelled it (QA 20/10 m6, d3): the courier learns what became of
+    his goods — on sale again (he keeps his chance to be paid back), or over (its 2 h are gone)."""
+    base = cancelled_by_customer(shop_name, reason)
+    if back_on_sale:
+        return {
+            **base,
+            "body_ar": base["body_ar"] + ". عرضك الساخن معروض للبيع من جديد.",
+            "body_fr": base["body_fr"] + ". Votre Offre Chaude est de nouveau en vente.",
+        }
+    return {
+        **base,
+        "body_ar": base["body_ar"] + ". انتهت مدة عرضك الساخن: لم يعد معروضاً.",
+        "body_fr": base["body_fr"] + ". Votre Offre Chaude a expiré : elle n'est plus en vente.",
+    }
+
+
 def offer_closed_by_customer_cancel(shop_name: str | None) -> Text:
     shop = f" ({shop_name})" if shop_name else ""
     return {
@@ -118,7 +135,38 @@ def offer_closed_by_customer_cancel(shop_name: str | None) -> Text:
     }
 
 
-def cancelled_by_courier(reason: str, verified_no_response: bool, hot_deal: bool) -> Text:
+def no_show_closed(resold: bool) -> Text:
+    """« Le client n'est pas venu » (owner 19/10/2026, QA M6): he ANSWERED the alerts but never came —
+    never « vous n'avez pas répondu … malgré l'alarme » (QA 20/10 d3-M2), the same words as the notice
+    he got at the « pas venu » (« Vous n'êtes pas venu chercher votre commande »)."""
+    if resold:
+        return {
+            "title_ar": "❌ تم إلغاء طلبك",
+            "title_fr": "❌ Commande annulée",
+            "body_ar": (
+                "لم تأتِ لاستلام طلبك بعد ردّك، فأُلغي الطلب وأُعيد عرض المشتريات للبيع. سُجّلت حادثة عدم دفع."
+            ),
+            "body_fr": (
+                "Vous n'êtes pas venu chercher votre commande après votre réponse : elle est annulée, "
+                "les achats sont remis en vente et un incident est enregistré."
+            ),
+        }
+    return {
+        "title_ar": "❌ تم إلغاء طلبك",
+        "title_fr": "❌ Commande annulée",
+        "body_ar": "لم تأتِ لاستلام طلبك بعد ردّك، فأُلغي طلبك وسُجّلت حادثة عدم دفع.",
+        "body_fr": (
+            "Vous n'êtes pas venu chercher votre commande après votre réponse : elle est annulée et "
+            "un incident est enregistré."
+        ),
+    }
+
+
+def cancelled_by_courier(
+    reason: str, verified_no_response: bool, hot_deal: bool, no_show: bool = False
+) -> Text:
+    if verified_no_response and no_show:
+        return no_show_closed(resold=False)
     if verified_no_response:
         # the courier did nothing wrong: the title doesn't blame him (QA 06/10 B30), same title as
         # after a resale (createHotDeal)
@@ -504,13 +552,26 @@ def _money(value: object) -> str:
     return f"{float(value):.3f}"  # type: ignore[arg-type]
 
 
-def new_offer_for_customer(courier_name: str | None, fee: object, eta: int | None) -> Text:
+def offer_arrival_text(eta: int | None, verified: bool = True) -> tuple[str, str]:
+    """(fr, ar) « · chez vous ≈ 22 min »: the arrival at his door, the shop's wait included (owner
+    18/10/2026). A delay the server could not check (his position unknown) says so — « (non vérifié) »,
+    as on the offers list (QA 20/10 m3). Arabic: « حوالي » and the noun that agrees with the number,
+    never « ≈ 25 دق » (QA 18/10 m7)."""
+    if not eta:
+        return "", ""
+    fr = f" · chez vous ≈ {eta} min"
+    ar = f" · الوصول إليك حوالي {minutes_ar(eta)}"
+    if not verified:
+        fr, ar = f"{fr} (non vérifié)", f"{ar} (غير مؤكَّد)"
+    return fr, ar
+
+
+def new_offer_for_customer(
+    courier_name: str | None, fee: object, eta: int | None, verified: bool = True
+) -> Text:
     name_fr = short_name(courier_name) or "Un livreur"
     name_ar = short_name(courier_name) or "مندوب"
-    # « chez vous ≈ 22 min »: the arrival at his door, the shop's wait included (owner 18/10/2026)
-    eta_fr = f" · chez vous ≈ {eta} min" if eta else ""
-    # Arabic: « حوالي » and the noun that agrees with the number, never « ≈ 25 دق » (QA 18/10 m7)
-    eta_ar = f" · الوصول إليك حوالي {minutes_ar(eta)}" if eta else ""
+    eta_fr, eta_ar = offer_arrival_text(eta, verified)
     return {
         "title_ar": "عرض جديد",
         "title_fr": "Nouvelle offre",

@@ -55,7 +55,11 @@ async def place(world, courier, at, seen_minutes_ago=1):
         await s.execute(
             update(Courier)
             .where(Courier.id == courier.id)
-            .values(last_location=pt(*at), last_seen_at=now() - timedelta(minutes=seen_minutes_ago))
+            .values(
+                last_location=pt(*at),
+                last_seen_at=now() - timedelta(minutes=seen_minutes_ago),
+                location_at=now() - timedelta(minutes=seen_minutes_ago),
+            )
         )
         await s.commit()
 

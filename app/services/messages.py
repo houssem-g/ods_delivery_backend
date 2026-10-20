@@ -146,6 +146,27 @@ def _iso(value: Any) -> str | None:
     return value.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z") if value else None
 
 
+def opaque_user_id(user_id: uuid.UUID | None) -> str | None:
+    """Another party's stable chat id, never his e-mail (QA 20/10 d7-M1): « u-<uuid> »."""
+    return f"u-{user_id}" if user_id is not None else None
+
+
+def _masked(doc: dict[str, Any], row: Any, user: CurrentUser) -> dict[str, Any]:
+    """sender_id / created_by / recipient_id: the reader's own e-mail as is (« is it mine? »), the other
+    party's as an opaque id — a courier never reads the customer's e-mail, nor the customer the
+    courier's (QA 20/10 d7-M1). Admins read everything."""
+    if user.is_admin or row is None:
+        return {}
+    me = (user.email or "").lower()
+    out: dict[str, Any] = {}
+    owners = (("sender_id", row.sender_id), ("created_by", row.sender_id), ("recipient_id", row.recipient_id))
+    for key, owner in owners:
+        value = doc.get(key)
+        if isinstance(value, str) and value and value.lower() != me:
+            out[key] = opaque_user_id(owner) or ""
+    return out
+
+
 async def enrich(
     session: AsyncSession, docs: list[dict[str, Any]], user: CurrentUser, *, sign: bool = True
 ) -> list[dict[str, Any]]:
@@ -161,6 +182,7 @@ async def enrich(
                 select(
                     Message.id,
                     Message.sender_id,
+                    Message.recipient_id,
                     Message.read_at,
                     Message.attachment_key,
                     Message.attachment_type,
@@ -177,6 +199,7 @@ async def enrich(
         out.append(
             {
                 **doc,
+                **_masked(doc, row, user),
                 "attachment_url": s3.presign_get(key, ATTACHMENT_URL_SECONDS) if key and sign else None,
                 "attachment_type": row.attachment_type if row else None,
                 "attachment_duration": row.attachment_duration if row else None,

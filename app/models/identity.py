@@ -300,7 +300,10 @@ class Courier(Base):
     declared_regular_clients: Mapped[int | None] = mapped_column(Integer)
     declared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_location = mapped_column(Point())
+    # presence heartbeat (4 h without one → offline); NOT the age of last_location
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # when last_location was taken (QA 20/10 m4 / d1-F1): the age every position reader uses
+    location_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     old_import_id: Mapped[str | None] = legacy_id()
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

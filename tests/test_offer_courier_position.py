@@ -37,6 +37,7 @@ async def place(courier, at, seen_minutes_ago=1.0):
             .values(
                 last_location=pt(*at) if at else None,
                 last_seen_at=now() - timedelta(minutes=seen_minutes_ago),
+                location_at=now() - timedelta(minutes=seen_minutes_ago) if at else None,
             )
         )
         await s.commit()

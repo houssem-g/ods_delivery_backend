@@ -237,7 +237,8 @@ async def test_m39_m49_no_emails_nor_referral_for_strangers(client, world, facto
     assert r.status_code == 200 and r.json()["courier_user_id"] == str(world.courier.id)
     accepted = await order_doc(client, world.customer, order)
     assert accepted["courier_user_id"] is None  # the customer never reads the courier's e-mail
-    assert (await order_doc(client, world.courier_user, order))["customer_id"] == "cust@example.test"  # party
+    # QA 20/10 d7-M1: not even to his own courier (the customer and admins only)
+    assert (await order_doc(client, world.courier_user, order))["customer_id"] is None
     assert other  # (the other courier no longer reads the order once it is taken)
 
 

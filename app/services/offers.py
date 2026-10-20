@@ -30,7 +30,7 @@ from app.services import (
 from app.services import order_transitions as ot
 from app.services.geo import ORDER_BOUNDS, as_float, within
 from app.services.notifications import notify, renotify
-from app.services.order_texts import minutes_ar, short_name
+from app.services.order_texts import short_name
 from app.services.orders import OrderRefused, courier_of_user, dropped_by
 from app.services.safety import blocked_with, is_blocked
 
@@ -517,8 +517,8 @@ async def update_offer(
     name = short_name(courier.display_name) or "Le livreur"
     name_ar = short_name(courier.display_name) or "المندوب"
     shown = arrival.offer_arrival(offer.estimated_eta_minutes, new_eta)  # what the customer reads (M12)
-    delay_fr = f" · chez vous ≈ {shown} min" if shown else ""
-    delay_ar = f" · الوصول إليك حوالي {minutes_ar(shown)}" if shown else ""
+    verified = offer.estimated_eta_minutes is not None  # « (non vérifié) » otherwise (QA 20/10 m3)
+    delay_fr, delay_ar = order_texts.offer_arrival_text(shown, verified)
     texts = {
         "title_fr": "Offre modifiée",
         "title_ar": "تم تعديل العرض",
@@ -533,6 +533,7 @@ async def update_offer(
         "proposed_fee": float(fee),
         "previous_fee": float(previous_fee),
         "eta_minutes": shown,
+        "arrival_verified": verified,
         "recipient_role": "customer",
         "edits": edits_done + 1,
         "edit_pushed_at": now.isoformat() if not pushed_lately else (notice.data or {}).get("edit_pushed_at"),

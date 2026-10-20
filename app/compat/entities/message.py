@@ -30,11 +30,16 @@ def _read_policy(user: CurrentUser) -> Any:
     return messages.c.sender_id == user.id
 
 
+def _recipient_self(user: CurrentUser) -> Any:
+    return true() if user.is_admin else messages.c.recipient_id == user.id
+
+
 FIELDS: dict[str, LegacyField] = {
     "order_id": LegacyField(messages.c.order_id, "id"),
     "sender_id": LegacyField(sender.c.email, "string"),
-    # '' when a customer's message had no single recipient (open order).
-    "recipient_id": LegacyField(func.coalesce(recipient.c.email, ""), "string"),
+    # '' when a customer's message had no single recipient (open order). The other party's e-mail is
+    # never read here (QA 20/10 d7-M1): the recipient himself and admins only (the reader is the sender)
+    "recipient_id": LegacyField(func.coalesce(recipient.c.email, ""), "string", read_guard=_recipient_self),
     "sender_role": LegacyField(messages.c.sender_role, "string"),
     "content": LegacyField(messages.c.body, "string"),
     "is_template": LegacyField(messages.c.is_template, "boolean"),

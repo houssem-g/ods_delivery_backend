@@ -322,22 +322,30 @@ async def create_deal(session: AsyncSession, user: CurrentUser, payload: dict[st
             "expires_at": legacy_datetime(deal.expires_at),
             "alerted": alerted,
         }
+    no_show = case is not None and case.messaging_status == no_response.NO_SHOW
+    if no_show:  # he answered but never came (QA 20/10 d3-M2): never « vous n'avez pas répondu »
+        texts = order_texts.no_show_closed(resold=True)
+    else:
+        texts = {
+            "title_ar": "❌ تم إلغاء طلبك",
+            "title_fr": "❌ Commande annulée",
+            "body_ar": (
+                "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي الطلب وأُعيد عرض المشتريات "
+                "للبيع. سُجّلت حادثة عدم رد."
+            ),
+            "body_fr": (
+                "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : la commande "
+                "est annulée, les achats sont remis en vente et un incident de non-réponse est enregistré."
+            ),
+        }
     await notify_always_pushed(
         session,
         user_id=order.customer_id,
         order_id=order.id,
         type_="order_cancelled",
-        title_ar="❌ تم إلغاء طلبك",
-        title_fr="❌ Commande annulée",
-        body_ar=(
-            "لم تردّ على المندوب رغم الإشعار والتنبيه، فأُلغي الطلب وأُعيد عرض المشتريات "
-            "للبيع. سُجّلت حادثة عدم رد."
-        ),
-        body_fr=(
-            "Vous n'avez pas répondu au livreur malgré la notification et l'alarme : la commande "
-            "est annulée, les achats sont remis en vente et un incident de non-réponse est enregistré."
-        ),
+        **texts,
         metadata={
+            "no_show": no_show,
             "reason": "client_no_response",
             "resale_order_id": str(deal.id),
             "recipient_role": "customer",

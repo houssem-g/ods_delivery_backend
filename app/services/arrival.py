@@ -202,7 +202,7 @@ async def courier_origin(
 async def courier_fix(
     session: AsyncSession, courier: Courier | None, payload: dict[str, Any], now: datetime
 ) -> tuple[float, float, datetime] | None:
-    """courier_origin with the moment of that position: `now` for the app's, the server's last_seen_at
+    """courier_origin with the moment of that position: `now` for the app's, the server's location_at
     for its stored one. Never invented: None when neither is usable."""
     lat, lng = as_float(payload.get("from_lat")), as_float(payload.get("from_lng"))
     abroad = lat is not None and lng is not None and not within(lat, lng, ORDER_BOUNDS)
@@ -212,7 +212,7 @@ async def courier_fix(
         row = (
             await session.execute(
                 select(
-                    lat_of(Courier.last_location), lng_of(Courier.last_location), Courier.last_seen_at
+                    lat_of(Courier.last_location), lng_of(Courier.last_location), Courier.location_at
                 ).where(Courier.id == courier.id)
             )
         ).first()

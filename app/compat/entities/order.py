@@ -313,6 +313,11 @@ def customer_or_admin(user: CurrentUser) -> Any:
     return true() if user.is_admin else orders.c.customer_id == user.id
 
 
+def customer_self_or_admin(user: CurrentUser) -> Any:
+    """The order's customer himself (his own e-mail: « is this my order? »), admins (QA 20/10 d7-M1)."""
+    return true() if user.is_admin else orders.c.customer_id == user.id
+
+
 def courier_self_or_admin(user: CurrentUser) -> Any:
     """The order's courier himself (his own e-mail: « is this my delivery? »), admins."""
     return true() if user.is_admin else courier_user.c.id == user.id
@@ -482,7 +487,9 @@ guarded = {"read_guard": party_or_admin}
 FIELDS: dict[str, LegacyField] = {
     # QA 18/10 m39: the customer's e-mail and name only for the order's parties (and admins), never for
     # the couriers bidding on an open order (« own order » checks still work: the customer reads his own)
-    "customer_id": LegacyField(customer.c.email, "string", **guarded),
+    # QA 20/10 d7-M1: the e-mail itself only to the customer and admins — never to his courier either
+    # (the app compares it with the reader's own e-mail; the server sends every notice to the customer)
+    "customer_id": LegacyField(customer.c.email, "string", read_guard=customer_self_or_admin),
     "customer_name": LegacyField(orders.c.contact_name, "string", **guarded),
     "customer_phone": LegacyField(orders.c.contact_phone_e164, "string", read_guard=contact_of_party),
     "courier_id": LegacyField(orders.c.courier_id, "id"),
@@ -697,7 +704,7 @@ ENTITY = register(
         created_expr=orders.c.created_at,
         updated_expr=orders.c.updated_at,
         created_by_expr=customer.c.email,
-        created_by_guard=party_or_admin,  # m39: the customer's e-mail
+        created_by_guard=customer_self_or_admin,  # m39 / QA 20/10 d7-M1: the customer's e-mail
         fields=FIELDS,
         read_policy=read_policy,
         update=update,

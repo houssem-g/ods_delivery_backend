@@ -130,6 +130,9 @@ UPDATABLE: dict[str, Check] = {
     "vehicle_model": _model,
     "vehicle_plate": _plate,
     "daily_goal": _num(0, 10000),
+    # the app's presence ping without a position (QA 20/10 m4: GPS refused, the app open): keeps an
+    # online courier online, never touches his position nor its age
+    "heartbeat": _bool,
 }
 ADDRESS_FIELDS = ("address", "address_city", "address_governorate", "address_lat", "address_lng")
 CREATE_ONLY: dict[str, Check] = {
@@ -203,8 +206,8 @@ def _apply(courier: Courier, clean: dict[str, Any]) -> None:
         setattr(courier, column, value)
     if "current_lat" in clean and "current_lng" in clean:
         courier.last_location = point(clean["current_lat"], clean["current_lng"])
-        courier.last_seen_at = ot.now_utc()
-    if clean.get("is_online") is True:
+        courier.last_seen_at = courier.location_at = ot.now_utc()
+    if clean.get("is_online") is True or (clean.get("heartbeat") is True and courier.is_online):
         courier.last_seen_at = ot.now_utc()
 
 
@@ -414,7 +417,7 @@ async def publish_position(
         )
         emit(session, "Order", "update", order_id)
     courier.last_location = fix
-    courier.last_seen_at = now
+    courier.last_seen_at = courier.location_at = now
     await session.flush()
     return active
 

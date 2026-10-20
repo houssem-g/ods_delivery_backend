@@ -2,7 +2,7 @@
 
 import math
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -10,10 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compat.dates import legacy_datetime
 from app.integrations import osrm
-from app.models import Courier, Order, OrderTracking, courier_stats
+from app.models import Courier, Order, OrderOffer, OrderTracking, courier_stats
+from app.services import order_transitions as ot
 from app.services.arrival import speed_kmh
 from app.services.geo import haversine_km, lat_of, lng_of
 from app.services.orders import first_stop, stop_coordinates
+
+# a courier position older than this is never shown as « where he is » (QA 20/10 d1-F1)
+POSITION_MAX_AGE = timedelta(minutes=15)
 
 
 def first_name(full_name: str | None) -> str:
@@ -26,7 +30,7 @@ async def courier_position(
 ) -> tuple[float, float, datetime | None] | None:
     row = (
         await session.execute(
-            select(lat_of(Courier.last_location), lng_of(Courier.last_location), Courier.last_seen_at).where(
+            select(lat_of(Courier.last_location), lng_of(Courier.last_location), Courier.location_at).where(
                 Courier.id == courier_id
             )
         )
@@ -45,6 +49,38 @@ async def live_position(session: AsyncSession, order_id: uuid.UUID) -> tuple[flo
         )
     ).first()
     return (float(row[0]), float(row[1]), row[2]) if row is not None else None
+
+
+async def accepted_offer_position(
+    session: AsyncSession, order_id: uuid.UUID
+) -> tuple[float, float, datetime] | None:
+    """Where the courier was when he sent (or last changed) the offer the customer accepted."""
+    row = (
+        await session.execute(
+            select(OrderOffer.courier_lat, OrderOffer.courier_lng, OrderOffer.courier_position_at).where(
+                OrderOffer.order_id == order_id,
+                OrderOffer.status == "accepted",
+                OrderOffer.courier_position_at.is_not(None),
+            )
+        )
+    ).first()
+    return (float(row[0]), float(row[1]), row[2]) if row is not None else None
+
+
+async def recent_position(
+    session: AsyncSession, courier_id: uuid.UUID, order_id: uuid.UUID | None
+) -> tuple[float, float, datetime] | None:
+    """The newest of the order's live fix, his profile's and the accepted offer's — only if it is recent:
+    an old position is never shown as « where he is » (QA 20/10 d1-F1: a fix of the day before read
+    « 10 min · au magasin » on the customer's tracking)."""
+    fixes = [await courier_position(session, courier_id)]
+    if order_id is not None:
+        fixes += [await live_position(session, order_id), await accepted_offer_position(session, order_id)]
+    dated = [f for f in fixes if f is not None and f[2] is not None]
+    if not dated:
+        return None
+    best = max(dated, key=lambda f: f[2])
+    return (best[0], best[1], best[2]) if ot.now_utc() - best[2] <= POSITION_MAX_AGE else None
 
 
 async def courier_card(
@@ -80,11 +116,7 @@ async def courier_card(
     }
     if not position:
         return card
-    best: tuple[float, float, datetime | None] | None = await courier_position(session, courier.id)
-    if order_id is not None:
-        live = await live_position(session, order_id)
-        if live is not None and (best is None or best[2] is None or live[2] > best[2]):
-            best = live
+    best = await recent_position(session, courier.id, order_id)
     if best is not None and (best[0] != 0 or best[1] != 0):
         card["current_lat"], card["current_lng"] = best[0], best[1]
         card["location_updated_at"] = legacy_datetime(best[2]) if best[2] else None
@@ -129,11 +161,10 @@ async def order_eta(
     if order.courier_id is None:
         return {**base, "eta_minutes": None, "distance_km": None, "reason": "no_courier_assigned"}
     courier = await session.get(Courier, order.courier_id)
-    fixes = [await courier_position(session, order.courier_id), await live_position(session, order.id)]
-    known = [f for f in fixes if f is not None]
-    if not known:
+    fix = await recent_position(session, order.courier_id, order.id)
+    if fix is None:  # none, or only an old one (QA 20/10 d1-F1): no time made up from it
         return {**base, "eta_minutes": None, "distance_km": None, "reason": "courier_location_unavailable"}
-    lat, lng, _ = max(known, key=lambda f: f[2].timestamp() if f[2] else 0)
+    lat, lng, _ = fix
     if destination is None:
         return {**base, "eta_minutes": None, "distance_km": None, "reason": "destination_unavailable"}
     route = await osrm.route(lat, lng, destination[0], destination[1])

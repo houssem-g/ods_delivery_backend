@@ -359,7 +359,11 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
                     type_="order_cancelled",
                     order_id=order.id,
                     metadata={"reason": reason, "cancelled_by": cancelled_by, "recipient_role": "courier"},
-                    **order_texts.cancelled_by_customer(shop_name, reason),
+                    **(
+                        order_texts.hot_deal_buyer_cancelled(shop_name, reason, deal.status == "available")
+                        if deal is not None
+                        else order_texts.cancelled_by_customer(shop_name, reason)
+                    ),
                 )
         return
 
@@ -368,7 +372,12 @@ async def cancel_order(session: AsyncSession, user: CurrentUser, payload: dict[s
     elif final_for_courier and not verified_no_response:
         texts = order_texts.courier_final_cancel(reason, shop_name)
     else:
-        texts = order_texts.cancelled_by_courier(reason, verified_no_response, deal is not None)
+        texts = order_texts.cancelled_by_courier(
+            reason,
+            verified_no_response,
+            deal is not None,
+            no_show=case is not None and case.messaging_status == "no_show",  # no_response.NO_SHOW (d3-M2)
+        )
     await notify_always_pushed(
         session,
         user_id=order.customer_id,

@@ -34,11 +34,21 @@ def read_policy(user: CurrentUser) -> Any:
     )
 
 
+def _customer_self(user: CurrentUser) -> Any:
+    """customer_id (an e-mail): the customer himself and admins — never his courier (QA 20/10 d7-M1)."""
+    return true() if user.is_admin else case_order.c.customer_id == user.id
+
+
+def _courier_self(user: CurrentUser) -> Any:
+    """courier_user_id (an e-mail): the courier himself and admins — never the customer (QA 20/10 d7-M1)."""
+    return true() if user.is_admin else case_courier.c.user_id == user.id
+
+
 FIELDS: dict[str, LegacyField] = {
     "order_id": LegacyField(cases.c.order_id, "id"),
-    "customer_id": LegacyField(case_customer.c.email, "string"),
+    "customer_id": LegacyField(case_customer.c.email, "string", read_guard=_customer_self),
     "courier_id": LegacyField(cases.c.courier_id, "id"),
-    "courier_user_id": LegacyField(case_courier_user.c.email, "string"),
+    "courier_user_id": LegacyField(case_courier_user.c.email, "string", read_guard=_courier_self),
     "purchase_amount": LegacyField(cases.c.purchase_amount, "number"),
     "started_at": LegacyField(cases.c.started_at, "datetime"),
     "deadline_at": LegacyField(cases.c.deadline_at, "datetime"),

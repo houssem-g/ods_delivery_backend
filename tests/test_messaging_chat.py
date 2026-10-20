@@ -37,7 +37,8 @@ async def test_customer_message_goes_to_the_assigned_courier(client, parties):
     assert body["success"] is True and body["notified"] is True
     msg = body["message"]
     assert msg["content"] == "Salut" and msg["sender_role"] == "customer"
-    assert msg["sender_id"] == "client@example.test" and msg["recipient_id"] == "livreur@example.test"
+    # QA 20/10 d7-M1: his own e-mail as is, the courier's never — an opaque id
+    assert msg["sender_id"] == "client@example.test" and msg["recipient_id"] == f"u-{parties.courier_user.id}"
     assert msg["order_id"] == str(order.id) and msg["is_read"] is False and msg["is_template"] is False
     [notif] = await notifications_of(parties.courier_user)
     assert notif.type == "new_message" and notif.order_id == order.id
@@ -53,7 +54,7 @@ async def test_courier_message_goes_to_the_customer_with_a_preview(client, parti
     res = await call(
         client, "sendOrderMessage", parties.courier_user, {"order_id": str(order.id), "content": long_text}
     )
-    assert res.status_code == 200 and res.json()["message"]["recipient_id"] == "client@example.test"
+    assert res.status_code == 200 and res.json()["message"]["recipient_id"] == f"u-{parties.customer.id}"
     [notif] = await notifications_of(parties.customer)
     assert notif.title_fr == "💬 Message du livreur" and notif.title_ar == "💬 رسالة من المندوب"
     assert notif.body_ar == "x" * 80 + "…" and len(notif.data["message_preview"]) == 100
@@ -117,7 +118,7 @@ async def test_bidder_on_an_open_order(client, parties, factory):
         client, "sendOrderMessage", parties.courier_user, {"order_id": str(order.id), "content": "q?"}
     )
     assert first.status_code == 200
-    assert first.json()["message"]["recipient_id"] == "client@example.test"
+    assert first.json()["message"]["recipient_id"] == f"u-{parties.customer.id}"  # never her e-mail (d7-M1)
     # the customer's answer before assignment has no single recipient: nobody notified
     answer = await call(
         client, "sendOrderMessage", parties.customer, {"order_id": str(order.id), "content": "oui"}

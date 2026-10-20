@@ -485,9 +485,17 @@ async def status_by_token(session: AsyncSession, payload: dict[str, Any], addres
 
 
 async def list_admin(session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
+    from app.services.admin_sheets import _test_user_sql
+
     _admin(admin)
     wanted = payload.get("status") or "pending"
-    stmt = select(VitrineRequest)
+    # « Masquer les comptes et commandes de test » (on unless the payload says false, QA 20/10
+    # d6-admin-1): a request flagged test or sent from a test account is out of the list AND the counts
+    shown: list[Any] = []
+    if payload.get("hide_tests") is not False:
+        requester = select(User.id).where(User.id == VitrineRequest.user_id, _test_user_sql(User)).exists()
+        shown = [VitrineRequest.test.is_(False), ~requester]
+    stmt = select(VitrineRequest).where(*shown)
     if wanted != "all":
         if wanted not in REQUEST_STATUSES:
             raise ApiError(400, "validation_error", "status: pending, accepted, refused or all")
@@ -496,7 +504,9 @@ async def list_admin(session: AsyncSession, admin: CurrentUser, payload: dict[st
     rows = (await session.execute(stmt.order_by(order).limit(200))).scalars().all()
     counts = dict(
         (
-            await session.execute(select(VitrineRequest.status, func.count()).group_by(VitrineRequest.status))
+            await session.execute(
+                select(VitrineRequest.status, func.count()).where(*shown).group_by(VitrineRequest.status)
+            )
         ).all()
     )
     return {

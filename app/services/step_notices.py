@@ -82,7 +82,9 @@ async def offer_created(session: AsyncSession, order: Order, offer: OrderOffer, 
         order_id=order.id,
         type_="new_offer",
         offer_id=str(offer.id),
-        text=order_texts.new_offer_for_customer(courier.display_name, offer.proposed_fee, shown),
+        text=order_texts.new_offer_for_customer(
+            courier.display_name, offer.proposed_fee, shown, verified=offer.estimated_eta_minutes is not None
+        ),
         metadata={
             "recipient_role": "customer",
             "offer_id": str(offer.id),
@@ -91,6 +93,7 @@ async def offer_created(session: AsyncSession, order: Order, offer: OrderOffer, 
             "proposed_fee": float(offer.proposed_fee),
             "distance_km": float(offer.distance_km) if offer.distance_km is not None else None,
             "eta_minutes": shown,
+            "arrival_verified": offer.estimated_eta_minutes is not None,
             "timestamp": _stamp(),
         },
     )

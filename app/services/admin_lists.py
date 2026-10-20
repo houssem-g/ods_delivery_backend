@@ -731,6 +731,22 @@ async def list_users(session: AsyncSession, user: CurrentUser | None, payload: d
     now = _now()
     inviter = Courier.__table__.alias("inviter")
     own_courier = Courier.__table__.alias("own_courier")
+    # « Masquer … de test » (QA 20/10 d6-admin-2): a user's orders, spent and « Ont commandé » leave out the
+    # test orders the Commandes list hides (« QA TEST » / « PW- », delivered by a test courier) — the partner
+    # account « Coffee and Tea » read 6 orders / 2 delivered while Commandes showed none of them
+    order_conds: list[Any] = []
+    if _hide_tests(payload):
+        courier_user = User.__table__.alias("placed_courier_user")
+        by_test_courier = (
+            select(Courier.id)
+            .join(courier_user, courier_user.c.id == Courier.user_id)
+            .where(Courier.id == Order.courier_id, _is_test(courier_user.c))
+            .exists()
+        )
+        order_conds = [
+            not_(func.coalesce(Order.items_text.op("~*", return_type=Boolean)(TEST_ORDER_SQL), false())),
+            not_(by_test_courier),
+        ]
     placed = (
         select(
             Order.customer_id.label("user_id"),
@@ -749,13 +765,14 @@ async def list_users(session: AsyncSession, user: CurrentUser | None, payload: d
             ).label("spent"),
             func.max(Order.created_at).label("last_order"),
         )
+        .where(*order_conds)
         .group_by(Order.customer_id)
         .subquery("placed")
     )
     unpaid = (
         select(Order.customer_id.label("user_id"), func.count(func.distinct(Order.id)).label("n"))
         .join(NoResponseCase, NoResponseCase.order_id == Order.id)
-        .where(NoResponseCase.incident_counted.is_(True))
+        .where(NoResponseCase.incident_counted.is_(True), *order_conds)
         .group_by(Order.customer_id)
         .subquery("unpaid")
     )

@@ -87,7 +87,7 @@ async def test_abroad_position_is_ignored(client, world, osrm_ok):
         await s.execute(
             update(Courier)
             .where(Courier.id == world.courier.id)
-            .values(last_seen_at=now() - timedelta(hours=2))
+            .values(last_seen_at=now() - timedelta(hours=2), location_at=now() - timedelta(hours=2))
         )
         await s.commit()
     order = await world.order()
