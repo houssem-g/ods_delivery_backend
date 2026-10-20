@@ -44,8 +44,10 @@ OFFERS_MAX = 100
 TEST_EMAIL_SQL = (
     r"@(example\.(test|com|org|net)|[^@]*\.(test|example))$"  # test domains, never @deleted.invalid
     r"|^(qa|pw|e2e|playwright)[-_.+0-9]"  # qa-…, pw-…, e2e… seeds
+    r"|^contact\+[^@]*@ordering-dashboard-solution\.com$"  # the owner's contact+…@ trial sign-ups
 )
-TEST_NAME_SQL = r"^\s*(QA|PW)([- ]|$)"
+# « QA … », « PW-… », « Test5 », « Testeur-client » (owner 20/10: his test accounts), never « Test User »
+TEST_NAME_SQL = r"^\s*((QA|PW)([- ]|$)|Test[0-9]|Testeur)"
 
 
 def _test_user_sql(users: Any = User) -> ColumnElement[bool]:

@@ -188,3 +188,16 @@ async def test_courier_sheet(client, factory, people):
     assert (
         await call(client, "getAdminCourierSheet", admin, {"user_id": str(customer.id)})
     ).status_code == 404
+
+
+async def test_owner_test_names_and_contact_aliases_are_test_accounts(client, factory, people):
+    # owner 20/10: « Testeur-client », « Test5 » and contact+…@ sign-ups are his own test accounts
+    admin, *_ = people
+    named = await factory.user(email="someone@hotmail.fr", full_name="Testeur-client")
+    numbered = await factory.user(email="x@gmail.com", full_name="Test5")
+    alias = await factory.user(email="contact+essai1811@ordering-dashboard-solution.com", full_name="Ali")
+    real = await factory.user(email="testa@gmail.com", full_name="Testa Ben Ali")
+    res = await call(client, "listAdminTestAccounts", admin, {})
+    ids = set(res.json()["user_ids"])
+    assert {str(named.id), str(numbered.id), str(alias.id)} <= ids
+    assert str(real.id) not in ids
