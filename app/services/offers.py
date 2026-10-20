@@ -28,7 +28,7 @@ from app.services import (
     text_filter,
 )
 from app.services import order_transitions as ot
-from app.services.geo import as_float
+from app.services.geo import ORDER_BOUNDS, as_float, within
 from app.services.notifications import notify, renotify
 from app.services.order_texts import minutes_ar, short_name
 from app.services.orders import OrderRefused, courier_of_user, dropped_by
@@ -110,6 +110,20 @@ def _store_estimate(offer: OrderOffer, estimate: arrival.Arrival | None) -> None
             else None
         )
     offer.eta_announced = False
+    _store_position(offer, estimate)
+
+
+def _store_position(offer: OrderOffer, estimate: arrival.Arrival | None) -> None:
+    """Where the courier was for that estimate (admin only, getAdminOrderRoute). No position this time:
+    the stored one is kept — never an invented one. ~11 m (4 decimals), inside ORDER_BOUNDS."""
+    fix = estimate.origin if estimate is not None else None
+    if fix is None:
+        return
+    lat, lng, at = round(fix[0], 4), round(fix[1], 4), fix[2]
+    if at is None or not within(lat, lng, ORDER_BOUNDS):
+        return
+    offer.courier_lat, offer.courier_lng = Decimal(f"{lat:.4f}"), Decimal(f"{lng:.4f}")
+    offer.courier_position_at = at
 
 
 async def verified_courier(session: AsyncSession, user: CurrentUser) -> Courier:

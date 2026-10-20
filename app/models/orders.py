@@ -308,6 +308,12 @@ class OrderOffer(Base):
         CheckConstraint("length(message) <= 500", name="message"),
         CheckConstraint("estimated_eta_minutes BETWEEN 0 AND 600", name="estimated_eta_minutes"),
         CheckConstraint("to_shop_km >= 0 AND to_shop_km <= 1000", name="to_shop_km"),
+        CheckConstraint(
+            "(courier_lat IS NULL AND courier_lng IS NULL AND courier_position_at IS NULL)"
+            " OR (courier_lat BETWEEN 29.5 AND 38.5 AND courier_lng BETWEEN 7.0 AND 12.5"
+            " AND courier_position_at IS NOT NULL)",
+            name="courier_position",
+        ),
         Index(
             "one_live_offer_per_courier",
             "order_id",
@@ -338,6 +344,12 @@ class OrderOffer(Base):
     estimated_eta_minutes: Mapped[int | None] = mapped_column(Integer)
     to_shop_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     eta_announced: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # 20/10/2026 (owner): where the courier was when he sent / last changed the offer (the app's
+    # position, else his recent server one — arrival.courier_fix), ~11 m, inside ORDER_BOUNDS. ADMIN
+    # ONLY (getAdminOrderRoute): never in the OrderOffer entity, the board or any notification.
+    courier_lat: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    courier_lng: Mapped[Decimal | None] = mapped_column(Numeric(7, 4))
+    courier_position_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(offer_status, nullable=False, server_default="pending")
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     old_import_id: Mapped[str | None] = legacy_id()

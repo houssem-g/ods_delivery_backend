@@ -80,7 +80,15 @@ async def test_without_a_router_the_straight_lines_are_given(client, world, monk
 async def test_no_position_no_route(client, world, osrm_ok):
     order = await world.order(delivery=None)
     body = (await ask(client, world.admin, order.id)).json()
-    assert body == {"success": False, "reason": "no_location"}
+    assert body["success"] is False and body["reason"] == "no_location"
+    assert [st["key"] for st in body["steps"]] == [
+        "accepted",
+        "at_shop",
+        "purchased",
+        "on_the_way",
+        "delivered",
+    ]
+    assert all(st["at"] is None for st in body["steps"]) and body["incidents"] == []
     assert osrm_ok == []
 
 

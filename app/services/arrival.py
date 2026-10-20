@@ -29,7 +29,7 @@ import math
 import time
 import uuid
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from itertools import pairwise
 from typing import Any
@@ -195,6 +195,15 @@ async def courier_origin(
     session: AsyncSession, courier: Courier | None, payload: dict[str, Any], now: datetime
 ) -> tuple[float, float] | None:
     """Where the courier starts from (module doc: the app's position, else the server's recent one)."""
+    fix = await courier_fix(session, courier, payload, now)
+    return (fix[0], fix[1]) if fix is not None else None
+
+
+async def courier_fix(
+    session: AsyncSession, courier: Courier | None, payload: dict[str, Any], now: datetime
+) -> tuple[float, float, datetime] | None:
+    """courier_origin with the moment of that position: `now` for the app's, the server's last_seen_at
+    for its stored one. Never invented: None when neither is usable."""
     lat, lng = as_float(payload.get("from_lat")), as_float(payload.get("from_lng"))
     abroad = lat is not None and lng is not None and not within(lat, lng, ORDER_BOUNDS)
     sent = (lat, lng) if lat is not None and lng is not None and not abroad else None
@@ -212,19 +221,17 @@ async def courier_origin(
     if abroad:
         # his address abroad (shop → customer only), unless the server saw him in Tunisia moments
         # ago: then that fix (« abroad » would otherwise dodge the arrival and « annoncé »)
-        return (
-            (stored[0], stored[1]) if stored is not None and _fresh(stored[2], SPOOF_FIX_FRESH, now) else None
-        )
+        return stored if stored is not None and _fresh(stored[2], SPOOF_FIX_FRESH, now) else None
     if sent is not None:
         if (
             stored is not None
             and _fresh(stored[2], SPOOF_FIX_FRESH, now)
             and haversine_km(sent[0], sent[1], stored[0], stored[1]) > SPOOF_DISTANCE_KM
         ):
-            return stored[0], stored[1]
-        return sent
+            return stored
+        return sent[0], sent[1], now
     if stored is not None and _fresh(stored[2], STORED_FIX_FRESH, now):
-        return stored[0], stored[1]
+        return stored
     return None
 
 
@@ -244,6 +251,9 @@ class Arrival:
     delivery_km: float
     delivery_min: int
     trip: osrm.Trip | None = None  # the road (getRoutePreview draws it)
+    # where the courier was (lat, lng, when) — offer_estimate only, stored on the offer for the admin
+    # (getAdminOrderRoute); never in as_dict
+    origin: tuple[float, float, datetime] | None = None
 
     @property
     def total_min(self) -> int | None:
@@ -364,10 +374,11 @@ async def offer_estimate(
     position unknown included: an Arrival without its courier → shop leg has no total)."""
     try:
         async with session.begin_nested():  # a failed read never poisons the offer's transaction
-            origin = await courier_origin(session, courier, payload, now)
-            if origin is None:
+            fix = await courier_fix(session, courier, payload, now)
+            if fix is None:
                 return None
-            return await arrival(session, order_id, courier.vehicle, origin)
+            found = await arrival(session, order_id, courier.vehicle, (fix[0], fix[1]))
+            return replace(found, origin=fix) if found is not None else None
     except Exception:  # an estimate never blocks an offer
         log.warning("offer estimate failed", exc_info=True)
         return None
