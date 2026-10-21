@@ -17,8 +17,9 @@ host can end up in an <img> of the app.
 The photo team's file (photos/libres/photos_<x>.json) is accepted as it is: `{slug: {file, source_page,
 image_url, author, license, license_url, title, note, score}}` → only a photo scored 5/5 is kept (owner
 21/10: beautiful photos or nothing; an entry without a score is accepted, a lower score refused) → the
-key `public/recipes/<slug>.webp`, source 'photo', and the CREDIT kept (`photo_credit`: author, licence, links). `credit_required` is true for CC BY /
-BY-SA (the app then shows « © author · licence » in small, with the link), false for CC0 / public domain.
+key `public/recipes/<slug>.webp`, source 'photo', and the CREDIT kept (`photo_credit`: author, licence,
+links). `credit_required` is true for CC BY / BY-SA (the app then shows « © author · licence » in small,
+with the link), false for CC0 / public domain.
 """
 
 from __future__ import annotations
