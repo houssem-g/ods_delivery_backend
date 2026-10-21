@@ -5,7 +5,8 @@ its small version (`photo_thumb_key`, ~480 px for the cards, optional), the alte
 comes from (`photo_source`: 'ia' = generated, 'photo' = a real one), its credit (`photo_credit` JSONB:
 author, licence, links — shown when the licence asks for it) and when it was set. And the two parts of
 `time_min` from the recipe files (`prep_min`, `cook_min`, filled by the next recipe import): the time ring of
-the recipe sheet. The files live in the
+the recipe sheet; and `seasons` (the files' « saison » as words: hiver, printemps, ete, automne, ramadan,
+aid) for the home's « En ce moment » row. The files live in the
 PUBLIC part of the ODS Delivery bucket (`public/recipes/<slug>.webp`), served like the Vitrine thumbnails
 (app/services/vitrine_thumbs.py, s3.public_url). A recipe without a photo keeps the design A tile.
 
@@ -38,6 +39,9 @@ def upgrade() -> None:
     op.add_column("recipes", sa.Column("photo_credit", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column("recipes", sa.Column("prep_min", sa.SmallInteger(), nullable=True))
     op.add_column("recipes", sa.Column("cook_min", sa.SmallInteger(), nullable=True))
+    op.add_column(
+        "recipes", sa.Column("seasons", postgresql.ARRAY(sa.Text()), nullable=False, server_default="{}")
+    )
     op.create_check_constraint(op.f("ck_recipes_prep_min"), "recipes", "prep_min IS NULL OR prep_min BETWEEN 0 AND 1440")
     op.create_check_constraint(op.f("ck_recipes_cook_min"), "recipes", "cook_min IS NULL OR cook_min BETWEEN 0 AND 1440")
     op.create_check_constraint(
@@ -56,6 +60,7 @@ def downgrade() -> None:
     op.drop_constraint(op.f("ck_recipes_photo"), "recipes", type_="check")
     op.drop_constraint(op.f("ck_recipes_photo_source"), "recipes", type_="check")
     for column in (
+        "seasons",
         "cook_min",
         "prep_min",
         "photo_credit",

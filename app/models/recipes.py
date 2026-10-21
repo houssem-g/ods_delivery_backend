@@ -107,6 +107,8 @@ class Recipe(Base):
     time_min: Mapped[int | None] = mapped_column(SmallInteger)
     # 22/10: the two parts of time_min (the files' prep_min / cuisson_min) — the fiche's time ring
     prep_min: Mapped[int | None] = mapped_column(SmallInteger)
+    # 22/10: the files' « saison » read as words: hiver, printemps, ete, automne (+ ramadan, aid)
+    seasons: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
     cook_min: Mapped[int | None] = mapped_column(SmallInteger)
     difficulty: Mapped[str | None] = mapped_column(Text)
     base_servings: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="4")

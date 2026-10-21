@@ -339,6 +339,7 @@ def _card(recipe: Recipe, c: dict[str, Any], lines_n: int, servings: int | None 
         "category": recipe.category,
         "time_min": recipe.time_min,
         "prep_min": recipe.prep_min,
+        "seasons": list(recipe.seasons or []),
         "cook_min": recipe.cook_min,
         "difficulty": recipe.difficulty,
         "base_servings": recipe.base_servings,
@@ -373,6 +374,9 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
         ("category", Recipe.category),
     ):
         raw = payload.get(field)
+        plural = payload.get({"cuisine": "cuisines", "country": "countries", "category": "categories"}[field])
+        if raw in (None, "", "all") and plural:  # the home's `cuisines=a,b` / `categories=[…]`
+            raw = plural.split(",") if isinstance(plural, str) else plural
         if isinstance(raw, list):  # a region: several cuisines (« Égypte & Golfe »), soups and stews…
             values = [str(v).strip()[:60] for v in raw[:30] if str(v).strip()]
             if values:
@@ -382,8 +386,15 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
         if value and value != "all":
             where.append(column == value[:60])
     tag = str(payload.get("tag") or "").strip()
-    if tag:  # « Petit budget », « Végétarien », « Ramadan »… as the files write them
-        where.append(Recipe.tags.contains([tag[:30]]))
+    if tag:  # « Petit budget », « Végétarien », « Ramadan »… whatever the case the files wrote them in
+        where.append(
+            text("lower(:recipe_tag) IN (SELECT lower(x) FROM unnest(recipes.tags) AS x)").bindparams(
+                recipe_tag=tag[:30]
+            )
+        )
+    season = str(payload.get("season") or "").strip().lower().replace("é", "e")
+    if season:  # hiver / printemps / ete / automne / ramadan / aid (the home's « En ce moment »)
+        where.append(Recipe.seasons.contains([season[:20]]))
     slugs = payload.get("slugs")
     if isinstance(slugs, list):  # « Vos recettes »: the favourites / last opened kept on the phone
         where.append(Recipe.slug.in_([str(x)[:120] for x in slugs[:40]]))
@@ -440,7 +451,9 @@ async def list_recipes(
     """{q?, cuisine? (one or a list), country?, category? (one or a list), tag?, slugs?, max_time?, servings?,
     max_cost?, page? (1…), page_size? (≤ 40)} → one page of cards, the total, the facets (on page 1 only).
 
-    `servings`: the costs are for that many people (dishes only; a pastry keeps its pieces). `max_cost`
+    `servings`: the costs are for that many people (dishes only; a pastry keeps its pieces). `priced_only`:
+    the same rule as `max_cost` without a ceiling. `cuisines` / `categories` (a list or « a,b »), `season`
+    (hiver / printemps / ete / automne / ramadan / aid), `tag` (any case). `max_cost`
     (« Ce soir avec 20 DT pour 4 »): only the recipes whose WHOLE cost is known (a total shown, ≥ 70 %
     priced) and whose high end fits, Tunisian first then the cheapest; never a recipe without a total."""
     await _require_see(session, viewer)
@@ -459,7 +472,8 @@ async def list_recipes(
     if max_cost is not None and (not max_cost.is_finite() or max_cost <= 0):
         max_cost = None
     where = _filters(payload)
-    if max_cost is not None:
+    priced_only = str(payload.get("priced_only") or "").lower() in ("1", "true", "yes")
+    if max_cost is not None or priced_only:  # only recipes whose whole cost is shown (≥ 70 % priced)
         servings = servings or 4
         ids = list((await session.execute(select(Recipe.id).where(*where).limit(MAX_BUDGET_SCAN))).scalars())
         data = await load(session, ids=ids, published_only=False)
@@ -469,7 +483,11 @@ async def list_recipes(
             if recipe.servings_unit != "people":
                 continue
             c = _card_cost(data, recipe, servings, prices)
-            if c.get("show_total") and c.get("high") is not None and Decimal(str(c["high"])) <= max_cost:
+            if (
+                c.get("show_total")
+                and c.get("high") is not None
+                and (max_cost is None or Decimal(str(c["high"])) <= max_cost)
+            ):
                 fitting.append((recipe, c))
         fitting.sort(key=lambda t: (t[0].cuisine != "tunisienne", float(t[1]["high"]), t[0].title_fr))
         total = len(fitting)
@@ -632,7 +650,7 @@ async def _items(
     return data, list(wanted.items())
 
 
-MAX_OTHERS = 12  # « + Ajouter autre chose » (lait, pain, eau…): free lines, never priced
+MAX_OTHERS = 20  # « + Ajouter autre chose » (lait, pain, eau…): free lines, never priced
 OTHER_MAX = 60
 
 

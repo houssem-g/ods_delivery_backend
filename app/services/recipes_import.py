@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Ingredient, Recipe, RecipeLine
 from app.models.recipes import AISLES, INGREDIENT_UNITS
 from app.services import recipe_units as ru
+from app.services import text_norm
 from app.services.recipes import fold, to_ing
 
 MAX_RECIPES = 2000
@@ -321,7 +322,27 @@ def parse_recipe(
     # the recipes already imported must not send a published recipe back to draft
     cols["prep_min"] = _minutes(prep_min)
     cols["cook_min"] = _minutes(cook_min)
+    cols["seasons"] = seasons_of(_first(raw, "saison", "season", "seasons"))
     return {**cols, "lines": lines}, None, warnings
+
+
+ALL_SEASONS = ["hiver", "printemps", "ete", "automne"]
+
+
+def seasons_of(value: Any) -> list[str]:
+    """« Automne et hiver », « Toute l'année, Ramadan », « Automne à printemps » → season words."""
+    raw = " ".join(value) if isinstance(value, list) else str(value or "")
+    t = text_norm.normalize_text(raw)
+    out: list[str] = []
+    if "toute l" in t or "toute l annee" in t or "all year" in t:
+        out += ALL_SEASONS
+    if "automne a printemps" in t:
+        out += ["automne", "hiver", "printemps"]
+    for word, key in (("hiver", "hiver"), ("printemps", "printemps"), ("ete", "ete"), ("automne", "automne"),
+                      ("ramadan", "ramadan"), ("aid", "aid")):  # fmt: skip
+        if re.search(rf"\b{word}\b", t):
+            out.append(key)
+    return [k for k in [*ALL_SEASONS, "ramadan", "aid"] if k in out]
 
 
 def _minutes(value: Decimal | None) -> int | None:
@@ -380,8 +401,10 @@ async def import_recipes(
         recipe = existing.get(parsed["slug"])
         if recipe is not None and recipe.content_hash == parsed["content_hash"]:
             report["unchanged"] += 1
-            if (recipe.prep_min, recipe.cook_min) != (parsed["prep_min"], parsed["cook_min"]):
-                recipe.prep_min, recipe.cook_min = parsed["prep_min"], parsed["cook_min"]
+            extra = ("prep_min", "cook_min", "seasons")
+            if any(getattr(recipe, k) != parsed[k] for k in extra):
+                for k in extra:
+                    setattr(recipe, k, parsed[k])
                 report["times"] += 1
             continue
         if recipe is None:

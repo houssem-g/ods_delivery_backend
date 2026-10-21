@@ -697,3 +697,41 @@ async def test_ma_liste_extras_objects_become_free_lines_of_the_order(client, qa
         rec = await s.get(RecipeOrder, order.id)
     assert order.items_text.split("\n")[-2:] == ["Lait × 2", "Pain"]
     assert rec.lines[-2:] == [{"other": "Lait × 2"}, {"other": "Pain"}]
+
+
+def test_seasons_read_from_the_files_words():
+    from app.services.recipes_import import seasons_of
+
+    assert seasons_of("Toute l'année, Ramadan") == ["hiver", "printemps", "ete", "automne", "ramadan"]
+    assert seasons_of("Automne et hiver") == ["hiver", "automne"]
+    assert seasons_of("Automne à printemps (hors repos biologique)") == ["hiver", "printemps", "automne"]
+    assert seasons_of("Été, Aïd el-Kébir") == ["ete", "aid"]
+    assert seasons_of(None) == [] and seasons_of("Fêtes, mariages") == []
+
+
+async def test_list_by_season_several_cuisines_or_categories_and_a_tag_whatever_its_case(
+    client, qa, ods_prices
+):
+    await seed({**OJJA, "saison": "Hiver", "tags": ["Ramadan"]}, {**SALADE, "saison": "Été"}, TAJINE)
+    winter = await ok(client, qa, "listRecipes", {"season": "hiver"})
+    assert [c["slug"] for c in winter["recipes"]] == ["ojja-merguez"] and winter["recipes"][0]["seasons"] == [
+        "hiver"
+    ]
+    assert [c["slug"] for c in (await ok(client, qa, "listRecipes", {"season": "été"}))["recipes"]] == [
+        "salade-tomate"
+    ]
+    both = await ok(client, qa, "listRecipes", {"cuisines": "marocaine,algérienne"})
+    assert [c["slug"] for c in both["recipes"]] == ["tajine-zitoun"]
+    cats = await ok(client, qa, "listRecipes", {"categories": ["salade", "plat"]})
+    assert {c["slug"] for c in cats["recipes"]} == {"salade-tomate", "ojja-merguez"}
+    assert [c["slug"] for c in (await ok(client, qa, "listRecipes", {"tag": "ramadan"}))["recipes"]] == [
+        "ojja-merguez"
+    ]
+
+
+async def test_priced_only_keeps_the_recipes_with_a_whole_cost_cheapest_tunisian_first(
+    client, qa, ods_prices
+):
+    await seed(OJJA, SALADE, TAJINE)
+    rows = (await ok(client, qa, "listRecipes", {"priced_only": 1, "servings": 4}))["recipes"]
+    assert [c["slug"] for c in rows] == ["salade-tomate", "ojja-merguez"]  # tajine: no total
