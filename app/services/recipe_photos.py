@@ -15,8 +15,9 @@ is accepted only on our own public origin, a key only under `public/recipes/` an
 host can end up in an <img> of the app.
 
 The photo team's file (photos/libres/photos_<x>.json) is accepted as it is: `{slug: {file, source_page,
-image_url, author, license, license_url, title, note}}` → the key `public/recipes/<slug>.webp`, source
-'photo', and the CREDIT kept (`photo_credit`: author, licence, links). `credit_required` is true for CC BY /
+image_url, author, license, license_url, title, note, score}}` → only a photo scored 5/5 is kept (owner
+21/10: beautiful photos or nothing; an entry without a score is accepted, a lower score refused) → the
+key `public/recipes/<slug>.webp`, source 'photo', and the CREDIT kept (`photo_credit`: author, licence, links). `credit_required` is true for CC BY /
 BY-SA (the app then shows « © author · licence » in small, with the link), false for CC0 / public domain.
 """
 
@@ -41,6 +42,7 @@ PREFIX = "public/recipes/"
 KEY_RE = re.compile(r"^public/recipes/[a-z0-9][a-z0-9_-]{0,150}\.webp$")
 ALT_MAX = 200
 CREDIT_MAX = 200
+TOP_SCORE = 5  # owner 21/10: only the photos scored 5/5 by the photo team
 # free photos are « photo »; the photo team's words are accepted too
 SOURCE_ALIASES = {
     **dict.fromkeys(("libre", "free", "openverse", "wikimedia", "commons"), "photo"),
@@ -120,6 +122,14 @@ def credit_of(entry: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def _is_top(score: Any) -> bool:
+    """The photo team scores each photo out of 5; only a 5/5 is kept (« 5 », 5, « 5/5 »)."""
+    try:
+        return float(str(score).split("/")[0].replace(",", ".")) >= TOP_SCORE
+    except ValueError:
+        return False
+
+
 def _alt(value: Any) -> str | None:
     text = " ".join(str(value).split())[:ALT_MAX] if isinstance(value, str) else ""
     return text or None
@@ -131,6 +141,9 @@ def parse_entry(slug: str, value: Any) -> tuple[dict[str, Any] | None, str | Non
         return {"photo_key": None, "photo_thumb_key": None, "photo_alt_fr": None, "photo_alt_ar": None,
                 "photo_source": None, "photo_credit": None, "photo_set_at": None}, None  # fmt: skip
     entry = value if isinstance(value, dict) else {"photo": value}
+    score = entry.get("score")
+    if score is not None and not _is_top(score):  # owner 21/10: beautiful photos or nothing
+        return None, f"{slug}: photo notée {score}/5 (seules les 5/5 sont gardées)"
     given = entry.get("photo") or entry.get("url") or entry.get("photo_url")
     if not given and entry.get("file"):  # the photo team's file: uploaded as public/recipes/<slug>.webp
         given = default_key(slug)

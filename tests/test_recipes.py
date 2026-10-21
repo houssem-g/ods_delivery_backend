@@ -735,3 +735,16 @@ async def test_priced_only_keeps_the_recipes_with_a_whole_cost_cheapest_tunisian
     await seed(OJJA, SALADE, TAJINE)
     rows = (await ok(client, qa, "listRecipes", {"priced_only": 1, "servings": 4}))["recipes"]
     assert [c["slug"] for c in rows] == ["salade-tomate", "ojja-merguez"]  # tajine: no total
+
+
+def test_only_photos_scored_5_out_of_5_are_kept():
+    from app.services import recipe_photos as rp
+
+    for score in (5, "5", "5/5", 5.0):
+        cols, reason = rp.parse_entry(
+            "lablabi", {"file": "x.webp", "author": "A", "license": "CC0", "score": score}
+        )
+        assert reason is None and cols["photo_key"] == "public/recipes/lablabi.webp", score
+    for score in (4, "4/5", 4.5, "bof"):
+        cols, reason = rp.parse_entry("lablabi", {"file": "x.webp", "score": score})
+        assert cols is None and "5/5" in reason, score
