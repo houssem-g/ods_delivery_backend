@@ -9,8 +9,11 @@ import pytest
 from sqlalchemy import select
 
 from app.db import SessionLocal
-from app.models import CourierDocument, File
+from app.models import AuditLog, CourierDocument, File
 from app.services import account_deletion
+from app.services import email as email_service
+from app.services.courier_reminders import clean_first_name
+from app.services.push import push_link
 from tests.factories import auth
 from tests.order_helpers import OrderWorld, notifications, now, reload, rows
 
@@ -206,3 +209,154 @@ async def test_account_deletion_removes_the_documents(client, world, monkeypatch
     assert r.status_code == 200, r.text
     assert await rows(select(CourierDocument)) == []
     assert key in deleted
+
+
+async def test_admin_summary_per_courier_and_last_review(client, world, factory, monkeypatch):
+    """Owner 21/10: each expected document's state on the admin's courier lists / sheet, never a link;
+    the review answer says when the last required one is verified (the admin is then asked)."""
+    monkeypatch.setattr(
+        "app.services.courier_documents.s3.presign_get",
+        lambda key, seconds: f"https://signed/{key}?t={seconds}",
+    )
+    nour_user = await factory.user(email="nour@example.test", profile=False)
+    id_key = await private_file(nour_user, purpose="courier_id")
+    nour = await world.make_courier(
+        nour_user, display_name="Nour", verification="pending", vehicle="scooter", id_document_key=id_key
+    )
+    walker_user = await factory.user(email="walk@example.test", profile=False)
+    walker = await world.make_courier(
+        walker_user, display_name="Walid", verification="pending", vehicle="walking"
+    )
+    permis = (
+        await call(
+            client,
+            nour_user,
+            "uploadCourierDocument",
+            {"kind": "permis", "file_url": await private_file(nour_user), "expires_on": tomorrow()},
+        )
+    ).json()["document"]
+
+    def states(summary):
+        return {i["kind"]: (i["status"], i["required"], i["source"]) for i in summary["items"]}
+
+    listed = (
+        await call(client, world.admin, "listAdminCouriers", {"verification": "pending", "hide_tests": False})
+    ).json()
+    by_name = {c["full_name"]: c["documents"] for c in listed["couriers"]}
+    assert states(by_name["Nour"]) == {
+        "cin": ("pending", True, "onboarding"),
+        "permis": ("pending", True, "upload"),
+        "carte_grise": ("missing", True, None),
+    }
+    assert by_name["Nour"]["missing"] == ["carte_grise"] and by_name["Nour"]["ready"] is False
+    assert states(by_name["Walid"]) == {"cin": ("missing", True, None)}  # on foot: the ID only
+    assert "https://signed" not in str(listed) and id_key not in str(listed)
+
+    sheet = (await call(client, world.admin, "getAdminCourierSheet", {"courier_id": str(nour.id)})).json()
+    assert sheet["courier"]["documents"]["to_review"] == ["cin", "permis"]
+    many = await call(
+        client,
+        world.admin,
+        "getCourierDocumentSummaries",
+        {"courier_ids": [str(nour.id), str(walker.id), "x"]},
+    )
+    assert many.status_code == 200 and set(many.json()["documents"]) == {str(nour.id), str(walker.id)}
+    for user in (nour_user, world.customer):
+        r = await call(client, user, "getCourierDocumentSummaries", {"courier_ids": [str(nour.id)]})
+        assert r.status_code == 403
+        assert "documents" not in (await call(client, user, "listAdminCouriers")).json()
+
+    # the sign-up ID photo is reviewed in place: it becomes his `cin` row (same private file)
+    cin = await call(
+        client,
+        world.admin,
+        "reviewCourierDocument",
+        {"courier_id": str(nour.id), "kind": "cin", "status": "verified"},
+    )
+    assert cin.status_code == 200, cin.text
+    assert cin.json()["document"]["kind"] == "cin"
+    assert await rows(select(CourierDocument.file_key).where(CourierDocument.kind == "cin")) == [id_key]
+    assert (
+        await call(
+            client,
+            world.admin,
+            "reviewCourierDocument",
+            {"courier_id": str(walker.id), "kind": "cin", "status": "verified"},
+        )
+    ).status_code == 404
+    await call(client, world.admin, "reviewCourierDocument", {"id": permis["id"], "status": "verified"})
+    grise = (
+        await call(
+            client,
+            nour_user,
+            "uploadCourierDocument",
+            {"kind": "carte_grise", "file_url": await private_file(nour_user)},
+        )
+    ).json()["document"]
+    last = (
+        await call(client, world.admin, "reviewCourierDocument", {"id": grise["id"], "status": "verified"})
+    ).json()
+    assert last["courier"]["verification_status"] == "pending"
+    assert last["courier"]["documents"]["ready"] is True and last["courier"]["id"] == str(nour.id)
+    assert "https://signed" not in str(last)
+
+
+async def test_remind_courier_documents(client, world, factory, monkeypatch):
+    """Owner 21/10 « Relancer »: personal text (first name, exact documents, his language), push + in-app
+    + e-mail, one reminder per 12 h, admins only, audit log, shown on the admin's lists."""
+    assert clean_first_name("  MOHAMED-nour2 Chaffak") == "Mohamed-nour"
+    assert clean_first_name("🛵 مؤيد الرقوبي") == "مؤيد" and clean_first_name("😀 123") == ""
+    fr_user = await factory.user(email="mohamed@example.test", profile=False, language="fr")
+    mohamed = await world.make_courier(fr_user, display_name="MOHAMED Nour Chaffak", verification="pending")
+    ar_user = await factory.user(email="mouaied@example.test", profile=False, language="ar")
+    mouaied = await world.make_courier(ar_user, display_name="مؤيد الرقوبي", verification="pending")
+    email_service.OUTBOX.clear()
+
+    ask = {"courier_id": str(mohamed.id), "kinds": ["carte_grise", "cin"]}
+    for user in (world.courier_user, world.customer):
+        assert (await call(client, user, "remindCourierDocuments", ask)).status_code == 403
+    assert (
+        await call(client, world.admin, "remindCourierDocuments", {**ask, "kinds": ["x"]})
+    ).status_code == 400
+    r = await call(client, world.admin, "remindCourierDocuments", ask)
+    assert r.status_code == 200, r.text
+    [note] = await notifications(fr_user, "documents_requested")
+    assert note.body_fr == (
+        "Bonjour Mohamed, pour activer votre compte livreur ODS Delivery,"
+        " envoyez votre CIN et votre carte grise. Ça prend 1 min."
+    )
+    assert note.data["kinds"] == ["cin", "carte_grise"]
+    assert push_link(note.type, None, note.data) == "/CourierProfile?docs=cin,carte_grise&as=courier"
+    [mail] = [m for m in email_service.OUTBOX if m.to == "mohamed@example.test"]
+    assert mail.text == note.body_fr
+
+    again = await call(client, world.admin, "remindCourierDocuments", ask)
+    assert again.status_code == 429 and again.json()["error"] == "reminded_recently"
+    assert again.json()["last"]["kinds"] == ["cin", "carte_grise"]
+    assert len(await notifications(fr_user, "documents_requested")) == 1
+
+    r = await call(
+        client,
+        world.admin,
+        "remindCourierDocuments",
+        {"courier_id": str(mouaied.id), "kinds": ["permis"], "note": "  صورة   واضحة "},
+    )
+    assert r.status_code == 200, r.text
+    [ar_note] = await notifications(ar_user, "documents_requested")
+    assert ar_note.body_ar.startswith(
+        "مرحباً مؤيد، لتفعيل حسابكم كمندوب في ODS Delivery، يُرجى إرسال رخصة السياقة."
+    )
+    assert ar_note.body_ar.endswith("رسالة الفريق: « صورة واضحة »")
+    [ar_mail] = [m for m in email_service.OUTBOX if m.to == "mouaied@example.test"]
+    assert ar_mail.text == ar_note.body_ar
+
+    audit = await rows(select(AuditLog).where(AuditLog.action == "documents_requested").order_by(AuditLog.id))
+    assert [(a.entity_id, a.actor_user_id, a.after["kinds"]) for a in audit] == [
+        (str(mohamed.id), world.admin.id, ["cin", "carte_grise"]),
+        (str(mouaied.id), world.admin.id, ["permis"]),
+    ]
+    listed = (
+        await call(client, world.admin, "listAdminCouriers", {"verification": "pending", "hide_tests": False})
+    ).json()
+    reminder = next(c for c in listed["couriers"] if c["id"] == str(mohamed.id))["documents"]["reminder"]
+    assert reminder["kinds"] == ["cin", "carte_grise"] and reminder["at"] and reminder["next_at"]

@@ -112,7 +112,11 @@ CHAT_TYPES = ("new_message", "message")
 def push_link(type_: str, order_id: str | None, metadata: dict[str, Any]) -> str:
     """In-app link; `as=<role>` makes a dual account switch to that side first."""
     role = recipient_role(type_, metadata)
-    if role == "courier":
+    if role == "courier" and type_ == "documents_requested":
+        # « Relancer » (owner 21/10): straight to « Mes documents », the asked ones shown first
+        kinds = ",".join(k for k in metadata.get("kinds") or [] if isinstance(k, str) and k.isidentifier())
+        path = f"/CourierProfile?docs={kinds or '1'}"
+    elif role == "courier":
         if not order_id:
             path = "/CourierHome"
         elif type_ == "new_order":

@@ -27,7 +27,7 @@ NOTIFICATION_TYPES = (
     "order_preparing", "hot_deal_reserved", "issue_reported", "account_verified", "account_rejected",
     "stock_check", "stock_check_answered", "hot_deal_new", "document_verified", "document_rejected",
     "user_reported", "credit_low", "credit_topup_pending", "credit_topup_approved", "credit_topup_rejected",
-    "vitrine_request", "pickup_ready", "offer_not_retained",
+    "vitrine_request", "pickup_ready", "offer_not_retained", "documents_requested",
 )  # fmt: skip
 # Legacy synonyms merged at import time and when a caller still sends them.
 NOTIFICATION_TYPE_SYNONYMS = {
