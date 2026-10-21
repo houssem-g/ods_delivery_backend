@@ -399,7 +399,8 @@ async def test_admin_lists_publishes_unpublishes_and_imports(client, factory, qa
     listed = await ok(client, admin, "listAdminRecipes")
     assert [(r["slug"], r["status"]) for r in listed["recipes"]] == [("ojja-merguez", "draft")]
     assert listed["public_allowed"] is False and listed["prices"]["available"] is False
-    assert (await ok(client, qa, "listRecipes"))["recipes"] == []  # the list browses published recipes only
+    # admins-only for now: the admin browses the drafts too (owner 21/10)
+    assert [r["slug"] for r in (await ok(client, qa, "listRecipes"))["recipes"]] == ["ojja-merguez"]
     rid = listed["recipes"][0]["id"]
     assert (
         await fn(client, customer, "setRecipeStatus", {"id": rid, "status": "published"})
@@ -408,7 +409,9 @@ async def test_admin_lists_publishes_unpublishes_and_imports(client, factory, qa
     assert done["status"] == "published" and done["published_at"]
     assert [r["slug"] for r in (await ok(client, qa, "listRecipes"))["recipes"]] == ["ojja-merguez"]
     await ok(client, admin, "setRecipeStatus", {"id": rid, "status": "draft"})
-    assert (await ok(client, qa, "listRecipes"))["recipes"] == []
+    assert [r["slug"] for r in (await ok(client, qa, "listRecipes"))["recipes"]] == [
+        "ojja-merguez"
+    ]  # draft, browsable
     async with SessionLocal() as s:
         actions = (
             (await s.execute(select(AuditLog.action).where(AuditLog.entity == "recipes"))).scalars().all()

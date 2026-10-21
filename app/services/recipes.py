@@ -347,6 +347,8 @@ def _card(recipe: Recipe, c: dict[str, Any], lines_n: int) -> dict[str, Any]:
 
 
 PAGE_SIZE = 20
+# while Recettes is admins-only; back to ("published",) before any opening
+BROWSABLE = ("published", "draft")
 PAGE_SIZE_MAX = 40
 _AR_FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ة": "ه", "ى": "ي", "ؤ": "و", "ئ": "ي"})
 
@@ -357,7 +359,8 @@ def fold(*values: Any) -> str:
 
 
 def _filters(payload: dict[str, Any]) -> list[Any]:
-    where: list[Any] = [Recipe.status == "published"]
+    # Admins only for now (owner 21/10): they browse the drafts too, to read the recipes before review.
+    where: list[Any] = [Recipe.status.in_(BROWSABLE)]
     for field, column in (
         ("cuisine", Recipe.cuisine),
         ("country", Recipe.country),
@@ -389,7 +392,7 @@ async def _facets(session: AsyncSession) -> dict[str, list[dict[str, Any]]]:
         rows = (
             await session.execute(
                 select(column, func.count())
-                .where(Recipe.status == "published", column.is_not(None))
+                .where(Recipe.status.in_(BROWSABLE), column.is_not(None))
                 .group_by(column)
                 .order_by(func.count().desc(), column)
             )
@@ -422,7 +425,7 @@ async def list_recipes(
             )
         ).scalars()
     )
-    data = await load(session, ids=ids)
+    data = await load(session, ids=ids, published_only=False)
     prices = await recipe_prices.prices(session) if ids else None
     cards = []
     for recipe in data.recipes:
