@@ -33,7 +33,7 @@ from app.models import (
     User,
 )
 from app.security.deps import CurrentUser
-from app.services import credit
+from app.services import courier_documents, credit
 from app.services.commission import COMMISSION_KINDS, KIND_DUE, LEGACY_STATUS
 from app.services.orders import active_incidents, is_test_order, recent_badge
 from app.services.super_admin import is_super_admin_email
@@ -421,6 +421,8 @@ async def courier_sheet(session: AsyncSession, user: CurrentUser | None, payload
             "is_super_admin": bool(
                 account and account.role == "admin" and is_super_admin_email(account.email)
             ),
+            # each expected document's state (owner 21/10), never a file link
+            "documents": (await courier_documents.summaries(session, [courier]))[str(courier.id)],
         },
         "totals": {
             "orders": len(rows),

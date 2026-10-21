@@ -51,6 +51,7 @@ from app.models import (
     User,
 )
 from app.security.deps import CurrentUser
+from app.services import courier_documents
 from app.services.admin_sheets import _forbidden, _money, _test_user_sql
 from app.services.commission import COMMISSION_KINDS, KIND_DUE, LEGACY_STATUS
 from app.services.credit import BALANCE_KINDS
@@ -665,6 +666,8 @@ async def list_couriers(session: AsyncSession, user: CurrentUser | None, payload
             .limit(size)
         )
     ).all()
+    # each expected document's state (owner 21/10), never a file link
+    docs = await courier_documents.summaries(session, [r[0] for r in rows])
     out = [
         {
             "id": str(c.id),
@@ -695,6 +698,7 @@ async def list_couriers(session: AsyncSession, user: CurrentUser | None, payload
             "invited_clients": int(n_invited),
             "is_active": disabled is None,
             "is_test_account": bool(test),
+            "documents": docs.get(str(c.id)),
         }
         for (
             c,

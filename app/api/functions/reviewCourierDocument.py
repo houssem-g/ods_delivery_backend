@@ -1,7 +1,9 @@
 """reviewCourierDocument — an admin verifies or rejects a courier document
 (app/services/courier_documents.py). The courier is told (document_verified / document_rejected).
 
-Body: { id, status (verified | rejected), note? (≤ 500) }. Returns { success, document }.
+Body: { id, status (verified | rejected), note? (≤ 500) } — or, for the ID photo of his sign-up (no
+document row yet), { courier_id, kind: "cin", status, note? } (owner 21/10). Returns { success, document,
+courier: { id, user_id, full_name, verification_status, documents (summary, no link) } }.
 Errors: invalid_status / invalid_note (400), Forbidden (403), document_not_found (404).
 """
 

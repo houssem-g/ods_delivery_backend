@@ -9,6 +9,10 @@
   reviewCourierDocument    admin: verified / rejected (+ note); the courier is told
                            (document_verified / document_rejected).
   listCourierDocuments     admin: filtered by courier / status, with 5-minute signed links.
+  summaries / summary      admin (owner 21/10): per courier, each EXPECTED document (required by his
+                           vehicle, + the optional ones he sent) with its state — never a file link.
+                           In listAdminCouriers, getAdminCourierSheet, getCourierDocumentSummaries and
+                           in reviewCourierDocument's answer (« approve the courier too? »).
 The uploaded file's purpose becomes `courier_doc`: /api/files/signed-url refuses it (admins only).
 """
 
@@ -40,6 +44,20 @@ LABELS = {
     "assurance": ("Assurance", "التأمين"),
     "photo": ("Photo", "الصورة"),
 }
+
+
+# Owner 21/10: what a courier must send before he is approved, by vehicle. On foot: the ID only.
+REQUIRED_BY_VEHICLE = {
+    "walking": ("cin",),
+    "scooter": ("cin", "permis", "carte_grise"),
+    "car": ("cin", "permis", "carte_grise"),
+}
+REQUIRED_DEFAULT = ("cin", "permis", "carte_grise")
+SUMMARY_IDS_MAX = 100
+
+
+def required_kinds(vehicle: str | None) -> tuple[str, ...]:
+    return REQUIRED_BY_VEHICLE.get(str(vehicle or ""), REQUIRED_DEFAULT)
 
 
 def _uuid(value: Any) -> uuid.UUID | None:
@@ -81,6 +99,96 @@ def _synthetic_cin(courier: Courier) -> dict[str, Any]:
         "synthetic": True,
         "has_file": courier.id_document_key is not None,
     }
+
+
+def summary(courier: Courier, rows: list[CourierDocument], today: date | None = None) -> dict[str, Any]:
+    """Admin only. Each expected document: status missing | pending | verified | rejected, expiry, and
+    whether it is required for his vehicle. Without an uploaded `cin`, his onboarding ID photo stands
+    for it (`source: onboarding`): verified once the courier is approved, else to review. No file link."""
+    today = today or tunis_day(ot.now_utc())
+    by_kind = {r.kind: r for r in rows}
+    required = required_kinds(courier.vehicle)
+    kinds = [*required, *(k for k in COURIER_DOCUMENT_KINDS if k not in required and k in by_kind)]
+    items: list[dict[str, Any]] = []
+    for kind in kinds:
+        doc = by_kind.get(kind)
+        item: dict[str, Any] = {
+            "kind": kind,
+            "required": kind in required,
+            "document_id": None,
+            "expires_on": None,
+            "expired": False,
+            "note": None,
+            "source": None,
+        }
+        if doc is not None:
+            item.update(
+                status=doc.status,
+                document_id=str(doc.id),
+                expires_on=doc.expires_on.isoformat() if doc.expires_on else None,
+                expired=doc.expires_on is not None and doc.expires_on < today,
+                note=doc.note,
+                source="upload",
+                reviewed_at=legacy_datetime(doc.reviewed_at) if doc.reviewed_at else None,
+            )
+        elif kind == "cin" and courier.id_document_key:
+            item.update(
+                status="verified" if courier.verification == "verified" else "pending", source="onboarding"
+            )
+        else:
+            item["status"] = "missing"
+        items.append(item)
+    req = [i for i in items if i["required"]]
+    return {
+        "items": items,
+        "missing": [i["kind"] for i in req if i["status"] == "missing"],
+        "to_review": [i["kind"] for i in req if i["status"] == "pending"],
+        "rejected": [i["kind"] for i in req if i["status"] == "rejected"],
+        "expired": [i["kind"] for i in req if i["expired"]],
+        "ready": all(i["status"] == "verified" and not i["expired"] for i in req),
+    }
+
+
+async def summaries(session: AsyncSession, couriers: list[Courier]) -> dict[str, dict[str, Any]]:
+    """courier id (str) → summary(), one read for all of them."""
+    if not couriers:
+        return {}
+    rows = (
+        await session.execute(
+            select(CourierDocument).where(CourierDocument.courier_id.in_([c.id for c in couriers]))
+        )
+    ).scalars()
+    by_courier: dict[uuid.UUID, list[CourierDocument]] = {}
+    for row in rows:
+        by_courier.setdefault(row.courier_id, []).append(row)
+    today = tunis_day(ot.now_utc())
+    from app.services.courier_reminders import last_reminders
+
+    reminders = await last_reminders(session, [c.id for c in couriers])
+    return {
+        str(c.id): {**summary(c, by_courier.get(c.id, []), today), "reminder": reminders.get(str(c.id))}
+        for c in couriers
+    }
+
+
+async def summaries_for_ids(
+    session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]
+) -> dict[str, Any]:
+    if not admin.is_admin:
+        raise OrderRefused(403, "Forbidden")
+    raw = payload.get("courier_ids")
+    if not isinstance(raw, list):
+        raise OrderRefused(400, "courier_ids_required")
+    ids: list[uuid.UUID] = []
+    for value in raw[: SUMMARY_IDS_MAX * 2]:
+        uid = _uuid(value) if isinstance(value, str) and len(value) <= 64 else None
+        if uid is not None and uid not in ids:
+            ids.append(uid)
+    ids = ids[:SUMMARY_IDS_MAX]
+    couriers = (
+        list((await session.execute(select(Courier).where(Courier.id.in_(ids)))).scalars()) if ids else []
+    )
+    return {"success": True, "documents": await summaries(session, couriers)}
 
 
 async def _courier(session: AsyncSession, user: CurrentUser) -> Courier:
@@ -176,6 +284,8 @@ async def review(session: AsyncSession, admin: CurrentUser, payload: dict[str, A
         if doc_id
         else None
     )
+    if doc is None and not doc_id and payload.get("kind") == "cin":
+        doc = await _onboarding_cin(session, _uuid(payload.get("courier_id")))
     if doc is None:
         raise OrderRefused(404, "document_not_found")
     doc.status, doc.note = status, note
@@ -183,7 +293,20 @@ async def review(session: AsyncSession, admin: CurrentUser, payload: dict[str, A
     await session.flush()
     await session.refresh(doc)
     courier = await session.get(Courier, doc.courier_id)
+    answer_courier = None
     if courier is not None:
+        rows = list(
+            (
+                await session.execute(select(CourierDocument).where(CourierDocument.courier_id == courier.id))
+            ).scalars()
+        )
+        answer_courier = {
+            "id": str(courier.id),
+            "user_id": str(courier.user_id),
+            "full_name": courier.display_name,
+            "verification_status": courier.verification,
+            "documents": summary(courier, rows),
+        }
         label_fr, label_ar = LABELS[doc.kind]
         verified = status == "verified"
         reason_fr = f" : {note}" if note and not verified else ""
@@ -206,7 +329,30 @@ async def review(session: AsyncSession, admin: CurrentUser, payload: dict[str, A
                 "note": note,
             },
         )
-    return {"success": True, "document": view(doc)}
+    return {"success": True, "document": view(doc), "courier": answer_courier}
+
+
+async def _onboarding_cin(session: AsyncSession, courier_id: uuid.UUID | None) -> CourierDocument | None:
+    """The ID photo of his sign-up, reviewed like an upload (owner 21/10): it becomes his `cin` row
+    (same private file), so the review is kept and a later upload replaces it as usual."""
+    if courier_id is None:
+        return None
+    courier = await session.get(Courier, courier_id)
+    if courier is None or not courier.id_document_key:
+        return None
+    existing = (
+        await session.execute(
+            select(CourierDocument)
+            .where(CourierDocument.courier_id == courier.id, CourierDocument.kind == "cin")
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    doc = CourierDocument(courier_id=courier.id, kind="cin", file_key=courier.id_document_key)
+    session.add(doc)
+    await session.flush()
+    return doc
 
 
 async def list_all(session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
