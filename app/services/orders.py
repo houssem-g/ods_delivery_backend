@@ -583,6 +583,12 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
         from app.services import vitrine_orders
 
         raw, vitrine_extras = await vitrine_orders.prepare(session, user, raw)
+    recipe_extras = None
+    if isinstance(raw, dict) and raw.get("recipes") is not None and raw.get("vitrine") is None:
+        # Recettes (app/services/recipes.py): the list rebuilt server side, a normal Achats order
+        from app.services import recipes
+
+        raw, recipe_extras = await recipes.prepare_order(session, user, raw)
     built = build_order(raw, user, address, default_point)
     pickup = vitrine_extras is not None and vitrine_extras.get("fulfillment") == "pickup"
     if vitrine_extras is not None:
@@ -618,6 +624,10 @@ async def place_order(session: AsyncSession, user_id: uuid.UUID, raw: Any) -> Or
     session.add_all(built.stops)
     if vitrine_extras is not None:
         await vitrine_orders.record_options(session, vitrine_extras)
+    if recipe_extras is not None:
+        from app.services import recipes
+
+        await recipes.record_order(session, built.order.id, user.id, recipe_extras)
     if pickup:
         await ot.start(session, built.order, user.id, "placeOrder", status="awaiting_restaurant")
         await vitrine_pickup.after_start(

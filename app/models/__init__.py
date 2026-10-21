@@ -45,6 +45,7 @@ from app.models.orders import (
     OrderTracking,
 )
 from app.models.partners import Partner, PartnerCustomerStat, PartnerWebhookDelivery
+from app.models.recipes import Ingredient, Recipe, RecipeLine, RecipeOrder, RecipePriceCache
 from app.models.safety import UserBlock, UserReport
 from app.models.views import courier_stats, customer_stats
 from app.models.vitrine import (
@@ -79,6 +80,7 @@ __all__ = [
     "ForecastFactor",
     "GeocodeCache",
     "HotDeal",
+    "Ingredient",
     "Message",
     "MessageTranslation",
     "NoResponseCase",
@@ -102,6 +104,10 @@ __all__ = [
     "PhoneVerification",
     "Place",
     "PushDelivery",
+    "Recipe",
+    "RecipeLine",
+    "RecipeOrder",
+    "RecipePriceCache",
     "RefreshToken",
     "RevokedAccessToken",
     "Shop",

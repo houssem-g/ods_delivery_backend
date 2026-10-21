@@ -248,6 +248,13 @@ class Settings(BaseSettings):
     # `new,old` during a key rotation (the first encrypts, any decrypts).
     PARTNER_SECRET_KEY: str = LOCAL_PARTNER_SECRET_KEY
 
+    # --- recettes (21/10/2026): ingredient prices read from ODS (app/services/recipe_prices.py) ----------
+    # ods-be base URL and the shared service secret (ods-be DELIVERY_RECIPES_SECRET); empty = no cost shown.
+    ODS_API_BASE_URL: str | None = None
+    ODS_RECIPES_SECRET: str | None = None
+    RECIPE_PRICES_TTL_MINUTES: int = 180
+    RECIPE_PRICES_TIMEOUT_SECONDS: float = 4.0
+
     @model_validator(mode="before")
     @classmethod
     def _split_origins(cls, data: dict) -> dict:

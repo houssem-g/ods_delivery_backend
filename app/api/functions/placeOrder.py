@@ -24,6 +24,10 @@ Delivered orders too (free text or Vitrine, QA 19/10 M3): `order.client_ref` (or
 that order); the same key again from the same customer answers the order it made, as is
 ({ success, order, dispatched: 0, existing: true }), never a second order nor a second broadcast.
 Without client_ref every call places a new order (older apps).
+Recettes (21/10/2026, app/services/recipes.py): `order.recipes = { items: [{recipe_id, servings}], at_home:
+[ingredient ids], accept_unpriced, lang, unavailable_policy? }` → the items, estimate, ceiling and shop are
+rebuilt server side (a normal Achats order, « QA TEST » while the recipes are not public); refusals
+recipes_unavailable, recipes_empty, recipes_nothing_to_buy, recipes_unpriced_not_accepted (+ count).
 """
 
 import logging
