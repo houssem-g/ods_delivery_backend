@@ -643,8 +643,11 @@ async def _items(
         wanted[rid] = min(MAX_SERVINGS, wanted.get(rid, 0) + _servings(item.get("servings"), 4))
     if len(wanted) > MAX_RECIPES:
         raise OrderRefused(400, "too_many_recipes", max=MAX_RECIPES)
-    data = await load(session, ids=list(wanted))
-    missing = [str(rid) for rid in wanted if rid not in data.by_id]
+    # while Recettes is admins-only (owner 21/10) « Ma liste » and the order take the drafts too, like the
+    # browsing (BROWSABLE); back to published only before any opening
+    data = await load(session, ids=list(wanted), published_only=False)
+    data_ok = {rid for rid, r in data.by_id.items() if r.status in BROWSABLE}
+    missing = [str(rid) for rid in wanted if rid not in data_ok]
     if missing:
         raise OrderRefused(409, "recipes_unavailable", ids=missing)
     return data, list(wanted.items())

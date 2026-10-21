@@ -761,3 +761,12 @@ def test_photos_of_an_excluded_commons_author_are_refused():
         "kafteji", {"file": "x.webp", "credit": {"author": " slothtysloth "}, "score": 5}
     )
     assert cols is None
+
+
+async def test_while_admins_only_ma_liste_and_the_order_take_draft_recipes(client, qa, ods_prices):
+    await seed({**OJJA, "ingredients": OJJA["ingredients"][:3]}, publish=False)  # a draft, as the 547 today
+    rid = await recipe_id("ojja-merguez")
+    p = await ok(client, qa, "previewRecipeList", {"items": [{"recipe_id": rid, "servings": 4}]})
+    assert p["lines"] and p["recipes"][0]["id"] == rid
+    placed = await ok(client, qa, "placeOrder", order_body(rid, accept_unpriced=True))
+    assert placed["order"]["id"]
