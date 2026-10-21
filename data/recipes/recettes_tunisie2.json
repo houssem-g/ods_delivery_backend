@@ -1,0 +1,5498 @@
+{
+ "version": "2026-10-21",
+ "groupe": "tunisie2",
+ "auteur": "ODS (brouillon rédigé par l'assistant, à relire par une cuisinière tunisienne)",
+ "statut_global": "brouillon",
+ "licence_note": "Textes écrits par ODS. Les recettes en ligne ont servi seulement à vérifier proportions et étapes ; aucun texte copié.",
+ "portions_de_base": 4,
+ "unites": {
+  "kg": {
+   "fr": "kg",
+   "ar": "كغ"
+  },
+  "L": {
+   "fr": "L",
+   "ar": "ل"
+  },
+  "pièce": {
+   "fr": "pièce",
+   "ar": "حبة"
+  },
+  "botte": {
+   "fr": "botte",
+   "ar": "باقة"
+  },
+  "c. à soupe": {
+   "fr": "c. à soupe",
+   "ar": "ملعقة كبيرة"
+  },
+  "c. à café": {
+   "fr": "c. à café",
+   "ar": "ملعقة صغيرة"
+  },
+  "pincée": {
+   "fr": "pincée",
+   "ar": "رشة"
+  }
+ },
+ "regles": [
+  "Quantités pour 4 personnes sauf indication (champ portions).",
+  "Les cuillères et pincées ne servent qu'aux ingrédients du placard, jamais achetés par la recette.",
+  "Aucun prix dans ce fichier.",
+  "Un ingrédient absent du dictionnaire a ingredient_id = null et ingredient_new = sa clé dans ingredients_a_ajouter_tunisie2.json.",
+  "prix_manquants_21_10 : même calcul que recettes.json (verification_manuelle.csv) ; « pas dans le dictionnaire » = ingrédient à ajouter."
+ ],
+ "recettes": [
+  {
+   "id": "tastira",
+   "statut": "brouillon",
+   "nom_fr": "Tastira (poivrons et tomates frits aux œufs)",
+   "nom_ar": "تستيرة",
+   "nom_local": {
+    "ar": "تستيرة",
+    "latin": "Tastira"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Sfax et littoral",
+   "saison": "Été",
+   "occasion": [
+    "Entrée",
+    "Avec le poisson"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 25,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 5,
+     "nom_fr": "Poivron vert",
+     "nom_ar": "فلفل أخضر",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "poivrons ou piments doux longs",
+     "note_ar": "فلفل حلو طويل"
+    },
+    {
+     "ingredient_id": 6,
+     "nom_fr": "Piment piquant",
+     "nom_ar": "فلفل حار",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 1,
+     "nom_fr": "Tomate",
+     "nom_ar": "طماطم",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "4 gousses",
+     "note_ar": "4 فصوص"
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 4,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 142,
+     "nom_fr": "Coriandre moulue",
+     "nom_ar": "تابل",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "ou graines de coriandre pilées",
+     "note_ar": "أو حب التابل المدقوق"
+    },
+    {
+     "ingredient_id": 140,
+     "nom_fr": "Cumin",
+     "nom_ar": "كمون",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 141,
+     "nom_fr": "Carvi",
+     "nom_ar": "كروية",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true,
+     "note_fr": "certaines familles mettent du carvi",
+     "note_ar": "بعض العائلات تضع الكروية"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 5,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Poivron vert"
+    ]
+   },
+   "etapes_fr": [
+    "Pilez l'ail avec la coriandre, le cumin (et le carvi) et une pincée de sel.",
+    "Dans une poêle, chauffez l'huile d'olive et faites revenir l'oignon haché 3 minutes.",
+    "Faites frire les œufs rapidement, en gardant le jaune coulant, puis retirez-les et réservez.",
+    "Mettez dans la poêle les poivrons et piments en morceaux et les tomates coupées. Ajoutez le mélange d'ail et d'épices.",
+    "Laissez mijoter au moins 15 minutes en remuant, avec un peu d'eau si cela attache.",
+    "Hachez grossièrement les œufs frits et mélangez-les aux légumes. Servez tiède ou froid."
+   ],
+   "etapes_ar": [
+    "اهرسوا الثوم مع التابل والكمون (والكروية) ورشة ملح.",
+    "سخّنوا زيت الزيتون في مقلاة وقلّبوا البصل المفروم 3 دقائق.",
+    "اقلوا البيض بسرعة مع ترك الصفار سائلًا، ثم أخرجوه وضعوه جانبًا.",
+    "ضعوا في المقلاة الفلفل قطعًا والطماطم مقطّعة، وأضيفوا خليط الثوم والتوابل.",
+    "اتركوها 15 دقيقة على الأقل مع التحريك، وأضيفوا قليلًا من الماء إن التصقت.",
+    "افرموا البيض المقلي فرمًا خشنًا واخلطوه بالخضر. قدّموها فاترة أو باردة."
+   ],
+   "astuce_fr": "C'est l'accompagnement classique du poisson frit dans les ports : préparez-la pendant que le poisson cuit.",
+   "astuce_ar": "هي الطبق المرافق التقليدي للحوت المقلي في المدن الساحلية، فحضّروها أثناء طهي الحوت.",
+   "sources": [
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-la-tastira-342913",
+    "https://www.food.com/recipe/tastira-tunisian-fried-peppers-and-eggs-503158",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "salade-poulpe",
+   "statut": "brouillon",
+   "nom_fr": "Salade de poulpe",
+   "nom_ar": "سلطة القرنيط",
+   "nom_local": {
+    "ar": "سلاطة قرنيط",
+    "latin": "Slatet karnit"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Sfax, Kerkennah, Mahdia",
+   "saison": "Automne à printemps (hors repos biologique)",
+   "occasion": [
+    "Entrée",
+    "Kemia"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 45,
+   "repos": "1 heure au frais",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 75,
+     "nom_fr": "Poulpe",
+     "nom_ar": "قرنيط",
+     "quantite": 1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 31,
+     "nom_fr": "Oignon vert",
+     "nom_ar": "بصل أخضر",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "oignons verts",
+     "note_ar": "بصل أخضر"
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "un petit oignon rouge",
+     "note_ar": "بصلة حمراء صغيرة"
+    },
+    {
+     "ingredient_id": 1,
+     "nom_fr": "Tomate",
+     "nom_ar": "طماطم",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.005,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "2 citrons",
+     "note_ar": "قارصتان"
+    },
+    {
+     "ingredient_id": 115,
+     "nom_fr": "Harissa",
+     "nom_ar": "هريسة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 6,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 150,
+     "nom_fr": "Feuilles de laurier",
+     "nom_ar": "ورق رند",
+     "quantite": 2,
+     "unite": "pièce",
+     "placard": true,
+     "optionnel": true,
+     "note_fr": "2 feuilles pour la cuisson",
+     "note_ar": "ورقتان للطهي"
+    },
+    {
+     "ingredient_id": 117,
+     "nom_fr": "Olives noires",
+     "nom_ar": "زيتون أسود",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Lavez le poulpe, retirez le bec et les yeux. Plongez-le 3 fois de suite dans une marmite d'eau bouillante pour que les tentacules se recourbent, puis laissez-le dedans.",
+    "Ajoutez le laurier et laissez cuire 40 à 45 minutes à petit feu : la pointe d'un couteau doit entrer facilement. Laissez refroidir dans l'eau.",
+    "Coupez le poulpe en petits morceaux.",
+    "Délayez l'harissa dans l'huile d'olive avec le jus de citron, l'ail écrasé et le sel.",
+    "Mélangez le poulpe avec les oignons verts, l'oignon et la tomate coupés finement, le persil haché et la sauce.",
+    "Laissez reposer 1 heure au frais. Servez avec des olives."
+   ],
+   "etapes_ar": [
+    "اغسلوا القرنيط وانزعوا المنقار والعينين. اغمسوه 3 مرات متتالية في قدر ماء يغلي حتى تلتفّ أرجله، ثم اتركوه فيه.",
+    "أضيفوا ورق الرند واتركوه 40 إلى 45 دقيقة على نار هادئة حتى يدخل رأس السكين بسهولة. اتركوه يبرد في الماء.",
+    "قطّعوا القرنيط قطعًا صغيرة.",
+    "ذوّبوا الهريسة في زيت الزيتون مع عصير القارص والثوم المهروس والملح.",
+    "اخلطوا القرنيط مع البصل الأخضر والبصل والطماطم المفرومة رقيقًا والبقدونس المفروم والصلصة.",
+    "اتركوها ساعة في الثلاجة وقدّموها مع الزيتون."
+   ],
+   "astuce_fr": "Un poulpe congelé puis décongelé devient plus tendre : n'hésitez pas à le congeler une nuit avant la cuisson. La pêche du poulpe est fermée une partie de l'année : vérifiez la saison.",
+   "astuce_ar": "القرنيط المجمّد ثم المذاب يصبح أطرى، فلا تترددوا في تجميده ليلة قبل الطهي. صيد القرنيط ممنوع في جزء من السنة، فتأكدوا من الموسم.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-salade-de-poulpe/",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-poulpe-la-mediterraneenne-chaud-ou-froid-53835",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "mermouma",
+   "statut": "brouillon",
+   "nom_fr": "Mermouma (salade cuite de poivrons et tomates)",
+   "nom_ar": "مرمومة / مقبوبة",
+   "nom_local": {
+    "ar": "مرمومة",
+    "latin": "Mermouma / Makbouba"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Tunis",
+   "saison": "Été",
+   "occasion": [
+    "Entrée",
+    "Kemia"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 45,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 5,
+     "nom_fr": "Poivron vert",
+     "nom_ar": "فلفل أخضر",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 7,
+     "nom_fr": "Poivron rouge",
+     "nom_ar": "فلفل أحمر",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 1,
+     "nom_fr": "Tomate",
+     "nom_ar": "طماطم",
+     "quantite": 0.8,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "bien mûres",
+     "note_ar": "ناضجة"
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "4 gousses",
+     "note_ar": "4 فصوص"
+    },
+    {
+     "ingredient_id": 6,
+     "nom_fr": "Piment piquant",
+     "nom_ar": "فلفل حار",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 141,
+     "nom_fr": "Carvi",
+     "nom_ar": "كروية",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 143,
+     "nom_fr": "Paprika",
+     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 6,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Poivron vert"
+    ]
+   },
+   "etapes_fr": [
+    "Faites griller les poivrons à la flamme ou au four, enfermez-les 10 minutes dans un saladier couvert, puis pelez-les et coupez-les en lanières.",
+    "Pelez les tomates (plongez-les 1 minute dans l'eau bouillante) et coupez-les en morceaux.",
+    "Chauffez l'huile d'olive dans une sauteuse, ajoutez l'ail en lamelles et faites-le blondir 1 minute.",
+    "Ajoutez les tomates, le carvi, le paprika et le sel. Laissez réduire 20 minutes à feu doux.",
+    "Ajoutez les poivrons (et le piment) et laissez confire encore 15 minutes, jusqu'à ce que l'huile remonte.",
+    "Servez tiède ou froid, avec du pain."
+   ],
+   "etapes_ar": [
+    "اشووا الفلفل على اللهب أو في الفرن، وضعوه 10 دقائق في وعاء مغطّى، ثم قشّروه وقطّعوه شرائح.",
+    "قشّروا الطماطم (اغمسوها دقيقة في الماء المغلي) وقطّعوها.",
+    "سخّنوا زيت الزيتون في مقلاة عميقة وأضيفوا الثوم شرائح وحمّروه قليلًا دقيقة.",
+    "أضيفوا الطماطم والكروية والفلفل الأحمر الحلو والملح، واتركوها تنقص 20 دقيقة على نار هادئة.",
+    "أضيفوا الفلفل (والفلفل الحار) واتركوها 15 دقيقة أخرى حتى يطفو الزيت.",
+    "قدّموها فاترة أو باردة مع الخبز."
+   ],
+   "astuce_fr": "Elle se garde 3 jours au réfrigérateur dans un bocal, couverte d'un filet d'huile d'olive.",
+   "astuce_ar": "تُحفظ 3 أيام في الثلاجة في برطمان مغطّاة بقليل من زيت الزيتون.",
+   "sources": [
+    "https://lepetitjournal.com/tunis/comprendre-tunisie/gastronomie-mermouma-ou-makbouba-la-salade-cuite-405612",
+    "https://en.wikipedia.org/wiki/Tunisian_cuisine",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "torchi-navets",
+   "statut": "brouillon",
+   "nom_fr": "Torchi (navets marinés au citron et à l'harissa)",
+   "nom_ar": "طرشي اللفت",
+   "nom_local": {
+    "ar": "طرشي",
+    "latin": "Torchi"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "kemia",
+   "region": "Toute la Tunisie",
+   "saison": "Hiver",
+   "occasion": [
+    "Kemia",
+    "Avec le poisson"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 0,
+   "repos": "2 à 3 jours de marinade",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 12,
+     "nom_fr": "Navet",
+     "nom_ar": "لفت",
+     "quantite": 0.8,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 8,
+     "nom_fr": "Carotte",
+     "nom_ar": "سفنارية / جزر",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "quelques carottes pour la couleur",
+     "note_ar": "بعض الجزر للون"
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "2 citrons",
+     "note_ar": "قارصتان"
+    },
+    {
+     "ingredient_id": 121,
+     "nom_fr": "Vinaigre",
+     "nom_ar": "خل",
+     "quantite": 0.15,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 115,
+     "nom_fr": "Harissa",
+     "nom_ar": "هريسة",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.01,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 4,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "au moment de servir",
+     "note_ar": "عند التقديم"
+    }
+   ],
+   "prix_manquants_21_10": {},
+   "etapes_fr": [
+    "Épluchez les navets (et les carottes) et coupez-les en fines tranches ou en bâtonnets.",
+    "Mettez-les dans un saladier avec le sel, mélangez et laissez dégorger 1 heure. Rincez et égouttez.",
+    "Mettez-les dans un bocal propre avec l'ail, le jus de citron et le vinaigre. Complétez avec de l'eau froide pour bien couvrir.",
+    "Fermez et laissez mariner 2 à 3 jours au frais, en secouant le bocal chaque jour.",
+    "Au moment de servir, égouttez une portion et mélangez-la avec l'harissa délayée dans l'huile d'olive."
+   ],
+   "etapes_ar": [
+    "قشّروا اللفت (والجزر) وقطّعوه شرائح رقيقة أو أصابع.",
+    "ضعوه في وعاء مع الملح واخلطوه واتركوه ساعة ليخرج ماءه، ثم اغسلوه وصفّوه.",
+    "ضعوه في برطمان نظيف مع الثوم وعصير القارص والخل، وأكملوا بالماء البارد حتى يغطيه.",
+    "أغلقوه واتركوه 2 إلى 3 أيام في مكان بارد، مع رجّ البرطمان كل يوم.",
+    "عند التقديم، صفّوا كمية واخلطوها بالهريسة المذابة في زيت الزيتون."
+   ],
+   "astuce_fr": "Recette sans sucre, comme on la fait en Tunisie : c'est l'harissa et l'huile d'olive qui adoucissent l'acidité.",
+   "astuce_ar": "وصفة دون سكر كما تُحضّر في تونس، فالهريسة وزيت الزيتون هما ما يخفّفان الحموضة.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Tunisian_cuisine",
+    "https://en.wikipedia.org/wiki/Torshi"
+   ]
+  },
+  {
+   "id": "harissa-maison",
+   "statut": "brouillon",
+   "nom_fr": "Harissa maison",
+   "nom_ar": "هريسة عربي",
+   "nom_local": {
+    "ar": "هريسة عربي",
+    "latin": "Harissa arbi"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "sauce",
+   "region": "Nabeul et Cap Bon",
+   "saison": "Fin d'été (séchage des piments)",
+   "occasion": [
+    "Provisions"
+   ],
+   "portions": 8,
+   "prep_min": 30,
+   "cuisson_min": 0,
+   "trempage": "1 heure (piments séchés)",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 230,
+     "nom_fr": "Piment rouge séché entier",
+     "nom_ar": "فلفل أحمر مجفف",
+     "quantite": 0.25,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "1 tête",
+     "note_ar": "رأس ثوم"
+    },
+    {
+     "ingredient_id": 142,
+     "nom_fr": "Coriandre moulue",
+     "nom_ar": "تابل",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 141,
+     "nom_fr": "Carvi",
+     "nom_ar": "كروية",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 0.1,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Piment rouge séché entier"
+    ]
+   },
+   "etapes_fr": [
+    "Retirez les queues et la plupart des graines des piments séchés (portez des gants).",
+    "Faites-les tremper 1 heure dans de l'eau tiède, puis égouttez-les bien en les pressant.",
+    "Passez les piments au hachoir ou au mixeur avec l'ail épluché.",
+    "Ajoutez la coriandre moulue, le carvi et le sel, puis mixez encore jusqu'à obtenir une pâte.",
+    "Mettez la harissa dans un bocal propre, tassez-la et couvrez-la d'une couche d'huile d'olive.",
+    "Gardez-la au réfrigérateur et remettez un peu d'huile après chaque utilisation."
+   ],
+   "etapes_ar": [
+    "انزعوا أعناق الفلفل المجفف ومعظم البذور (البسوا قفازات).",
+    "انقعوه ساعة في ماء فاتر ثم صفّوه جيدًا مع العصر.",
+    "مرّروا الفلفل في المفرمة أو الخلاط مع الثوم المقشّر.",
+    "أضيفوا التابل والكروية والملح واخلطوا حتى تصبح عجينة.",
+    "ضعوا الهريسة في برطمان نظيف واضغطوها وغطّوها بطبقة من زيت الزيتون.",
+    "احفظوها في الثلاجة وأضيفوا قليلًا من الزيت بعد كل استعمال."
+   ],
+   "astuce_fr": "Quantité pour un bocal d'environ 0,4 kg. Les piments séchés en chapelet se trouvent surtout au Cap Bon ; à Sousse, demandez-les chez les marchands d'épices du souk.",
+   "astuce_ar": "الكمية تكفي برطمانًا من حوالي 0,4 كغ. يوجد الفلفل المجفف في الوطن القبلي خاصة، وفي سوسة اطلبوه عند العطّارين في السوق.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-harissa-maison/",
+    "https://en.wikipedia.org/wiki/Harissa"
+   ]
+  },
+  {
+   "id": "tabil-maison",
+   "statut": "brouillon",
+   "nom_fr": "Tabil maison (mélange d'épices tunisien)",
+   "nom_ar": "تابل عربي",
+   "nom_local": {
+    "ar": "تابل",
+    "latin": "Tabil"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "sauce",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Provisions"
+   ],
+   "portions": 10,
+   "prep_min": 20,
+   "cuisson_min": 0,
+   "repos": "2 jours de séchage de l'ail",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 142,
+     "nom_fr": "Coriandre moulue",
+     "nom_ar": "تابل",
+     "quantite": 6,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "idéalement des graines entières à moudre",
+     "note_ar": "يفضّل حب التابل الكامل لطحنه"
+    },
+    {
+     "ingredient_id": 141,
+     "nom_fr": "Carvi",
+     "nom_ar": "كروية",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "6 gousses",
+     "note_ar": "6 فصوص"
+    },
+    {
+     "ingredient_id": 144,
+     "nom_fr": "Piment rouge moulu",
+     "nom_ar": "فلفل أحمر حار مرحي",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 140,
+     "nom_fr": "Cumin",
+     "nom_ar": "كمون",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Piment rouge moulu"
+    ]
+   },
+   "etapes_fr": [
+    "Épluchez l'ail, coupez-le en fines lamelles et laissez-le sécher 2 jours à l'air sur un plateau (ou 1 heure dans le four tiède porte entrouverte).",
+    "Si vous avez des graines entières, faites-les griller 2 minutes à sec dans une poêle, puis laissez refroidir.",
+    "Pilez ou moulez la coriandre, le carvi et l'ail séché ensemble.",
+    "Ajoutez le piment moulu (et le cumin) et mélangez bien.",
+    "Conservez dans un bocal bien fermé, à l'abri de la lumière."
+   ],
+   "etapes_ar": [
+    "قشّروا الثوم وقطّعوه شرائح رقيقة واتركوه يجف يومين في الهواء على صينية (أو ساعة في فرن فاتر مع ترك الباب مفتوحًا قليلًا).",
+    "إن كان لديكم حب كامل، حمّصوه دقيقتين في مقلاة دون زيت ثم اتركوه يبرد.",
+    "ادقّوا أو اطحنوا التابل والكروية والثوم المجفف معًا.",
+    "أضيفوا الفلفل الحار المرحي (والكمون) واخلطوا جيدًا.",
+    "احفظوه في برطمان محكم الغلق بعيدًا عن الضوء."
+   ],
+   "astuce_fr": "Une cuillère à café de tabil remplace dans toutes ces recettes la coriandre moulue et le carvi.",
+   "astuce_ar": "ملعقة صغيرة من التابل تعوّض في كل هذه الوصفات التابل المطحون والكروية.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Tabil",
+    "https://lepetitjournal.com/vivre-a-tunis/epices-aromates-cuisine-tunisienne-53664"
+   ],
+   "portions_unite": "portions"
+  },
+  {
+   "id": "sauce-kerkennaise",
+   "statut": "brouillon",
+   "nom_fr": "Sauce kerkennaise crue (pour poissons grillés)",
+   "nom_ar": "صلصة قرقنية",
+   "nom_local": {
+    "ar": "قرقنية",
+    "latin": "Kerkennaise"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "sauce",
+   "region": "Kerkennah et Sfax",
+   "saison": "Été",
+   "occasion": [
+    "Avec le poisson",
+    "Kemia"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 0,
+   "repos": "30 minutes à 1 heure",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 1,
+     "nom_fr": "Tomate",
+     "nom_ar": "طماطم",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "3 tomates bien mûres",
+     "note_ar": "3 طماطم ناضجة"
+    },
+    {
+     "ingredient_id": 31,
+     "nom_fr": "Oignon vert",
+     "nom_ar": "بصل أخضر",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "3 oignons verts",
+     "note_ar": "3 بصلات خضراء"
+    },
+    {
+     "ingredient_id": 153,
+     "nom_fr": "Poivron vert",
+     "nom_ar": "فلفل أخضر",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 piment vert doux",
+     "note_ar": "فلفلة خضراء حلوة"
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.005,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 142,
+     "nom_fr": "Coriandre moulue",
+     "nom_ar": "تابل",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 141,
+     "nom_fr": "Carvi",
+     "nom_ar": "كروية",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 121,
+     "nom_fr": "Vinaigre",
+     "nom_ar": "خل",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 118,
+     "nom_fr": "Câpres",
+     "nom_ar": "كبار",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Poivron vert"
+    ],
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Coupez les tomates en deux, retirez les graines et râpez la chair ; jetez la peau.",
+    "Mixez brièvement les tomates avec le blanc des oignons verts, le piment, l'ail, la coriandre, le carvi et le vinaigre : la sauce doit rester un peu granuleuse.",
+    "Ajoutez le vert des oignons émincé, le persil haché, l'huile d'olive, le sel (et les câpres).",
+    "Laissez reposer 30 minutes à 1 heure à température ambiante. Servez sur du poisson grillé ou avec du pain."
+   ],
+   "etapes_ar": [
+    "اقسموا الطماطم نصفين وانزعوا البذور وابشروا اللبّ، وتخلّصوا من القشرة.",
+    "اطحنوا الطماطم قليلًا مع الجزء الأبيض من البصل الأخضر والفلفل والثوم والتابل والكروية والخل، فالصلصة يجب أن تبقى خشنة قليلًا.",
+    "أضيفوا الجزء الأخضر من البصل مقطّعًا والبقدونس المفروم وزيت الزيتون والملح (والكبار).",
+    "اتركوها 30 دقيقة إلى ساعة في حرارة الغرفة، وقدّموها على الحوت المشوي أو مع الخبز."
+   ],
+   "astuce_fr": "Elle accompagne aussi les crevettes et les seiches grillées.",
+   "astuce_ar": "ترافق أيضًا القمبري والشوابي المشوية.",
+   "sources": [
+    "https://kvalifood.com/posts/kerkennaise/",
+    "https://www.177milkstreet.com/recipes/shrimp-kerkennaise-sauce",
+    "https://en.wikipedia.org/wiki/Tunisian_cuisine"
+   ]
+  },
+  {
+   "id": "casse-croute-tunisien",
+   "statut": "brouillon",
+   "nom_fr": "Casse-croûte tunisien au thon",
+   "nom_ar": "كسكروت تونسي بالتن",
+   "nom_local": {
+    "ar": "كسكروت",
+    "latin": "Casse-croûte"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "sandwich",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Rapide",
+    "Quotidien"
+   ],
+   "portions": 4,
+   "prep_min": 25,
+   "cuisson_min": 20,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 109,
+     "nom_fr": "Baguette",
+     "nom_ar": "خبز باقات",
+     "quantite": 2,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "2 baguettes coupées en deux",
+     "note_ar": "خبزتان مقسومتان"
+    },
+    {
+     "ingredient_id": 76,
+     "nom_fr": "Thon à l'huile",
+     "nom_ar": "تن بالزيت",
+     "quantite": 0.16,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 2,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "cuits durs",
+     "note_ar": "مسلوقتان"
+    },
+    {
+     "ingredient_id": 2,
+     "nom_fr": "Pomme de terre",
+     "nom_ar": "بطاطا",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "en frites ou en dés cuits",
+     "note_ar": "مقلية أو مكعبات مطبوخة"
+    },
+    {
+     "ingredient_id": 1,
+     "nom_fr": "Tomate",
+     "nom_ar": "طماطم",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 5,
+     "nom_fr": "Poivron vert",
+     "nom_ar": "فلفل أخضر",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 23,
+     "nom_fr": "Concombre",
+     "nom_ar": "فقوس / خيار",
+     "quantite": 0.15,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 117,
+     "nom_fr": "Olives noires",
+     "nom_ar": "زيتون أسود",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 118,
+     "nom_fr": "Câpres",
+     "nom_ar": "كبار",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 115,
+     "nom_fr": "Harissa",
+     "nom_ar": "هريسة",
+     "quantite": 2,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "un demi-citron",
+     "note_ar": "نصف قارصة"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "sans prix": [
+     "Baguette"
+    ],
+    "douteux": [
+     "Poivron vert"
+    ]
+   },
+   "etapes_fr": [
+    "Faites cuire les œufs durs 10 minutes. Si vous aimez, faites des frites ou cuisez les pommes de terre en dés.",
+    "Coupez finement la tomate, le poivron et le concombre. Assaisonnez avec un peu d'huile d'olive, le jus de citron et le sel : c'est la petite salade du casse-croûte.",
+    "Ouvrez les demi-baguettes sans les séparer complètement.",
+    "Délayez l'harissa dans le reste d'huile d'olive et étalez-la à l'intérieur du pain.",
+    "Garnissez de salade, de thon émietté, d'œufs en rondelles, de pommes de terre, d'olives et de câpres. Servez tout de suite."
+   ],
+   "etapes_ar": [
+    "اسلقوا البيض 10 دقائق. إن رغبتم، اقلوا البطاطا أو اطهوها مكعبات.",
+    "قطّعوا الطماطم والفلفل والفقوس قطعًا صغيرة، وتبّلوها بقليل من زيت الزيتون وعصير القارص والملح: هذه سلطة الكسكروت.",
+    "افتحوا أنصاف الخبز دون فصلها تمامًا.",
+    "ذوّبوا الهريسة في بقية زيت الزيتون وادهنوا بها داخل الخبز.",
+    "احشوه بالسلطة والتن المفتت والبيض شرائح والبطاطا والزيتون والكبار. قدّموه فورًا."
+   ],
+   "astuce_fr": "Une cuillère de salade méchouia à la place de la petite salade crue donne le goût des casse-croûtes de rue.",
+   "astuce_ar": "ملعقة من السلطة المشوية بدل السلطة النيئة تعطي طعم كسكروت الشارع.",
+   "sources": [
+    "https://ourtunisiantable.com/home/2016/11/3/casse-croute-recipe",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "chapati-mahdia",
+   "statut": "brouillon",
+   "nom_fr": "Chapati de Mahdia (galette fourrée au thon et aux œufs)",
+   "nom_ar": "شباتي المهدية",
+   "nom_local": {
+    "ar": "شباتي",
+    "latin": "Chapati"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "entrée",
+   "region": "Mahdia (Sahel)",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Rapide",
+    "Quotidien"
+   ],
+   "portions": 4,
+   "prep_min": 30,
+   "cuisson_min": 25,
+   "repos": "1 heure pour la pâte",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 90,
+     "nom_fr": "Semoule fine",
+     "nom_ar": "سميد رقيق",
+     "quantite": 0.25,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.15,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 76,
+     "nom_fr": "Thon à l'huile",
+     "nom_ar": "تن بالزيت",
+     "quantite": 0.16,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 4,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "en omelette fine",
+     "note_ar": "عجة رقيقة"
+    },
+    {
+     "ingredient_id": 81,
+     "nom_fr": "Fromage râpé",
+     "nom_ar": "جبن مبشور",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 2,
+     "nom_fr": "Pomme de terre",
+     "nom_ar": "بطاطا",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "frites ou en dés cuits",
+     "note_ar": "مقلية أو مكعبات مطبوخة"
+    },
+    {
+     "ingredient_id": 117,
+     "nom_fr": "Olives noires",
+     "nom_ar": "زيتون أسود",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 115,
+     "nom_fr": "Harissa",
+     "nom_ar": "هريسة",
+     "quantite": 2,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Semoule fine"
+    ]
+   },
+   "etapes_fr": [
+    "Mélangez la semoule, la farine, la levure, le sel et 2 cuillères à soupe d'huile. Ajoutez de l'eau tiède peu à peu (environ 0,25 L) et pétrissez 10 minutes. Laissez lever 1 heure sous un linge.",
+    "Divisez la pâte en 4 boules et étalez chacune en galette ronde de 3 à 4 mm d'épaisseur.",
+    "Faites cuire les galettes à sec dans une poêle bien chaude, 3 à 4 minutes de chaque côté.",
+    "Battez les œufs avec le persil haché et un peu de sel, et faites une omelette fine dans le reste d'huile. Coupez-la en 4.",
+    "Fendez chaque galette sur le côté pour former une poche. Tartinez l'intérieur d'un peu d'harissa.",
+    "Garnissez d'omelette, de thon, de fromage, d'olives et de pommes de terre. Repassez 1 minute à la poêle pour faire fondre le fromage et servez."
+   ],
+   "etapes_ar": [
+    "اخلطوا السميد والفرينة والخميرة والملح وملعقتين كبيرتين من الزيت. أضيفوا الماء الفاتر تدريجيًا (حوالي 0,25 ل) واعجنوا 10 دقائق. اتركوه يختمر ساعة تحت منشفة.",
+    "قسّموا العجين إلى 4 كرات وافردوا كل واحدة قرصًا دائريًا بسمك 3 إلى 4 مم.",
+    "اطهوا الأقراص في مقلاة ساخنة دون زيت، 3 إلى 4 دقائق من كل جهة.",
+    "اخفقوا البيض مع البقدونس المفروم وقليل من الملح، واصنعوا عجة رقيقة في بقية الزيت، ثم قسّموها إلى 4.",
+    "افتحوا كل قرص من الجانب ليصبح جيبًا وادهنوا داخله بقليل من الهريسة.",
+    "احشوه بالعجة والتن والجبن والزيتون والبطاطا، ثم أعيدوه دقيقة إلى المقلاة ليذوب الجبن وقدّموه."
+   ],
+   "astuce_fr": "Pour gagner du temps, utilisez des galettes de semoule toutes prêtes (khobz tabouna ou mlawi) ouvertes en poche.",
+   "astuce_ar": "لربح الوقت، استعملوا خبزًا جاهزًا (خبز طابونة أو ملاوي) وافتحوه كالجيب.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-chapati-mahdia/",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "tajine-jben",
+   "statut": "brouillon",
+   "nom_fr": "Tajine jben (tajine au fromage et aux pommes de terre)",
+   "nom_ar": "طاجين جبن",
+   "nom_local": {
+    "ar": "طاجين جبن",
+    "latin": "Tajine jben"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "tajine",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Ramadan",
+    "Végétarien",
+    "Entrée"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 40,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 2,
+     "nom_fr": "Pomme de terre",
+     "nom_ar": "بطاطا",
+     "quantite": 0.6,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 8,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 81,
+     "nom_fr": "Fromage râpé",
+     "nom_ar": "جبن مبشور",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 78,
+     "nom_fr": "Lait demi-écrémé",
+     "nom_ar": "حليب نصف دسم",
+     "quantite": 0.1,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 145,
+     "nom_fr": "Curcuma",
+     "nom_ar": "كركم",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "pour le moule",
+     "note_ar": "للقالب"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Coupez les pommes de terre en petits dés et faites-les dorer 15 minutes dans l'huile d'olive (ou cuire 10 minutes à l'eau).",
+    "Faites revenir l'oignon haché 3 minutes avec le curcuma.",
+    "Préchauffez le four à 180 °C. Battez les œufs avec le lait, le sel et le poivre.",
+    "Ajoutez les pommes de terre, l'oignon, le fromage râpé et le persil haché.",
+    "Versez dans un moule beurré et enfournez 25 minutes, jusqu'à ce que le centre soit pris.",
+    "Laissez tiédir, coupez en carrés et servez chaud ou froid."
+   ],
+   "etapes_ar": [
+    "قطّعوا البطاطا مكعبات صغيرة وحمّروها 15 دقيقة في زيت الزيتون (أو اسلقوها 10 دقائق).",
+    "قلّبوا البصل المفروم 3 دقائق مع الكركم.",
+    "سخّنوا الفرن على 180 درجة. اخفقوا البيض مع الحليب والملح والفلفل الأكحل.",
+    "أضيفوا البطاطا والبصل والجبن المبشور والبقدونس المفروم.",
+    "صبّوا الخليط في قالب مدهون بالزبدة وأدخلوه الفرن 25 دقيقة حتى يتماسك الوسط.",
+    "اتركوه يفتر ثم قطّعوه مربعات وقدّموه ساخنًا أو باردًا."
+   ],
+   "astuce_fr": "Le tajine se garde 2 jours au frais : pratique pour les boîtes à repas.",
+   "astuce_ar": "يُحفظ الطاجين يومين في الثلاجة، وهو عملي لعلب الأكل.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-tajine-tunisien-au-fromage/",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-les-tajines-53086",
+    "https://fr.wikipedia.org/wiki/Tajine_tunisien"
+   ]
+  },
+  {
+   "id": "bazine-sfaxien",
+   "statut": "brouillon",
+   "nom_fr": "Bazine sfaxien au miel",
+   "nom_ar": "بازين صفاقسي",
+   "nom_local": {
+    "ar": "بازين",
+    "latin": "Bazine"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Sfax",
+   "saison": "Aïd el-Kébir, Ramadan",
+   "occasion": [
+    "Aïd",
+    "Ramadan"
+   ],
+   "portions": 4,
+   "prep_min": 10,
+   "cuisson_min": 25,
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "farine (ou moitié farine d'orge)",
+     "note_ar": "فرينة (أو نصفها فرينة شعير)"
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 125,
+     "nom_fr": "Miel",
+     "nom_ar": "عسل",
+     "quantite": 0.15,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {},
+   "etapes_fr": [
+    "Portez 1 L d'eau salée à ébullition dans une marmite à fond épais.",
+    "Versez la farine d'un coup au centre, sans remuer. Couvrez et laissez cuire 15 minutes à feu doux.",
+    "Avec une grosse cuillère en bois, battez énergiquement la pâte en l'écrasant contre les parois jusqu'à ce qu'elle soit lisse et élastique (5 à 10 minutes).",
+    "Mouillez vos mains et formez un dôme lisse dans un plat creux.",
+    "Creusez le centre, versez-y le miel (et le beurre fondu), et arrosez d'huile d'olive. Servez chaud, avec la klaya autour si vous en avez préparé."
+   ],
+   "etapes_ar": [
+    "اغلوا 1 ل من الماء المملّح في قدر بقاع سميك.",
+    "صبّوا الفرينة دفعة واحدة في الوسط دون تحريك، ثم غطّوها واتركوها 15 دقيقة على نار هادئة.",
+    "بملعقة خشبية كبيرة، اضربوا العجين بقوة مع عصره على جوانب القدر حتى يصبح أملس ومطاطيًا (5 إلى 10 دقائق).",
+    "بلّلوا أيديكم وشكّلوا قبة ملساء في صحن عميق.",
+    "احفروا الوسط وصبّوا فيه العسل (والزبدة المذابة) ورشّوا زيت الزيتون. قدّموه ساخنًا مع القلاية حوله إن حضّرتموها."
+   ],
+   "astuce_fr": "Une version salée existe dans le Sud : le dôme est servi avec une sauce rouge à l'agneau et des œufs durs.",
+   "astuce_ar": "توجد نسخة مالحة في الجنوب تُقدّم فيها القبة مع مرقة حمراء بلحم الخروف وبيض مسلوق.",
+   "sources": [
+    "https://www.tunisienumerique.com/?p=857890",
+    "https://en.wikipedia.org/wiki/Bazeen",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-cuisine-sfaxienne-53301"
+   ]
+  },
+  {
+   "id": "minina",
+   "statut": "brouillon",
+   "nom_fr": "Minina (terrine de poulet aux œufs)",
+   "nom_ar": "مينينة بالدجاج",
+   "nom_local": {
+    "ar": "مينينة",
+    "latin": "Minina / Menina"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "entrée",
+   "region": "Tunis (cuisine juive tunisoise)",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Fête",
+    "Entrée"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 60,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 52,
+     "nom_fr": "Escalope de poulet",
+     "nom_ar": "إسكالوب دجاج",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 8,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "4 durs + 4 crus",
+     "note_ar": "4 مسلوقة + 4 نيئة"
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 145,
+     "nom_fr": "Curcuma",
+     "nom_ar": "كركم",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "pour le moule",
+     "note_ar": "للقالب"
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour servir",
+     "note_ar": "للتقديم"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Faites cuire l'escalope dans 0,5 L d'eau avec l'oignon, le curcuma, le sel et le poivre pendant 20 minutes. Gardez le bouillon.",
+    "Faites cuire 4 œufs durs 10 minutes et coupez-les en dés.",
+    "Effilochez le poulet très finement avec deux fourchettes.",
+    "Battez les 4 œufs crus avec 0,1 L de bouillon, l'huile d'olive et le persil haché. Ajoutez le poulet et les œufs durs, puis rectifiez le sel.",
+    "Préchauffez le four à 170 °C. Versez dans un moule à cake beurré et faites cuire 30 à 35 minutes au bain-marie.",
+    "Laissez refroidir, démoulez et coupez en tranches. Servez froid avec du citron."
+   ],
+   "etapes_ar": [
+    "اطهوا صدر الدجاج في 0,5 ل من الماء مع البصل والكركم والملح والفلفل الأكحل 20 دقيقة. احتفظوا بالمرق.",
+    "اسلقوا 4 بيضات 10 دقائق وقطّعوها مكعبات.",
+    "فتّتوا الدجاج خيوطًا رقيقة بشوكتين.",
+    "اخفقوا البيضات الأربع النيئة مع 0,1 ل من المرق وزيت الزيتون والبقدونس المفروم. أضيفوا الدجاج والبيض المسلوق وعدّلوا الملح.",
+    "سخّنوا الفرن على 170 درجة. صبّوا الخليط في قالب كيك مدهون بالزبدة واطهوه 30 إلى 35 دقيقة في حمّام مائي.",
+    "اتركوه يبرد ثم أخرجوه من القالب وقطّعوه شرائح. قدّموه باردًا مع القارص."
+   ],
+   "astuce_fr": "La minina se prépare la veille : elle se tranche plus proprement bien froide.",
+   "astuce_ar": "تُحضّر المينينة في اليوم السابق لأنها تُقطّع بشكل أنظف وهي باردة.",
+   "sources": [
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-minina-53904",
+    "https://www.tunisienumerique.com/recette-minina/",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "salade-pecheur",
+   "statut": "brouillon",
+   "nom_fr": "Salade du pêcheur (pommes de terre, thon et olives)",
+   "nom_ar": "سلطة الصياد بالبطاطا والتن",
+   "nom_local": {
+    "ar": "سلاطة بطاطا بالتن",
+    "latin": "Slata batata bel ton"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Entrée",
+    "Quotidien",
+    "Petit budget"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 25,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 2,
+     "nom_fr": "Pomme de terre",
+     "nom_ar": "بطاطا",
+     "quantite": 0.8,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 76,
+     "nom_fr": "Thon à l'huile",
+     "nom_ar": "تن بالزيت",
+     "quantite": 0.16,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 3,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "cuits durs",
+     "note_ar": "مسلوقة"
+    },
+    {
+     "ingredient_id": 117,
+     "nom_fr": "Olives noires",
+     "nom_ar": "زيتون أسود",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "un petit oignon rouge",
+     "note_ar": "بصلة حمراء صغيرة"
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 119,
+     "nom_fr": "Mayonnaise",
+     "nom_ar": "مايونيز",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "si vous préférez une version crémeuse",
+     "note_ar": "لمن يفضّل نسخة كريمية"
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 citron",
+     "note_ar": "قارصة واحدة"
+    },
+    {
+     "ingredient_id": 115,
+     "nom_fr": "Harissa",
+     "nom_ar": "هريسة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 4,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Lavez les pommes de terre et faites-les cuire avec la peau dans de l'eau salée 20 à 25 minutes : la pointe d'un couteau doit entrer facilement.",
+    "Pendant ce temps, faites cuire les œufs 10 minutes, passez-les sous l'eau froide et écalez-les.",
+    "Épluchez les pommes de terre encore tièdes et coupez-les en cubes.",
+    "Délayez l'harissa dans l'huile d'olive avec le jus de citron, le sel et le poivre.",
+    "Versez cette sauce sur les pommes de terre tièdes, ajoutez l'oignon émincé et le persil haché, et mélangez doucement.",
+    "Ajoutez le thon émietté et les olives, puis posez les œufs en quartiers. Servez tiède ou froid (avec la mayonnaise à part si vous en mettez)."
+   ],
+   "etapes_ar": [
+    "اغسلوا البطاطا واسلقوها بقشرتها في ماء مملّح 20 إلى 25 دقيقة حتى يدخل رأس السكين بسهولة.",
+    "في الأثناء، اسلقوا البيض 10 دقائق، ثم ضعوه تحت الماء البارد وقشّروه.",
+    "قشّروا البطاطا وهي فاترة وقطّعوها مكعبات.",
+    "ذوّبوا الهريسة في زيت الزيتون مع عصير القارص والملح والفلفل الأكحل.",
+    "صبّوا هذه الصلصة على البطاطا الفاترة، وأضيفوا البصل المقطّع والبقدونس المفروم، واخلطوا بلطف.",
+    "أضيفوا التن المفتّت والزيتون، ثم ضعوا البيض أرباعًا فوقها. قدّموها فاترة أو باردة (والمايونيز جانبًا لمن يرغب)."
+   ],
+   "astuce_fr": "Assaisonnez les pommes de terre quand elles sont encore tièdes : elles boivent mieux la sauce.",
+   "astuce_ar": "تبّلوا البطاطا وهي ما تزال فاترة لأنها تتشرّب الصلصة أكثر.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-salade-du-pecheur/",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-assiette-tunisienne-53368",
+    "https://ourtunisiantable.com/home/2016/11/3/casse-croute-recipe"
+   ]
+  },
+  {
+   "id": "salade-radis-thon",
+   "statut": "brouillon",
+   "nom_fr": "Salade de radis aux olives et au thon",
+   "nom_ar": "سلطة الفجل بالزيتون والتن",
+   "nom_local": {
+    "ar": "سلاطة فجل",
+    "latin": "Slata fjel"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Toute la Tunisie",
+   "saison": "Hiver et printemps",
+   "occasion": [
+    "Entrée",
+    "Kemia",
+    "Rapide"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 0,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 30,
+     "nom_fr": "Radis",
+     "nom_ar": "فجل",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 grosse botte",
+     "note_ar": "باقة كبيرة"
+    },
+    {
+     "ingredient_id": 116,
+     "nom_fr": "Olives vertes",
+     "nom_ar": "زيتون أخضر",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 117,
+     "nom_fr": "Olives noires",
+     "nom_ar": "زيتون أسود",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 76,
+     "nom_fr": "Thon à l'huile",
+     "nom_ar": "تن بالزيت",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "5 ou 6 brins",
+     "note_ar": "5 أو 6 عروق"
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "2 citrons",
+     "note_ar": "قارصتان"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 4,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 2,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "cuits durs, pour décorer",
+     "note_ar": "مسلوقتان للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Coupez les fanes et la pointe des radis, lavez-les bien et coupez-les en fines rondelles.",
+    "Dénoyautez les olives si besoin et coupez-les en deux.",
+    "Mélangez le jus des citrons avec l'huile d'olive, le sel et le poivre.",
+    "Dans un saladier, mettez les radis, les olives et le persil haché. Arrosez de sauce et mélangez.",
+    "Ajoutez le thon émietté sur le dessus (et les œufs durs en quartiers). Servez bien frais."
+   ],
+   "etapes_ar": [
+    "انزعوا أوراق الفجل وأطرافه، واغسلوه جيدًا وقطّعوه شرائح دائرية رقيقة.",
+    "انزعوا نوى الزيتون إن لزم وقسّموه نصفين.",
+    "اخلطوا عصير القارص مع زيت الزيتون والملح والفلفل الأكحل.",
+    "في سلطانية، ضعوا الفجل والزيتون والبقدونس المفروم، ثم صبّوا الصلصة واخلطوا.",
+    "ضعوا التن المفتّت فوقها (والبيض المسلوق أرباعًا). قدّموها باردة."
+   ],
+   "astuce_fr": "Préparez-la au dernier moment : le radis rend de l'eau quand il attend dans le citron.",
+   "astuce_ar": "حضّروها في آخر لحظة لأن الفجل يُخرج ماءه إذا بقي طويلًا في القارص.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-salade-tunisienne-radis-olives-et-thon/",
+    "https://www.zingermansdeli.com/2022/02/tunisian-salad/",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "salade-betteraves-cumin",
+   "statut": "brouillon",
+   "nom_fr": "Salade de betteraves au cumin",
+   "nom_ar": "سلطة البنجر بالكمون",
+   "nom_local": {
+    "ar": "سلاطة بنجر",
+    "latin": "Slata bnajer"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Toute la Tunisie",
+   "saison": "Hiver et printemps",
+   "occasion": [
+    "Entrée",
+    "Kemia"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 45,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 29,
+     "nom_fr": "Betterave",
+     "nom_ar": "بنجر / شمندر",
+     "quantite": 0.8,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "4 betteraves moyennes",
+     "note_ar": "4 حبات متوسطة"
+    },
+    {
+     "ingredient_id": 4,
+     "nom_fr": "Ail",
+     "nom_ar": "ثوم",
+     "quantite": 0.005,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "1 gousse",
+     "note_ar": "فص واحد"
+    },
+    {
+     "ingredient_id": 140,
+     "nom_fr": "Cumin",
+     "nom_ar": "كمون",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 121,
+     "nom_fr": "Vinaigre",
+     "nom_ar": "خل",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "quelques brins",
+     "note_ar": "بعض العروق"
+    },
+    {
+     "ingredient_id": 2,
+     "nom_fr": "Pomme de terre",
+     "nom_ar": "بطاطا",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "cuites à l'eau, en cubes",
+     "note_ar": "مسلوقة ومقطّعة مكعبات"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Lavez les betteraves sans les éplucher et faites-les cuire dans l'eau 40 à 45 minutes, jusqu'à ce qu'elles soient tendres.",
+    "Laissez-les refroidir, épluchez-les (portez des gants si vous ne voulez pas tacher vos mains) et coupez-les en cubes.",
+    "Écrasez l'ail et mélangez-le avec le cumin, le vinaigre, l'huile d'olive et le sel.",
+    "Versez la sauce sur les betteraves (et les pommes de terre si vous en mettez) et mélangez.",
+    "Laissez reposer 15 minutes, parsemez de persil haché et servez frais."
+   ],
+   "etapes_ar": [
+    "اغسلوا البنجر دون تقشيره واسلقوه في الماء 40 إلى 45 دقيقة حتى يلين.",
+    "اتركوه يبرد ثم قشّروه (البسوا قفازات لتجنّب تلوّن اليدين) وقطّعوه مكعبات.",
+    "اهرسوا الثوم واخلطوه مع الكمون والخل وزيت الزيتون والملح.",
+    "صبّوا الصلصة على البنجر (والبطاطا إن أضفتموها) واخلطوا.",
+    "اتركوها 15 دقيقة، ثم رشّوا البقدونس المفروم وقدّموها باردة."
+   ],
+   "astuce_fr": "Les betteraves déjà cuites sous vide (rayon frais) font gagner 45 minutes.",
+   "astuce_ar": "البنجر المطبوخ المعلّب في أكياس (قسم المبرّدات) يوفّر 45 دقيقة.",
+   "sources": [
+    "https://jewishfoodsociety.org/recipes/salade-de-betteraves-au-cumin",
+    "https://www.tunisienumerique.com/salade-de-betteraves-facile/"
+   ]
+  },
+  {
+   "id": "salade-riz-thon",
+   "statut": "brouillon",
+   "nom_fr": "Salade de riz au thon, aux câpres et aux œufs",
+   "nom_ar": "سلطة الأرز بالتن والكبار والبيض",
+   "nom_local": {
+    "ar": "سلاطة روز",
+    "latin": "Slata rouz"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "salade",
+   "region": "Toute la Tunisie",
+   "saison": "Été",
+   "occasion": [
+    "Plat unique",
+    "Pique-nique",
+    "Petit budget"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 20,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 95,
+     "nom_fr": "Riz",
+     "nom_ar": "روز",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 76,
+     "nom_fr": "Thon à l'huile",
+     "nom_ar": "تن بالزيت",
+     "quantite": 0.16,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 3,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "cuits durs",
+     "note_ar": "مسلوقة"
+    },
+    {
+     "ingredient_id": 1,
+     "nom_fr": "Tomate",
+     "nom_ar": "طماطم",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 23,
+     "nom_fr": "Concombre",
+     "nom_ar": "فقوس / خيار",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 117,
+     "nom_fr": "Olives noires",
+     "nom_ar": "زيتون أسود",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 118,
+     "nom_fr": "Câpres",
+     "nom_ar": "كبار",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 81,
+     "nom_fr": "Fromage râpé",
+     "nom_ar": "جبن مبشور",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "fromage râpé ou gruyère en dés",
+     "note_ar": "جبن مبشور أو قرويار مكعبات"
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 115,
+     "nom_fr": "Harissa",
+     "nom_ar": "هريسة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true,
+     "note_fr": "délayée dans la sauce",
+     "note_ar": "مذابة في الصلصة"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 5,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Faites cuire le riz dans une grande casserole d'eau salée bouillante 15 à 18 minutes. Égouttez-le, rincez-le à l'eau froide et laissez-le bien égoutter.",
+    "Faites cuire les œufs 10 minutes, refroidissez-les et coupez-les en dés.",
+    "Coupez la tomate (et le concombre) en petits dés et hachez le persil.",
+    "Mélangez l'huile d'olive avec le jus de citron, le sel, le poivre (et l'harissa).",
+    "Dans un grand saladier, mélangez le riz froid avec les légumes, les olives, les câpres et la sauce.",
+    "Ajoutez le thon émietté, les œufs (et le fromage). Gardez au frais jusqu'au service."
+   ],
+   "etapes_ar": [
+    "اطهوا الأرز في قدر كبير من الماء المملّح المغلي 15 إلى 18 دقيقة. صفّوه واغسلوه بالماء البارد واتركوه يتصفّى جيدًا.",
+    "اسلقوا البيض 10 دقائق، ثم برّدوه وقطّعوه مكعبات.",
+    "قطّعوا الطماطم (والفقوس) مكعبات صغيرة وافرموا البقدونس.",
+    "اخلطوا زيت الزيتون مع عصير القارص والملح والفلفل الأكحل (والهريسة).",
+    "في سلطانية كبيرة، اخلطوا الأرز البارد مع الخضر والزيتون والكبار والصلصة.",
+    "أضيفوا التن المفتّت والبيض (والجبن). احفظوها في الثلاجة حتى التقديم."
+   ],
+   "astuce_fr": "Un riz long (type basmati ou riz étuvé) reste mieux en grains qu'un riz rond dans une salade.",
+   "astuce_ar": "الأرز الطويل (مثل البسمتي أو الأرز المطهو بالبخار) يبقى حبّات منفصلة في السلطة أفضل من الأرز المدوّر.",
+   "sources": [
+    "https://www.tunisienumerique.com/?p=538692",
+    "https://www.e-sante.fr/salade-riz-thon-olives/recette/1743",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-assiette-tunisienne-53368"
+   ]
+  },
+  {
+   "id": "zammita",
+   "statut": "brouillon",
+   "nom_fr": "Zammita (orge grillée à l'huile d'olive et au miel)",
+   "nom_ar": "زميطة",
+   "nom_local": {
+    "ar": "زميطة",
+    "latin": "Zammita / Zommita"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "petit-déjeuner",
+   "region": "Djerba et Sud tunisien",
+   "saison": "Toute l'année, surtout Ramadan (shour)",
+   "occasion": [
+    "Petit-déjeuner",
+    "Ramadan"
+   ],
+   "portions": 4,
+   "prep_min": 5,
+   "cuisson_min": 0,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 255,
+     "nom_fr": "Zammita (farine d'orge grillée aux épices)",
+     "nom_ar": "زميطة",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 6,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "de bonne qualité",
+     "note_ar": "جيّد"
+    },
+    {
+     "ingredient_id": 125,
+     "nom_fr": "Miel",
+     "nom_ar": "عسل",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "ou 4 cuillères à soupe de sucre",
+     "note_ar": "أو 4 ملاعق كبيرة من السكر"
+    },
+    {
+     "ingredient_id": 41,
+     "nom_fr": "Dattes",
+     "nom_ar": "تمر",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour accompagner",
+     "note_ar": "للمرافقة"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Zammita (farine d'orge grillée aux épices)"
+    ]
+   },
+   "etapes_fr": [
+    "Dans un bol, mettez la zammita.",
+    "Versez l'eau froide petit à petit (environ 0,25 L) en mélangeant avec une cuillère, jusqu'à obtenir la texture voulue : liquide à boire, ou pâte épaisse à manger à la cuillère.",
+    "Ajoutez l'huile d'olive et le miel, puis mélangez bien.",
+    "Répartissez dans 4 bols et servez tout de suite, avec quelques dattes."
+   ],
+   "etapes_ar": [
+    "ضعوا الزميطة في وعاء.",
+    "أضيفوا الماء البارد تدريجيًا (حوالي 0,25 ل) مع الخلط بملعقة حتى تحصلوا على القوام المرغوب: سائلة للشرب أو عجينة كثيفة تؤكل بالملعقة.",
+    "أضيفوا زيت الزيتون والعسل واخلطوا جيدًا.",
+    "وزّعوها في 4 أوعية وقدّموها فورًا مع بعض حبات التمر."
+   ],
+   "astuce_fr": "On la trouve surtout à Djerba et dans le Sud ; à Sousse, demandez-la chez les marchands de bsissa. À défaut, la bsissa se prépare de la même façon.",
+   "astuce_ar": "توجد خاصة في جربة والجنوب، وفي سوسة اطلبوها عند باعة البسيسة. وإن لم تجدوها، تُحضّر البسيسة بالطريقة نفسها.",
+   "sources": [
+    "https://fr.vikidia.org/wiki/Gastronomie_Djerbienne",
+    "https://www.tunisienumerique.com/?p=853889",
+    "https://www.tunisienumerique.com/7-facons-differentes-de-bsissa-en-tunisie/"
+   ]
+  },
+  {
+   "id": "dro-sorgho",
+   "statut": "brouillon",
+   "nom_fr": "Drô (crème chaude de sorgho)",
+   "nom_ar": "درع (عصيدة الذرة البيضاء)",
+   "nom_local": {
+    "ar": "درع",
+    "latin": "Drô / Droo"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "petit-déjeuner",
+   "region": "Tunis et Nord (toute la Tunisie)",
+   "saison": "Hiver",
+   "occasion": [
+    "Petit-déjeuner",
+    "Ramadan"
+   ],
+   "portions": 4,
+   "prep_min": 5,
+   "cuisson_min": 15,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 240,
+     "nom_fr": "Farine de sorgho (drô)",
+     "nom_ar": "دقيق الذرة البيضاء",
+     "quantite": 0.15,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 79,
+     "nom_fr": "Lait entier",
+     "nom_ar": "حليب كامل الدسم",
+     "quantite": 1,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 4,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "ou miel, selon le goût",
+     "note_ar": "أو العسل حسب الذوق"
+    },
+    {
+     "ingredient_id": 138,
+     "nom_fr": "Eau de fleur d'oranger",
+     "nom_ar": "ماء الزهر",
+     "quantite": 0.02,
+     "unite": "L",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "1 cuillère à soupe",
+     "note_ar": "ملعقة كبيرة"
+    },
+    {
+     "ingredient_id": 127,
+     "nom_fr": "Halwa chamia",
+     "nom_ar": "حلوى شامية",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "émiettée sur le dessus",
+     "note_ar": "مفتّتة فوقها"
+    },
+    {
+     "ingredient_id": 133,
+     "nom_fr": "Noisettes",
+     "nom_ar": "بندق",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "grillées et concassées",
+     "note_ar": "محمّصة ومكسّرة"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Farine de sorgho (drô)"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Dans une casserole, mélangez la farine de sorgho et le sucre.",
+    "Versez le lait froid petit à petit en fouettant, pour éviter les grumeaux.",
+    "Faites chauffer à feu moyen en remuant sans arrêt, jusqu'à ébullition, puis laissez épaissir 5 minutes à feu doux.",
+    "Ajoutez l'eau de fleur d'oranger si vous en mettez.",
+    "Versez dans des bols et décorez de halwa émiettée et de noisettes. Servez chaud."
+   ],
+   "etapes_ar": [
+    "في قدر، اخلطوا دقيق الدرع والسكر.",
+    "صبّوا الحليب البارد تدريجيًا مع الخفق لتجنّب الكتل.",
+    "سخّنوه على نار متوسطة مع التحريك المستمر حتى الغليان، ثم اتركوه يتكثّف 5 دقائق على نار هادئة.",
+    "أضيفوا ماء الزهر إن رغبتم.",
+    "صبّوه في أوعية وزيّنوه بالحلوى الشامية المفتّتة والبندق. قدّموه ساخنًا."
+   ],
+   "astuce_fr": "Le drô se fait aussi à l'eau au lieu du lait, pour une version plus légère ; une pincée de gingembre moulu le parfume joliment.",
+   "astuce_ar": "يمكن تحضير الدرع بالماء بدل الحليب لنسخة أخفّ، ورشة من الزنجبيل المطحون تعطيه نكهة لطيفة.",
+   "sources": [
+    "https://www.tunisienumerique.com/?p=810794",
+    "https://www.lapresse.tn/?p=263432",
+    "https://halalxplorer.com/dro3-a-warm-bowl-of-tunisian-comfort-for-breakfast/"
+   ]
+  },
+  {
+   "id": "the-pignons",
+   "statut": "brouillon",
+   "nom_fr": "Thé vert à la menthe et aux pignons",
+   "nom_ar": "تاي أخضر بالنعناع والزقوقو الأبيض",
+   "nom_local": {
+    "ar": "تاي بالبوفريوة",
+    "latin": "Tey bel bondok"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "boisson",
+   "region": "Toute la Tunisie (Sidi Bou Saïd, Tunis)",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Après le repas",
+    "Invités"
+   ],
+   "portions": 4,
+   "prep_min": 5,
+   "cuisson_min": 10,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 129,
+     "nom_fr": "Thé vert",
+     "nom_ar": "تاي أخضر",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 19,
+     "nom_fr": "Menthe fraîche",
+     "nom_ar": "نعناع",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "quelques brins",
+     "note_ar": "بعض العروق"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 6,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "à ajuster",
+     "note_ar": "حسب الذوق"
+    },
+    {
+     "ingredient_id": 135,
+     "nom_fr": "Pignons",
+     "nom_ar": "زقوقو أبيض / صنوبر",
+     "quantite": 0.04,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "ou amandes effilées grillées",
+     "note_ar": "أو لوز مقطّع ومحمّص"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Menthe fraîche",
+     "Pignons"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Rincez le thé avec un petit verre d'eau bouillante, puis jetez cette eau.",
+    "Mettez le thé dans une théière ou une petite casserole avec 0,75 L d'eau et le sucre. Portez à ébullition et laissez bouillir doucement 5 minutes.",
+    "Hors du feu, ajoutez la menthe lavée et laissez infuser 3 minutes.",
+    "Pendant ce temps, faites griller les pignons 2 minutes à sec dans une poêle, en remuant.",
+    "Mettez une cuillère de pignons dans chaque verre et versez le thé chaud par-dessus. Servez aussitôt."
+   ],
+   "etapes_ar": [
+    "اشطفوا التاي بكأس صغير من الماء المغلي ثم تخلّصوا من هذا الماء.",
+    "ضعوا التاي في برّاد أو قدر صغير مع 0,75 ل من الماء والسكر. اتركوه يغلي بهدوء 5 دقائق.",
+    "بعيدًا عن النار، أضيفوا النعناع المغسول واتركوه ينقع 3 دقائق.",
+    "في الأثناء، حمّصوا الزقوقو الأبيض دقيقتين في مقلاة دون زيت مع التحريك.",
+    "ضعوا ملعقة من الزقوقو الأبيض في كل كأس وصبّوا عليه التاي الساخن. قدّموه فورًا."
+   ],
+   "astuce_fr": "Les pignons sont chers : les amandes grillées ou les cacahuètes grillées les remplacent très bien, comme dans beaucoup de cafés tunisiens.",
+   "astuce_ar": "الزقوقو الأبيض غالٍ، واللوز أو الكاكاوية المحمّصة يعوّضانه جيدًا كما في كثير من المقاهي التونسية.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Tea_with_pine_nuts",
+    "https://www.jidlonacestach.cz/en/the-aux-pignons/",
+    "https://www.alimentarium.org/fr/savoir/le-th%C3%A9-au-maghreb"
+   ]
+  },
+  {
+   "id": "citronnade",
+   "statut": "brouillon",
+   "nom_fr": "Citronnade tunisienne (citrons entiers mixés)",
+   "nom_ar": "سيترونادة تونسية",
+   "nom_local": {
+    "ar": "سيترونادة",
+    "latin": "Citronnade"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "boisson",
+   "region": "Toute la Tunisie",
+   "saison": "Été, Ramadan",
+   "occasion": [
+    "Ramadan",
+    "Été",
+    "Invités"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 0,
+   "repos": "4 heures de macération au frais",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.6,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "5 ou 6 citrons non traités",
+     "note_ar": "5 أو 6 حبات غير معالجة"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 138,
+     "nom_fr": "Eau de fleur d'oranger",
+     "nom_ar": "ماء الزهر",
+     "quantite": 0.02,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 à 2 cuillères à soupe",
+     "note_ar": "ملعقة إلى ملعقتين كبيرتين"
+    },
+    {
+     "ingredient_id": 19,
+     "nom_fr": "Menthe fraîche",
+     "nom_ar": "نعناع",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "quelques feuilles",
+     "note_ar": "بعض الأوراق"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Lavez bien les citrons. Retirez la moitié de l'écorce jaune (elle rend la boisson amère si on la garde toute) et coupez les citrons en morceaux en enlevant les pépins.",
+    "Mettez-les dans un saladier avec le sucre, mélangez, couvrez et laissez macérer au moins 4 heures au réfrigérateur.",
+    "Mixez les citrons avec leur sirop et 1 L d'eau froide, en deux fois, jusqu'à ce que ce soit mousseux.",
+    "Filtrez dans une passoire fine en pressant bien la pulpe.",
+    "Ajoutez l'eau de fleur d'oranger, goûtez et rajoutez du sucre ou de l'eau si besoin. Servez très frais, avec quelques feuilles de menthe."
+   ],
+   "etapes_ar": [
+    "اغسلوا القارص جيدًا. انزعوا نصف القشرة الصفراء (فهي تجعل المشروب مرًّا إن تُركت كلها)، وقطّعوه قطعًا مع نزع البذور.",
+    "ضعوه في سلطانية مع السكر واخلطوه، ثم غطّوه واتركوه 4 ساعات على الأقل في الثلاجة.",
+    "اخلطوا القارص مع شرابه و1 ل من الماء البارد في الخلاط على دفعتين حتى تتكوّن رغوة.",
+    "صفّوه في مصفاة رقيقة مع عصر اللب جيدًا.",
+    "أضيفوا ماء الزهر وذوقوه، وزيدوا السكر أو الماء إن لزم. قدّموه باردًا جدًا مع بعض أوراق النعناع."
+   ],
+   "astuce_fr": "Buvez-la le jour même : le lendemain, elle devient plus amère.",
+   "astuce_ar": "اشربوها في اليوم نفسه لأنها تصبح أكثر مرارة في الغد.",
+   "sources": [
+    "https://www.ourtunisiantable.com/home/2017/7/8/tunisian-citronnade-recipe",
+    "https://www.routard.com/guide/tunisie/78/cuisine_et_boissons.htm",
+    "https://culinarybackstreets.com/?p=40990"
+   ]
+  },
+  {
+   "id": "ftayer",
+   "statut": "brouillon",
+   "nom_fr": "Ftayer (beignets plats du matin, nature ou à l'œuf)",
+   "nom_ar": "فطاير",
+   "nom_local": {
+    "ar": "فطاير",
+    "latin": "Ftayer"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "petit-déjeuner",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année, surtout l'hiver",
+   "occasion": [
+    "Petit-déjeuner",
+    "Goûter"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 20,
+   "repos": "1 h 30 de levée",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 145,
+     "nom_fr": "Curcuma",
+     "nom_ar": "كركم",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 2,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 0.75,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour la friture",
+     "note_ar": "للقلي"
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 4,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "1 par ftira, pour la version à l'œuf",
+     "note_ar": "واحدة لكل فطيرة للنسخة بالبيض"
+    },
+    {
+     "ingredient_id": 125,
+     "nom_fr": "Miel",
+     "nom_ar": "عسل",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "ou sucre, pour la version sucrée",
+     "note_ar": "أو السكر للنسخة الحلوة"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Délayez la levure et le sucre dans un verre d'eau tiède et laissez reposer 10 minutes.",
+    "Mélangez la farine, le sel (et le curcuma). Ajoutez la levure, l'huile d'olive, puis environ 0,3 L d'eau tiède petit à petit.",
+    "Pétrissez 10 minutes : la pâte doit être très souple et un peu collante. Couvrez et laissez lever 1 heure 30 dans un endroit tiède.",
+    "Chauffez l'huile de friture. Huilez-vous les mains, prenez une boule de pâte de la taille d'un œuf et étirez-la en galette fine avec les doigts.",
+    "Faites frire chaque ftira 1 à 2 minutes par face, jusqu'à ce qu'elle soit dorée et gonflée. Égouttez sur du papier absorbant.",
+    "Pour la version à l'œuf, cassez un œuf au centre de la galette dès qu'elle est dans l'huile et repliez-la, ou repassez-la à la poêle avec un œuf. Sinon, servez avec du miel ou du sucre."
+   ],
+   "etapes_ar": [
+    "ذوّبوا الخميرة والسكر في كأس ماء فاتر واتركوها 10 دقائق.",
+    "اخلطوا الفرينة والملح (والكركم). أضيفوا الخميرة وزيت الزيتون، ثم حوالي 0,3 ل من الماء الفاتر تدريجيًا.",
+    "اعجنوا 10 دقائق، فالعجين يجب أن يكون طريًا جدًا ولزجًا قليلًا. غطّوه واتركوه يختمر ساعة ونصفًا في مكان دافئ.",
+    "سخّنوا زيت القلي. ادهنوا أيديكم بالزيت، وخذوا كرة عجين بحجم البيضة وافردوها بالأصابع قرصًا رقيقًا.",
+    "اقلوا كل فطيرة دقيقة إلى دقيقتين من كل جهة حتى تتحمّر وتنتفخ. صفّوها على ورق ماصّ.",
+    "للنسخة بالبيض، اكسروا بيضة في وسط القرص بمجرد وضعه في الزيت واطووه، أو أعيدوه إلى المقلاة مع بيضة. وإلا قدّموه مع العسل أو السكر."
+   ],
+   "astuce_fr": "L'huile doit être chaude mais pas fumante : trop chaude, la ftira dore dehors et reste crue dedans.",
+   "astuce_ar": "يجب أن يكون الزيت ساخنًا دون أن يدخّن، فإن كان ساخنًا جدًا تتحمّر الفطيرة من الخارج وتبقى نيئة من الداخل.",
+   "sources": [
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-petit-delice-tunisien-ftayer-ou-bambaloni-53512",
+    "https://tasteofbeirut.com/tunisian-donuts-ftira",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "tajine-chou-fleur",
+   "statut": "brouillon",
+   "nom_fr": "Tajine de chou-fleur (au four, aux œufs et au fromage)",
+   "nom_ar": "طاجين القرنبيط",
+   "nom_local": {
+    "ar": "طاجين نوار",
+    "latin": "Tajine nouar"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "tajine",
+   "region": "Toute la Tunisie",
+   "saison": "Hiver",
+   "occasion": [
+    "Végétarien",
+    "Ramadan",
+    "Entrée"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 40,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 14,
+     "nom_fr": "Chou-fleur",
+     "nom_ar": "قرنبيط / نوار",
+     "quantite": 1,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "environ 1 kg",
+     "note_ar": "حوالي 1 كغ"
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 6,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 81,
+     "nom_fr": "Fromage râpé",
+     "nom_ar": "جبن مبشور",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 145,
+     "nom_fr": "Curcuma",
+     "nom_ar": "كركم",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 110,
+     "nom_fr": "Chapelure",
+     "nom_ar": "فرينة الخبز",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "2 cuillères à soupe pour le dessus",
+     "note_ar": "ملعقتان كبيرتان للوجه"
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.01,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "pour le moule",
+     "note_ar": "للقالب"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Détaillez le chou-fleur en petits bouquets, lavez-les et faites-les cuire 8 minutes dans de l'eau bouillante salée. Égouttez.",
+    "Dans une poêle, faites revenir l'oignon haché dans l'huile d'olive 3 minutes avec le curcuma. Ajoutez le chou-fleur et laissez dorer 5 minutes.",
+    "Préchauffez le four à 200 °C. Battez les œufs avec le sel, le poivre, le persil haché et les trois quarts du fromage.",
+    "Écrasez grossièrement le chou-fleur à la fourchette et mélangez-le aux œufs.",
+    "Versez dans un moule beurré, couvrez du reste de fromage (et de chapelure) et enfournez 20 minutes, jusqu'à ce que le dessus soit doré et le centre pris.",
+    "Laissez tiédir 10 minutes, coupez en carrés et servez chaud ou froid avec une salade."
+   ],
+   "etapes_ar": [
+    "قسّموا القرنبيط إلى باقات صغيرة واغسلوها، ثم اسلقوها 8 دقائق في ماء مملّح يغلي وصفّوها.",
+    "في مقلاة، قلّبوا البصل المفروم في زيت الزيتون 3 دقائق مع الكركم. أضيفوا القرنبيط واتركوه يتحمّر 5 دقائق.",
+    "سخّنوا الفرن على 200 درجة. اخفقوا البيض مع الملح والفلفل الأكحل والبقدونس المفروم وثلاثة أرباع الجبن.",
+    "اهرسوا القرنبيط هرسًا خشنًا بالشوكة واخلطوه بالبيض.",
+    "صبّوا الخليط في قالب مدهون بالزبدة، وغطّوه ببقية الجبن (وفرينة الخبز)، وأدخلوه الفرن 20 دقيقة حتى يتحمّر الوجه ويتماسك الوسط.",
+    "اتركوه يفتر 10 دقائق، ثم قطّعوه مربعات وقدّموه ساخنًا أو باردًا مع سلطة."
+   ],
+   "astuce_fr": "Égouttez bien le chou-fleur après la cuisson : s'il reste de l'eau, le tajine sera mou.",
+   "astuce_ar": "صفّوا القرنبيط جيدًا بعد السلق، فإن بقي فيه ماء يصبح الطاجين رخوًا.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-tajine-de-chou-fleur/",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-les-tajines-53086",
+    "https://whereismyspoon.co/wprm_print/tunisian-tajine"
+   ]
+  },
+  {
+   "id": "brik-pomme-de-terre-fromage",
+   "statut": "brouillon",
+   "nom_fr": "Brik aux pommes de terre, au fromage et au persil",
+   "nom_ar": "بريك بالبطاطا والجبن والمعدنوس",
+   "nom_local": {
+    "ar": "بريك بطاطا وجبن",
+    "latin": "Brik batata w jben"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "brik",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année, surtout Ramadan",
+   "occasion": [
+    "Ramadan",
+    "Végétarien",
+    "Entrée"
+   ],
+   "portions": 4,
+   "prep_min": 25,
+   "cuisson_min": 25,
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 108,
+     "nom_fr": "Feuilles de brick",
+     "nom_ar": "ملسوقة",
+     "quantite": 8,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 2,
+     "nom_fr": "Pomme de terre",
+     "nom_ar": "بطاطا",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 81,
+     "nom_fr": "Fromage râpé",
+     "nom_ar": "جبن مبشور",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 17,
+     "nom_fr": "Persil",
+     "nom_ar": "معدنوس",
+     "quantite": 1,
+     "unite": "botte",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 3,
+     "nom_fr": "Oignon",
+     "nom_ar": "بصل",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "un petit oignon haché",
+     "note_ar": "بصلة صغيرة مفرومة"
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 2,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 pour la farce, 1 blanc pour coller",
+     "note_ar": "واحدة للحشو وبياض للّصق"
+    },
+    {
+     "ingredient_id": 118,
+     "nom_fr": "Câpres",
+     "nom_ar": "كبار",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 146,
+     "nom_fr": "Poivre noir",
+     "nom_ar": "فلفل أكحل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 0.5,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour la friture",
+     "note_ar": "للقلي"
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour servir",
+     "note_ar": "للتقديم"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Persil"
+    ]
+   },
+   "etapes_fr": [
+    "Épluchez les pommes de terre, coupez-les en morceaux et faites-les cuire 15 minutes dans l'eau salée. Égouttez et écrasez-les.",
+    "Ajoutez le fromage râpé, le persil haché finement, l'oignon (et les câpres), un œuf battu, le sel et le poivre. Mélangez.",
+    "Coupez chaque feuille de brick en deux. Posez une cuillère de farce sur le bas d'une demi-feuille, rabattez les côtés et roulez en cigare (ou pliez en triangle).",
+    "Collez le bord avec un peu de blanc d'œuf.",
+    "Faites frire les briks dans l'huile chaude 1 à 2 minutes par face, jusqu'à ce qu'elles soient bien dorées. Égouttez sur du papier absorbant.",
+    "Servez chaud avec des quartiers de citron."
+   ],
+   "etapes_ar": [
+    "قشّروا البطاطا وقطّعوها واسلقوها 15 دقيقة في ماء مملّح، ثم صفّوها واهرسوها.",
+    "أضيفوا الجبن المبشور والبقدونس المفروم ناعمًا والبصل (والكبار) وبيضة مخفوقة والملح والفلفل الأكحل، واخلطوا.",
+    "قسّموا كل ورقة ملسوقة نصفين. ضعوا ملعقة من الحشو أسفل نصف الورقة، واثنوا الجانبين ولفّوها كالسيجار (أو اطووها مثلثًا).",
+    "الصقوا الطرف بقليل من بياض البيض.",
+    "اقلوا البريك في الزيت الساخن دقيقة إلى دقيقتين من كل جهة حتى يتحمّر جيدًا، ثم صفّوه على ورق ماصّ.",
+    "قدّموه ساخنًا مع أرباع القارص."
+   ],
+   "astuce_fr": "Pour moins de gras, badigeonnez les briks d'huile et faites-les cuire 15 minutes au four à 200 °C.",
+   "astuce_ar": "لتقليل الدهون، ادهنوا البريك بالزيت واطهوه 15 دقيقة في الفرن على 200 درجة.",
+   "sources": [
+    "https://lepetitjournal.com/vivre-a-tunis/recettes-ramadan-briks-53915",
+    "https://www.tunisienumerique.com/?p=892777",
+    "https://fr.wikipedia.org/wiki/Cuisine_tunisienne"
+   ]
+  },
+  {
+   "id": "khobz-tabouna",
+   "statut": "brouillon",
+   "nom_fr": "Khobz tabouna (pain rond à la semoule, au four de maison)",
+   "nom_ar": "خبز الطابونة",
+   "nom_local": {
+    "ar": "خبز طابونة",
+    "latin": "Khobz tabouna"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "pain",
+   "region": "Toute la Tunisie (campagnes)",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Quotidien",
+    "Boulangerie maison"
+   ],
+   "portions": 4,
+   "prep_min": 20,
+   "cuisson_min": 25,
+   "repos": "1 h 30 de levée",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 90,
+     "nom_fr": "Semoule fine",
+     "nom_ar": "سميد رقيق",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 200,
+     "nom_fr": "Nigelle (graines)",
+     "nom_ar": "حبة البركة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Semoule fine"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Délayez la levure et le sucre dans un verre d'eau tiède et laissez reposer 10 minutes.",
+    "Mélangez la semoule, la farine et le sel. Ajoutez l'huile d'olive et frottez entre vos mains pour bien l'incorporer.",
+    "Versez la levure, puis environ 0,3 L d'eau tiède petit à petit, et pétrissez 10 minutes jusqu'à obtenir une pâte souple. Couvrez et laissez lever 1 heure.",
+    "Divisez en 2 boules. Aplatissez chacune en disque de 1,5 cm d'épaisseur, piquez-les à la fourchette et parsemez de nigelle. Laissez lever encore 30 minutes.",
+    "Préchauffez le four à 230 °C avec la plaque dedans. Posez les pains sur la plaque très chaude et faites cuire 20 à 25 minutes, jusqu'à ce qu'ils soient bien dorés.",
+    "Enveloppez-les dans un linge propre en sortant du four pour garder la croûte souple."
+   ],
+   "etapes_ar": [
+    "ذوّبوا الخميرة والسكر في كأس ماء فاتر واتركوها 10 دقائق.",
+    "اخلطوا السميد والفرينة والملح. أضيفوا زيت الزيتون وافركوا الخليط بين أيديكم ليتشرّبه جيدًا.",
+    "أضيفوا الخميرة ثم حوالي 0,3 ل من الماء الفاتر تدريجيًا، واعجنوا 10 دقائق حتى يصبح العجين طريًا. غطّوه واتركوه يختمر ساعة.",
+    "قسّموه إلى كرتين. افردوا كل واحدة قرصًا بسمك 1,5 سم، ووخزوه بالشوكة ورشّوا عليه السانوج. اتركوه يختمر 30 دقيقة أخرى.",
+    "سخّنوا الفرن على 230 درجة مع الصينية داخله. ضعوا الخبز على الصينية الساخنة جدًا واطهوه 20 إلى 25 دقيقة حتى يتحمّر جيدًا.",
+    "لفّوه في منشفة نظيفة عند إخراجه من الفرن لتبقى قشرته طرية."
+   ],
+   "astuce_fr": "Le vrai tabouna cuit collé aux parois d'un four en terre ; à la maison, une plaque ou une pierre bien préchauffée donne la base croustillante la plus proche.",
+   "astuce_ar": "الطابونة الأصلية تُطهى ملتصقة بجدران فرن من الطين، وفي البيت تعطي الصينية أو الحجرة المسخّنة جيدًا أقرب قاعدة مقرمشة.",
+   "sources": [
+    "https://www.tunisienumerique.com/?p=504242",
+    "https://www.leconomistemaghrebin.com/2018/09/02/tunisie-le-pain-tabouna-traditionnel-devenu-un-luxe/",
+    "https://dubocalalassiette.fr/blog/recette-pain-tunisien-avec-semoule-fine/"
+   ]
+  },
+  {
+   "id": "mlawi",
+   "statut": "brouillon",
+   "nom_fr": "Mlawi (galettes feuilletées à la poêle)",
+   "nom_ar": "ملاوي",
+   "nom_local": {
+    "ar": "ملاوي",
+    "latin": "Mlawi"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "pain",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Petit-déjeuner",
+    "Quotidien",
+    "Boulangerie maison"
+   ],
+   "portions": 6,
+   "prep_min": 40,
+   "cuisson_min": 25,
+   "repos": "1 heure",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 90,
+     "nom_fr": "Semoule fine",
+     "nom_ar": "سميد رقيق",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 6,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour étaler et plier",
+     "note_ar": "للفرد والطيّ"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Semoule fine"
+    ]
+   },
+   "etapes_fr": [
+    "Mélangez la semoule fine, la farine, la levure et le sel. Ajoutez environ 0,35 L d'eau tiède petit à petit et pétrissez 10 à 15 minutes : la pâte doit être très souple et élastique.",
+    "Couvrez et laissez reposer 1 heure.",
+    "Mélangez l'huile végétale et l'huile d'olive. Divisez la pâte en 6 boules et huilez-les bien.",
+    "Sur un plan de travail huilé, étalez une boule avec les doigts jusqu'à ce qu'elle soit très fine. Saupoudrez d'un peu de semoule, pliez-la en 3 dans un sens puis en 3 dans l'autre pour former un carré.",
+    "Laissez reposer les carrés 10 minutes, puis aplatissez-les doucement à la main pour les agrandir.",
+    "Faites-les cuire dans une poêle à peine huilée, à feu moyen, 2 à 3 minutes par face. Gardez-les au chaud dans un linge ou un sac propre."
+   ],
+   "etapes_ar": [
+    "اخلطوا السميد الرقيق والفرينة والخميرة والملح. أضيفوا حوالي 0,35 ل من الماء الفاتر تدريجيًا واعجنوا 10 إلى 15 دقيقة، فالعجين يجب أن يكون طريًا جدًا ومطاطيًا.",
+    "غطّوه واتركوه يرتاح ساعة.",
+    "اخلطوا الزيت النباتي وزيت الزيتون. قسّموا العجين إلى 6 كرات وادهنوها جيدًا بالزيت.",
+    "على سطح مدهون بالزيت، افردوا كرة بالأصابع حتى تصبح رقيقة جدًا. رشّوا عليها قليلًا من السميد واطووها 3 طيّات في اتجاه ثم 3 في الاتجاه الآخر لتصبح مربعًا.",
+    "اتركوا المربعات ترتاح 10 دقائق، ثم افردوها بلطف باليد لتكبر.",
+    "اطهوها في مقلاة مدهونة قليلًا بالزيت على نار متوسطة، 2 إلى 3 دقائق من كل جهة. احفظوها ساخنة في منشفة أو كيس نظيف."
+   ],
+   "astuce_fr": "Retournez la mlawi dès que la face brunit : trop cuite, elle durcit. Garnie de thon, d'œuf, d'harissa et de fromage, elle fait un casse-croûte complet.",
+   "astuce_ar": "اقلبوا الملاوي بمجرد أن يتحمّر وجهها لأنها تجفّ إن طُهيت أكثر. ومحشوّة بالتن والبيض والهريسة والجبن تصبح كسكروتًا كاملًا.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-by-warda-le-pain-tunisien-mlawi/",
+    "https://www.tunisienumerique.com/recette-de-mlaouis-tunisiens/",
+    "https://dubocalalassiette.fr/blog/recette-mlawi-semoule/"
+   ]
+  },
+  {
+   "id": "kesra",
+   "statut": "brouillon",
+   "nom_fr": "Kesra (galette de semoule à l'huile d'olive, à la poêle)",
+   "nom_ar": "كسرة",
+   "nom_local": {
+    "ar": "كسرة / خبز طاجين",
+    "latin": "Kesra / khobz tajine"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "pain",
+   "region": "Nord-Ouest et toute la Tunisie",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Quotidien",
+    "Boulangerie maison"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 20,
+   "repos": "45 minutes",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 91,
+     "nom_fr": "Semoule moyenne",
+     "nom_ar": "سميد متوسط",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 5,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 200,
+     "nom_fr": "Nigelle (graines)",
+     "nom_ar": "حبة البركة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {},
+   "etapes_fr": [
+    "Mélangez la semoule et le sel, ajoutez l'huile d'olive et frottez entre vos mains pour que chaque grain soit enrobé.",
+    "Délayez la levure dans un peu d'eau tiède, versez-la sur la semoule, puis ajoutez environ 0,25 L d'eau tiède petit à petit en pétrissant 5 à 10 minutes : la pâte doit être souple sans coller.",
+    "Divisez en 2 boules, couvrez et laissez reposer 30 minutes.",
+    "Aplatissez chaque boule à la main en galette de 1 cm d'épaisseur, piquez-la à la fourchette (et parsemez de nigelle). Laissez reposer encore 15 minutes.",
+    "Faites cuire dans une poêle épaisse ou un tajine en terre, à sec et à feu moyen, environ 5 minutes par face, en tournant la galette pour qu'elle dore partout.",
+    "Laissez refroidir sur une grille, puis coupez en parts."
+   ],
+   "etapes_ar": [
+    "اخلطوا السميد والملح، وأضيفوا زيت الزيتون وافركوه بين أيديكم حتى تتغلّف كل حبة.",
+    "ذوّبوا الخميرة في قليل من الماء الفاتر وصبّوها على السميد، ثم أضيفوا حوالي 0,25 ل من الماء الفاتر تدريجيًا مع العجن 5 إلى 10 دقائق، فالعجين يجب أن يكون طريًا دون أن يلتصق.",
+    "قسّموه إلى كرتين، غطّوهما واتركوهما ترتاحان 30 دقيقة.",
+    "افردوا كل كرة باليد قرصًا بسمك 1 سم، ووخزوه بالشوكة (ورشّوا السانوج). اتركوه 15 دقيقة أخرى.",
+    "اطهوه في مقلاة سميكة أو طاجين من الطين دون زيت على نار متوسطة، حوالي 5 دقائق من كل جهة، مع تدوير القرص ليتحمّر من كل الجوانب.",
+    "اتركوه يبرد على شبكة ثم قطّعوه."
+   ],
+   "astuce_fr": "Une version sans levure (khobz ftir) existe : la galette est alors plus fine et plus croquante, à manger le jour même.",
+   "astuce_ar": "توجد نسخة دون خميرة (خبز فطير) يكون فيها القرص أرقّ وأكثر قرمشة، ويؤكل في اليوم نفسه.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-kesra-tunisie/",
+    "https://dubocalalassiette.fr/blog/galette-tunisienne-semoule/"
+   ]
+  },
+  {
+   "id": "khobz-mbesses",
+   "statut": "brouillon",
+   "nom_fr": "Khobz mbesses (pain brioché à la semoule et au curcuma)",
+   "nom_ar": "خبز مبسّس",
+   "nom_local": {
+    "ar": "خبز مبسّس",
+    "latin": "Khobz mbesses"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "pain",
+   "region": "Sahel et Sfax (toute la Tunisie pour l'Aïd)",
+   "saison": "Toute l'année, surtout Aïd",
+   "occasion": [
+    "Aïd",
+    "Petit-déjeuner",
+    "Boulangerie maison"
+   ],
+   "portions": 8,
+   "prep_min": 30,
+   "cuisson_min": 30,
+   "repos": "3 heures de levée",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 90,
+     "nom_fr": "Semoule fine",
+     "nom_ar": "سميد رقيق",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 85,
+     "nom_fr": "Yaourt nature",
+     "nom_ar": "ياغورت",
+     "quantite": 1,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 145,
+     "nom_fr": "Curcuma",
+     "nom_ar": "كركم",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 78,
+     "nom_fr": "Lait demi-écrémé",
+     "nom_ar": "حليب نصف دسم",
+     "quantite": 0.1,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "dont un peu pour dorer",
+     "note_ar": "منه قليل للدهن"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 0.1,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 1,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "le jaune, pour dorer",
+     "note_ar": "الصفار للدهن"
+    },
+    {
+     "ingredient_id": 200,
+     "nom_fr": "Nigelle (graines)",
+     "nom_ar": "حبة البركة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true
+    },
+    {
+     "ingredient_id": 137,
+     "nom_fr": "Sésame",
+     "nom_ar": "جلجلان",
+     "quantite": 0.01,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "1 cuillère à soupe pour le dessus",
+     "note_ar": "ملعقة كبيرة للوجه"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "refusé (prix réel)": [
+     "Semoule fine"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Délayez la levure dans un verre d'eau tiède et laissez reposer 10 minutes.",
+    "Dans un grand saladier, mélangez la farine, la semoule, le sucre, le sel et le curcuma. Faites un puits et versez-y le yaourt, l'huile d'olive, le lait et la levure.",
+    "Ajoutez de l'eau tiède petit à petit (environ 0,3 L) et pétrissez 10 minutes jusqu'à obtenir une pâte souple. Couvrez et laissez lever 2 heures.",
+    "Dégazez la pâte, divisez-la en 3 boudins et tressez-les (ou formez 2 pains ronds). Posez sur une plaque huilée, couvrez et laissez lever encore 1 heure.",
+    "Préchauffez le four à 200 °C. Badigeonnez le pain avec le jaune d'œuf battu dans un peu de lait et parsemez de nigelle et de sésame.",
+    "Enfournez 25 à 30 minutes, jusqu'à ce que le pain soit bien doré et sonne creux dessous. Laissez refroidir sur une grille."
+   ],
+   "etapes_ar": [
+    "ذوّبوا الخميرة في كأس ماء فاتر واتركوها 10 دقائق.",
+    "في سلطانية كبيرة، اخلطوا الفرينة والسميد والسكر والملح والكركم. اصنعوا حفرة في الوسط وصبّوا فيها الياغورت وزيت الزيتون والحليب والخميرة.",
+    "أضيفوا الماء الفاتر تدريجيًا (حوالي 0,3 ل) واعجنوا 10 دقائق حتى يصبح العجين طريًا. غطّوه واتركوه يختمر ساعتين.",
+    "أخرجوا الهواء من العجين وقسّموه إلى 3 أصابع واضفروها (أو شكّلوا خبزتين مستديرتين). ضعوه على صينية مدهونة، وغطّوه واتركوه يختمر ساعة أخرى.",
+    "سخّنوا الفرن على 200 درجة. ادهنوا الخبز بالصفار المخفوق مع قليل من الحليب ورشّوا عليه السانوج والجلجلان.",
+    "أدخلوه الفرن 25 إلى 30 دقيقة حتى يتحمّر جيدًا ويصدر صوتًا أجوف من الأسفل. اتركوه يبرد على شبكة."
+   ],
+   "astuce_fr": "Quelques graines de fenouil ou d'anis dans la pâte donnent le parfum des pains de fête du Sahel.",
+   "astuce_ar": "قليل من حبوب البسباس أو حبة حلاوة في العجين يعطي رائحة خبز الأعياد في الساحل.",
+   "sources": [
+    "https://lepetitjournal.com/vivre-a-tunis/traditions-culinaires-khobz-mbesses-pain-brioche-la-semoule-347511",
+    "https://www.tunisienumerique.com/recette-pain-maison-pour-aid/"
+   ]
+  },
+  {
+   "id": "khobz-chair",
+   "statut": "brouillon",
+   "nom_fr": "Khobz chaïr (pain d'orge au four)",
+   "nom_ar": "خبز الشعير",
+   "nom_local": {
+    "ar": "خبز شعير",
+    "latin": "Khobz chaïr"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "pain",
+   "region": "Sfax et Sud tunisien",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Quotidien",
+    "Boulangerie maison"
+   ],
+   "portions": 8,
+   "prep_min": 15,
+   "cuisson_min": 40,
+   "repos": "15 minutes",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 232,
+     "nom_fr": "Farine d'orge",
+     "nom_ar": "دقيق الشعير",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 3,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 200,
+     "nom_fr": "Nigelle (graines)",
+     "nom_ar": "حبة البركة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": true
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Farine d'orge"
+    ]
+   },
+   "etapes_fr": [
+    "Mélangez la farine d'orge et le sel dans un saladier. Versez environ 0,3 L d'eau tiède et mélangez à la main.",
+    "Couvrez et laissez reposer 15 minutes : l'orge boit l'eau et la pâte devient plus facile à travailler.",
+    "Pétrissez quelques minutes avec les mains mouillées : la pâte reste collante, c'est normal.",
+    "Préchauffez le four à 180 °C. Tassez la pâte dans un moule rond peu profond, huilé, sur 2 à 3 cm d'épaisseur. Lissez avec les mains mouillées.",
+    "Tracez 8 parts au couteau, faites un petit creux au centre et versez-y l'huile d'olive (parsemez de nigelle).",
+    "Enfournez 40 minutes, jusqu'à ce que le pain soit ferme et doré. Laissez tiédir avant de démouler."
+   ],
+   "etapes_ar": [
+    "اخلطوا دقيق الشعير والملح في سلطانية. صبّوا حوالي 0,3 ل من الماء الفاتر واخلطوا باليد.",
+    "غطّوه واتركوه 15 دقيقة، فالشعير يتشرّب الماء ويصبح العجين أسهل في العمل.",
+    "اعجنوه بضع دقائق بأيدٍ مبلّلة، ومن الطبيعي أن يبقى لزجًا.",
+    "سخّنوا الفرن على 180 درجة. اضغطوا العجين في قالب دائري قليل العمق مدهون بالزيت بسمك 2 إلى 3 سم، وملّسوه بأيدٍ مبلّلة.",
+    "ارسموا 8 أجزاء بالسكين، واصنعوا حفرة صغيرة في الوسط وصبّوا فيها زيت الزيتون (ورشّوا السانوج).",
+    "أدخلوه الفرن 40 دقيقة حتى يتماسك ويتحمّر. اتركوه يفتر قبل إخراجه من القالب."
+   ],
+   "astuce_fr": "Sans gluten actif, ce pain ne gonfle pas : il est dense, c'est voulu. Pour un pain plus léger, remplacez un tiers de l'orge par de la farine de blé et ajoutez 1 cuillère à café de levure boulangère.",
+   "astuce_ar": "هذا الخبز لا ينتفخ وهو كثيف بطبيعته. لخبز أخفّ، عوّضوا ثلث الشعير بفرينة القمح وأضيفوا ملعقة صغيرة من الخميرة.",
+   "sources": [
+    "https://www.tunisienumerique.com/?p=555857",
+    "https://fr.allafrica.com/stories/202610160605.html",
+    "https://www.lapresse.tn/?p=4365400"
+   ]
+  },
+  {
+   "id": "makroudh-four",
+   "statut": "brouillon",
+   "nom_fr": "Makroudh aux dattes au four (version simplifiée)",
+   "nom_ar": "مقروض بالتمر في الفرن",
+   "nom_local": {
+    "ar": "مقروض",
+    "latin": "Makroudh"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Kairouan (toute la Tunisie)",
+   "saison": "Aïd el-Fitr, Ramadan",
+   "occasion": [
+    "Aïd",
+    "Ramadan",
+    "Fête"
+   ],
+   "portions": 30,
+   "prep_min": 45,
+   "cuisson_min": 25,
+   "repos": "30 minutes",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 91,
+     "nom_fr": "Semoule moyenne",
+     "nom_ar": "سميد متوسط",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.15,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "fondu (ou moitié beurre, moitié huile)",
+     "note_ar": "مذابة (أو نصف زبدة ونصف زيت)"
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 138,
+     "nom_fr": "Eau de fleur d'oranger",
+     "nom_ar": "ماء الزهر",
+     "quantite": 0.05,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 209,
+     "nom_fr": "Pâte de dattes",
+     "nom_ar": "عجينة التمر",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 147,
+     "nom_fr": "Cannelle",
+     "nom_ar": "قرفة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 167,
+     "nom_fr": "Clou de girofle",
+     "nom_ar": "قرنفل",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": true,
+     "note_fr": "moulu",
+     "note_ar": "مطحون"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour assouplir la pâte de dattes",
+     "note_ar": "لتليين عجينة التمر"
+    },
+    {
+     "ingredient_id": 125,
+     "nom_fr": "Miel",
+     "nom_ar": "عسل",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 137,
+     "nom_fr": "Sésame",
+     "nom_ar": "جلجلان",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour le décor",
+     "note_ar": "للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Pâte de dattes"
+    ]
+   },
+   "etapes_fr": [
+    "Dans un grand saladier, versez le beurre fondu chaud sur la semoule et le sel. Frottez la semoule entre vos paumes pendant 5 minutes pour que chaque grain soit enrobé. Couvrez et laissez reposer 30 minutes.",
+    "Pendant ce temps, malaxez la pâte de dattes avec la cannelle, le clou de girofle et l'huile d'olive. Roulez-la en boudins de 1 cm de diamètre.",
+    "Mouillez la semoule avec l'eau de fleur d'oranger et un peu d'eau tiède, petit à petit, en rassemblant sans pétrir, jusqu'à obtenir une pâte qui se tient.",
+    "Prenez une boule de pâte, aplatissez-la en long boudin, creusez une rigole au centre, posez un boudin de dattes et refermez. Roulez pour obtenir un rouleau de 2 cm, aplatissez légèrement (striez le dessus avec une pince ou une fourchette) et coupez en losanges.",
+    "Préchauffez le four à 180 °C. Posez les losanges sur une plaque recouverte de papier cuisson et faites cuire 20 à 25 minutes, jusqu'à ce qu'ils soient dorés.",
+    "Faites tiédir le miel avec un filet d'eau. Trempez les makroudh encore chauds dans le miel 1 minute, égouttez-les et parsemez de sésame. Vous obtenez environ 30 pièces."
+   ],
+   "etapes_ar": [
+    "في سلطانية كبيرة، صبّوا الزبدة المذابة الساخنة على السميد والملح. افركوا السميد بين الكفّين 5 دقائق حتى تتغلّف كل حبة، ثم غطّوه واتركوه 30 دقيقة.",
+    "في الأثناء، اعجنوا عجينة التمر مع القرفة والقرنفل وزيت الزيتون، ولفّوها أصابع بقطر 1 سم.",
+    "بلّلوا السميد بماء الزهر وقليل من الماء الفاتر تدريجيًا، مع جمعه دون عجن، حتى تتماسك العجينة.",
+    "خذوا كرة من العجين وافردوها إصبعًا طويلًا، واصنعوا مجرى في وسطه وضعوا فيه إصبع التمر ثم أغلقوه. لفّوه ليصبح أسطوانة بسمك 2 سم، واضغطوه قليلًا (وخطّطوا وجهه بالملقاط أو الشوكة) وقطّعوه معيّنات.",
+    "سخّنوا الفرن على 180 درجة. ضعوا القطع على صينية مغطاة بورق الطهي واطهوها 20 إلى 25 دقيقة حتى تتحمّر.",
+    "سخّنوا العسل قليلًا مع قليل من الماء. اغمسوا المقروض وهو ساخن في العسل دقيقة، ثم صفّوه ورشّوا عليه الجلجلان. تحصلون على حوالي 30 قطعة."
+   ],
+   "astuce_fr": "Ne pétrissez pas la semoule comme une pâte à pain : rassemblez-la seulement, sinon le makroudh devient dur. Le smen remplace le beurre pour un goût plus traditionnel.",
+   "astuce_ar": "لا تعجنوا السميد كعجين الخبز، بل اجمعوه فقط، وإلا يصبح المقروض قاسيًا. والسمن يعوّض الزبدة لطعم تقليدي أكثر.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-makroudh-au-four-rapide/",
+    "https://www.croq-kilos.com/actus/comment-faire-des-makrouds-legers",
+    "https://www.tunisienumerique.com/recette-traditionnelle-de-makroudh-aux-dattes-et-au-miel/"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "ghraiba-homs",
+   "statut": "brouillon",
+   "nom_fr": "Ghraiba homs (sablés fondants aux pois chiches grillés)",
+   "nom_ar": "غريبة الحمص",
+   "nom_local": {
+    "ar": "غريبة حمص",
+    "latin": "Ghraiba homs"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Toute la Tunisie",
+   "saison": "Aïd el-Fitr",
+   "occasion": [
+    "Aïd",
+    "Fête",
+    "Thé"
+   ],
+   "portions": 30,
+   "prep_min": 30,
+   "cuisson_min": 25,
+   "repos": "1 heure",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 254,
+     "nom_fr": "Farine de pois chiches grillés",
+     "nom_ar": "دقيق الحمص المحمص",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 181,
+     "nom_fr": "Sucre glace",
+     "nom_ar": "سكر ناعم",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 0.2,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "huile neutre",
+     "note_ar": "زيت محايد"
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "fondu",
+     "note_ar": "مذابة"
+    },
+    {
+     "ingredient_id": 132,
+     "nom_fr": "Amandes",
+     "nom_ar": "لوز",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "amandes entières pour décorer",
+     "note_ar": "لوز كامل للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Farine de pois chiches grillés",
+     "Sucre glace"
+    ]
+   },
+   "etapes_fr": [
+    "Tamisez ensemble la farine de pois chiches, la farine et le sucre glace dans un grand saladier.",
+    "Ajoutez le beurre fondu tiède, puis l'huile petit à petit, en mélangeant à la main jusqu'à obtenir une pâte souple qui se tient.",
+    "Couvrez et laissez reposer au moins 1 heure (ou une nuit).",
+    "Préchauffez le four à 160 °C. Formez des boudins de 4 cm de large, aplatissez-les légèrement, tracez des stries avec une fourchette et coupez en losanges (posez une amande sur chacun si vous voulez).",
+    "Posez-les sur une plaque recouverte de papier cuisson et faites cuire 20 à 25 minutes : ils doivent rester clairs.",
+    "Laissez-les refroidir complètement sur la plaque avant de les toucher : chauds, ils s'effritent. Vous obtenez environ 30 pièces."
+   ],
+   "etapes_ar": [
+    "انخلوا معًا دقيق الحمص والفرينة والسكر الناعم في سلطانية كبيرة.",
+    "أضيفوا الزبدة المذابة الفاترة ثم الزيت تدريجيًا مع الخلط باليد حتى تحصلوا على عجينة طرية متماسكة.",
+    "غطّوها واتركوها ساعة على الأقل (أو ليلة كاملة).",
+    "سخّنوا الفرن على 160 درجة. شكّلوا أصابع بعرض 4 سم واضغطوها قليلًا، وخطّطوها بالشوكة وقطّعوها معيّنات (وضعوا لوزة على كل واحدة إن رغبتم).",
+    "ضعوها على صينية مغطاة بورق الطهي واطهوها 20 إلى 25 دقيقة، فيجب أن يبقى لونها فاتحًا.",
+    "اتركوها تبرد تمامًا على الصينية قبل لمسها لأنها تتفتّت وهي ساخنة. تحصلون على حوالي 30 قطعة."
+   ],
+   "astuce_fr": "La farine de pois chiches grillés se vend chez les droguistes et en grande surface avant l'Aïd. À défaut, grillez des pois chiches secs à la poêle puis moulez-les très finement et tamisez.",
+   "astuce_ar": "يُباع دقيق الحمص المحمّص عند العطّارين وفي المساحات الكبرى قبل العيد. وإن لم تجدوه، حمّصوا الحمص اليابس في المقلاة واطحنوه ناعمًا جدًا وانخلوه.",
+   "sources": [
+    "https://www.tunisienumerique.com/?p=15165",
+    "https://www.tunisienumerique.com/ghraiba-homs-recette-traditionnelle/",
+    "https://fr.allafrica.com/stories/202603140051.html"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "yoyo",
+   "statut": "brouillon",
+   "nom_fr": "Yoyo (beignets en anneaux au sirop)",
+   "nom_ar": "يويو",
+   "nom_local": {
+    "ar": "يويو",
+    "latin": "Yoyo"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Tunis et Djerba",
+   "saison": "Toute l'année",
+   "occasion": [
+    "Goûter",
+    "Fête"
+   ],
+   "portions": 15,
+   "prep_min": 30,
+   "cuisson_min": 25,
+   "repos": "30 minutes",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 3,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "0,1 kg pour la pâte, 0,2 kg pour le sirop",
+     "note_ar": "0,1 كغ للعجين و0,2 كغ للقطر"
+    },
+    {
+     "ingredient_id": 178,
+     "nom_fr": "Sucre vanillé",
+     "nom_ar": "سكر الفانيليا",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 0.75,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "1 cuillère à soupe pour la pâte, le reste pour la friture",
+     "note_ar": "ملعقة كبيرة للعجين والباقي للقلي"
+    },
+    {
+     "ingredient_id": 85,
+     "nom_fr": "Yaourt nature",
+     "nom_ar": "ياغورت",
+     "quantite": 1,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 cuillère à soupe suffit",
+     "note_ar": "ملعقة كبيرة تكفي"
+    },
+    {
+     "ingredient_id": 36,
+     "nom_fr": "Orange",
+     "nom_ar": "برتقال",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 orange : le zeste",
+     "note_ar": "برتقالة واحدة: القشرة المبشورة"
+    },
+    {
+     "ingredient_id": 177,
+     "nom_fr": "Levure chimique",
+     "nom_ar": "خميرة كيميائية",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.35,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "à ajuster",
+     "note_ar": "حسب الحاجة"
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "un demi-citron, pour le sirop",
+     "note_ar": "نصف قارصة للقطر"
+    },
+    {
+     "ingredient_id": 138,
+     "nom_fr": "Eau de fleur d'oranger",
+     "nom_ar": "ماء الزهر",
+     "quantite": 0.02,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 137,
+     "nom_fr": "Sésame",
+     "nom_ar": "جلجلان",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour décorer",
+     "note_ar": "للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Sucre"
+    ],
+    "pas dans le dictionnaire": [
+     "Sucre vanillé",
+     "Levure chimique"
+    ]
+   },
+   "etapes_fr": [
+    "Battez les œufs avec 0,1 kg de sucre et le sucre vanillé jusqu'à ce que le mélange blanchisse.",
+    "Ajoutez 1 cuillère à soupe d'huile, 1 cuillère à soupe de yaourt et le zeste d'orange. Incorporez la levure chimique puis la farine petit à petit, jusqu'à obtenir une pâte souple qui ne colle plus aux doigts.",
+    "Couvrez et laissez reposer 30 minutes. Pendant ce temps, préparez le sirop : faites frémir 10 minutes 0,2 kg de sucre, 0,15 L d'eau et le jus du demi-citron, puis ajoutez l'eau de fleur d'oranger et laissez tiédir.",
+    "Les mains huilées, formez des boules de la taille d'une noix, aplatissez-les et percez un trou au centre avec le doigt pour former des anneaux.",
+    "Faites frire les yoyos dans l'huile chaude mais pas fumante, 2 à 3 minutes par face, jusqu'à ce qu'ils soient bien dorés. Égouttez sur du papier absorbant.",
+    "Trempez-les encore chauds dans le sirop tiède 1 minute, égouttez-les et parsemez de sésame. Vous obtenez environ 15 yoyos."
+   ],
+   "etapes_ar": [
+    "اخفقوا البيض مع 0,1 كغ من السكر وسكر الفانيليا حتى يبيضّ الخليط.",
+    "أضيفوا ملعقة كبيرة من الزيت وملعقة كبيرة من الياغورت وقشرة البرتقال المبشورة. أدخلوا الخميرة الكيميائية ثم الفرينة تدريجيًا حتى تحصلوا على عجينة طرية لا تلتصق بالأصابع.",
+    "غطّوها واتركوها 30 دقيقة. في الأثناء حضّروا القطر: اطهوا 0,2 كغ من السكر و0,15 ل من الماء وعصير نصف القارصة 10 دقائق على نار هادئة، ثم أضيفوا ماء الزهر واتركوه يفتر.",
+    "بأيدٍ مدهونة بالزيت، شكّلوا كرات بحجم الجوزة واضغطوها، ثم اثقبوا وسطها بالإصبع لتصبح حلقات.",
+    "اقلوا اليويو في زيت ساخن دون أن يدخّن، 2 إلى 3 دقائق من كل جهة حتى يتحمّر جيدًا، ثم صفّوه على ورق ماصّ.",
+    "اغمسوه وهو ساخن في القطر الفاتر دقيقة، ثم صفّوه ورشّوا عليه الجلجلان. تحصلون على حوالي 15 حبة."
+   ],
+   "astuce_fr": "Beignet chaud dans un sirop tiède : c'est la règle pour qu'il s'imbibe sans devenir mou. Attention aux enfants près de l'huile chaude.",
+   "astuce_ar": "قطعة ساخنة في قطر فاتر: هذه هي القاعدة ليتشرّب دون أن يصبح رخوًا. انتبهوا للأطفال قرب الزيت الساخن.",
+   "sources": [
+    "https://www.croq-kilos.com/actus/recette-de-yoyo-tunisien-la-douceur-orientale-a-savourer-au-gouter",
+    "https://jewishdiversitystories.org/identity/yoyos-a-tunisian-hanukkah-treat/",
+    "https://www.croq-kilos.com/actus/10-desserts-tunisiens-irresistibles"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "samsa-amandes",
+   "statut": "brouillon",
+   "nom_fr": "Samsa aux amandes (triangles de brick au sirop, au four)",
+   "nom_ar": "صمصة باللوز",
+   "nom_local": {
+    "ar": "صمصة",
+    "latin": "Samsa"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Tunis (toute la Tunisie)",
+   "saison": "Aïd, Ramadan",
+   "occasion": [
+    "Aïd",
+    "Ramadan",
+    "Fête"
+   ],
+   "portions": 24,
+   "prep_min": 40,
+   "cuisson_min": 25,
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 108,
+     "nom_fr": "Feuilles de brick",
+     "nom_ar": "ملسوقة",
+     "quantite": 6,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 132,
+     "nom_fr": "Amandes",
+     "nom_ar": "لوز",
+     "quantite": 0.25,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "en poudre, ou sésame grillé moulu",
+     "note_ar": "مطحون، أو جلجلان محمّص مطحون"
+    },
+    {
+     "ingredient_id": 181,
+     "nom_fr": "Sucre glace",
+     "nom_ar": "سكر ناعم",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "3 cuillères à soupe",
+     "note_ar": "3 ملاعق كبيرة"
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "fondu : 0,035 kg pour la farce, le reste pour badigeonner",
+     "note_ar": "مذابة: 0,035 كغ للحشو والباقي للدهن"
+    },
+    {
+     "ingredient_id": 138,
+     "nom_fr": "Eau de fleur d'oranger",
+     "nom_ar": "ماء الزهر",
+     "quantite": 0.06,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "2 c. à soupe pour la farce, 2 pour le sirop",
+     "note_ar": "ملعقتان كبيرتان للحشو وملعقتان للقطر"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 125,
+     "nom_fr": "Miel",
+     "nom_ar": "عسل",
+     "quantite": 0.06,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "3 cuillères à soupe",
+     "note_ar": "3 ملاعق كبيرة"
+    },
+    {
+     "ingredient_id": 134,
+     "nom_fr": "Pistaches",
+     "nom_ar": "فستق",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "moulues, pour le décor",
+     "note_ar": "مطحون للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Sucre glace"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Farce : mélangez la poudre d'amandes et le sucre glace, sablez avec 0,035 kg de beurre fondu, puis ajoutez 2 cuillères à soupe d'eau de fleur d'oranger jusqu'à obtenir une pâte lisse.",
+    "Sirop : faites chauffer 0,2 L d'eau avec le sucre 10 minutes à feu doux, ajoutez le miel et 2 cuillères à soupe d'eau de fleur d'oranger, et laissez épaissir 5 minutes. Gardez au chaud.",
+    "Préchauffez le four à 180 °C. Coupez chaque feuille de brick en 4 bandes et badigeonnez-les de beurre fondu.",
+    "Posez une noisette de farce en bas de chaque bande et pliez en triangle jusqu'au bout, comme un drapeau. Collez la fin avec un peu de beurre.",
+    "Rangez les samsas sur une plaque huilée et faites-les cuire 20 à 25 minutes, jusqu'à ce qu'elles soient bien dorées.",
+    "Trempez-les encore chaudes 1 minute dans le sirop chaud, égouttez-les et saupoudrez de pistaches moulues. Vous obtenez environ 24 pièces."
+   ],
+   "etapes_ar": [
+    "الحشو: اخلطوا اللوز المطحون والسكر الناعم، وافركوهما مع 0,035 كغ من الزبدة المذابة، ثم أضيفوا ملعقتين كبيرتين من ماء الزهر حتى تحصلوا على عجينة ملساء.",
+    "القطر: سخّنوا 0,2 ل من الماء مع السكر 10 دقائق على نار هادئة، وأضيفوا العسل وملعقتين كبيرتين من ماء الزهر، واتركوه يتكثّف 5 دقائق. احفظوه ساخنًا.",
+    "سخّنوا الفرن على 180 درجة. قصّوا كل ورقة ملسوقة إلى 4 أشرطة وادهنوها بالزبدة المذابة.",
+    "ضعوا قليلًا من الحشو أسفل كل شريط واطووه مثلثات حتى آخره كالعلم، ثم الصقوا الطرف بقليل من الزبدة.",
+    "رتّبوا الصمصة على صينية مدهونة واطهوها 20 إلى 25 دقيقة حتى تتحمّر جيدًا.",
+    "اغمسوها وهي ساخنة دقيقة في القطر الساخن، ثم صفّوها ورشّوا عليها الفستق المطحون. تحصلون على حوالي 24 قطعة."
+   ],
+   "astuce_fr": "La version au sésame grillé (samsa jeljlen) coûte beaucoup moins cher que celle aux amandes et se fait exactement de la même façon.",
+   "astuce_ar": "نسخة الجلجلان المحمّص (صمصة بالجلجلان) أرخص بكثير من نسخة اللوز وتُحضّر بالطريقة نفسها تمامًا.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-samsa-tunisienne/",
+    "https://www.afrik.com/triangles-aux-amandes-samsa",
+    "https://lepetitjournal.com/vivre-a-tunis/gastronomie-samsas-sucrees-et-salees-237781"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "bjawia",
+   "statut": "brouillon",
+   "nom_fr": "Bjawia (nougat tendre aux fruits secs)",
+   "nom_ar": "بجاوية",
+   "nom_local": {
+    "ar": "بجاوية",
+    "latin": "Bjawia / Bjaouia"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Sfax et Tunis",
+   "saison": "Fêtes et mariages",
+   "occasion": [
+    "Fête",
+    "Mariage",
+    "Aïd"
+   ],
+   "portions": 8,
+   "prep_min": 30,
+   "cuisson_min": 20,
+   "repos": "30 minutes",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 134,
+     "nom_fr": "Pistaches",
+     "nom_ar": "فستق",
+     "quantite": 0.175,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "0,1 kg pour la pâte, 0,075 kg pour le décor",
+     "note_ar": "0,1 كغ للعجينة و0,075 كغ للتزيين"
+    },
+    {
+     "ingredient_id": 132,
+     "nom_fr": "Amandes",
+     "nom_ar": "لوز",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "émondées",
+     "note_ar": "مقشّرة"
+    },
+    {
+     "ingredient_id": 133,
+     "nom_fr": "Noisettes",
+     "nom_ar": "بندق",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 194,
+     "nom_fr": "Cerneaux de noix",
+     "nom_ar": "جوز (لبّ الجوز)",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 135,
+     "nom_fr": "Pignons",
+     "nom_ar": "زقوقو أبيض / صنوبر",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pignons, si vous en avez",
+     "note_ar": "الزقوقو الأبيض إن وُجد"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 32,
+     "nom_fr": "Citron",
+     "nom_ar": "ليم / قارص",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "un demi-citron",
+     "note_ar": "نصف قارصة"
+    },
+    {
+     "ingredient_id": 139,
+     "nom_fr": "Eau de rose",
+     "nom_ar": "ماء الورد",
+     "quantite": 0.015,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 cuillère à soupe",
+     "note_ar": "ملعقة كبيرة"
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour huiler le papier",
+     "note_ar": "لدهن الورق"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Cerneaux de noix"
+    ],
+    "douteux": [
+     "Sucre"
+    ],
+    "sans prix": [
+     "Eau de rose"
+    ]
+   },
+   "etapes_fr": [
+    "Faites griller chaque fruit sec séparément, à sec dans une poêle ou au four à 170 °C, car ils ne grillent pas à la même vitesse. Frottez les noisettes dans un torchon pour retirer leur peau.",
+    "Concassez grossièrement au couteau les pistaches, les amandes, les noisettes et les noix (pas les pignons). Mettez-les dans un saladier en métal.",
+    "Sirop : faites cuire le sucre avec 0,25 L d'eau et le jus du demi-citron, sans remuer, jusqu'à ce qu'il soit épais et légèrement doré. Une goutte jetée dans un verre d'eau froide doit former une petite perle souple.",
+    "Versez le sirop et l'eau de rose sur les fruits secs, mélangez vite avec une cuillère en bois et laissez tiédir 10 minutes.",
+    "Posez le mélange entre deux feuilles de papier cuisson huilées et étalez au rouleau sur 3 à 4 cm d'épaisseur. Laissez durcir 30 minutes au frais.",
+    "Coupez en carrés ou en losanges avec un couteau bien aiguisé et roulez les bords dans la pistache finement moulue."
+   ],
+   "etapes_ar": [
+    "حمّصوا كل نوع من الفواكه الجافة على حدة في مقلاة دون زيت أو في الفرن على 170 درجة، لأنها لا تتحمّص بالسرعة نفسها. افركوا البندق في منشفة لنزع قشرته.",
+    "اكسروا الفستق واللوز والبندق والجوز تكسيرًا خشنًا بالسكين (دون الزقوقو الأبيض)، وضعوها في سلطانية معدنية.",
+    "القطر: اطهوا السكر مع 0,25 ل من الماء وعصير نصف القارصة دون تحريك حتى يتكثّف ويصبح ذهبيًا قليلًا. قطرة منه في كأس ماء بارد يجب أن تصبح حبة لينة.",
+    "صبّوا القطر وماء الورد على الفواكه الجافة، واخلطوا بسرعة بملعقة خشبية، واتركوه يفتر 10 دقائق.",
+    "ضعوا الخليط بين ورقتين من ورق الطهي مدهونتين بالزيت وافردوه بالشوبك بسمك 3 إلى 4 سم. اتركوه يتماسك 30 دقيقة في مكان بارد.",
+    "قطّعوه مربعات أو معيّنات بسكين حادة، ولفّوا الحواف في الفستق المطحون ناعمًا."
+   ],
+   "astuce_fr": "Les pistaches et les pignons sont chers : la bjawia se fait aussi avec seulement des amandes et des noisettes, en gardant les pistaches pour le décor.",
+   "astuce_ar": "الفستق والزقوقو الأبيض غاليان، ويمكن تحضير البجاوية باللوز والبندق فقط مع الاحتفاظ بالفستق للتزيين.",
+   "sources": [
+    "https://www.196flavors.com/fr/tunisie-bjaouia/",
+    "https://voyage-tunisie.info/la-bjawia-tunisie/",
+    "https://www.wikiwand.com/fr/Bjawia"
+   ]
+  },
+  {
+   "id": "kaak-warka-simplifie",
+   "statut": "brouillon",
+   "nom_fr": "Kaak warka simplifié (couronnes fourrées à la pâte d'amandes)",
+   "nom_ar": "كعك ورقة مبسّط",
+   "nom_local": {
+    "ar": "كعك ورقة",
+    "latin": "Kaak warka"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Zaghouan",
+   "saison": "Aïd, mariages",
+   "occasion": [
+    "Aïd",
+    "Fête",
+    "Mariage"
+   ],
+   "portions": 20,
+   "prep_min": 60,
+   "cuisson_min": 20,
+   "repos": "30 minutes",
+   "difficulte": "difficile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.3,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "fondu, 0,05 kg pour la pâte et 0,05 kg pour la farce",
+     "note_ar": "مذابة: 0,05 كغ للعجين و0,05 كغ للحشو"
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 132,
+     "nom_fr": "Amandes",
+     "nom_ar": "لوز",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "émondées et moulues finement",
+     "note_ar": "مقشّرة ومطحونة ناعمًا"
+    },
+    {
+     "ingredient_id": 181,
+     "nom_fr": "Sucre glace",
+     "nom_ar": "سكر ناعم",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "dont un peu pour le décor",
+     "note_ar": "منه قليل للتزيين"
+    },
+    {
+     "ingredient_id": 139,
+     "nom_fr": "Eau de rose",
+     "nom_ar": "ماء الورد",
+     "quantite": 0.04,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "ou eau de fleur d'oranger",
+     "note_ar": "أو ماء الزهر"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Sucre glace"
+    ],
+    "sans prix": [
+     "Eau de rose"
+    ]
+   },
+   "etapes_fr": [
+    "Pâte : mélangez la farine, le sel et 0,05 kg de beurre fondu. Ajoutez environ 0,1 L d'eau tiède petit à petit et pétrissez 10 minutes jusqu'à ce que la pâte soit lisse et très souple. Couvrez et laissez reposer 30 minutes.",
+    "Farce : mélangez la poudre d'amandes, le sucre glace, le reste du beurre fondu et l'eau de rose, jusqu'à obtenir une pâte ferme qui se tient. Roulez-la en boudins de 1 cm d'épaisseur et 12 cm de long.",
+    "Divisez la pâte en petites boules. Étalez chacune le plus finement possible au rouleau, en bande de 6 cm sur 14 cm : on doit presque voir à travers.",
+    "Posez un boudin d'amandes sur le bord de la bande, roulez pour l'envelopper, coupez l'excédent, puis fermez en couronne en pinçant les deux bouts.",
+    "Préchauffez le four à 160 °C. Rangez les couronnes sur une plaque recouverte de papier cuisson et faites cuire 15 à 20 minutes : elles doivent rester blanches, à peine dorées dessous.",
+    "Laissez refroidir et saupoudrez légèrement de sucre glace. Vous obtenez environ 20 couronnes."
+   ],
+   "etapes_ar": [
+    "العجين: اخلطوا الفرينة والملح و0,05 كغ من الزبدة المذابة. أضيفوا حوالي 0,1 ل من الماء الفاتر تدريجيًا واعجنوا 10 دقائق حتى يصبح العجين أملس وطريًا جدًا. غطّوه واتركوه 30 دقيقة.",
+    "الحشو: اخلطوا اللوز المطحون والسكر الناعم وبقية الزبدة المذابة وماء الورد حتى تحصلوا على عجينة متماسكة. لفّوها أصابع بسمك 1 سم وطول 12 سم.",
+    "قسّموا العجين إلى كرات صغيرة. افردوا كل واحدة بالشوبك أرقّ ما يمكن، شريطًا بـ 6 سم على 14 سم، حتى يكاد يُرى ما وراءه.",
+    "ضعوا إصبع اللوز على طرف الشريط ولفّوه حوله، واقطعوا الزائد، ثم أغلقوه دائرة بضمّ الطرفين.",
+    "سخّنوا الفرن على 160 درجة. رتّبوا الكعك على صينية مغطاة بورق الطهي واطهوه 15 إلى 20 دقيقة، فيجب أن يبقى أبيض ومتحمّرًا قليلًا من الأسفل فقط.",
+    "اتركوه يبرد ورشّوا عليه قليلًا من السكر الناعم. تحصلون على حوالي 20 كعكة."
+   ],
+   "astuce_fr": "À Zaghouan, la farce est parfumée à l'eau d'églantine (nesri), difficile à trouver ailleurs : l'eau de rose ou de géranium du commerce la remplace bien. Version simplifiée : la pâte est roulée en une seule couche au lieu des feuilles superposées des pâtissiers.",
+   "astuce_ar": "في زغوان يُعطّر الحشو بماء النسري، ومن الصعب إيجاده في غيرها، فيعوّضه ماء الورد أو العطرشية التجاري جيدًا. هذه نسخة مبسّطة: العجين يُلفّ طبقة واحدة بدل الأوراق المتراكبة عند الحلوانيّة.",
+   "sources": [
+    "https://fr.allafrica.com/stories/202603080012.html",
+    "https://engagingcultures.com/traditional-kaak-warka-of-zaghouan-tunisia",
+    "https://masmoudigourmet.com/products/kaak-warka-450g"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "zlabia",
+   "statut": "brouillon",
+   "nom_fr": "Zlabia (spirales frites au miel)",
+   "nom_ar": "زلابية",
+   "nom_local": {
+    "ar": "زلابية",
+    "latin": "Zlabia"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Béja et Nabeul",
+   "saison": "Ramadan",
+   "occasion": [
+    "Ramadan"
+   ],
+   "portions": 20,
+   "prep_min": 20,
+   "cuisson_min": 25,
+   "repos": "1 heure de levée",
+   "difficulte": "moyenne",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 151,
+     "nom_fr": "Maïzena (amidon de maïs)",
+     "nom_ar": "نشاء الذرة",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 113,
+     "nom_fr": "Levure boulangère",
+     "nom_ar": "خميرة",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 85,
+     "nom_fr": "Yaourt nature",
+     "nom_ar": "ياغورت",
+     "quantite": 1,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 cuillère à soupe suffit",
+     "note_ar": "ملعقة كبيرة تكفي"
+    },
+    {
+     "ingredient_id": 122,
+     "nom_fr": "Huile d'olive",
+     "nom_ar": "زيت زيتون",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 256,
+     "nom_fr": "Colorant alimentaire (rouge, vert ou jaune)",
+     "nom_ar": "ملوّن غذائي",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": true,
+     "note_fr": "jaune ou orange",
+     "note_ar": "أصفر أو برتقالي"
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 0.75,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour la friture",
+     "note_ar": "للقلي"
+    },
+    {
+     "ingredient_id": 125,
+     "nom_fr": "Miel",
+     "nom_ar": "عسل",
+     "quantite": 0.4,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Maïzena (amidon de maïs)"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Mélangez la farine, la maïzena, le sucre et la levure. Ajoutez 1 cuillère à soupe de yaourt, l'huile d'olive et environ 0,25 L d'eau tiède, en fouettant jusqu'à obtenir une pâte lisse et un peu coulante (et le colorant).",
+    "Couvrez et laissez lever 1 heure dans un endroit tiède : des bulles doivent apparaître.",
+    "Faites tiédir le miel dans une casserole avec 2 cuillères à soupe d'eau. Gardez-le tiède.",
+    "Chauffez l'huile. Versez la pâte dans une poche à douille fine ou une bouteille souple percée.",
+    "Formez directement dans l'huile des spirales de 8 cm, puis faites-les frire 2 minutes par face, jusqu'à ce qu'elles soient dorées et croustillantes.",
+    "Égouttez-les 10 secondes et plongez-les aussitôt dans le miel tiède 1 minute. Égouttez sur une grille. Vous obtenez environ 20 zlabias."
+   ],
+   "etapes_ar": [
+    "اخلطوا الفرينة ونشاء الذرة والسكر والخميرة. أضيفوا ملعقة كبيرة من الياغورت وزيت الزيتون وحوالي 0,25 ل من الماء الفاتر مع الخفق حتى تحصلوا على عجينة ملساء سائلة قليلًا (والملوّن).",
+    "غطّوها واتركوها تختمر ساعة في مكان دافئ حتى تظهر فقاعات.",
+    "سخّنوا العسل قليلًا في قدر مع ملعقتين كبيرتين من الماء، واحفظوه فاترًا.",
+    "سخّنوا الزيت. ضعوا العجين في كيس حلواني بفوهة رقيقة أو في قارورة مرنة مثقوبة.",
+    "شكّلوا مباشرة في الزيت دوائر حلزونية بقطر 8 سم، واقلوها دقيقتين من كل جهة حتى تتحمّر وتصبح مقرمشة.",
+    "صفّوها 10 ثوانٍ ثم اغمسوها فورًا في العسل الفاتر دقيقة، وصفّوها على شبكة. تحصلون على حوالي 20 زلابية."
+   ],
+   "astuce_fr": "À Béja, on y ajoute traditionnellement du beurre clarifié et des œufs, et la pâte fermente plusieurs heures. Mangez-les le jour même : elles perdent leur croustillant le lendemain.",
+   "astuce_ar": "في باجة يُضاف تقليديًا السمن والبيض، ويُترك العجين يختمر عدة ساعات. كلوها في اليوم نفسه لأنها تفقد قرمشتها في الغد.",
+   "sources": [
+    "https://fr.vikidia.org/wiki/Mkharek_et_Zlabia_de_B%C3%A9ja",
+    "https://ileauxepices.com/blog/2016/09/12/recette-zlabia-patisserie-orientale/wpid11536/",
+    "https://www.tunisienumerique.com/beja-zlabia-mkharak-et-fromages-attirent-des-milliers-de-visiteurs-pendant-le-ramadan/"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "mhalbia",
+   "statut": "brouillon",
+   "nom_fr": "Mhalbia (crème de riz à la fleur d'oranger)",
+   "nom_ar": "مهلبية",
+   "nom_local": {
+    "ar": "مهلبية",
+    "latin": "Mhalbia"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Toute la Tunisie",
+   "saison": "Ramadan (shour), toute l'année",
+   "occasion": [
+    "Ramadan",
+    "Dessert"
+   ],
+   "portions": 4,
+   "prep_min": 10,
+   "cuisson_min": 15,
+   "repos": "2 heures au frais",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 79,
+     "nom_fr": "Lait entier",
+     "nom_ar": "حليب كامل الدسم",
+     "quantite": 1,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 201,
+     "nom_fr": "Farine de riz (crème de riz)",
+     "nom_ar": "دقيق الأرز",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "ou 4 cuillères à soupe de maïzena",
+     "note_ar": "أو 4 ملاعق كبيرة من نشاء الذرة"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 138,
+     "nom_fr": "Eau de fleur d'oranger",
+     "nom_ar": "ماء الزهر",
+     "quantite": 0.04,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "2 à 3 cuillères à soupe",
+     "note_ar": "2 إلى 3 ملاعق كبيرة"
+    },
+    {
+     "ingredient_id": 134,
+     "nom_fr": "Pistaches",
+     "nom_ar": "فستق",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "concassées",
+     "note_ar": "مكسّرة"
+    },
+    {
+     "ingredient_id": 132,
+     "nom_fr": "Amandes",
+     "nom_ar": "لوز",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "grillées et concassées",
+     "note_ar": "محمّص ومكسّر"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Farine de riz (crème de riz)"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Délayez la farine de riz dans un verre de lait froid, sans grumeaux.",
+    "Faites chauffer le reste du lait avec le sucre. Juste avant l'ébullition, versez la farine délayée en fouettant.",
+    "Laissez cuire à feu doux 8 à 10 minutes en fouettant sans arrêt, jusqu'à ce que la crème nappe la cuillère.",
+    "Hors du feu, ajoutez l'eau de fleur d'oranger et mélangez.",
+    "Versez dans 4 coupes ou verres, laissez tiédir puis mettez au frais au moins 2 heures.",
+    "Au moment de servir, décorez de pistaches (et d'amandes) concassées."
+   ],
+   "etapes_ar": [
+    "ذوّبوا دقيق الأرز في كأس من الحليب البارد دون كتل.",
+    "سخّنوا بقية الحليب مع السكر. وقبل الغليان بقليل، صبّوا الدقيق المذاب مع الخفق.",
+    "اتركوه يطهى على نار هادئة 8 إلى 10 دقائق مع الخفق المستمر حتى تغطي الكريمة الملعقة.",
+    "بعيدًا عن النار، أضيفوا ماء الزهر واخلطوا.",
+    "صبّوها في 4 كؤوس أو أوعية، واتركوها تفتر ثم ضعوها في الثلاجة ساعتين على الأقل.",
+    "عند التقديم، زيّنوها بالفستق (واللوز) المكسّر."
+   ],
+   "astuce_fr": "Quelques gouttes d'eau de géranium (atarcha) à la place de la fleur d'oranger donnent le parfum des mhalbias de Tunis.",
+   "astuce_ar": "بعض قطرات ماء العطرشية بدل ماء الزهر تعطي رائحة مهلبية تونس العاصمة.",
+   "sources": [
+    "https://fr.allafrica.com/stories/202603120220.html",
+    "https://paperjam.lu/article/delicieuse-mahalabia",
+    "https://dubocalalassiette.fr/blog/creme-dessert-tunisienne/"
+   ]
+  },
+  {
+   "id": "bouza-noisettes",
+   "statut": "brouillon",
+   "nom_fr": "Bouza aux noisettes (crème chaude de noisettes)",
+   "nom_ar": "بوزة بالبندق",
+   "nom_local": {
+    "ar": "بوزة",
+    "latin": "Bouza"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Tunis (toute la Tunisie)",
+   "saison": "Hiver, Mouled, naissances",
+   "occasion": [
+    "Fête",
+    "Mouled",
+    "Dessert"
+   ],
+   "portions": 4,
+   "prep_min": 15,
+   "cuisson_min": 20,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 133,
+     "nom_fr": "Noisettes",
+     "nom_ar": "بندق",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 79,
+     "nom_fr": "Lait entier",
+     "nom_ar": "حليب كامل الدسم",
+     "quantite": 1,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 151,
+     "nom_fr": "Maïzena (amidon de maïs)",
+     "nom_ar": "نشاء الذرة",
+     "quantite": 0.03,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "2 cuillères à soupe",
+     "note_ar": "ملعقتان كبيرتان"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.08,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 139,
+     "nom_fr": "Eau de rose",
+     "nom_ar": "ماء الورد",
+     "quantite": 0.015,
+     "unite": "L",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "eau de rose ou de géranium",
+     "note_ar": "ماء الورد أو العطرشية"
+    },
+    {
+     "ingredient_id": 134,
+     "nom_fr": "Pistaches",
+     "nom_ar": "فستق",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour décorer",
+     "note_ar": "للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Maïzena (amidon de maïs)"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Faites griller les noisettes 10 minutes au four à 180 °C, puis frottez-les dans un torchon pour retirer la peau.",
+    "Mixez-les longuement jusqu'à obtenir une pâte presque lisse (ajoutez une cuillère de lait si besoin).",
+    "Délayez la maïzena dans un verre de lait froid.",
+    "Dans une casserole, mélangez la pâte de noisettes, le reste du lait et le sucre. Faites chauffer en remuant, ajoutez la maïzena délayée et laissez épaissir à feu doux 8 à 10 minutes, en tournant sans arrêt.",
+    "Retirez du feu dès que la crème nappe la cuillère et ajoutez l'eau de rose si vous en mettez.",
+    "Servez chaud ou tiède dans des verres, décoré de pistaches concassées."
+   ],
+   "etapes_ar": [
+    "حمّصوا البندق 10 دقائق في الفرن على 180 درجة، ثم افركوه في منشفة لنزع قشرته.",
+    "اطحنوه طويلًا حتى يصبح عجينة شبه ملساء (أضيفوا ملعقة حليب إن لزم).",
+    "ذوّبوا نشاء الذرة في كأس من الحليب البارد.",
+    "في قدر، اخلطوا عجينة البندق وبقية الحليب والسكر. سخّنوها مع التحريك، وأضيفوا النشاء المذاب، واتركوها تتكثّف على نار هادئة 8 إلى 10 دقائق مع التحريك المستمر.",
+    "ارفعوها عن النار بمجرد أن تغطي الكريمة الملعقة، وأضيفوا ماء الورد إن رغبتم.",
+    "قدّموها ساخنة أو فاترة في كؤوس، مزيّنة بالفستق المكسّر."
+   ],
+   "astuce_fr": "Contrairement à la bouza orientale (glace), la bouza tunisienne se mange chaude. Pour une version plus économique, remplacez la moitié des noisettes par de la farine de sorgho.",
+   "astuce_ar": "على عكس البوزة المشرقية (المثلّجة)، تؤكل البوزة التونسية ساخنة. ولنسخة أرخص، عوّضوا نصف البندق بدقيق الدرع.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-bouza-tunisienne-aux-noisettes/",
+    "https://www.lapresse.tn/?p=4316326",
+    "https://www.croq-kilos.com/actus/bouza-la-recette-tunisienne-du-dessert-doux-riche-et-irresistible"
+   ]
+  },
+  {
+   "id": "kaaber-ellouz",
+   "statut": "brouillon",
+   "nom_fr": "Kaaber ellouz (boules de Carthage à la pâte d'amandes)",
+   "nom_ar": "كعابر اللوز",
+   "nom_local": {
+    "ar": "كعابر اللوز",
+    "latin": "Kaaber ellouz"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Tunis",
+   "saison": "Aïd, mariages",
+   "occasion": [
+    "Aïd",
+    "Mariage",
+    "Sans cuisson"
+   ],
+   "portions": 25,
+   "prep_min": 45,
+   "cuisson_min": 0,
+   "repos": "30 minutes au frais",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 132,
+     "nom_fr": "Amandes",
+     "nom_ar": "لوز",
+     "quantite": 0.25,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "émondées, légèrement grillées et moulues",
+     "note_ar": "مقشّرة ومحمّصة قليلًا ومطحونة"
+    },
+    {
+     "ingredient_id": 181,
+     "nom_fr": "Sucre glace",
+     "nom_ar": "سكر ناعم",
+     "quantite": 0.1,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 139,
+     "nom_fr": "Eau de rose",
+     "nom_ar": "ماء الورد",
+     "quantite": 0.03,
+     "unite": "L",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "eau de rose ou de géranium, 2 cuillères à soupe",
+     "note_ar": "ماء الورد أو العطرشية، ملعقتان كبيرتان"
+    },
+    {
+     "ingredient_id": 256,
+     "nom_fr": "Colorant alimentaire (rouge, vert ou jaune)",
+     "nom_ar": "ملوّن غذائي",
+     "quantite": 2,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "rose et vert",
+     "note_ar": "وردي وأخضر"
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 4,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "pour enrober",
+     "note_ar": "للتغليف"
+    },
+    {
+     "ingredient_id": 134,
+     "nom_fr": "Pistaches",
+     "nom_ar": "فستق",
+     "quantite": 0.02,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "pour décorer",
+     "note_ar": "للتزيين"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Sucre glace",
+     "Colorant alimentaire (rouge, vert ou jaune)"
+    ],
+    "sans prix": [
+     "Eau de rose"
+    ],
+    "douteux": [
+     "Sucre"
+    ]
+   },
+   "etapes_fr": [
+    "Mélangez la poudre d'amandes et le sucre glace, puis ajoutez l'eau de rose petit à petit en pétrissant, jusqu'à obtenir une pâte souple qui ne colle pas.",
+    "Divisez la pâte en 3 parts. Laissez-en une nature, colorez la deuxième en rose et la troisième en vert avec une pointe de colorant.",
+    "Couvrez et mettez 30 minutes au frais pour raffermir.",
+    "Roulez chaque couleur en long boudin fin, puis posez les 3 boudins côte à côte et torsadez-les ensemble.",
+    "Coupez des tronçons de 2 cm et roulez-les entre vos paumes pour former des boules marbrées.",
+    "Roulez les boules dans le sucre et posez-les dans des caissettes en papier, avec un éclat de pistache. Vous obtenez environ 25 boules."
+   ],
+   "etapes_ar": [
+    "اخلطوا اللوز المطحون والسكر الناعم، ثم أضيفوا ماء الورد تدريجيًا مع العجن حتى تحصلوا على عجينة طرية لا تلتصق.",
+    "قسّموا العجينة إلى 3 أجزاء. اتركوا جزءًا بلونه، ولوّنوا الثاني بالوردي والثالث بالأخضر بقليل من الملوّن.",
+    "غطّوها وضعوها 30 دقيقة في الثلاجة لتتماسك.",
+    "لفّوا كل لون إصبعًا طويلًا رقيقًا، ثم ضعوا الأصابع الثلاثة جنبًا إلى جنب واضفروها معًا.",
+    "قطّعوا قطعًا بطول 2 سم ولفّوها بين الكفّين لتصبح كرات ملوّنة.",
+    "لفّوا الكرات في السكر وضعوها في قوالب ورقية مع قطعة فستق. تحصلون على حوالي 25 كرة."
+   ],
+   "astuce_fr": "Sans cuisson et sans four : une bonne douceur à préparer avec les enfants. Tamisez la poudre d'amandes pour une pâte plus lisse.",
+   "astuce_ar": "دون طهي ودون فرن، حلوى مناسبة لتحضيرها مع الأطفال. انخلوا اللوز المطحون لعجينة أنعم.",
+   "sources": [
+    "https://lepetitjournal.com/vivre-a-tunis/gourmand-les-boules-de-carthage-kaaber-ellouz-415307",
+    "https://www.tunisienumerique.com/recette-boules-aux-amandes-kaaber-ellouz/",
+    "https://tarasmulticulturaltable.com/kaber-ellouz-tunisian-almond-balls/"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "bechkoutou",
+   "statut": "brouillon",
+   "nom_fr": "Bechkoutou (biscuits croquants au sésame et au fenouil)",
+   "nom_ar": "بشكوتو",
+   "nom_local": {
+    "ar": "بشكوتو",
+    "latin": "Bechkoutou / Bachkoutou"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Toute la Tunisie",
+   "saison": "Toute l'année, Aïd",
+   "occasion": [
+    "Goûter",
+    "Thé",
+    "Aïd"
+   ],
+   "portions": 40,
+   "prep_min": 25,
+   "cuisson_min": 25,
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 3,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 111,
+     "nom_fr": "Sucre",
+     "nom_ar": "سكر",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 123,
+     "nom_fr": "Huile végétale",
+     "nom_ar": "زيت نباتي",
+     "quantite": 0.15,
+     "unite": "L",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 177,
+     "nom_fr": "Levure chimique",
+     "nom_ar": "خميرة كيميائية",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "environ, selon la pâte",
+     "note_ar": "تقريبًا حسب العجين"
+    },
+    {
+     "ingredient_id": 215,
+     "nom_fr": "Graines de fenouil",
+     "nom_ar": "بذور البسباس",
+     "quantite": 1,
+     "unite": "c. à soupe",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 36,
+     "nom_fr": "Orange",
+     "nom_ar": "برتقال",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "1 orange : le zeste",
+     "note_ar": "برتقالة واحدة: القشرة المبشورة"
+    },
+    {
+     "ingredient_id": 137,
+     "nom_fr": "Sésame",
+     "nom_ar": "جلجلان",
+     "quantite": 0.05,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": true,
+     "note_fr": "ou noisettes concassées",
+     "note_ar": "أو بندق مكسّر"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "douteux": [
+     "Sucre"
+    ],
+    "pas dans le dictionnaire": [
+     "Levure chimique",
+     "Graines de fenouil"
+    ]
+   },
+   "etapes_fr": [
+    "Battez les œufs avec le sucre 3 minutes, puis ajoutez l'huile en continuant de battre.",
+    "Ajoutez le zeste d'orange, les graines de fenouil (et le sésame).",
+    "Mélangez la levure avec la farine et incorporez-la petit à petit jusqu'à obtenir une pâte souple qui ne colle plus aux mains.",
+    "Préchauffez le four à 180 °C. Formez des boudins de 2 cm d'épaisseur et coupez-les en tronçons de 6 cm (ou passez la pâte au hachoir avec la douille cannelée).",
+    "Posez-les sur une plaque recouverte de papier cuisson et faites cuire 20 à 25 minutes, jusqu'à ce qu'ils soient dorés et secs.",
+    "Laissez refroidir : ils durcissent en refroidissant. Gardez-les dans une boîte en fer. Vous obtenez environ 40 biscuits."
+   ],
+   "etapes_ar": [
+    "اخفقوا البيض مع السكر 3 دقائق، ثم أضيفوا الزيت مع مواصلة الخفق.",
+    "أضيفوا قشرة البرتقال المبشورة وبذور البسباس (والجلجلان).",
+    "اخلطوا الخميرة الكيميائية مع الفرينة وأضيفوها تدريجيًا حتى تحصلوا على عجينة طرية لا تلتصق باليدين.",
+    "سخّنوا الفرن على 180 درجة. شكّلوا أصابع بسمك 2 سم وقطّعوها قطعًا بطول 6 سم (أو مرّروا العجين في المفرمة بالفوهة المسنّنة).",
+    "ضعوها على صينية مغطاة بورق الطهي واطهوها 20 إلى 25 دقيقة حتى تتحمّر وتجفّ.",
+    "اتركوها تبرد فهي تتصلّب عند التبريد. احفظوها في علبة حديدية. تحصلون على حوالي 40 قطعة."
+   ],
+   "astuce_fr": "Trempés dans le café au lait du matin, c'est le goûter des écoliers tunisiens. Les graines d'anis remplacent le fenouil.",
+   "astuce_ar": "مغموسة في قهوة الحليب صباحًا، هي لمجة التلاميذ في تونس. وحبة حلاوة تعوّض بذور البسباس.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-bachkoutou-tunisien-biscuit-croquant/",
+    "https://voyages.ideoz.fr/boussou-la-tmessou-recette-patisserie-orientale/",
+    "https://www.masmoudigourmet.com/collections/all-products/products/bachkoutou-tunisian-biscuits"
+   ],
+   "portions_unite": "pièces"
+  },
+  {
+   "id": "sables-confiture",
+   "statut": "brouillon",
+   "nom_fr": "Sablés à la confiture (petits gâteaux de fête maison)",
+   "nom_ar": "صابلي بالمعجون",
+   "nom_local": {
+    "ar": "صابلي بالمعجون",
+    "latin": "Sablé bel maajoun"
+   },
+   "cuisine": "tunisienne",
+   "pays": "Tunisie",
+   "categorie": "douceur",
+   "region": "Toute la Tunisie",
+   "saison": "Aïd, toute l'année",
+   "occasion": [
+    "Aïd",
+    "Goûter",
+    "Fête"
+   ],
+   "portions": 25,
+   "prep_min": 40,
+   "cuisson_min": 12,
+   "repos": "1 heure au frais",
+   "difficulte": "facile",
+   "contient_agneau_ou_boeuf_en_morceaux": false,
+   "ingredients": [
+    {
+     "ingredient_id": 94,
+     "nom_fr": "Farine",
+     "nom_ar": "فارينة / دقيق",
+     "quantite": 0.5,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 80,
+     "nom_fr": "Beurre",
+     "nom_ar": "زبدة",
+     "quantite": 0.25,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "froid, en petits morceaux",
+     "note_ar": "باردة ومقطّعة قطعًا صغيرة"
+    },
+    {
+     "ingredient_id": 181,
+     "nom_fr": "Sucre glace",
+     "nom_ar": "سكر ناعم",
+     "quantite": 0.17,
+     "unite": "kg",
+     "placard": true,
+     "optionnel": false,
+     "note_fr": "dont un peu pour le décor",
+     "note_ar": "منه قليل للتزيين"
+    },
+    {
+     "ingredient_id": 177,
+     "nom_fr": "Levure chimique",
+     "nom_ar": "خميرة كيميائية",
+     "quantite": 1,
+     "unite": "c. à café",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 77,
+     "nom_fr": "Oeufs",
+     "nom_ar": "عظم / بيض",
+     "quantite": 2,
+     "unite": "pièce",
+     "placard": false,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 112,
+     "nom_fr": "Sel",
+     "nom_ar": "ملح",
+     "quantite": 1,
+     "unite": "pincée",
+     "placard": true,
+     "optionnel": false
+    },
+    {
+     "ingredient_id": 126,
+     "nom_fr": "Confiture",
+     "nom_ar": "معجون",
+     "quantite": 0.2,
+     "unite": "kg",
+     "placard": false,
+     "optionnel": false,
+     "note_fr": "abricot, fraise ou orange",
+     "note_ar": "مشماش أو فراولة أو برتقال"
+    }
+   ],
+   "prix_manquants_21_10": {
+    "pas dans le dictionnaire": [
+     "Sucre glace",
+     "Levure chimique"
+    ]
+   },
+   "etapes_fr": [
+    "Mélangez la farine et la levure, ajoutez le beurre froid et frottez du bout des doigts jusqu'à obtenir une texture de sable.",
+    "Ajoutez 0,15 kg de sucre glace, le sel et les œufs, puis rassemblez en boule sans trop pétrir.",
+    "Enveloppez la pâte et laissez-la 1 heure au frais.",
+    "Préchauffez le four à 180 °C. Étalez la pâte sur 3 à 4 mm et découpez des ronds. Dans la moitié des ronds, découpez un petit trou au centre.",
+    "Faites cuire 10 à 12 minutes sur une plaque recouverte de papier cuisson : ils doivent rester clairs. Laissez refroidir complètement.",
+    "Tartinez les ronds pleins de confiture, saupoudrez les ronds troués de sucre glace et posez-les dessus. Vous obtenez environ 25 sablés."
+   ],
+   "etapes_ar": [
+    "اخلطوا الفرينة والخميرة الكيميائية، وأضيفوا الزبدة الباردة وافركوها بأطراف الأصابع حتى يصبح الخليط كالرمل.",
+    "أضيفوا 0,15 كغ من السكر الناعم والملح والبيض، ثم اجمعوا العجين كرة دون عجن كثير.",
+    "لفّوا العجين واتركوه ساعة في الثلاجة.",
+    "سخّنوا الفرن على 180 درجة. افردوا العجين بسمك 3 إلى 4 مم وقطّعوا دوائر، واثقبوا نصف الدوائر ثقبًا صغيرًا في الوسط.",
+    "اطهوها 10 إلى 12 دقيقة على صينية مغطاة بورق الطهي، فيجب أن يبقى لونها فاتحًا. اتركوها تبرد تمامًا.",
+    "ادهنوا الدوائر الكاملة بالمعجون، ورشّوا السكر الناعم على الدوائر المثقوبة وضعوها فوقها. تحصلون على حوالي 25 قطعة."
+   ],
+   "astuce_fr": "Une pâte bien froide se découpe proprement : si elle ramollit pendant le découpage, remettez-la 10 minutes au réfrigérateur.",
+   "astuce_ar": "العجين البارد جيدًا يُقطّع بشكل نظيف، فإن لان أثناء التقطيع أعيدوه 10 دقائق إلى الثلاجة.",
+   "sources": [
+    "https://www.tunisienumerique.com/recette-sable-a-la-confiture/",
+    "https://www.bosch-home.com/ch/fr/blog/recette-sables-a-confiture-blog"
+   ],
+   "portions_unite": "pièces"
+  }
+ ]
+}
