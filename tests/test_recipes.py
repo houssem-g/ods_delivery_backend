@@ -748,3 +748,16 @@ def test_only_photos_scored_5_out_of_5_are_kept():
     for score in (4, "4/5", 4.5, "bof"):
         cols, reason = rp.parse_entry("lablabi", {"file": "x.webp", "score": score})
         assert cols is None and "5/5" in reason, score
+
+
+def test_photos_of_an_excluded_commons_author_are_refused():
+    from app.services import recipe_photos as rp
+
+    cols, reason = rp.parse_entry(
+        "kafteji", {"file": "x.webp", "author": "Slothtysloth", "license": "CC BY-SA 4.0", "score": 5}
+    )
+    assert cols is None and "Slothtysloth" in reason
+    cols, reason = rp.parse_entry(
+        "kafteji", {"file": "x.webp", "credit": {"author": " slothtysloth "}, "score": 5}
+    )
+    assert cols is None

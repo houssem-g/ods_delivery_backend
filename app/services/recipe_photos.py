@@ -44,6 +44,9 @@ KEY_RE = re.compile(r"^public/recipes/[a-z0-9][a-z0-9_-]{0,150}\.webp$")
 ALT_MAX = 200
 CREDIT_MAX = 200
 TOP_SCORE = 5  # owner 21/10: only the photos scored 5/5 by the photo team
+# authors whose Commons uploads look copied from food blogs (owner 21/10, 11 photos): never used, those
+# recipes go to the « missing » list (AI pictures later)
+EXCLUDED_AUTHORS = frozenset({"slothtysloth"})
 # free photos are « photo »; the photo team's words are accepted too
 SOURCE_ALIASES = {
     **dict.fromkeys(("libre", "free", "openverse", "wikimedia", "commons"), "photo"),
@@ -145,6 +148,11 @@ def parse_entry(slug: str, value: Any) -> tuple[dict[str, Any] | None, str | Non
     score = entry.get("score")
     if score is not None and not _is_top(score):  # owner 21/10: beautiful photos or nothing
         return None, f"{slug}: photo notée {score}/5 (seules les 5/5 sont gardées)"
+    author = str(
+        (entry.get("credit") if isinstance(entry.get("credit"), dict) else entry).get("author") or ""
+    )
+    if author.strip().lower() in EXCLUDED_AUTHORS:
+        return None, f"{slug}: photo de « {author.strip()} » exclue (photos de blog recopiées)"
     given = entry.get("photo") or entry.get("url") or entry.get("photo_url")
     if not given and entry.get("file"):  # the photo team's file: uploaded as public/recipes/<slug>.webp
         given = default_key(slug)
