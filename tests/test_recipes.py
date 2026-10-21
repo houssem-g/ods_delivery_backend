@@ -511,3 +511,112 @@ async def test_files_schema_lines_without_reference_are_kept_unpriced_and_the_li
         await recipes_import.import_ingredients(session, extra)
         again = await recipes_import.import_recipes(session, [doc])
     assert again["updated"] == 1 and again["back_to_draft"] == ["tajine-zitoun"]
+
+
+# --- 22/10: photos, « Ce soir avec X DT », « Vos recettes », « + Ajouter autre chose » ------------------
+
+
+def test_photo_keys_only_under_public_recipes_and_from_our_own_origin():
+    from app.services import recipe_photos as rp
+    from app.storage import s3
+
+    assert rp.to_key("recipes/ojja-merguez.webp") == "public/recipes/ojja-merguez.webp"
+    assert (
+        rp.to_key(s3.public_url("public/recipes/ojja-merguez-480.webp"))
+        == "public/recipes/ojja-merguez-480.webp"
+    )
+    for bad in ("https://evil.test/public/recipes/x.webp", "public/recipes/x.png", "public/other/x.webp",
+                "public/recipes/../x.webp", None, 3):  # fmt: skip
+        assert rp.to_key(bad) is None, bad
+    cols, reason = rp.parse_entry("ojja", {"photo": "recipes/ojja.webp", "source": "robot"})
+    assert cols is None and "source" in reason
+    cols, _ = rp.parse_entry("ojja", "recipes/ojja.webp")
+    assert cols["photo_source"] == "ia" and cols["photo_thumb_key"] is None
+
+
+async def test_admin_records_photos_one_or_a_file_the_cards_show_them_an_import_keeps_them(
+    client, factory, qa, ods_prices, tmp_path
+):
+    from app.storage import s3
+    from scripts import import_recipe_photos
+
+    await seed(OJJA, SALADE)
+    customer = await factory.user()
+    one = {
+        "slug": "ojja-merguez",
+        "photo": "recipes/ojja-merguez.webp",
+        "thumb": "recipes/ojja-merguez-480.webp",
+        "alt_fr": "Ojja fumante dans sa poêle",
+    }
+    assert (await fn(client, customer, "setRecipePhoto", one)).status_code == 403
+    done = await ok(client, qa, "setRecipePhoto", one)
+    assert (done["updated"], done["unchanged"]) == (1, 0)
+    assert (await ok(client, qa, "setRecipePhoto", one))["unchanged"] == 1
+    cards = {c["slug"]: c for c in (await ok(client, qa, "listRecipes"))["recipes"]}
+    assert cards["ojja-merguez"]["photo_url"] == s3.public_url("public/recipes/ojja-merguez.webp")
+    assert cards["ojja-merguez"]["photo_thumb_url"] == s3.public_url("public/recipes/ojja-merguez-480.webp")
+    assert cards["ojja-merguez"]["photo_alt_fr"] == "Ojja fumante dans sa poêle"
+    assert (
+        cards["ojja-merguez"]["photo_alt_ar"] == "عجة بالمرقاز"
+        and cards["ojja-merguez"]["photo_source"] == "ia"
+    )
+    assert cards["salade-tomate"]["photo_url"] is None
+    sheet = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
+    assert sheet["photo_url"].endswith("/public/recipes/ojja-merguez.webp")
+    async with transaction() as session:  # the recipe file read again: the photo stays
+        await recipes_import.import_recipes(session, [{**OJJA, "time_min": 30}])
+    assert (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]["photo_url"]
+    report = await ok(client, qa, "setRecipePhoto", {"photos": {
+        "salade-tomate": s3.public_url("public/recipes/salade-tomate.webp"), "ojja-merguez": None,
+        "inconnue": "recipes/inconnue.webp"}})  # fmt: skip
+    assert (report["updated"], report["cleared"], report["unknown"]) == (1, 1, ["inconnue"])
+    bad = await ok(client, qa, "setRecipePhoto", {"photos": {"salade-tomate": "https://evil.test/a.webp"}})
+    assert bad["updated"] == 0 and len(bad["refused"]) == 1
+    file = tmp_path / "photos.json"
+    file.write_text(json.dumps({"ojja-merguez": "recipes/ojja-merguez.webp"}), encoding="utf-8")
+    assert (await import_recipe_photos.run(file, "ia"))["updated"] == 1
+    async with SessionLocal() as s:
+        actions = (
+            (await s.execute(select(AuditLog.action).where(AuditLog.action == "recipes.photo")))
+            .scalars()
+            .all()
+        )
+    assert len(actions) == 4
+
+
+async def test_list_tonight_with_a_budget_for_4_tags_favourites_and_a_region(client, qa, ods_prices):
+    await seed({**OJJA, "tags": ["Rapide"]}, SALADE, TAJINE)
+    tonight = await ok(client, qa, "listRecipes", {"max_cost": 10, "servings": 4})
+    assert [c["slug"] for c in tonight["recipes"]] == ["salade-tomate"] and tonight["total"] == 1
+    assert tonight["recipes"][0]["cost_servings"] == 4 and tonight["recipes"][0]["cost"]["high"] <= 10
+    both = await ok(client, qa, "listRecipes", {"max_cost": 30, "servings": 4})
+    assert {c["slug"] for c in both["recipes"]} == {"salade-tomate", "ojja-merguez"}  # tajine: no total
+    for8 = {c["slug"]: c for c in (await ok(client, qa, "listRecipes", {"servings": 8}))["recipes"]}
+    assert for8["ojja-merguez"]["cost_servings"] == 8 and for8["ojja-merguez"]["cost"]["high"] > 28
+    assert [c["slug"] for c in (await ok(client, qa, "listRecipes", {"tag": "Rapide"}))["recipes"]] == [
+        "ojja-merguez"
+    ]
+    mine = await ok(client, qa, "listRecipes", {"slugs": ["tajine-zitoun", "salade-tomate"]})
+    assert {c["slug"] for c in mine["recipes"]} == {"tajine-zitoun", "salade-tomate"}
+    region = await ok(client, qa, "listRecipes", {"cuisine": ["marocaine", "algérienne"]})
+    assert [c["slug"] for c in region["recipes"]] == ["tajine-zitoun"]
+
+
+async def test_other_articles_of_the_list_come_back_unpriced_and_go_into_the_order(client, qa, ods_prices):
+    await seed({**OJJA, "ingredients": OJJA["ingredients"][:3]})  # all priced: only « lait » needs the yes
+    rid = await recipe_id("ojja-merguez")
+    others = [" Lait  1 L ", "lait 1 l", "Pain", ""]
+    p = await ok(
+        client, qa, "previewRecipeList", {"items": [{"recipe_id": rid, "servings": 4}], "others": others}
+    )
+    assert p["others"] == ["Lait 1 L", "Pain"]
+    refused = await fn(client, qa, "placeOrder", order_body(rid, others=["Lait 1 L"]))
+    assert refused.status_code == 400 and refused.json()["error"] == "recipes_unpriced_not_accepted"
+    placed = await ok(
+        client, qa, "placeOrder", order_body(rid, others=["Lait 1 L", "Pain"], accept_unpriced=True)
+    )
+    async with SessionLocal() as s:
+        order = await s.get(Order, placed["order"]["id"])
+        rec = await s.get(RecipeOrder, order.id)
+    assert order.items_text.split("\n")[-2:] == ["Lait 1 L", "Pain"] and "Lait 1 L" in order.notes
+    assert rec.lines[-1] == {"other": "Pain"}

@@ -40,7 +40,7 @@ from app.models import (
     User,
 )
 from app.security.deps import CurrentUser
-from app.services import recipe_prices, text_norm
+from app.services import recipe_photos, recipe_prices, text_norm
 from app.services import recipe_units as ru
 from app.services.orders import MAX_BUDGET, OrderRefused, is_qa_account
 from app.services.places import lat_expr, lng_expr, point
@@ -325,7 +325,9 @@ def _pantry_defaults(data: Loaded, recipe_ids: list[uuid.UUID]) -> set[int | str
 # --- client reads --------------------------------------------------------------------------------------
 
 
-def _card(recipe: Recipe, c: dict[str, Any], lines_n: int) -> dict[str, Any]:
+def _card(recipe: Recipe, c: dict[str, Any], lines_n: int, servings: int | None = None) -> dict[str, Any]:
+    """A recipe card. The cost is for `servings` (the recipe's own number unless the list asked another)."""
+    n = servings or recipe.base_servings
     return {
         "id": str(recipe.id),
         "slug": recipe.slug,
@@ -342,7 +344,9 @@ def _card(recipe: Recipe, c: dict[str, Any], lines_n: int) -> dict[str, Any]:
         "tags": list(recipe.tags or []),
         "ingredients_count": lines_n,
         "cost": _cost_doc(c),
-        "per_person": recipe_prices.per_person(c, recipe.base_servings),
+        "cost_servings": n,
+        "per_person": recipe_prices.per_person(c, n),
+        **recipe_photos.fields(recipe),
     }
 
 
@@ -366,9 +370,21 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
         ("country", Recipe.country),
         ("category", Recipe.category),
     ):
-        value = str(payload.get(field) or "").strip()
+        raw = payload.get(field)
+        if isinstance(raw, list):  # a region: several cuisines (« Égypte & Golfe »), soups and stews…
+            values = [str(v).strip()[:60] for v in raw[:30] if str(v).strip()]
+            if values:
+                where.append(column.in_(values))
+            continue
+        value = str(raw or "").strip()
         if value and value != "all":
             where.append(column == value[:60])
+    tag = str(payload.get("tag") or "").strip()
+    if tag:  # « Petit budget », « Végétarien », « Ramadan »… as the files write them
+        where.append(Recipe.tags.any(tag[:30]))
+    slugs = payload.get("slugs")
+    if isinstance(slugs, list):  # « Vos recettes »: the favourites / last opened kept on the phone
+        where.append(Recipe.slug.in_([str(x)[:120] for x in slugs[:40]]))
     try:
         max_time = int(payload.get("max_time") or 0)
     except (TypeError, ValueError):
@@ -401,38 +417,85 @@ async def _facets(session: AsyncSession) -> dict[str, list[dict[str, Any]]]:
     return out
 
 
+def _people(recipe: Recipe, servings: int | None) -> int:
+    """The number a card's cost is for: the asked one for a dish (people), the recipe's own otherwise."""
+    return servings if servings and recipe.servings_unit == "people" else recipe.base_servings
+
+
+def _card_cost(data: Loaded, recipe: Recipe, n: int, prices: Any) -> dict[str, Any]:
+    lst = shopping(data, [(recipe.id, n)], _pantry_defaults(data, [recipe.id]))
+    return recipe_prices.cost(lst["buy"], prices)
+
+
+MAX_BUDGET_SCAN = (
+    600  # « Ce soir avec 20 DT »: the costs of every matching recipe are computed (547 on 21/10)
+)
+
+
 async def list_recipes(
     session: AsyncSession, viewer: CurrentUser | None, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """{q?, cuisine?, country?, category?, max_time?, page? (1…), page_size? (≤ 40)} → one page of cards, the
-    total, the facets (on page 1 only). Costs are computed for the page only."""
+    """{q?, cuisine? (one or a list), country?, category? (one or a list), tag?, slugs?, max_time?, servings?,
+    max_cost?, page? (1…), page_size? (≤ 40)} → one page of cards, the total, the facets (on page 1 only).
+
+    `servings`: the costs are for that many people (dishes only; a pastry keeps its pieces). `max_cost`
+    (« Ce soir avec 20 DT pour 4 »): only the recipes whose WHOLE cost is known (a total shown, ≥ 70 %
+    priced) and whose high end fits, Tunisian first then the cheapest; never a recipe without a total."""
     await _require_see(session, viewer)
     try:
         page = max(1, int(payload.get("page") or 1))
         size = max(1, min(PAGE_SIZE_MAX, int(payload.get("page_size") or PAGE_SIZE)))
     except (TypeError, ValueError):
         page, size = 1, PAGE_SIZE
-    where = _filters(payload)
-    total = (await session.execute(select(func.count()).select_from(Recipe).where(*where))).scalar_one()
-    ids = list(
-        (
-            await session.execute(
-                select(Recipe.id)
-                .where(*where)
-                .order_by(Recipe.title_fr, Recipe.id)
-                .offset((page - 1) * size)
-                .limit(size)
-            )
-        ).scalars()
-    )
-    data = await load(session, ids=ids, published_only=False)
-    prices = await recipe_prices.prices(session) if ids else None
-    cards = []
-    for recipe in data.recipes:
-        lst = shopping(data, [(recipe.id, recipe.base_servings)], _pantry_defaults(data, [recipe.id]))
-        cards.append(
-            _card(recipe, recipe_prices.cost(lst["buy"], prices), len(data.lines.get(recipe.id, [])))
+    servings = _servings(payload.get("servings"), 0) if payload.get("servings") is not None else None
+    try:
+        max_cost = (
+            Decimal(str(payload.get("max_cost"))) if payload.get("max_cost") not in (None, "") else None
         )
+    except ArithmeticError:
+        max_cost = None
+    if max_cost is not None and (not max_cost.is_finite() or max_cost <= 0):
+        max_cost = None
+    where = _filters(payload)
+    if max_cost is not None:
+        servings = servings or 4
+        ids = list((await session.execute(select(Recipe.id).where(*where).limit(MAX_BUDGET_SCAN))).scalars())
+        data = await load(session, ids=ids, published_only=False)
+        prices = await recipe_prices.prices(session) if ids else None
+        fitting = []
+        for recipe in data.recipes:
+            if recipe.servings_unit != "people":
+                continue
+            c = _card_cost(data, recipe, servings, prices)
+            if c.get("show_total") and c.get("high") is not None and Decimal(str(c["high"])) <= max_cost:
+                fitting.append((recipe, c))
+        fitting.sort(key=lambda t: (t[0].cuisine != "tunisienne", float(t[1]["high"]), t[0].title_fr))
+        total = len(fitting)
+        cards = [
+            _card(recipe, c, len(data.lines.get(recipe.id, [])), servings)
+            for recipe, c in fitting[(page - 1) * size : page * size]
+        ]
+    else:
+        total = (await session.execute(select(func.count()).select_from(Recipe).where(*where))).scalar_one()
+        ids = list(
+            (
+                await session.execute(
+                    select(Recipe.id)
+                    .where(*where)
+                    .order_by(Recipe.title_fr, Recipe.id)
+                    .offset((page - 1) * size)
+                    .limit(size)
+                )
+            ).scalars()
+        )
+        data = await load(session, ids=ids, published_only=False)
+        prices = await recipe_prices.prices(session) if ids else None
+        cards = []
+        for recipe in data.recipes:
+            n = _people(recipe, servings)
+            cards.append(
+                _card(recipe, _card_cost(data, recipe, n, prices), len(data.lines.get(recipe.id, [])), n)
+            )
     answer: dict[str, Any] = {
         "success": True,
         "visible": True,
@@ -529,7 +592,7 @@ async def get_recipe(
     return {
         "success": True,
         "recipe": {
-            **_card(recipe, c, len(ingredients)),
+            **_card(recipe, c, len(ingredients), servings),
             "status": recipe.status,
             "intro_fr": recipe.intro_fr,
             "intro_ar": recipe.intro_ar,
@@ -567,11 +630,26 @@ async def _items(
     return data, list(wanted.items())
 
 
+MAX_OTHERS = 12  # « + Ajouter autre chose » (lait, pain, eau…): free lines, never priced
+OTHER_MAX = 60
+
+
+def _others(raw: Any) -> list[str]:
+    """The customer's own extra articles: trimmed, no duplicates, ≤ 12 of ≤ 60 characters."""
+    out: list[str] = []
+    for value in raw[: MAX_OTHERS * 2] if isinstance(raw, list) else []:
+        text_ = " ".join(str(value).split())[:OTHER_MAX] if isinstance(value, str | int | float) else ""
+        if text_ and text_.casefold() not in {o.casefold() for o in out}:
+            out.append(text_)
+    return out[:MAX_OTHERS]
+
+
 async def preview_list(
     session: AsyncSession, viewer: CurrentUser | None, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """{items: [{recipe_id, servings}], at_home?: [ingredient ids]} → the merged list by aisle, what is at
-    home, the couffin's weight, the honest cost (and the order's ceiling when a total is shown)."""
+    """{items: [{recipe_id, servings}], at_home?: [ingredient ids], others?: [text]} → the merged list by
+    aisle, what is at home, the couffin's weight, the honest cost (and the order's ceiling when a total is
+    shown); `others` (« + Ajouter autre chose ») come back cleaned, always without a price."""
     data, items = await _items(session, viewer, payload.get("items"))
     at_home = _at_home(payload.get("at_home"), _pantry_defaults(data, [rid for rid, _ in items]))
     lst = shopping(data, items, at_home)
@@ -592,6 +670,7 @@ async def preview_list(
         "at_home": [{"ingredient_id": i.id, "name_fr": i.name_fr, "name_ar": i.name_ar} for i in lst["home"]],
         "weight_kg": float(lst["weight_kg"]),
         "cost": _cost_doc(c),
+        "others": _others(payload.get("others")),
     }
 
 
@@ -599,7 +678,12 @@ async def preview_list(
 
 
 def items_text(
-    data: Loaded, items: list[tuple[uuid.UUID, int]], buy: list[tuple[ru.Ing, Decimal]], lang: str, test: bool
+    data: Loaded,
+    items: list[tuple[uuid.UUID, int]],
+    buy: list[tuple[ru.Ing, Decimal]],
+    lang: str,
+    test: bool,
+    others: list[str] | None = None,
 ) -> str:
     t = TEXTS[lang]
     titles = " · ".join(
@@ -609,7 +693,7 @@ def items_text(
     head = f"{TEST_PREFIX if test else ''}{LABEL} {titles}"
     sep = ": " if lang == "ar" else " : "
     lines = [f"{ing.name(lang)}{sep}{ru.fmt_qty(q, ing.unit, lang)}" for ing, q in buy]
-    return "\n".join([head, *lines])
+    return "\n".join([head, *lines, *(others or [])])
 
 
 async def nearest_shop(session: AsyncSession, lat: float, lng: float) -> dict[str, Any] | None:
@@ -664,7 +748,8 @@ async def prepare_order(
     data, items = await _items(session, viewer, r.get("items"))
     at_home = _at_home(r.get("at_home"), _pantry_defaults(data, [rid for rid, _ in items]))
     lst = shopping(data, items, at_home)
-    if not lst["buy"]:
+    others = _others(r.get("others"))
+    if not lst["buy"] and not others:
         raise OrderRefused(400, "recipes_nothing_to_buy")
     c = recipe_prices.cost(lst["buy"], await recipe_prices.prices(session))
     unpriced = (
@@ -672,12 +757,13 @@ async def prepare_order(
         if c.get("available")
         else [{"id": i.id, "fr": i.name_fr, "ar": i.name_ar} for i, _ in lst["buy"]]
     )
+    unpriced = [*unpriced, *({"id": f"o:{o}", "fr": o, "ar": o} for o in others)]
     if unpriced and r.get("accept_unpriced") is not True:
         # the client ticks « j'accepte le prix du ticket pour ces articles » (PRIX-INGREDIENTS §4)
         raise OrderRefused(400, "recipes_unpriced_not_accepted", count=len(unpriced))
     lang = _lang(r.get("lang"))
     test = ADMIN_ONLY or not await public_allowed(session) or is_qa_account(user.email)
-    text = items_text(data, items, lst["buy"], lang, test)
+    text = items_text(data, items, lst["buy"], lang, test, others)
     if len(text) > ITEMS_TEXT_MAX:
         raise OrderRefused(400, "items_too_long", max=ITEMS_TEXT_MAX, length=len(text))
     lat, lng = raw.get("delivery_lat"), raw.get("delivery_lng")
@@ -725,7 +811,10 @@ async def prepare_order(
             {"id": str(rid), "servings": n, "title_fr": data.by_id[rid].title_fr} for rid, n in items
         ],
         "at_home": sorted(at_home),
-        "lines": [{"ingredient_id": i.id, "qty": float(q), "unit": i.unit} for i, q in lst["buy"]],
+        "lines": [
+            *({"ingredient_id": i.id, "qty": float(q), "unit": i.unit} for i, q in lst["buy"]),
+            *({"other": o} for o in others),
+        ],
         "cost": _cost_doc(c),
         "test": test,
     }
