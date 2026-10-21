@@ -202,7 +202,8 @@ def _issues() -> Any:
             "description", issues.c.description,
             "photo_url", _public_url(issues.c.photo_key),
             "reported_at", _iso_z(issues.c.created_at),
-            "reported_by", reporter.c.email,
+            # never an e-mail (QA 21/10 d7-F1: the courier's was readable by the customer): a neutral id
+            "reported_by", literal("u-", Text) + cast(issues.c.reporter_id, Text),
             "courier_id", cast(reporter_courier.c.id, Text),
         )
     )  # fmt: skip

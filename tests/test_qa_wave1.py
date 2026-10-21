@@ -172,6 +172,20 @@ async def test_the_customer_cannot_buy_back_his_own_order(client, world):
         client, world.buyer, "reserveHotDeal", {"resale_order_id": str(deal.id), "delivery_address": "Rue X"}
     )
     assert r.status_code == 403 and r.json()["error"] == "own_order_resale"
+    # QA 21/10 d3-F1: bought by someone else, resold again — still his goods, up the whole chain
+    from app.db import SessionLocal
+    from app.models import Order
+
+    second = await resale(world, "Pain x3")  # its order: world.customer's
+    async with SessionLocal() as s:
+        rebuy = await s.get(Order, second.original_order_id)
+        rebuy.resale_deal_id = deal.id
+        await s.commit()
+    body = {"resale_order_id": str(second.id), "delivery_address": "Rue X"}
+    r = await fn(client, world.buyer, "reserveHotDeal", body)
+    assert r.status_code == 403 and r.json()["error"] == "own_order_resale"
+    listed = (await fn(client, world.buyer, "listHotDeals", {"radius_km": 50})).json()["deals"]
+    assert str(second.id) not in {d["id"] for d in listed}
 
 
 # ─────────────────────────── B19 ───────────────────────────

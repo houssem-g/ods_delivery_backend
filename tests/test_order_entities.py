@@ -83,7 +83,9 @@ async def test_order_legacy_shape_for_the_customer(client, world):
     assert doc["status_history"][0]["timestamp"].endswith("Z")
     assert doc["ods_commission"] == 0.5 and doc["ods_commission_status"] == "offered_launch"
     assert doc["platform_fee"] is None  # set at delivery only
-    assert doc["has_issues"] is True and doc["reported_issues"][0]["reported_by"] == "courier@example.test"
+    assert doc["has_issues"] is True
+    # a neutral id, never an e-mail (QA 21/10 d7-F1)
+    assert doc["reported_issues"][0]["reported_by"] == f"u-{world.courier.user_id}"
     assert doc["reported_issues"][0]["courier_id"] == str(world.courier.id)
     assert doc["no_response_reported"] is True and doc["no_response_channels"] == {"in_app": True}
     assert doc["customer_responded_to_emergency"] is False

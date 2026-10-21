@@ -148,6 +148,7 @@ async def test_create_deal_resells_and_closes_the_order(client, world):
         and public["courier_name"] == "Karim Trabelsi"
     )
     assert public["courier_phone"] is None and public["courier_lat"] is None and public["buyer_id"] is None
+    assert public["created_by"] is None  # the courier's e-mail (QA 21/10 d7-F2)
     admin = (await client.get(f"/api/entities/ResaleOrder/{deal.id}", headers=auth(world.admin))).json()
     assert admin["courier_phone"] == "+21655123456" and admin["courier_lat"] == pytest.approx(SOUSSE_SHOP[0])
     assert admin["original_order_id"] == str(order.id) and admin["created_by"] == "courier@example.test"

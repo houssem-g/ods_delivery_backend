@@ -461,7 +461,7 @@ async def eta(client, user, order):
 async def test_eta_through_osrm(client, world, osrm_answer):
     geometry = {"type": "LineString", "coordinates": [[10.6084, 35.8256], [10.61, 35.83], "junk"]}
     calls = osrm_answer(
-        httpx.Response(200, json={"routes": [{"duration": 610, "distance": 4321, "geometry": geometry}]})
+        httpx.Response(200, json={"routes": [{"duration": 600, "distance": 5780, "geometry": geometry}]})
     )
     order = await world.order(status="accepted", courier=world.courier)
     body = await eta(client, world.customer, order)
@@ -469,8 +469,9 @@ async def test_eta_through_osrm(client, world, osrm_answer):
         "success": True,
         "order_id": str(order.id),
         "status": "accepted",
-        "eta_minutes": 11,
-        "distance_km": 4.32,
+        # 5.78 km by scooter (25 km/h) = 14 min, not OSRM's free-road car 10 min (QA 21/10 d1-21-F4)
+        "eta_minutes": 14,
+        "distance_km": 5.78,
         "source": "osrm",
         "route_coords": [[35.8256, 10.6084], [35.83, 10.61]],
     }

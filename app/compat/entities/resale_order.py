@@ -46,6 +46,12 @@ def read_policy(user: CurrentUser) -> Any:
 
 private = {"read_guard": _admin}
 
+
+def _courier_self_or_admin(user: CurrentUser) -> Any:
+    """created_by = the reselling courier's e-mail: himself and admins only (QA 21/10 d7-F2)."""
+    return true() if user.is_admin else deal_courier_user.c.id == user.id
+
+
 FIELDS: dict[str, LegacyField] = {
     "original_order_id": LegacyField(deals.c.original_order_id, "id"),
     "courier_id": LegacyField(deals.c.courier_id, "id"),
@@ -87,6 +93,7 @@ ENTITY = register(
         created_expr=deals.c.created_at,
         updated_expr=deals.c.updated_at,
         created_by_expr=deal_courier_user.c.email,
+        created_by_guard=_courier_self_or_admin,
         fields=FIELDS,
         read_policy=read_policy,
     )

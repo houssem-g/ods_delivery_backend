@@ -446,6 +446,31 @@ async def _active_reservations(session: AsyncSession, buyer_id: uuid.UUID) -> in
     ).scalar_one()
 
 
+CHAIN_MAX = 10  # resales of a resale: never that many in practice, a bound against a loop
+
+
+async def chain_customers(session: AsyncSession, order_id: uuid.UUID | None) -> set[uuid.UUID]:
+    """The customers of an order and of every order it was resold from (QA 21/10 d3-F1): X absent →
+    deal D1 → Y buys → resold again as D2 → X must not buy D2 cheaper, his own goods."""
+    out: set[uuid.UUID] = set()
+    seen: set[uuid.UUID] = set()
+    while order_id is not None and order_id not in seen and len(seen) < CHAIN_MAX:
+        seen.add(order_id)
+        row = (
+            await session.execute(select(Order.customer_id, Order.resale_deal_id).where(Order.id == order_id))
+        ).one_or_none()
+        if row is None:
+            break
+        if row.customer_id is not None:
+            out.add(row.customer_id)
+        if row.resale_deal_id is None:
+            break
+        order_id = await session.scalar(
+            select(HotDeal.original_order_id).where(HotDeal.id == row.resale_deal_id)
+        )
+    return out
+
+
 async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[str, Any]) -> Result:
     raw_id = payload.get("resale_order_id")
     address = payload.get("delivery_address")
@@ -470,9 +495,9 @@ async def reserve_deal(session: AsyncSession, user: CurrentUser, payload: dict[s
         return 404, {"error": "Hot deal not found"}  # a QA deal is invisible to real customers (B43)
     if deal.status != "available":
         return 409, {"error": "Hot deal is no longer available"}
-    original = await session.get(Order, deal.original_order_id)
-    if original is not None and original.customer_id == user.id:
-        # the customer who did not answer can't buy his own order back cheaper (owner, 06/10, B44)
+    if user.id in await chain_customers(session, deal.original_order_id):
+        # the customer who did not answer can't buy his own order back cheaper (owner, 06/10, B44), even
+        # through a resale of a resale (QA 21/10 d3-F1)
         return 403, {"error": "own_order_resale"}
     now = ot.now_utc()
     if deal.expires_at <= now:
@@ -691,6 +716,13 @@ async def list_deals(
     for row in rows[:take]:
         deal, courier_name, bought_at, reported_at, has_receipt, rating, deliveries = row[:7]
         customer_of_original, courier_user_id, original_source = row[7], row[8], row[9]
+        # a resale of a resale: every customer up the chain is « own order » (QA 21/10 d3-F1)
+        own = user is not None and (
+            customer_of_original == user.id
+            or user.id in await chain_customers(session, deal.original_order_id)
+        )
+        if own and deal_id is None:
+            continue
         km = row[10] if has_point else None
         price = current_price(deal, now)
         original = deal.purchase_amount
@@ -728,7 +760,7 @@ async def list_deals(
                 "created_date": legacy_datetime(deal.created_at),
                 "distance_km": float(km) if km is not None else None,
                 # the detail page shows « C'était votre commande » instead of « Réserver »
-                "own_order": user is not None and customer_of_original == user.id,
+                "own_order": own,
                 "own_deal": user is not None and courier_user_id == user.id,
             }
         )

@@ -12,7 +12,7 @@ from app.compat.dates import legacy_datetime
 from app.integrations import osrm
 from app.models import Courier, Order, OrderOffer, OrderTracking, courier_stats
 from app.services import order_transitions as ot
-from app.services.arrival import speed_kmh
+from app.services.arrival import leg_minutes, speed_kmh
 from app.services.geo import haversine_km, lat_of, lng_of
 from app.services.orders import first_stop, stop_coordinates
 
@@ -171,7 +171,8 @@ async def order_eta(
     if route is not None:
         return {
             **base,
-            "eta_minutes": max(1, math.ceil(route.duration_s / 60)),
+            # at the vehicle's pace, as the offer's computed time (QA 21/10 d1-21-F4: 10 min vs 14)
+            "eta_minutes": max(1, math.ceil(leg_minutes(route, courier.vehicle if courier else None))),
             "distance_km": round(route.distance_m / 1000, 2),
             "source": "osrm",
             # [[lat, lng], ...] of the road (what LiveTracking.jsx draws from its own OSRM call)
