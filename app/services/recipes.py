@@ -636,11 +636,25 @@ MAX_OTHERS = 12  # « + Ajouter autre chose » (lait, pain, eau…): free lines,
 OTHER_MAX = 60
 
 
-def _others(raw: Any) -> list[str]:
-    """The customer's own extra articles: trimmed, no duplicates, ≤ 12 of ≤ 60 characters."""
+def _other_text(value: Any) -> str:
+    """« Lait » / {name: « Lait », count: 2} (Ma liste A sends `extras` as objects) → « Lait × 2 »."""
+    if isinstance(value, dict):
+        name = " ".join(str(value.get("name") or "").split())[:OTHER_MAX]
+        try:
+            count = int(value.get("count") or 1)
+        except (TypeError, ValueError):
+            count = 1
+        return f"{name} × {min(count, 99)}" if name and count > 1 else name
+    return " ".join(str(value).split())[:OTHER_MAX] if isinstance(value, str | int | float) else ""
+
+
+def _others(raw: Any, extras: Any = None) -> list[str]:
+    """The customer's own extra articles (`others`: texts, or `extras`: [{name, count}]): trimmed, no
+    duplicates, ≤ 12 of ≤ 60 characters (+ the count)."""
     out: list[str] = []
-    for value in raw[: MAX_OTHERS * 2] if isinstance(raw, list) else []:
-        text_ = " ".join(str(value).split())[:OTHER_MAX] if isinstance(value, str | int | float) else ""
+    values = [*(raw if isinstance(raw, list) else []), *(extras if isinstance(extras, list) else [])]
+    for value in values[: MAX_OTHERS * 2]:
+        text_ = _other_text(value)
         if text_ and text_.casefold() not in {o.casefold() for o in out}:
             out.append(text_)
     return out[:MAX_OTHERS]
@@ -672,7 +686,7 @@ async def preview_list(
         "at_home": [{"ingredient_id": i.id, "name_fr": i.name_fr, "name_ar": i.name_ar} for i in lst["home"]],
         "weight_kg": float(lst["weight_kg"]),
         "cost": _cost_doc(c),
-        "others": _others(payload.get("others")),
+        "others": _others(payload.get("others"), payload.get("extras")),
     }
 
 
@@ -750,7 +764,7 @@ async def prepare_order(
     data, items = await _items(session, viewer, r.get("items"))
     at_home = _at_home(r.get("at_home"), _pantry_defaults(data, [rid for rid, _ in items]))
     lst = shopping(data, items, at_home)
-    others = _others(r.get("others"))
+    others = _others(r.get("others"), r.get("extras"))
     if not lst["buy"] and not others:
         raise OrderRefused(400, "recipes_nothing_to_buy")
     c = recipe_prices.cost(lst["buy"], await recipe_prices.prices(session))

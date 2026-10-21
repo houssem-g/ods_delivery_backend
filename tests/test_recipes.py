@@ -681,3 +681,19 @@ async def test_import_keeps_prep_and_cook_minutes_without_sending_a_published_re
     assert (report["unchanged"], report["times"], report["back_to_draft"]) == (1, 1, [])
     sheet = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
     assert (sheet["prep_min"], sheet["cook_min"], sheet["status"]) == (15, 20, "published")
+
+
+async def test_ma_liste_extras_objects_become_free_lines_of_the_order(client, qa, ods_prices):
+    await seed({**OJJA, "ingredients": OJJA["ingredients"][:3]})
+    rid = await recipe_id("ojja-merguez")
+    extras = [{"name": " Lait ", "count": 2}, {"name": "Pain", "count": 1}, {"name": ""}, "lait × 2"]
+    p = await ok(
+        client, qa, "previewRecipeList", {"items": [{"recipe_id": rid, "servings": 4}], "extras": extras}
+    )
+    assert p["others"] == ["Lait × 2", "Pain"]
+    placed = await ok(client, qa, "placeOrder", order_body(rid, extras=extras[:2], accept_unpriced=True))
+    async with SessionLocal() as s:
+        order = await s.get(Order, placed["order"]["id"])
+        rec = await s.get(RecipeOrder, order.id)
+    assert order.items_text.split("\n")[-2:] == ["Lait × 2", "Pain"]
+    assert rec.lines[-2:] == [{"other": "Lait × 2"}, {"other": "Pain"}]
