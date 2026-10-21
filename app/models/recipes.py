@@ -39,6 +39,8 @@ INGREDIENT_UNITS = ("kg", "l", "piece", "botte")
 LINE_UNITS = ("kg", "l", "piece", "botte", "cas", "cac", "pincee")
 AISLES = ("marche", "boucherie", "poissonnerie", "cremerie", "epicerie", "boulangerie")
 RECIPE_STATUSES = ("draft", "published")
+# what `base_servings` counts: people (a dish), pieces (30 cornes de gazelle), portions (a spice mix)
+SERVINGS_UNITS = ("people", "pieces", "portions")
 
 
 def _in(values: tuple[str, ...]) -> str:
@@ -72,6 +74,7 @@ class Recipe(Base):
     __table_args__ = (
         CheckConstraint(f"status IN ({_in(RECIPE_STATUSES)})", name="status"),
         CheckConstraint("base_servings BETWEEN 1 AND 100", name="base_servings"),
+        CheckConstraint(f"servings_unit IN ({_in(SERVINGS_UNITS)})", name="servings_unit"),
         CheckConstraint("time_min IS NULL OR time_min BETWEEN 1 AND 1440", name="time_min"),
         CheckConstraint("(status = 'published') = (published_at IS NOT NULL)", name="published_at"),
         Index("ix_recipes_status", "status"),
@@ -92,6 +95,7 @@ class Recipe(Base):
     time_min: Mapped[int | None] = mapped_column(SmallInteger)
     difficulty: Mapped[str | None] = mapped_column(Text)
     base_servings: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="4")
+    servings_unit: Mapped[str] = mapped_column(Text, nullable=False, server_default="people")
     tags: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
     intro_fr: Mapped[str | None] = mapped_column(Text)
     intro_ar: Mapped[str | None] = mapped_column(Text)

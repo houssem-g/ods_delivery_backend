@@ -162,6 +162,20 @@ def new_ingredients_of(document: Any) -> dict[str, dict[str, Any]]:
     return out
 
 
+SERVINGS_UNITS = {
+    "personnes": "people", "personne": "people", "people": "people", "pers": "people",
+    "pièces": "pieces", "pièce": "pieces", "pieces": "pieces", "piece": "pieces",
+    "portions": "portions", "portion": "portions",
+}  # fmt: skip
+
+
+def _servings_unit(raw: dict[str, Any]) -> str:
+    """`portions_unite` of the files: a pastry is written for « 30 pièces », a spice mix for « 10 portions »
+    (people when absent or unknown)."""
+    value = str(_first(raw, "portions_unite", "servings_unit") or "").strip().lower().rstrip(".")
+    return SERVINGS_UNITS.get(value, "people")
+
+
 def _region_cuisine(raw: dict[str, Any]) -> str | None:
     """The first file (recettes.json, 40 Tunisian recipes) has neither `cuisine` nor `pays` (the other files
     always do): such a recipe is Tunisian."""
@@ -284,6 +298,7 @@ def parse_recipe(
         "time_min": int(time_min) if time_min and 1 <= time_min <= 1440 else None,
         "difficulty": _text(_first(raw, "difficulte", "difficulty"), 20),
         "base_servings": int(servings),
+        "servings_unit": _servings_unit(raw),
         "tags": [t for t in (_text(x, 30) for x in tags[:20]) if t],
         "intro_fr": _text(_first(raw, "intro_fr", "description_fr"), 500),
         "intro_ar": _text(_first(raw, "intro_ar", "description_ar"), 500),

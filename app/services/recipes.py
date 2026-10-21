@@ -6,11 +6,13 @@ recipe list makes is a NORMAL Achats order (placeOrder → offers, « Article in
 nothing changed): `items_text` = one line per article the courier ticks, rebuilt here server side from the
 recipes, the people and the « j'ai déjà » — never the client's text.
 
-Visibility (like the Vitrine at its start), enforced HERE: admins and the test accounts (settings.QA_ACCOUNTS)
-see the published recipes; everybody else only once the switch « Recettes publiques »
-(`app_settings['recipes'].public_allowed`, off) is on — before that the client reads `visible: false` and an
-unknown recipe. A test account's (or any, while not public) recipe order carries « QA TEST »: offered to
-the QA couriers only (existing dispatch rule).
+Visibility (owner 21/10, evening: « pour le moment les Recettes uniquement côté ADMIN »), enforced HERE:
+ADMINS ONLY. Every client route (listRecipes, getRecipe, previewRecipeList, placeOrder with `recipes`) answers
+403 to anybody else — customers, couriers AND the test accounts (QA_ACCOUNTS) — whatever the switch « Recettes
+publiques » (`app_settings['recipes'].public_allowed`, off) says: opening to the public later needs a code
+change here (ADMIN_ONLY) on top of that switch. An order from « Ma liste » is allowed only to an admin who
+uses a test account (QA_ACCOUNTS) and always carries « QA TEST »: offered to the QA couriers only (existing
+dispatch rule); any other admin is refused (`recipes_order_disabled`).
 """
 
 from __future__ import annotations
@@ -45,6 +47,7 @@ from app.services.places import lat_expr, lng_expr, point
 
 SETTINGS_KEY = "recipes"
 PUBLIC_ALLOWED = "public_allowed"
+ADMIN_ONLY = True  # owner 21/10: the Recettes are an admin screen for now (customers, test accounts: 403)
 LABEL = "[Recettes]"
 TEST_PREFIX = "QA TEST "
 MAX_RECIPES = 8  # recipes in one list
@@ -58,12 +61,16 @@ POLICIES = ("call_me", "substitute", "skip", "cancel")
 TEXTS = {
     "fr": {
         "people": "pers.",
+        "pieces": "pièces",
+        "portions": "portions",
         "nearest": "Supermarché ou épicerie le plus proche",
         "nearest_note": "Courses de recettes : magasin le plus proche, au choix du livreur.",
         "unpriced_note": "Sans prix connu (le client accepte le prix du ticket) : {names}.",
     },
     "ar": {
         "people": "أشخاص",
+        "pieces": "قطعة",
+        "portions": "حصص",
         "nearest": "أقرب مغازة أو عطّار",
         "nearest_note": "مشتريات وصفات: أقرب محل، يختاره المندوب.",
         "unpriced_note": "بدون سعر معروف (الحريف يقبل سعر الوصل): {names}.",
@@ -109,9 +116,16 @@ async def public_allowed(session: AsyncSession) -> bool:
 async def can_see(session: AsyncSession, viewer: CurrentUser | None) -> bool:
     if viewer is None:
         return False
-    if viewer.is_admin or is_qa_account(viewer.email):
+    if viewer.is_admin:
         return True
-    return await public_allowed(session)
+    if ADMIN_ONLY:
+        return False
+    return is_qa_account(viewer.email) or await public_allowed(session)
+
+
+async def _require_see(session: AsyncSession, viewer: CurrentUser | None) -> None:
+    if not await can_see(session, viewer):
+        raise ApiError(403, "forbidden", "Admin only")
 
 
 async def get_settings(session: AsyncSession, admin: CurrentUser, payload: dict[str, Any]) -> dict[str, Any]:
@@ -324,6 +338,7 @@ def _card(recipe: Recipe, c: dict[str, Any], lines_n: int) -> dict[str, Any]:
         "time_min": recipe.time_min,
         "difficulty": recipe.difficulty,
         "base_servings": recipe.base_servings,
+        "servings_unit": recipe.servings_unit,
         "tags": list(recipe.tags or []),
         "ingredients_count": lines_n,
         "cost": _cost_doc(c),
@@ -388,8 +403,7 @@ async def list_recipes(
 ) -> dict[str, Any]:
     """{q?, cuisine?, country?, category?, max_time?, page? (1…), page_size? (≤ 40)} → one page of cards, the
     total, the facets (on page 1 only). Costs are computed for the page only."""
-    if not await can_see(session, viewer):
-        return {"success": True, "visible": False, "recipes": [], "total": 0}
+    await _require_see(session, viewer)
     try:
         page = max(1, int(payload.get("page") or 1))
         size = max(1, min(PAGE_SIZE_MAX, int(payload.get("page_size") or PAGE_SIZE)))
@@ -434,8 +448,7 @@ async def list_recipes(
 async def _visible_recipe(
     session: AsyncSession, viewer: CurrentUser | None, payload: dict[str, Any]
 ) -> Recipe:
-    if not await can_see(session, viewer):
-        raise ApiError(404, "not_found", "Recipe not found")
+    await _require_see(session, viewer)
     rid = _uuid(payload.get("id"))
     slug = str(payload.get("slug") or "").strip()
     stmt = (
@@ -533,7 +546,7 @@ async def _items(
     session: AsyncSession, viewer: CurrentUser | None, raw: Any
 ) -> tuple[Loaded, list[tuple[uuid.UUID, int]]]:
     if not await can_see(session, viewer):
-        raise OrderRefused(404, "recipes_unavailable")
+        raise OrderRefused(403, "forbidden")
     if not isinstance(raw, list) or not raw:
         raise OrderRefused(400, "recipes_empty")
     wanted: dict[uuid.UUID, int] = {}
@@ -587,8 +600,8 @@ def items_text(
 ) -> str:
     t = TEXTS[lang]
     titles = " · ".join(
-        f"{data.by_id[rid].title_ar if lang == 'ar' else data.by_id[rid].title_fr} ({n} {t['people']})"
-        for rid, n in items
+        f"{r.title_ar if lang == 'ar' else r.title_fr} ({n} {t[r.servings_unit]})"
+        for r, n in ((data.by_id[rid], n) for rid, n in items)
     )
     head = f"{TEST_PREFIX if test else ''}{LABEL} {titles}"
     sep = ": " if lang == "ar" else " : "
@@ -642,6 +655,9 @@ async def prepare_order(
 
     r = raw.get("recipes") if isinstance(raw.get("recipes"), dict) else {}
     viewer = to_current_user(user)
+    if ADMIN_ONLY and viewer.is_admin and not is_qa_account(user.email):
+        # owner 21/10: no real order from the admin's « Ma liste » for now — a test account only (« QA TEST »)
+        raise OrderRefused(403, "recipes_order_disabled")
     data, items = await _items(session, viewer, r.get("items"))
     at_home = _at_home(r.get("at_home"), _pantry_defaults(data, [rid for rid, _ in items]))
     lst = shopping(data, items, at_home)
@@ -657,7 +673,7 @@ async def prepare_order(
         # the client ticks « j'accepte le prix du ticket pour ces articles » (PRIX-INGREDIENTS §4)
         raise OrderRefused(400, "recipes_unpriced_not_accepted", count=len(unpriced))
     lang = _lang(r.get("lang"))
-    test = not await public_allowed(session) or is_qa_account(user.email)
+    test = ADMIN_ONLY or not await public_allowed(session) or is_qa_account(user.email)
     text = items_text(data, items, lst["buy"], lang, test)
     if len(text) > ITEMS_TEXT_MAX:
         raise OrderRefused(400, "items_too_long", max=ITEMS_TEXT_MAX, length=len(text))

@@ -1,6 +1,7 @@
 """Import the recipes (and the ingredient dictionary) — idempotent, safe to run again.
 
     uv run python -m scripts.import_recipes --dir <dossier> [--ingredients referentiel.csv | --from-ods]
+    (--ingredients also takes ODS's dictionary file itself, tn_ingredients.json)
     uv run python -m scripts.import_recipes --recipes recettes.json recettes_maghreb.json …
 
 `--dir` reads every recettes*.json and ingredients_a_ajouter*.json of the folder. Same rules as the admin
@@ -48,11 +49,12 @@ async def run(args: argparse.Namespace) -> dict:
             )
         if args.ingredients is not None:
             with args.ingredients.open(encoding="utf-8") as handle:
-                rows = (
-                    list(csv.DictReader(handle))
-                    if args.ingredients.suffix == ".csv"
-                    else json.load(handle).get("ingredients", [])
-                )
+                if args.ingredients.suffix == ".csv":
+                    rows = list(csv.DictReader(handle))
+                else:
+                    # ODS's dictionary file itself (tn_ingredients.json: a list) or {"ingredients": [...]}
+                    data = json.load(handle)
+                    rows = data if isinstance(data, list) else data.get("ingredients", [])
             report["ingredients"] = await recipes_import.import_ingredients(session, rows)
         if recipe_files:
             docs = [await asyncio.to_thread(_read, p) for p in recipe_files]

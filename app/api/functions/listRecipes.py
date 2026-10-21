@@ -1,8 +1,9 @@
 """listRecipes — client: {} → { success, visible, test, recipes: [card], prices_available }
-Recettes (21/10/2026, app/services/recipes.py): visible to admins and the test accounts while the switch
-« Recettes publiques » is off — anyone else reads { visible: false, recipes: [] }. A card carries the honest
-cost for its base number of people (pantry ticked « j'ai déjà »): { available, show_total, low, high, priced,
-unpriced[{id, fr, ar}], oldest_as_of, stale, to_check, sources[] }, low / high null unless show_total."""
+Recettes (21/10/2026, app/services/recipes.py): ADMINS ONLY for now (owner 21/10) — anybody else, test
+accounts included, gets 403 forbidden whatever the switch « Recettes publiques » says. A card carries the
+honest cost for its base number of people (pantry ticked « j'ai déjà »): { available, show_total, low, high,
+priced, unpriced[{id, fr, ar}], oldest_as_of, stale, to_check, sources[] }, low / high null unless
+show_total."""
 
 from typing import Any
 

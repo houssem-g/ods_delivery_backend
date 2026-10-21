@@ -1,4 +1,4 @@
-"""recipes (21/10/2026, Recettes first version, visible to the test accounts only)
+"""recipes (21/10/2026, Recettes first version, admin only for now)
 
 - ingredients: the shared ingredient dictionary (names fr / ar, buying unit kg | l | piece | botte, weight of
   a piece / bunch for the couffin, aisle, « nearly always at home »); no price column;
@@ -70,6 +70,7 @@ def upgrade() -> None:
     sa.Column('time_min', sa.SmallInteger(), nullable=True),
     sa.Column('difficulty', sa.Text(), nullable=True),
     sa.Column('base_servings', sa.SmallInteger(), server_default='4', nullable=False),
+    sa.Column('servings_unit', sa.Text(), server_default='people', nullable=False),
     sa.Column('tags', postgresql.ARRAY(sa.Text()), server_default='{}', nullable=False),
     sa.Column('intro_fr', sa.Text(), nullable=True),
     sa.Column('intro_ar', sa.Text(), nullable=True),
@@ -88,6 +89,7 @@ def upgrade() -> None:
     sa.CheckConstraint("(status = 'published') = (published_at IS NOT NULL)", name=op.f('ck_recipes_published_at')),
     sa.CheckConstraint("status IN ('draft','published')", name=op.f('ck_recipes_status')),
     sa.CheckConstraint('base_servings BETWEEN 1 AND 100', name=op.f('ck_recipes_base_servings')),
+    sa.CheckConstraint("servings_unit IN ('people','pieces','portions')", name=op.f('ck_recipes_servings_unit')),
     sa.CheckConstraint('time_min IS NULL OR time_min BETWEEN 1 AND 1440', name=op.f('ck_recipes_time_min')),
     sa.ForeignKeyConstraint(['published_by'], ['users.id'], name=op.f('fk_recipes_published_by_users'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_recipes')),

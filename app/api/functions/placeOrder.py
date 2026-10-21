@@ -26,7 +26,8 @@ that order); the same key again from the same customer answers the order it made
 Without client_ref every call places a new order (older apps).
 Recettes (21/10/2026, app/services/recipes.py): `order.recipes = { items: [{recipe_id, servings}], at_home:
 [ingredient ids], accept_unpriced, lang, unavailable_policy? }` → the items, estimate, ceiling and shop are
-rebuilt server side (a normal Achats order, « QA TEST » while the recipes are not public); refusals
+rebuilt server side (a normal Achats order, always « QA TEST » for now); owner 21/10: an admin on a test
+account only — anybody else 403 forbidden, any other admin 403 recipes_order_disabled; refusals
 recipes_unavailable, recipes_empty, recipes_nothing_to_buy, recipes_unpriced_not_accepted (+ count).
 """
 

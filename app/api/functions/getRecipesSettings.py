@@ -1,4 +1,5 @@
-"""getRecipesSettings — admin: {} → { success, public_allowed } (off: test accounts only)."""
+"""getRecipesSettings — admin: {} → { success, public_allowed }.
+Stored only: the Recettes stay ADMIN ONLY while recipes.ADMIN_ONLY (owner 21/10)."""
 
 from typing import Any
 

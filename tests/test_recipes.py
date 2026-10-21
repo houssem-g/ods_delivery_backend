@@ -137,7 +137,10 @@ def ods_prices(monkeypatch):
 
 @pytest.fixture
 async def qa(factory):
-    return await factory.user(email=QA_CUSTOMER, full_name="Lemel Qa", phone_e164="+21622111333")
+    """An ADMIN using a test account (owner 21/10: the Recettes are admin only; only such an admin orders)."""
+    return await factory.user(
+        email=QA_CUSTOMER, full_name="Lemel Qa", phone_e164="+21622111333", role="admin"
+    )
 
 
 # --- pure ---------------------------------------------------------------------------------------------
@@ -181,6 +184,14 @@ def test_cost_is_a_range_names_the_unpriced_and_hides_the_total_under_70_percent
 # --- import -------------------------------------------------------------------------------------------
 
 
+def test_a_pastry_counts_pieces_and_a_spice_mix_portions():
+    unit = recipes_import._servings_unit
+    assert (
+        unit({"portions_unite": "pièces"}) == "pieces" and unit({"portions_unite": "portions"}) == "portions"
+    )
+    assert unit({}) == "people" and unit({"portions_unite": "verres"}) == "people"
+
+
 async def test_import_is_idempotent_keeps_unknown_lines_and_sends_a_changed_recipe_back_to_draft():
     odd = {
         "slug": "x",
@@ -203,18 +214,44 @@ async def test_import_is_idempotent_keeps_unknown_lines_and_sends_a_changed_reci
 # --- visibility and client reads ------------------------------------------------------------------------
 
 
-async def test_only_test_accounts_and_admins_see_recipes_until_the_public_switch(client, factory, qa):
+async def test_nobody_but_an_admin_reads_or_orders_recipes_even_a_test_account_or_the_public_switch_on(
+    client, factory, ods_prices
+):
+    """Owner 21/10: the Recettes are ADMIN ONLY for now — customers, couriers and the test accounts get 403
+    on every recipe route, also once « Recettes publiques » is on; an admin reads; only an admin on a test
+    account may order (« QA TEST »), any other admin is refused."""
     await seed(OJJA)
+    rid = await recipe_id("ojja-merguez")
+    qa_customer = await factory.user(email=QA_CUSTOMER, full_name="Lemel Qa", phone_e164="+21622111333")
     someone = await factory.user()
+    courier = await factory.user(role="courier")
     admin = await factory.user(role="admin")
-    hidden = await ok(client, someone, "listRecipes")
-    assert hidden == {"success": True, "visible": False, "recipes": [], "total": 0}
-    assert (await fn(client, someone, "getRecipe", {"slug": "ojja-merguez"})).status_code == 404
-    seen = await ok(client, qa, "listRecipes")
-    assert seen["visible"] and seen["test"] and [r["slug"] for r in seen["recipes"]] == ["ojja-merguez"]
+
+    async def closed(user):
+        for name, body in (
+            ("listRecipes", {}),
+            ("getRecipe", {"slug": "ojja-merguez"}),
+            ("previewRecipeList", {"items": [{"recipe_id": str(rid), "servings": 4}]}),
+            ("placeOrder", order_body(rid, accept_unpriced=True)),
+        ):
+            r = await fn(client, user, name, body)
+            assert r.status_code == 403, (name, r.status_code, r.text)
+
+    for user in (someone, qa_customer, courier):
+        await closed(user)
     assert (await fn(client, someone, "setRecipesSettings", {"public_allowed": True})).status_code == 403
     await ok(client, admin, "setRecipesSettings", {"public_allowed": True})
-    assert (await ok(client, someone, "listRecipes"))["visible"] is True
+    for user in (someone, qa_customer, courier):
+        await closed(user)  # the switch alone never opens them (recipes.ADMIN_ONLY)
+    seen = await ok(client, admin, "listRecipes")
+    assert seen["visible"] and [r["slug"] for r in seen["recipes"]] == ["ojja-merguez"]
+    assert (await ok(client, admin, "getRecipe", {"slug": "ojja-merguez"}))["recipe"][
+        "slug"
+    ] == "ojja-merguez"
+    refused = await fn(client, admin, "placeOrder", order_body(rid, accept_unpriced=True))
+    assert refused.status_code == 403 and refused.json()["error"] == "recipes_order_disabled"
+    async with SessionLocal() as s:
+        assert (await s.execute(text("SELECT count(*) FROM orders"))).scalar_one() == 0
 
 
 async def test_get_recipe_scales_for_the_people_pre_ticks_the_pantry_and_prices_the_rest(
@@ -354,6 +391,7 @@ async def test_recipe_order_with_a_total_gets_the_ceiling_and_falls_back_to_the_
 
 async def test_admin_lists_publishes_unpublishes_and_imports(client, factory, qa):
     admin = await factory.user(role="admin")
+    customer = await factory.user()
     report = await ok(
         client, admin, "importAdminRecipes", {"recipes": {"recipes": [OJJA]}, "ingredients": INGREDIENTS}
     )
@@ -361,9 +399,11 @@ async def test_admin_lists_publishes_unpublishes_and_imports(client, factory, qa
     listed = await ok(client, admin, "listAdminRecipes")
     assert [(r["slug"], r["status"]) for r in listed["recipes"]] == [("ojja-merguez", "draft")]
     assert listed["public_allowed"] is False and listed["prices"]["available"] is False
-    assert (await ok(client, qa, "listRecipes"))["recipes"] == []  # a draft is never shown to clients
+    assert (await ok(client, qa, "listRecipes"))["recipes"] == []  # the list browses published recipes only
     rid = listed["recipes"][0]["id"]
-    assert (await fn(client, qa, "setRecipeStatus", {"id": rid, "status": "published"})).status_code == 403
+    assert (
+        await fn(client, customer, "setRecipeStatus", {"id": rid, "status": "published"})
+    ).status_code == 403
     done = await ok(client, admin, "setRecipeStatus", {"id": rid, "status": "published"})
     assert done["status"] == "published" and done["published_at"]
     assert [r["slug"] for r in (await ok(client, qa, "listRecipes"))["recipes"]] == ["ojja-merguez"]
