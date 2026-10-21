@@ -278,6 +278,14 @@ async def test_an_accepted_offer_sends_the_order_to_ods_then_every_step(client, 
     assert call.body["data"]["order"]["courier_state"] == "assigned" and call.body["partner_ref"] is None
 
     await step(client, qa_courier, order_id, {"status": "at_shop"})
+    # QA 21/10 V1: never more than the menu without the customer's yes (a substitute he accepted)
+    r = await client.patch(
+        f"/api/entities/Order/{order_id}",
+        json={"status": "purchased", "purchase_amount": 7.5},
+        headers=auth(qa_courier),
+    )
+    assert r.status_code == 409 and r.json()["error"] == "above_vitrine_total" and r.json()["max"] == 6.5
+    assert (await reload(Order, uuid.UUID(order_id))).status == "at_shop"
     await step(client, qa_courier, order_id, {"status": "purchased", "purchase_amount": 6.5})
     await step(client, qa_courier, order_id, {"status": "on_the_way"})
     await step(client, qa_courier, order_id, {"status": "delivered"})

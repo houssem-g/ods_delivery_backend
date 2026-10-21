@@ -156,6 +156,17 @@ async def has_pending(session: AsyncSession, order_id: uuid.UUID) -> bool:
     ).scalar_one() > 0
 
 
+async def substitute_accepted(session: AsyncSession, order_id: uuid.UUID) -> bool:
+    """The customer said yes to a substitute (its price may raise the ticket above the order's total)."""
+    return (
+        await session.execute(
+            select(func.count())
+            .select_from(OrderStockCheck)
+            .where(OrderStockCheck.order_id == order_id, OrderStockCheck.status == DECISIONS["accept"])
+        )
+    ).scalar_one() > 0
+
+
 _LEADING_QUANTITY = re.compile(r"\d{1,3}x?|x\d{1,3}")
 _TRAILING_QUANTITY = re.compile(r"x\d{1,3}|\d{1,3}x")
 

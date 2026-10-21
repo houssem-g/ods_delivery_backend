@@ -195,6 +195,25 @@ def _current_seq(stops: list[OrderStop]) -> int:
     return min(waiting) if waiting else max(s.seq for s in stops)
 
 
+async def _vitrine_total_kept(session: AsyncSession, order: Order) -> None:
+    """QA 21/10 V1 (owner #11): a Vitrine order is sold at the restaurant's own prices — the customer saw
+    « Si le ticket dépasse ce montant, le livreur vous demande votre accord ». A ticket above the cart
+    total is refused (a typo, or more cash than the menu): the only way to pay more is the customer's
+    own yes, i.e. a substitute he accepted in « Article indisponible »."""
+    if order.source != "vitrine" or order.budget_max is None or order.purchase_amount is None:
+        return
+    if order.purchase_amount <= order.budget_max:
+        return
+    if await stock_checks.substitute_accepted(session, order.id):
+        return
+    raise ApiError(
+        409,
+        "above_vitrine_total",
+        "The ticket is above the Vitrine order's total: the customer did not agree to pay more",
+        max=float(order.budget_max),
+    )
+
+
 async def courier_step(
     session: AsyncSession, user: CurrentUser, order: Order, data: dict[str, Any], order_fields: set[str]
 ) -> None:
@@ -268,6 +287,8 @@ async def courier_step(
                 raise bad(f"purchase_amount: the shops total more than {MAX_PURCHASE}")
             order.purchase_amount = total
         order.current_stop_seq = _current_seq(stops)
+    if to_status == "purchased" and not hot_deal:
+        await _vitrine_total_kept(session, order)
     await session.flush()
     if to_status == from_status:
         return

@@ -183,6 +183,9 @@ async def test_d3m2_m5_no_show_resale_says_he_did_not_come(client, world):
     order, body = await no_show(client, world)
     # m5: two alerts were sent, the « pas venu » record is none (was « reports 3 » of 2, in_app true)
     assert body["reports"] == 2 and body["max_reports"] == 2 and body["channels"]["in_app"] is False
+    # QA 21/10 R-m5: the « status » both screens poll says the same (was « reports 3 »)
+    st = (await emergency(client, world.customer, "status", order)).json()
+    assert st["reports"] == 2 and st["max_reports"] == 2
     deal = await call(client, world.courier_user, "createHotDeal", {"order_id": str(order.id)})
     assert deal.status_code == 200, deal.text
     told = (await notifications(world.customer, "order_cancelled"))[-1]

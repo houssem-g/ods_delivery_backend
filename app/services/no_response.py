@@ -937,7 +937,7 @@ async def realert(session: AsyncSession, order: Order, actor: CurrentUser) -> Re
 
 async def status(session: AsyncSession, order: Order) -> Result:
     case = await advance(session, order, await _current_case(session, order))
-    reports = len(await _cases(session, order.id))
+    reports = alerts_sent(await _cases(session, order.id))  # the « pas venu » record is no alert (QA 21/10 R-m5)
     return 200, {"success": True, **await view(session, order, case, ot.now_utc(), reports)}
 
 
