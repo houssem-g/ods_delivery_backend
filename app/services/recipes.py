@@ -338,6 +338,8 @@ def _card(recipe: Recipe, c: dict[str, Any], lines_n: int, servings: int | None 
         "country": recipe.country,
         "category": recipe.category,
         "time_min": recipe.time_min,
+        "prep_min": recipe.prep_min,
+        "cook_min": recipe.cook_min,
         "difficulty": recipe.difficulty,
         "base_servings": recipe.base_servings,
         "servings_unit": recipe.servings_unit,
@@ -381,7 +383,7 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
             where.append(column == value[:60])
     tag = str(payload.get("tag") or "").strip()
     if tag:  # « Petit budget », « Végétarien », « Ramadan »… as the files write them
-        where.append(Recipe.tags.any(tag[:30]))
+        where.append(Recipe.tags.contains([tag[:30]]))
     slugs = payload.get("slugs")
     if isinstance(slugs, list):  # « Vos recettes »: the favourites / last opened kept on the phone
         where.append(Recipe.slug.in_([str(x)[:120] for x in slugs[:40]]))

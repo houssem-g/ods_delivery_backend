@@ -620,3 +620,64 @@ async def test_other_articles_of_the_list_come_back_unpriced_and_go_into_the_ord
         rec = await s.get(RecipeOrder, order.id)
     assert order.items_text.split("\n")[-2:] == ["Lait 1 L", "Pain"] and "Lait 1 L" in order.notes
     assert rec.lines[-1] == {"other": "Pain"}
+
+
+def test_photo_team_file_entry_gets_the_slug_key_its_credit_and_free_source():
+    from app.services import recipe_photos as rp
+
+    page, lic = (
+        "https://commons.wikimedia.org/wiki/File:L.jpg",
+        "https://creativecommons.org/licenses/by-sa/4.0/",
+    )
+    libre = {"file": "/work/qa/2110/photos/libres/lablabi.webp", "source_page": page, "title": "Lablabi",
+             "image_url": "https://upload.wikimedia.org/L.jpg", "author": "Jane  Doe",
+             "license": "CC BY-SA 4.0", "license_url": lic}  # fmt: skip
+    cols, reason = rp.parse_entry("lablabi", libre)
+    assert reason is None and cols["photo_key"] == "public/recipes/lablabi.webp"
+    assert cols["photo_source"] == "photo"
+    assert cols["photo_credit"] == {
+        "author": "Jane Doe", "license": "CC BY-SA 4.0", "license_url": lic, "source_url": page,
+        "title": "Lablabi", "credit_required": True}  # fmt: skip
+    cols, _ = rp.parse_entry(
+        "hsou", {"file": "x.webp", "author": "X", "license": "CC0 1.0", "source_page": "javascript:alert(1)"}
+    )
+    assert cols["photo_credit"]["credit_required"] is False and cols["photo_credit"]["source_url"] is None
+    cols, _ = rp.parse_entry("hsou", {"photo": "recipes/hsou.webp", "source": "gemini"})
+    assert cols["photo_source"] == "ia" and cols["photo_credit"] is None
+
+
+async def test_photo_credit_is_on_the_card_and_the_sheet_and_import_script_dry_run(
+    client, qa, ods_prices, tmp_path
+):
+    from scripts import import_recipe_photos
+
+    await seed(OJJA, SALADE)
+    file = tmp_path / "photos_tn.json"
+    file.write_text(json.dumps({
+        "ojja-merguez": {"file": str(tmp_path / "ojja-merguez.webp"), "author": "A. B.",
+                         "license": "CC BY 2.0", "source_page": "https://www.flickr.com/photos/x/1"},
+        "salade-tomate": {"photo": "https://evil.test/x.webp"}}), encoding="utf-8")  # fmt: skip
+    dry = await import_recipe_photos.run(file, None, dry_run=True)
+    assert dry["ok"] == 1 and len(dry["refused"]) == 1
+    done = await import_recipe_photos.run(file, None)
+    assert done["updated"] == 1 and len(done["refused"]) == 1
+    card = next(c for c in (await ok(client, qa, "listRecipes"))["recipes"] if c["slug"] == "ojja-merguez")
+    assert card["photo_url"].endswith("/public/recipes/ojja-merguez.webp") and card["photo_source"] == "photo"
+    assert card["photo_credit"]["author"] == "A. B." and card["photo_credit"]["credit_required"] is True
+    sheet = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
+    assert sheet["photo_credit"]["source_url"] == "https://www.flickr.com/photos/x/1"
+
+
+async def test_import_keeps_prep_and_cook_minutes_without_sending_a_published_recipe_back_to_draft(
+    client, qa, ods_prices
+):
+    await seed({**OJJA, "time_min": None, "prep_min": 10, "cuisson_min": 25})
+    sheet = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
+    assert (sheet["prep_min"], sheet["cook_min"], sheet["time_min"]) == (10, 25, 35)
+    async with transaction() as session:  # same content, other split: filled, still published
+        report = await recipes_import.import_recipes(
+            session, [{**OJJA, "time_min": None, "prep_min": 15, "cuisson_min": 20}]
+        )
+    assert (report["unchanged"], report["times"], report["back_to_draft"]) == (1, 1, [])
+    sheet = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
+    assert (sheet["prep_min"], sheet["cook_min"], sheet["status"]) == (15, 20, "published")

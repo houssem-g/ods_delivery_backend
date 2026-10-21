@@ -267,9 +267,10 @@ def parse_recipe(
     if not 1 <= servings <= 100:  # a pastry is often written for 30 pieces
         return None, f"{slug}: nombre de portions hors 1–100", []
     time_min = _dec(_first(raw, "time_min", "temps_min", "total_time_min"))
+    prep_min = _dec(_first(raw, "prep_min", "preparation_min"))
+    cook_min = _dec(_first(raw, "cuisson_min", "cook_min", "cooking_min"))
     if time_min is None:
-        parts = [_dec(raw.get(k)) for k in ("prep_min", "cuisson_min")]
-        time_min = sum((p for p in parts if p), Decimal(0)) or None
+        time_min = sum((p for p in (prep_min, cook_min) if p), Decimal(0)) or None
     lines_raw = _first(raw, "ingredients", "lignes", "lines") or []
     if not isinstance(lines_raw, list) or not lines_raw:
         return None, f"{slug}: aucun ingrédient", []
@@ -316,7 +317,15 @@ def parse_recipe(
     )
     digest = json.dumps({**cols, "lines": lines}, sort_keys=True, default=str, ensure_ascii=False)
     cols["content_hash"] = hashlib.sha256(digest.encode()).hexdigest()
+    # the two parts of the time (22/10, the fiche's time ring) stay OUT of the content hash: filling them on
+    # the recipes already imported must not send a published recipe back to draft
+    cols["prep_min"] = _minutes(prep_min)
+    cols["cook_min"] = _minutes(cook_min)
     return {**cols, "lines": lines}, None, warnings
+
+
+def _minutes(value: Decimal | None) -> int | None:
+    return int(value) if value is not None and 0 <= value <= 1440 else None
 
 
 def recipes_of(document: Any) -> list[Any]:
@@ -350,7 +359,8 @@ async def import_recipes(
     by_key = {i.key: i.id for i in ings.values()}
     existing = {r.slug: r for r in (await session.execute(select(Recipe))).scalars()}
     report: dict[str, Any] = {
-        "created": 0, "updated": 0, "unchanged": 0, "back_to_draft": [], "refused": [], "warnings": [],
+        "created": 0, "updated": 0, "unchanged": 0, "times": 0, "back_to_draft": [], "refused": [],
+        "warnings": [],
     }  # fmt: skip
     seen: set[str] = set()
     for raw in entries:
@@ -370,6 +380,9 @@ async def import_recipes(
         recipe = existing.get(parsed["slug"])
         if recipe is not None and recipe.content_hash == parsed["content_hash"]:
             report["unchanged"] += 1
+            if (recipe.prep_min, recipe.cook_min) != (parsed["prep_min"], parsed["cook_min"]):
+                recipe.prep_min, recipe.cook_min = parsed["prep_min"], parsed["cook_min"]
+                report["times"] += 1
             continue
         if recipe is None:
             recipe = Recipe(**parsed, status="draft")
