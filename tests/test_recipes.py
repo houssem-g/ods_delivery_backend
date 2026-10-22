@@ -162,6 +162,15 @@ def test_units_scale_round_merge_and_words():
     assert ru.fmt_qty(Decimal("1.5"), "l", "ar") == "1.5\u00a0ل"
     assert ru.fmt_qty(4, "piece", "fr") == "4\u00a0pièces"
     assert ru.fmt_qty(1, "botte", "ar") == "1\u00a0حزمة"
+    # QA 22/10 r2-8: what is written can be measured (the computations keep the exact quantity)
+    assert ru.fmt_qty(Decimal("0.233"), "piece", "fr") == "1\u00a0pièce"
+    assert ru.fmt_qty(Decimal("11.667"), "piece", "fr") == "12\u00a0pièces"
+    assert ru.fmt_qty(Decimal("1.5"), "piece", "ar") == "2\u00a0حبات"
+    assert ru.fmt_qty(Decimal("0.233"), "pincee", "fr") == "1\u00a0pincée"
+    assert ru.fmt_qty(Decimal("1.167"), "cas", "fr") == "1\u00a0c. à s."
+    assert ru.fmt_qty(Decimal("1.3"), "cac", "fr") == "1,5\u00a0c. à c."
+    assert ru.fmt_qty(Decimal("0.1"), "cas", "fr") == "0,5\u00a0c. à s."
+    assert ru.fmt_qty(Decimal("0.233"), "kg", "fr") == "0,233\u00a0kg"
 
 
 def test_cost_is_a_range_names_the_unpriced_and_hides_the_total_under_70_percent():
@@ -726,6 +735,12 @@ async def test_list_by_season_several_cuisines_or_categories_and_a_tag_whatever_
     assert [c["slug"] for c in (await ok(client, qa, "listRecipes", {"tag": "ramadan"}))["recipes"]] == [
         "ojja-merguez"
     ]
+    # QA 22/10 r1-11: the filters sheet only offers what the selection holds (its own facet left out)
+    scoped = await ok(client, qa, "listRecipes", {"cuisines": "marocaine", "facets_scope": "selection"})
+    assert [f["key"] for f in scoped["facets"]["categories"]] == ["tajine"]
+    assert {f["key"] for f in scoped["facets"]["cuisines"]} >= {"marocaine"}
+    whole = await ok(client, qa, "listRecipes", {"cuisines": "marocaine"})
+    assert {f["key"] for f in whole["facets"]["categories"]} == {"plat", "salade", "tajine"}
 
 
 async def test_priced_only_keeps_the_recipes_with_a_whole_cost_cheapest_tunisian_first(
