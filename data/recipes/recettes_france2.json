@@ -118,7 +118,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -181,7 +181,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -310,7 +310,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -368,7 +368,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -389,19 +389,17 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "à la place des lardons",
-     "note_ar": "بدل اللحم المقدّد"
+     "optionnel": false
     },
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -428,7 +426,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.08,
      "unite": "kg",
      "placard": false,
@@ -457,7 +455,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -466,7 +464,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Dinde fumée (lardons ou tranches)",
+     "Dinde fumée (en dés ou en tranches)",
      "Noix de muscade moulue"
     ]
    },
@@ -479,15 +477,15 @@
     "Faites cuire 35 à 40 minutes : la quiche doit être dorée et à peine tremblante au centre."
    ],
    "etapes_ar": [
-    "حضّروا العجين: افركوا بأطراف الأصابع الفارينة والزبدة الباردة المقطّعة ورشة ملح. أضيفوا 4 إلى 5 ملاعق كبيرة من الماء البارد، كوّروا العجين واتركوه 30 دقيقة في الثلاجة.",
+    "حضّروا العجين: افركوا بأطراف الأصابع الدقيق والزبدة الباردة المقطّعة ورشة ملح. أضيفوا 4 إلى 5 ملاعق كبيرة من الماء البارد، كوّروا العجين واتركوه 30 دقيقة في الثلاجة.",
     "سخّنوا الفرن على 180 درجة. افردوا العجين في قالب تارت قطره 26 سم واثقبوا القاع بالشوكة.",
     "قطّعوا الديك الرومي المدخّن أصابع صغيرة وحمّروه 3 دقائق في مقلاة دون دهن.",
     "اخفقوا البيض مع الكريمة والحليب وجوزة الطيب وقليل من الملح والفلفل.",
     "وزّعوا الديك الرومي (والجبن) على العجين ثم اسكبوا خليط البيض.",
     "اطهوها 35 إلى 40 دقيقة حتى تتحمّر ويبقى وسطها متماسكًا قليلًا."
    ],
-   "astuce_fr": "Version halal : les lardons de porc sont remplacés par de la dinde fumée (ou du bœuf fumé). La quiche lorraine d'origine n'a pas de fromage ; le gruyère est facultatif.",
-   "astuce_ar": "نسخة حلال: عُوّض لحم الخنزير المقدّد بالديك الرومي المدخّن (أو لحم البقر المدخّن). الكيش الأصلي دون جبن، والجبن هنا اختياري.",
+   "astuce_fr": "La dinde fumée peut être remplacée par du bœuf fumé. La quiche lorraine d'origine n'a pas de fromage ; le gruyère est facultatif.",
+   "astuce_ar": "يمكن تعويض الديك الرومي المدخّن بلحم البقر المدخّن. الكيش الأصلي دون جبن، والجبن هنا اختياري.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_quiche-lorraine_30283.aspx",
     "https://www.750g.com/quiche-lorraine-r55718.htm"
@@ -497,7 +495,7 @@
    "id": "quiche-thon-tomate",
    "statut": "brouillon",
    "nom_fr": "Quiche au thon et à la tomate",
-   "nom_ar": "كيش بالتن والطماطم",
+   "nom_ar": "كيش بالتونة والطماطم",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -518,7 +516,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -540,7 +538,7 @@
     {
      "ingredient_id": 76,
      "nom_fr": "Thon à l'huile",
-     "nom_ar": "تن بالزيت",
+     "nom_ar": "تونة بالزيت",
      "quantite": 0.16,
      "unite": "kg",
      "placard": false,
@@ -562,7 +560,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -589,7 +587,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -618,7 +616,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -638,10 +636,10 @@
     "Parsemez de fromage râpé et faites cuire 35 à 40 minutes, jusqu'à ce que le dessus soit doré."
    ],
    "etapes_ar": [
-    "حضّروا العجين (فارينة، زبدة باردة، رشة ملح، 4 إلى 5 ملاعق كبيرة ماء) واتركوه يرتاح 30 دقيقة.",
+    "حضّروا العجين (دقيق، زبدة باردة، رشة ملح، 4 إلى 5 ملاعق كبيرة ماء) واتركوه يرتاح 30 دقيقة.",
     "سخّنوا الفرن على 180 درجة. افردوا العجين في قالب 26 سم واثقبوا القاع. ادهنوه بالمستردة إن أحببتم.",
-    "فتّتوا التن على العجين. قطّعوا الطماطم دوائر، انزعوا البذور وضعوها فوقه.",
-    "اخفقوا البيض مع الكريمة والأعشاب وقليل من الملح (التن مالح) والفلفل، واسكبوه على الحشوة.",
+    "فتّتوا التونة على العجين. قطّعوا الطماطم دوائر، انزعوا البذور وضعوها فوقه.",
+    "اخفقوا البيض مع الكريمة والأعشاب وقليل من الملح (التونة مالحة) والفلفل، واسكبوه على الحشوة.",
     "رشّوا الجبن المبشور واطهوها 35 إلى 40 دقيقة حتى يتحمّر الوجه."
    ],
    "astuce_fr": "Retirez bien les graines des tomates et séchez les rondelles sur du papier : sinon la quiche rend de l'eau.",
@@ -675,7 +673,7 @@
     {
      "ingredient_id": 14,
      "nom_fr": "Chou-fleur",
-     "nom_ar": "قرنبيط / نوار",
+     "nom_ar": "قرنبيط",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -704,7 +702,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -740,7 +738,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -761,7 +759,7 @@
    ],
    "etapes_ar": [
     "قسّموا القرنبيط باقات صغيرة واغسلوها. اسلقوها 8 دقائق في ماء مغلي مملّح، ويجب أن تبقى متماسكة قليلًا. صفّوها جيدًا.",
-    "حضّروا البشاميل: ذوّبوا الزبدة، أضيفوا الفارينة وحرّكوا دقيقة. أضيفوا الحليب البارد تدريجيًا مع الخفق واتركوه يتكثّف 5 دقائق.",
+    "حضّروا البشاميل: ذوّبوا الزبدة، أضيفوا الدقيق وحرّكوا دقيقة. أضيفوا الحليب البارد تدريجيًا مع الخفق واتركوه يتكثّف 5 دقائق.",
     "أضيفوا إلى الصلصة نصف الجبن وجوزة الطيب والملح والفلفل.",
     "سخّنوا الفرن على 200 درجة. ضعوا القرنبيط في صينية مدهونة بالزبدة وغطّوه بالبشاميل.",
     "رشّوا بقية الجبن وحمّروه في الفرن 25 دقيقة."
@@ -777,7 +775,7 @@
    "id": "gratin-courgettes",
    "statut": "brouillon",
    "nom_fr": "Gratin de courgettes",
-   "nom_ar": "غراتان القرع الأخضر (الكوسة)",
+   "nom_ar": "غراتان الكوسة (الكوسة)",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -797,7 +795,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 1,
      "unite": "kg",
      "placard": false,
@@ -824,7 +822,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -878,7 +876,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -915,7 +913,7 @@
    "id": "gratin-macaronis",
    "statut": "brouillon",
    "nom_fr": "Gratin de macaronis",
-   "nom_ar": "غراتان المقرونة بالجبن",
+   "nom_ar": "غراتان المعكرونة بالجبن",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -935,7 +933,7 @@
     {
      "ingredient_id": 97,
      "nom_fr": "Macaroni",
-     "nom_ar": "مقرونة",
+     "nom_ar": "معكرونة",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -962,7 +960,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -971,7 +969,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -1011,7 +1009,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1037,14 +1035,14 @@
     "Parsemez du reste du fromage et faites gratiner 20 minutes."
    ],
    "etapes_ar": [
-    "اسلقوا المقرونة في ماء مغلي مملّح دقيقتين أقل من المدة المكتوبة على العلبة، ثم صفّوها.",
-    "حضّروا البشاميل: زبدة مذابة، فارينة، ثم الحليب تدريجيًا مع الخفق. اتركوه يتكثّف 5 دقائق.",
+    "اسلقوا المعكرونة في ماء مغلي مملّح دقيقتين أقل من المدة المكتوبة على العلبة، ثم صفّوها.",
+    "حضّروا البشاميل: زبدة مذابة، دقيق، ثم الحليب تدريجيًا مع الخفق. اتركوه يتكثّف 5 دقائق.",
     "أضيفوا إلى الصلصة ثلثي الجبن وجوزة الطيب والملح والفلفل.",
-    "سخّنوا الفرن على 200 درجة. اخلطوا المقرونة والصلصة والديك الرومي، واسكبوها في صينية مدهونة بالزبدة.",
+    "سخّنوا الفرن على 200 درجة. اخلطوا المعكرونة والصلصة والديك الرومي، واسكبوها في صينية مدهونة بالزبدة.",
     "رشّوا بقية الجبن وحمّروها في الفرن 20 دقيقة."
    ],
-   "astuce_fr": "Version halal : jambon de dinde à la place du jambon. Sans viande, ajoutez des champignons ou des brocolis.",
-   "astuce_ar": "نسخة حلال: الديك الرومي بدل لحم الخنزير. دون لحم، أضيفوا الفطر أو البروكلي.",
+   "astuce_fr": "Sans viande, ajoutez des champignons ou des brocolis.",
+   "astuce_ar": "دون لحم، أضيفوا الفطر أو البروكلي.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_gratin-de-macaronis-au-gruyere-et-au-jambon-fume-de-ma-grand-mere_91888.aspx",
     "https://www.750g.com/gratin-de-macaronis-au-saint-marcellin-r47509.htm"
@@ -1074,7 +1072,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -1101,7 +1099,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -1110,7 +1108,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1139,7 +1137,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1163,8 +1161,8 @@
     "Versez dans le moule et faites cuire 25 à 30 minutes sans jamais ouvrir le four. Servez immédiatement."
    ],
    "etapes_ar": [
-    "سخّنوا الفرن على 200 درجة. ادهنوا قالب سوفليه (أو صحنًا عاليًا) بالزبدة ورشّوا عليه قليلًا من الفارينة.",
-    "حضّروا بشاميل كثيفًا: زبدة مذابة، فارينة، ثم الحليب مع الخفق. اتركوه يتكثّف 3 دقائق وارفعوه عن النار.",
+    "سخّنوا الفرن على 200 درجة. ادهنوا قالب سوفليه (أو صحنًا عاليًا) بالزبدة ورشّوا عليه قليلًا من الدقيق.",
+    "حضّروا بشاميل كثيفًا: زبدة مذابة، دقيق، ثم الحليب مع الخفق. اتركوه يتكثّف 3 دقائق وارفعوه عن النار.",
     "افصلوا البياض عن الصفار. أضيفوا الصفار واحدًا واحدًا إلى البشاميل، ثم الجبن وجوزة الطيب والملح والفلفل.",
     "اخفقوا البياض حتى يصبح ثلجًا متماسكًا مع رشة ملح.",
     "أدمجوا البياض في الصلصة برفق برفعه بالملعقة المسطّحة دون تدوير.",
@@ -1202,7 +1200,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -1249,7 +1247,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -1269,7 +1267,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1307,7 +1305,7 @@
    "id": "cake-sale-thon-olives",
    "statut": "brouillon",
    "nom_fr": "Cake salé au thon et aux olives",
-   "nom_ar": "كيك مالح بالتن والزيتون",
+   "nom_ar": "كيك مالح بالتونة والزيتون",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -1328,7 +1326,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -1348,7 +1346,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -1375,7 +1373,7 @@
     {
      "ingredient_id": 76,
      "nom_fr": "Thon à l'huile",
-     "nom_ar": "تن بالزيت",
+     "nom_ar": "تونة بالزيت",
      "quantite": 0.16,
      "unite": "kg",
      "placard": false,
@@ -1395,7 +1393,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1406,7 +1404,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1424,7 +1422,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1447,9 +1445,9 @@
     "Laissez tiédir avant de démouler. Servez en tranches, tiède ou froid."
    ],
    "etapes_ar": [
-    "سخّنوا الفرن على 180 درجة. ادهنوا قالب كيك بالزيت ورشّوه بالفارينة.",
-    "في وعاء، اخلطوا الفارينة والخميرة. أضيفوا البيض واحدة واحدة، ثم الحليب والزيت مع الخفق حتى يصبح الخليط ناعمًا.",
-    "أضيفوا التن المفتّت والزيتون المقطّع دوائر والجبن والبقدونس المفروم. ضعوا الفلفل وقليلًا من الملح.",
+    "سخّنوا الفرن على 180 درجة. ادهنوا قالب كيك بالزيت ورشّوه بالدقيق.",
+    "في وعاء، اخلطوا الدقيق والخميرة. أضيفوا البيض واحدة واحدة، ثم الحليب والزيت مع الخفق حتى يصبح الخليط ناعمًا.",
+    "أضيفوا التونة المفتّتة والزيتون المقطّع دوائر والجبن والبقدونس المفروم. ضعوا الفلفل وقليلًا من الملح.",
     "اسكبوه في القالب واطهوه 45 دقيقة؛ يجب أن تخرج السكين جافة من الوسط.",
     "اتركوه يبرد قليلًا قبل إخراجه من القالب. قدّموه شرائح دافئًا أو باردًا."
    ],
@@ -1485,7 +1483,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -1514,7 +1512,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.06,
      "unite": "kg",
      "placard": false,
@@ -1525,7 +1523,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1563,7 +1561,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1587,7 +1585,7 @@
     "Faites cuire 35 à 40 minutes. Servez tiède avec une salade verte."
    ],
    "etapes_ar": [
-    "حضّروا العجين (فارينة، زبدة باردة، رشة ملح، 4 إلى 5 ملاعق كبيرة ماء) واتركوه يرتاح 30 دقيقة.",
+    "حضّروا العجين (دقيق، زبدة باردة، رشة ملح، 4 إلى 5 ملاعق كبيرة ماء) واتركوه يرتاح 30 دقيقة.",
     "قطّعوا الطماطم دوائر، ملّحوها قليلًا واتركوها تتصفّى 15 دقيقة على شبكة.",
     "سخّنوا الفرن على 200 درجة. افردوا العجين في قالب 26 سم واثقبوا القاع.",
     "ادهنوا القاع بالمستردة ثم ضعوا الجبن.",
@@ -1672,7 +1670,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -1690,7 +1688,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1717,7 +1715,7 @@
     "سخّنوا الفرن على 180 درجة. قشّروا البطاطا وقطّعوها دوائر 3 مم. قطّعوا البصل شرائح.",
     "ذوّبوا البصل في نصف الزبدة 10 دقائق.",
     "في صينية مدهونة بالزبدة، رتّبوا طبقات من البطاطا والبصل بالتناوب مع الملح والفلفل والزعتر.",
-    "ضعوا ورق الرند، اسكبوا المرق الساخن حتى المستوى، وضعوا بقية الزبدة قطعًا صغيرة.",
+    "ضعوا ورق الغار، اسكبوا المرق الساخن حتى المستوى، وضعوا بقية الزبدة قطعًا صغيرة.",
     "اطهوها ساعة تقريبًا حتى يُمتصّ المرق ويتحمّر الوجه."
    ],
    "astuce_fr": "Autrefois, on posait ce plat sous le gigot dans le four du boulanger : il cuit très bien sous une viande rôtie.",
@@ -1752,7 +1750,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -1790,7 +1788,7 @@
     {
      "ingredient_id": 175,
      "nom_fr": "Filets d'anchois à l'huile",
-     "nom_ar": "فيليه أنشوفة بالزيت",
+     "nom_ar": "أنشوفة بالزيت",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -1821,7 +1819,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1848,7 +1846,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1872,14 +1870,14 @@
     "Arrosez d'un filet d'huile, poivrez et faites cuire 20 à 25 minutes. Servez tiède ou froid, en carrés."
    ],
    "etapes_ar": [
-    "العجين: اخلطوا الفارينة والخميرة ورشة ملح وملعقتين من الزيت و0,13 لتر ماء فاتر. اعجنوا 5 دقائق واتركوه يتخمّر ساعة تحت منشفة.",
-    "في الأثناء، قطّعوا البصل شرائح رقيقة. ذوّبوه على نار هادئة جدًا في 3 ملاعق زيت مع الثوم والزعتر والرند 40 دقيقة مع الغطاء، حتى يصبح كالمربّى الذهبي دون أن يحترق.",
+    "العجين: اخلطوا الدقيق والخميرة ورشة ملح وملعقتين من الزيت و0,13 لتر ماء فاتر. اعجنوا 5 دقائق واتركوه يتخمّر ساعة تحت منشفة.",
+    "في الأثناء، قطّعوا البصل شرائح رقيقة. ذوّبوه على نار هادئة جدًا في 3 ملاعق زيت مع الثوم والزعتر والغار 40 دقيقة مع الغطاء، حتى يصبح كالمربّى الذهبي دون أن يحترق.",
     "سخّنوا الفرن على 210 درجة. افردوا العجين على صفيحة مدهونة على شكل مستطيل رقيق.",
-    "افردوا البصل (دون الرند)، ثم رتّبوا فيليه الأنشوفة على شكل شبكة وضعوا زيتونة في كل معيّن.",
+    "افردوا البصل (دون الغار)، ثم رتّبوا فيليه الأنشوفة على شكل شبكة وضعوا زيتونة في كل معيّن.",
     "رشّوا قليلًا من الزيت والفلفل واطهوها 20 إلى 25 دقيقة. قدّموها دافئة أو باردة مربعات."
    ],
    "astuce_fr": "Les anchois à l'huile se trouvent en boîte au rayon conserves ; sans anchois, mettez des câpres et un peu plus d'olives. Salez très peu : les anchois sont salés.",
-   "astuce_ar": "توجد الأنشوفة بالزيت في علب في قسم المصبّرات؛ دونها ضعوا الكبار وزيتونًا أكثر. قلّلوا الملح لأن الأنشوفة مالحة.",
+   "astuce_ar": "توجد الأنشوفة بالزيت في علب في قسم المصبّرات؛ دونها ضعوا القبّار وزيتونًا أكثر. قلّلوا الملح لأن الأنشوفة مالحة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_pissaladiere_20407.aspx",
     "https://www.750g.com/pissaladiere-nicoise-provencale-r96487.htm"
@@ -1910,7 +1908,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.3,
      "unite": "kg",
      "placard": true,
@@ -1939,7 +1937,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 5,
      "unite": "pièce",
      "placard": false,
@@ -2024,14 +2022,14 @@
    ],
    "etapes_ar": [
     "الكريمة: سخّنوا الحليب مع سكر الفانيليا. اخفقوا صفارين مع 0,1 كغ سكر والنشاء، اسكبوا عليهما الحليب الساخن، أعيدوه على النار وحرّكوا حتى تتكثّف الكريمة. اتركوها تبرد.",
-    "العجين: اخلطوا الزبدة الليّنة مع 0,15 كغ سكر، أضيفوا بيضة كاملة وصفارًا، ثم الفارينة والخميرة واللوز والملح. كوّروه واتركوه ساعة في الثلاجة.",
+    "العجين: اخلطوا الزبدة الليّنة مع 0,15 كغ سكر، أضيفوا بيضة كاملة وصفارًا، ثم الدقيق والخميرة واللوز والملح. كوّروه واتركوه ساعة في الثلاجة.",
     "سخّنوا الفرن على 180 درجة. افردوا ثلثي العجين في قالب مدهون قطره 24 سم مع رفعه على الجوانب.",
     "اسكبوا الكريمة الباردة، غطّوها ببقية العجين المفرود وألصقوا الأطراف.",
     "ادهنوا الوجه بالبيضة الأخيرة المخفوقة، ارسموا خطوطًا متقاطعة بالشوكة واطهوه 40 إلى 45 دقيقة.",
     "اتركوه يبرد تمامًا قبل إخراجه من القالب."
    ],
    "astuce_fr": "L'autre version basque se garnit de confiture de cerises noires : la confiture de figues tunisienne la remplace très bien.",
-   "astuce_ar": "النسخة الباسكية الأخرى تُحشى بمربّى الكرز الأسود، ومربّى الكرموس التونسي يعوّضه جيدًا.",
+   "astuce_ar": "النسخة الباسكية الأخرى تُحشى بمربّى الكرز الأسود، ومربّى التين التونسي يعوّضه جيدًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_gateau-basque-facile_94527.aspx",
     "https://www.750g.com/gateau-basque-a-la-confiture-de-cerise-noire-et-creme-patissiere-r96792.htm"
@@ -2071,7 +2069,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 9,
      "unite": "pièce",
      "placard": false,
@@ -2087,13 +2085,13 @@
      "unite": "kg",
      "placard": false,
      "optionnel": false,
-     "note_fr": "8 tranches, à la place du jambon",
-     "note_ar": "8 شرائح بدل لحم الخنزير"
+     "note_fr": "8 tranches",
+     "note_ar": "8 شرائح"
     },
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -2122,7 +2120,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2152,8 +2150,8 @@
     "رشّوا الجبن، ضعوا شريحة ديك رومي واكسروا بيضة في الوسط. ملّحوا وفلفلوا.",
     "اطووا الأطراف الأربعة نحو الوسط على شكل مربّع مع إبقاء الصفار ظاهرًا. غطّوا دقيقتين حتى ينضج البياض، وقدّموها فورًا."
    ],
-   "astuce_fr": "La farine de sarrasin est rare à Sousse (magasins bio) : un mélange moitié farine complète, moitié farine blanche donne une galette proche. Version halal : jambon de dinde.",
-   "astuce_ar": "دقيق الحنطة السوداء نادر في سوسة (محلات المواد البيولوجية): خليط من نصف فارينة كاملة ونصف بيضاء يعطي نتيجة قريبة. نسخة حلال: شرائح الديك الرومي.",
+   "astuce_fr": "La farine de sarrasin est rare à Sousse (magasins bio) : un mélange moitié farine complète, moitié farine blanche donne une galette proche.",
+   "astuce_ar": "دقيق الحنطة السوداء نادر في سوسة (محلات المواد البيولوجية): خليط من نصف دقيق كامل ونصف أبيض يعطي نتيجة قريبة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_galettes-bretonnes-completes_20899.aspx",
     "https://www.meilleurduchef.com/fr/recette/galette-bretonne.html",
@@ -2186,7 +2184,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -2195,7 +2193,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -2262,7 +2260,7 @@
     {
      "ingredient_id": 126,
      "nom_fr": "Confiture",
-     "nom_ar": "معجون",
+     "nom_ar": "مربّى",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -2284,7 +2282,7 @@
     "Faites cuire 1 minute, retournez et faites cuire 30 secondes. Servez avec du sucre, de la confiture, du miel ou du chocolat."
    ],
    "etapes_ar": [
-    "في وعاء، اخلطوا الفارينة والسكر والملح. اصنعوا حفرة واكسروا فيها البيض.",
+    "في وعاء، اخلطوا الدقيق والسكر والملح. اصنعوا حفرة واكسروا فيها البيض.",
     "اخفقوا مع إضافة الحليب تدريجيًا لتفادي الكتل.",
     "أضيفوا 0,03 كغ من الزبدة المذابة (وماء الزهر أو سكر الفانيليا). اتركوه ساعة.",
     "سخّنوا مقلاة مدهونة بقليل من الزبدة. اسكبوا مغرفة صغيرة ودوّروا المقلاة لفرد العجين رقيقًا.",
@@ -2322,7 +2320,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -2340,7 +2338,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -2410,13 +2408,13 @@
    ],
    "etapes_ar": [
     "سخّنوا الفرن على 200 درجة. ادهنوا صحن فرن جيدًا بالزبدة.",
-    "اخلطوا الفارينة والسكر وسكر الفانيليا والملح. أضيفوا البيض واحدة واحدة مع الخفق.",
+    "اخلطوا الدقيق والسكر وسكر الفانيليا والملح. أضيفوا البيض واحدة واحدة مع الخفق.",
     "أضيفوا الحليب تدريجيًا مع الخفق لتحصلوا على عجين ناعم وسائل كعجين الكريب.",
     "وزّعوا البرقوق في الصحن واسكبوا العجين فوقه.",
     "اطهوه 10 دقائق على 200 درجة ثم 40 دقيقة على 180، حتى يتحمّر الوجه جيدًا. قدّموه دافئًا أو باردًا."
    ],
-   "astuce_fr": "La recette bretonne parfume souvent les pruneaux au rhum : on le remplace par le sucre vanillé ou un peu de fleur d'oranger. Sans pruneaux, mettez des raisins secs ou des dattes coupées.",
-   "astuce_ar": "الوصفة البريتانية تعطّر البرقوق غالبًا بالروم: نعوّضه بسكر الفانيليا أو قليل من ماء الزهر. دون برقوق، ضعوا الزبيب أو التمر المقطّع.",
+   "astuce_fr": "Le sucre vanillé ou un peu de fleur d'oranger parfument les pruneaux. Sans pruneaux, mettez des raisins secs ou des dattes coupées.",
+   "astuce_ar": "سكر الفانيليا أو قليل من ماء الزهر يعطّران البرقوق. دون برقوق، ضعوا الزبيب أو التمر المقطّع.",
    "sources": [
     "https://keltia.net/recipes/far-breton/",
     "https://www.demotivateur.fr/food/far-aux-pruneaux-37926"
@@ -2446,7 +2444,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -2475,7 +2473,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 5,
      "unite": "pièce",
      "placard": false,
@@ -2520,7 +2518,7 @@
    "etapes_ar": [
     "سخّنوا الفرن على 180 درجة. ادهنوا قالبًا دائريًا 24 سم بالزبدة.",
     "اخلطوا الزبدة الليّنة مع السكر وسكر الفانيليا والملح (إن كانت الزبدة غير مملّحة) حتى يصبح الخليط كريميًا.",
-    "أضيفوا 4 صفار واحدًا واحدًا، ثم الفارينة. اخلطوا فقط حتى يتجانس العجين.",
+    "أضيفوا 4 صفار واحدًا واحدًا، ثم الدقيق. اخلطوا فقط حتى يتجانس العجين.",
     "افردوا العجين في القالب بظهر ملعقة مبلّلة.",
     "ادهنوه بالصفار الأخير، ارسموا خطوطًا متقاطعة بالشوكة واطهوه 35 إلى 40 دقيقة."
    ],
@@ -2556,7 +2554,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -2611,14 +2609,14 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
      "optionnel": false,
-     "note_fr": "en petits bâtonnets, à la place des lardons",
-     "note_ar": "أصابع صغيرة بدل اللحم المقدّد"
+     "note_fr": "en petits bâtonnets",
+     "note_ar": "أصابع صغيرة"
     },
     {
      "ingredient_id": 166,
@@ -2641,7 +2639,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2651,7 +2649,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Fromage blanc",
-     "Dinde fumée (lardons ou tranches)",
+     "Dinde fumée (en dés ou en tranches)",
      "Noix de muscade moulue"
     ]
    },
@@ -2663,14 +2661,14 @@
     "Étalez la crème, puis l'oignon et la dinde fumée. Glissez sur la plaque chaude et faites cuire 8 à 10 minutes, jusqu'à ce que les bords soient bien dorés."
    ],
    "etapes_ar": [
-    "العجين: اخلطوا الفارينة والخميرة والملح والزيت و0,13 لتر ماء فاتر. اعجنوا 5 دقائق واتركوه ساعة.",
+    "العجين: اخلطوا الدقيق والخميرة والملح والزيت و0,13 لتر ماء فاتر. اعجنوا 5 دقائق واتركوه ساعة.",
     "سخّنوا الفرن إلى أقصى درجة (250 أو أكثر) والصفيحة بداخله.",
     "اخلطوا الجبن الأبيض والكريمة مع جوزة الطيب والملح والفلفل. قطّعوا البصل شرائح رقيقة جدًا.",
     "قسّموا العجين إلى قطعتين وافردوا كل واحدة رقيقة جدًا (1 إلى 2 مم) على ورق الفرن.",
     "افردوا الكريمة، ثم البصل والديك الرومي المدخّن. ضعوها على الصفيحة الساخنة واطهوها 8 إلى 10 دقائق حتى تتحمّر الأطراف جيدًا."
    ],
-   "astuce_fr": "Version halal : dinde fumée à la place des lardons de porc. Sans fromage blanc, prenez du yaourt nature égoutté 2 heures dans un torchon.",
-   "astuce_ar": "نسخة حلال: الديك الرومي المدخّن بدل لحم الخنزير. دون جبن أبيض، استعملوا ياغورت طبيعي مصفّى ساعتين في قطعة قماش.",
+   "astuce_fr": "Sans fromage blanc, prenez du yaourt nature égoutté 2 heures dans un torchon.",
+   "astuce_ar": "دون جبن أبيض، استعملوا زبادي طبيعي مصفّى ساعتين في قطعة قماش.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_flammekueche-a-ma-facon_32497.aspx",
     "https://www.750g.com/la-meilleure-facon-de-faire-un-flammekueche-r208536.htm"
@@ -2701,7 +2699,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -2730,7 +2728,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -2802,8 +2800,8 @@
      "unite": "L",
      "placard": false,
      "optionnel": true,
-     "note_fr": "pour tremper les raisins, à la place du kirsch",
-     "note_ar": "لنقع الزبيب بدل الكحول"
+     "note_fr": "pour tremper les raisins",
+     "note_ar": "لنقع الزبيب"
     }
    ],
    "prix_manquants_21_10": {
@@ -2821,14 +2819,14 @@
    ],
    "etapes_ar": [
     "انقعوا الزبيب في قليل من الماء الساخن مع ماء الزهر.",
-    "ذوّبوا الخميرة في الحليب الفاتر. اخلطوا الفارينة والسكر والملح، أضيفوا الحليب والبيض واعجنوا 10 دقائق.",
+    "ذوّبوا الخميرة في الحليب الفاتر. اخلطوا الدقيق والسكر والملح، أضيفوا الحليب والبيض واعجنوا 10 دقائق.",
     "أضيفوا الزبدة الليّنة قطعًا واعجنوا 5 دقائق أخرى حتى يصبح العجين ليّنًا وينفصل عن جوانب الوعاء. أضيفوا الزبيب المصفّى.",
     "غطّوه واتركوه يتخمّر ساعة ونصفًا في مكان دافئ.",
     "ادهنوا قالب كوغلوف (أو قالبًا دائريًا مفرغًا) بالزبدة وضعوا لوزة في كل تجويف. شكّلوا العجين تاجًا وضعوه في القالب واتركوه يتخمّر ساعة ونصفًا أخرى.",
     "اطهوه 40 إلى 45 دقيقة على 180 درجة. أخرجوه من القالب دافئًا ورشّوا السكر الناعم."
    ],
-   "astuce_fr": "Les raisins se font tremper traditionnellement dans du kirsch (alcool) : la fleur d'oranger le remplace. Un moule à savarin (couronne) convient si vous n'avez pas de moule à kouglof.",
-   "astuce_ar": "يُنقع الزبيب تقليديًا في الكحول، ويعوّضه ماء الزهر. يصلح قالب دائري مفرغ إن لم يكن لديكم قالب كوغلوف.",
+   "astuce_fr": "Les raisins trempés dans la fleur d'oranger parfument la brioche. Un moule à savarin (couronne) convient si vous n'avez pas de moule à kouglof.",
+   "astuce_ar": "الزبيب المنقوع في ماء الزهر يعطّر العجين. يصلح قالب دائري مفرغ إن لم يكن لديكم قالب كوغلوف.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_kouglof_335953.aspx",
     "https://www.750g.com/le-kouglof-alsacien-r32675.htm"
@@ -2859,7 +2857,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -2888,7 +2886,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -2956,7 +2954,7 @@
     "Battez les œufs avec la crème, le sucre, le sucre vanillé et la cannelle. Versez sur les pommes et remettez au four 30 minutes, jusqu'à ce que la crème soit prise et dorée."
    ],
    "etapes_ar": [
-    "حضّروا العجين (فارينة، زبدة باردة، ملح، ملعقة سكر، 4 ملاعق ماء) واتركوه 30 دقيقة.",
+    "حضّروا العجين (دقيق، زبدة باردة، ملح، ملعقة سكر، 4 ملاعق ماء) واتركوه 30 دقيقة.",
     "سخّنوا الفرن على 180 درجة. افردوا العجين في قالب 26 سم.",
     "قشّروا التفاح، قطّعوه أرباعًا ثم شرائح سميكة، ورتّبوه متلاصقًا على العجين.",
     "اطهوها 15 دقيقة.",
@@ -2993,7 +2991,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -3089,7 +3087,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -3118,7 +3116,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -3188,14 +3186,14 @@
     "Battez les œufs avec le sucre, le sucre vanillé, la crème, les amandes mixées et 2 c. à soupe de farine. Versez sur les pommes et remettez 25 minutes au four."
    ],
    "etapes_ar": [
-    "حضّروا العجين (0,2 كغ فارينة، زبدة باردة، ملح، 4 ملاعق ماء) واتركوه 30 دقيقة.",
+    "حضّروا العجين (0,2 كغ دقيق، زبدة باردة، ملح، 4 ملاعق ماء) واتركوه 30 دقيقة.",
     "سخّنوا الفرن على 190 درجة. افردوا العجين في قالب 26 سم.",
     "قشّروا التفاح، قطّعوه شرائح رقيقة ورتّبوه دائريًا على العجين.",
     "اطهوها 15 دقيقة.",
-    "اخفقوا البيض مع السكر وسكر الفانيليا والكريمة واللوز المطحون وملعقتين من الفارينة. اسكبوه على التفاح وأعيدوها 25 دقيقة إلى الفرن."
+    "اخفقوا البيض مع السكر وسكر الفانيليا والكريمة واللوز المطحون وملعقتين من الدقيق. اسكبوه على التفاح وأعيدوها 25 دقيقة إلى الفرن."
    ],
-   "astuce_fr": "La version normande ajoute du calvados dans la crème : on s'en passe ici, la vanille et les amandes suffisent.",
-   "astuce_ar": "النسخة النورماندية تضيف الكحول إلى الكريمة؛ نستغني عنه هنا وتكفي الفانيليا واللوز.",
+   "astuce_fr": "La vanille et les amandes suffisent à parfumer la crème.",
+   "astuce_ar": "تكفي الفانيليا واللوز لتعطير الكريمة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_tarte-aux-pommes-normande-de-mag-16eme-rencontre-marmiton_35497.aspx",
     "https://www.750g.com/tarte-normande-aux-pommes-r77632.htm"
@@ -3226,7 +3224,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -3255,7 +3253,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -3282,7 +3280,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -3300,7 +3298,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3322,7 +3320,7 @@
     "Faites cuire 30 à 35 minutes, jusqu'à ce que le dessus soit doré."
    ],
    "etapes_ar": [
-    "حضّروا العجين (فارينة، 0,1 كغ زبدة باردة، ملح، 4 إلى 5 ملاعق ماء) واتركوه 30 دقيقة.",
+    "حضّروا العجين (دقيق، 0,1 كغ زبدة باردة، ملح، 4 إلى 5 ملاعق ماء) واتركوه 30 دقيقة.",
     "قطّعوا الجزء الأبيض والأخضر الطري من الكرّاث دوائر رقيقة واغسلوه جيدًا.",
     "ذوّبوه في بقية الزبدة مع الغطاء 20 دقيقة دون أن يتلوّن. ملّحوا وفلفلوا.",
     "سخّنوا الفرن على 190 درجة. افردوا العجين في قالب 26 سم.",
@@ -3361,7 +3359,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -3390,7 +3388,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -3460,7 +3458,7 @@
     "Versez le mélange œuf-crème et faites cuire 15 à 20 minutes, jusqu'à ce que le sucre ait caramélisé. Servez tiède."
    ],
    "etapes_ar": [
-    "ذوّبوا الخميرة في الحليب الفاتر. اخلطوا الفارينة والسكر والملح، أضيفوا الحليب وبيضة و0,05 كغ من الزبدة الليّنة. اعجنوا 10 دقائق.",
+    "ذوّبوا الخميرة في الحليب الفاتر. اخلطوا الدقيق والسكر والملح، أضيفوا الحليب وبيضة و0,05 كغ من الزبدة الليّنة. اعجنوا 10 دقائق.",
     "اتركوه يتخمّر ساعة ونصفًا تحت منشفة.",
     "افردوا العجين في قالب مدهون 26 سم واتركوه يتخمّر 30 دقيقة أخرى. سخّنوا الفرن على 200 درجة.",
     "اخفقوا البيضة الأخرى مع الكريمة. رشّوا العجين بالسكر الأسمر ثم ببقية الزبدة قطعًا صغيرة.",
@@ -3498,7 +3496,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -3507,7 +3505,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -3598,7 +3596,7 @@
     "Servez chaud avec du sucre glace, de la confiture ou du chocolat."
    ],
    "etapes_ar": [
-    "اخلطوا الفارينة والخميرة والسكر وسكر الفانيليا والملح.",
+    "اخلطوا الدقيق والخميرة والسكر وسكر الفانيليا والملح.",
     "افصلوا البياض عن الصفار. أضيفوا الصفار والحليب تدريجيًا مع الخفق، ثم الزبدة المذابة.",
     "اخفقوا البياض ثلجًا وأدمجوه برفق. اتركوه ساعة.",
     "سخّنوا آلة الوافل وادهنوها قليلًا. اسكبوا مغرفة واطهوها 3 إلى 4 دقائق حتى تتحمّر.",
@@ -3636,7 +3634,7 @@
     {
      "ingredient_id": 70,
      "nom_fr": "Merlan",
-     "nom_ar": "نازلي",
+     "nom_ar": "سمك الميرلان",
      "quantite": 0.7,
      "unite": "kg",
      "placard": false,
@@ -3674,7 +3672,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -3710,7 +3708,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -3728,7 +3726,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3750,7 +3748,7 @@
    "etapes_ar": [
     "اسلقوا البطاطا المقشّرة والمقطّعة دوائر 12 دقيقة في ماء مملّح ثم صفّوها.",
     "اطهوا السمك 5 دقائق في الحليب على نار هادئة. أخرجوه وفتّتوه واحتفظوا بالحليب.",
-    "حضّروا البشاميل بالزبدة والفارينة وحليب طهي السمك. أضيفوا جوزة الطيب والملح والفلفل وعصير القارص.",
+    "حضّروا البشاميل بالزبدة والدقيق وحليب طهي السمك. أضيفوا جوزة الطيب والملح والفلفل وعصير الليمون.",
     "سخّنوا الفرن على 200 درجة. في صينية مدهونة، ضعوا البطاطا ثم السمك المفتّت (والفطر المقلّب) ثم البشاميل.",
     "رشّوا الجبن وحمّروه 20 دقيقة."
    ],
@@ -3802,19 +3800,17 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "à la place des lardons",
-     "note_ar": "بدل اللحم المقدّد"
+     "optionnel": false
     },
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -3872,7 +3868,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3881,7 +3877,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Dinde fumée (lardons ou tranches)"
+     "Dinde fumée (en dés ou en tranches)"
     ],
     "douteux": [
      "Gruyère"
@@ -3901,8 +3897,8 @@
     "ضعوا نصف البطاطا ثم البصل والديك الرومي ثم بقية البطاطا. أضيفوا الفلفل وقليلًا من الملح واسكبوا الكريمة.",
     "غطّوها بشرائح الجبن والموزاريلا واطهوها 25 دقيقة حتى يذوب الجبن ويتحمّر. قدّموها مع سلطة خضراء."
    ],
-   "astuce_fr": "Adaptation : la vraie tartiflette se fait avec du reblochon (introuvable à Sousse), des lardons de porc et du vin blanc. Ici, dinde fumée, et un mélange gruyère + mozzarella pour le fondant.",
-   "astuce_ar": "نسخة مكيّفة: التارتيفلات الأصلية تُحضّر بجبن الروبلوشون (غير متوفّر في سوسة) ولحم الخنزير والخمر الأبيض. هنا الديك الرومي المدخّن وخليط من الجبن والموزاريلا.",
+   "astuce_fr": "Le reblochon est introuvable à Sousse : un mélange gruyère + mozzarella donne le fondant, et la dinde fumée le goût fumé.",
+   "astuce_ar": "جبن الروبلوشون غير متوفّر في سوسة: خليط من جبن الغرويير والموزاريلا يعطي الذوبان، والديك الرومي المدخّن يعطي النكهة المدخّنة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_la-vraie-tartiflette_17634.aspx",
     "https://www.750g.com/tartiflette-savoyarde-r2327.htm"
@@ -3932,7 +3928,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -3961,7 +3957,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -3978,7 +3974,7 @@
     "Formez une boule sans pétrir, aplatissez-la, enveloppez-la et laissez-la 30 minutes au réfrigérateur avant de l'étaler."
    ],
    "etapes_ar": [
-    "ضعوا الفارينة والملح في وعاء. أضيفوا الزبدة الباردة مكعّبات.",
+    "ضعوا الدقيق والملح في وعاء. أضيفوا الزبدة الباردة مكعّبات.",
     "افركوا بين الأصابع حتى تحصلوا على ما يشبه الرمل الخشن، دون الإكثار من العجن.",
     "أضيفوا الصفار إن أردتم، ثم 4 إلى 5 ملاعق كبيرة من الماء البارد جدًا واحدة واحدة حتى يتماسك العجين.",
     "كوّروه دون عجن، افردوه قليلًا، لفّوه واتركوه 30 دقيقة في الثلاجة قبل فرده."
@@ -4023,7 +4019,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -4132,7 +4128,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -4213,7 +4209,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -4271,7 +4267,7 @@
     {
      "ingredient_id": 126,
      "nom_fr": "Confiture",
-     "nom_ar": "معجون",
+     "nom_ar": "مربّى",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -4306,7 +4302,7 @@
     "À la sortie du four, badigeonnez de confiture chauffée pour faire briller."
    ],
    "etapes_ar": [
-    "حضّروا عجين تارت حلوًا (فارينة، 0,1 كغ زبدة باردة، ملح، ملعقة سكر، 4 ملاعق ماء). اتركوه 30 دقيقة.",
+    "حضّروا عجين تارت حلوًا (دقيق، 0,1 كغ زبدة باردة، ملح، ملعقة سكر، 4 ملاعق ماء). اتركوه 30 دقيقة.",
     "سخّنوا الفرن على 190 درجة. افردوا العجين في قالب 26 سم واثقبوا القاع.",
     "حضّروا كومبوت سريعًا بتفاحتين مكعّبات وملعقتي ماء وسكر الفانيليا، 10 دقائق مع الغطاء. اهرسوه وافردوه على العجين.",
     "قشّروا بقية التفاح، قطّعوه شرائح رقيقة ورتّبوه دائريًا على الكومبوت.",
@@ -4344,7 +4340,7 @@
     {
      "ingredient_id": 182,
      "nom_fr": "Cerises",
-     "nom_ar": "كرز / حب الملوك",
+     "nom_ar": "كرز",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -4353,7 +4349,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -4362,7 +4358,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.08,
      "unite": "kg",
      "placard": true,
@@ -4433,7 +4429,7 @@
    "etapes_ar": [
     "سخّنوا الفرن على 180 درجة. ادهنوا صحنًا بالزبدة ورشّوا عليه قليلًا من السكر.",
     "اغسلوا الكرز، انزعوا أعناقه ووزّعوه في الصحن (تقليديًا بنواته التي تعطّره).",
-    "اخفقوا البيض مع السكر وسكر الفانيليا، أضيفوا الفارينة والملح، ثم الحليب تدريجيًا.",
+    "اخفقوا البيض مع السكر وسكر الفانيليا، أضيفوا الدقيق والملح، ثم الحليب تدريجيًا.",
     "اسكبوا العجين على الكرز.",
     "اطهوه 35 إلى 40 دقيقة حتى ينتفخ ويتحمّر. قدّموه دافئًا."
    ],
@@ -4478,7 +4474,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 6,
      "unite": "pièce",
      "placard": false,
@@ -4576,7 +4572,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -4687,7 +4683,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -4696,7 +4692,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.05,
      "unite": "kg",
      "placard": true,
@@ -4728,10 +4724,10 @@
     "Versez dans le moule et faites cuire 20 à 25 minutes : le centre doit rester un peu tremblant. Laissez tiédir avant de démouler."
    ],
    "etapes_ar": [
-    "سخّنوا الفرن على 180 درجة. ادهنوا قالبًا 22 سم بالزبدة ورشّوه بالفارينة.",
+    "سخّنوا الفرن على 180 درجة. ادهنوا قالبًا 22 سم بالزبدة ورشّوه بالدقيق.",
     "ذوّبوا الشوكولاتة والزبدة معًا على نار هادئة جدًا أو في الميكروويف، واخلطوا.",
     "اخفقوا البيض مع السكر والملح حتى يرغو الخليط قليلًا.",
-    "أضيفوا الشوكولاتة المذابة ثم الفارينة واخلطوا بالقدر اللازم فقط.",
+    "أضيفوا الشوكولاتة المذابة ثم الدقيق واخلطوا بالقدر اللازم فقط.",
     "اسكبوه في القالب واطهوه 20 إلى 25 دقيقة، ويجب أن يبقى الوسط مرتعشًا قليلًا. اتركوه يفتر قبل إخراجه."
    ],
    "astuce_fr": "Servi avec une crème anglaise, c'est un dessert de restaurant. Il est encore meilleur le lendemain.",
@@ -4765,7 +4761,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -4785,7 +4781,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.24,
      "unite": "kg",
      "placard": true,
@@ -4841,14 +4837,14 @@
     "Versez dans le moule et faites cuire 40 à 45 minutes : une lame doit ressortir sèche."
    ],
    "etapes_ar": [
-    "زنوا البيض بقشره، وخذوا نفس الوزن من السكر والفارينة والزبدة (هنا نحو 0,24 كغ).",
+    "زنوا البيض بقشره، وخذوا نفس الوزن من السكر والدقيق والزبدة (هنا نحو 0,24 كغ).",
     "سخّنوا الفرن على 180 درجة. ادهنوا قالب كيك بالزبدة.",
     "اخفقوا البيض مع السكر وسكر الفانيليا حتى يبيضّ الخليط.",
-    "أضيفوا الزبدة المذابة الدافئة، ثم الفارينة والخميرة والملح.",
+    "أضيفوا الزبدة المذابة الدافئة، ثم الدقيق والخميرة والملح.",
     "اسكبوه في القالب واطهوه 40 إلى 45 دقيقة حتى تخرج السكين جافة."
    ],
    "astuce_fr": "Recette facile à retenir : quatre ingrédients, quatre quarts du même poids. Un zeste de citron ou d'orange le parfume très bien.",
-   "astuce_ar": "وصفة سهلة الحفظ: أربعة مكوّنات بنفس الوزن. قشر القارص أو البرتقال يعطّرها جيدًا.",
+   "astuce_ar": "وصفة سهلة الحفظ: أربعة مكوّنات بنفس الوزن. قشر الليمون أو البرتقال يعطّرها جيدًا.",
    "sources": [
     "https://morbihan.com/decouvrir/gastronomie-bretonne/carnet-des-recettes/recette-du-quatre-quarts-breton",
     "https://www.cuisineculinaire.com/?p=16663"
@@ -4879,7 +4875,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -4897,7 +4893,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.15,
      "unite": "kg",
      "placard": true,
@@ -4924,13 +4920,13 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
      "optionnel": false,
      "note_fr": "le zeste d'un citron",
-     "note_ar": "قشر قارصة"
+     "note_ar": "قشر ليمونة"
     },
     {
      "ingredient_id": 125,
@@ -4969,7 +4965,7 @@
    "etapes_ar": [
     "ذوّبوا الزبدة واتركوها تفتر.",
     "اخفقوا البيض مع السكر والعسل حتى يرغو الخليط.",
-    "أضيفوا الفارينة والخميرة والملح وقشر القارص، ثم الزبدة المذابة.",
+    "أضيفوا الدقيق والخميرة والملح وقشر الليمون، ثم الزبدة المذابة.",
     "غطّوه واتركوه ساعة في الثلاجة، فهذا ما يصنع الانتفاخ.",
     "سخّنوا الفرن على 220 درجة. ادهنوا القوالب، املؤوها إلى ثلاثة أرباعها وأدخلوها الفرن. اخفضوا إلى 200 بعد 4 دقائق واطهوها 5 إلى 6 دقائق أخرى."
    ],
@@ -5006,7 +5002,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -5066,7 +5062,7 @@
     "Faites cuire 30 à 35 minutes. Laissez reposer 10 minutes, puis retournez d'un coup sur un plat (attention, le caramel est brûlant)."
    ],
    "etapes_ar": [
-    "حضّروا العجين (فارينة، 0,1 كغ زبدة باردة، ملح، ملعقة سكر، 4 ملاعق ماء) واتركوه 30 دقيقة.",
+    "حضّروا العجين (دقيق، 0,1 كغ زبدة باردة، ملح، ملعقة سكر، 4 ملاعق ماء) واتركوه 30 دقيقة.",
     "في قالب يتحمّل النار (أو مقلاة تدخل الفرن)، ذوّبوا 0,08 كغ من الزبدة مع السكر حتى يصبح كراميلًا ذهبيًا فاتحًا.",
     "قشّروا التفاح، قطّعوه أرباعًا ورتّبوه واقفًا ومتلاصقًا في الكراميل. اتركوه 15 دقيقة على نار هادئة.",
     "سخّنوا الفرن على 200 درجة. افردوا العجين وضعوه فوق التفاح وأدخلوا الأطراف داخل القالب.",
@@ -5083,7 +5079,7 @@
    "id": "tarte-citron-meringuee",
    "statut": "brouillon",
    "nom_fr": "Tarte au citron meringuée",
-   "nom_ar": "تارت القارص بالمرنغ",
+   "nom_ar": "تارت الليمون بالمرنغ",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -5104,7 +5100,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -5124,7 +5120,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -5135,7 +5131,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 6,
      "unite": "pièce",
      "placard": false,
@@ -5190,7 +5186,7 @@
     "Étalez la meringue sur la crème et passez 5 minutes sous le grill pour la dorer. Laissez 2 heures au frais."
    ],
    "etapes_ar": [
-    "حضّروا عجين تارت حلوًا بالفارينة و0,1 كغ زبدة وملعقة سكر والملح وصفار وقليل من الماء. اتركوه 30 دقيقة.",
+    "حضّروا عجين تارت حلوًا بالدقيق و0,1 كغ زبدة وملعقة سكر والملح وصفار وقليل من الماء. اتركوه 30 دقيقة.",
     "سخّنوا الفرن على 180 درجة. افردوا العجين في قالب 24 سم، غطّوه بورق وفاصولياء جافة، واطهوه 15 دقيقة ثم 10 دقائق دون الفاصولياء.",
     "الكريمة: في قدر، اخفقوا 3 بيضات كاملة و0,15 كغ سكر والنشاء وعصير 4 قارصات والقشر. اتركوها تتكثّف على نار هادئة مع الخفق. خارج النار أضيفوا 0,07 كغ زبدة.",
     "اسكبوا الكريمة على قاعدة التارت المطهوة واتركوها تبرد.",
@@ -5198,7 +5194,7 @@
     "افردوا المرنغ على الكريمة وضعوها 5 دقائق تحت الشوّاية لتتحمّر. اتركوها ساعتين في الثلاجة."
    ],
    "astuce_fr": "Les citrons de Tunisie sont parfaits en hiver. Il faut au total 6 œufs : 1 jaune pour la pâte, 3 œufs entiers pour la crème, 3 blancs pour la meringue (les 2 jaunes restants servent à une crème anglaise).",
-   "astuce_ar": "قارص تونس ممتاز شتاءً. تحتاجون إجمالًا إلى 6 بيضات: صفار للعجين، 3 بيضات كاملة للكريمة، 3 بياض للمرنغ (الصفاران المتبقيان لكريمة إنجليزية).",
+   "astuce_ar": "ليمون تونس ممتاز شتاءً. تحتاجون إجمالًا إلى 6 بيضات: صفار للعجين، 3 بيضات كاملة للكريمة، 3 بياض للمرنغ (الصفاران المتبقيان لكريمة إنجليزية).",
    "sources": [
     "https://www.demotivateur.fr/food/recette/tarte-au-citron-meringuee-facile-1787",
     "https://ileauxepices.com/blog/2014/08/26/recette-tarte-au-citron-meringuee-et-epices/wpid5661/",
@@ -5209,7 +5205,7 @@
    "id": "gateau-yaourt",
    "statut": "brouillon",
    "nom_fr": "Gâteau au yaourt",
-   "nom_ar": "كعكة الياغورت",
+   "nom_ar": "كعكة الزبادي",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -5230,7 +5226,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -5241,7 +5237,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -5261,7 +5257,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -5328,13 +5324,13 @@
    ],
    "etapes_ar": [
     "سخّنوا الفرن على 180 درجة. ادهنوا قالبًا دائريًا أو قالب كيك بالزيت.",
-    "أفرغوا الياغورت في وعاء واحتفظوا بالعلبة للقياس.",
+    "أفرغوا الزبادي في وعاء واحتفظوا بالعلبة للقياس.",
     "أضيفوا علبتين من السكر وسكر الفانيليا والبيض، واخلطوا.",
-    "أضيفوا 3 علب فارينة والخميرة والملح، ثم نصف علبة زيت. اخلطوا حتى يصبح العجين ناعمًا.",
+    "أضيفوا 3 علب دقيق والخميرة والملح، ثم نصف علبة زيت. اخلطوا حتى يصبح العجين ناعمًا.",
     "اسكبوه في القالب واطهوه 30 إلى 35 دقيقة حتى تخرج السكين جافة."
    ],
    "astuce_fr": "Le premier gâteau que font les enfants en France : tout se mesure avec le pot de yaourt, sans balance.",
-   "astuce_ar": "أول كعكة يحضّرها الأطفال في فرنسا: كل شيء يُقاس بعلبة الياغورت، دون ميزان.",
+   "astuce_ar": "أول كعكة يحضّرها الأطفال في فرنسا: كل شيء يُقاس بعلبة الزبادي، دون ميزان.",
    "sources": [
     "https://www.danone.com/fr/fr/recettes/recette/gateau-au-yaourt.html",
     "https://www.cuisineculinaire.com/?p=2058",
@@ -5375,7 +5371,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -5495,7 +5491,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 5,
      "unite": "pièce",
      "placard": false,
@@ -5588,7 +5584,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.12,
      "unite": "kg",
      "placard": false,
@@ -5714,7 +5710,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.15,
      "unite": "kg",
      "placard": true,
@@ -5784,13 +5780,13 @@
    ],
    "etapes_ar": [
     "سخّنوا الفرن على 180 درجة. قشّروا التفاح، قطّعوه مكعّبات وضعوه في صحن مع القرفة وملعقة سكر أسمر.",
-    "في وعاء، اخلطوا الفارينة وبقية السكر واللوز والملح.",
+    "في وعاء، اخلطوا الدقيق وبقية السكر واللوز والملح.",
     "أضيفوا الزبدة الباردة مكعّبات وافركوا بين الأصابع للحصول على فتات كبيرة.",
     "وزّعوا الفتات على التفاح دون ضغط.",
     "اطهوه 30 إلى 35 دقيقة حتى يتحمّر الوجه ويصبح مقرمشًا. قدّموه دافئًا."
    ],
    "astuce_fr": "Marche avec tous les fruits : poires, pêches, abricots, figues… Le sucre blanc remplace le sucre roux si besoin.",
-   "astuce_ar": "يصلح مع كل الفواكه: إجاص، خوخ، مشمش، كرموس… ويمكن تعويض السكر الأسمر بالأبيض.",
+   "astuce_ar": "يصلح مع كل الفواكه: إجاص، خوخ، مشمش، تين… ويمكن تعويض السكر الأسمر بالأبيض.",
    "sources": [
     "https://www.torah-box.com/upl/recettes/recette-crumble-aux-pommes.pdf",
     "https://www.vorwerk.com/fr/fr/c/vorwerk/astuces-recettes/blog/thermomix/recettes-quotidien/recette-de-crumble-aux-pommes"
@@ -5849,7 +5845,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -5911,7 +5907,7 @@
     "Servez chaque poire égouttée avec une boule de glace, nappée de sauce chocolat chaude et parsemée d'amandes."
    ],
    "etapes_ar": [
-    "في قدر، اغلوا 1 لتر ماء مع السكر وسكر الفانيليا وعصير القارص.",
+    "في قدر، اغلوا 1 لتر ماء مع السكر وسكر الفانيليا وعصير الليمون.",
     "قشّروا الإجاص مع ترك العنق، وضعوه في الشراب. اتركوه 15 إلى 20 دقيقة على نار هادئة حتى تدخل السكين بسهولة.",
     "اتركوه يبرد في الشراب.",
     "سخّنوا الكريمة، اسكبوها على الشوكولاتة المقطّعة واخلطوا حتى تحصلوا على صلصة ناعمة.",
@@ -5949,7 +5945,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.15,
      "unite": "kg",
      "placard": true,
@@ -5967,7 +5963,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -6020,7 +6016,7 @@
    ],
    "etapes_ar": [
     "سخّنوا الفرن على 190 درجة. في قدر، ضعوا 0,25 لتر ماء والزبدة والسكر والملح، واتركوه يغلي.",
-    "خارج النار، أضيفوا الفارينة دفعة واحدة واخلطوا بقوة. أعيدوه دقيقة على نار هادئة لتجفيف العجين فيصبح كرة.",
+    "خارج النار، أضيفوا الدقيق دفعة واحدة واخلطوا بقوة. أعيدوه دقيقة على نار هادئة لتجفيف العجين فيصبح كرة.",
     "خارج النار، أضيفوا البيض واحدة واحدة مع الخلط جيدًا بين كل واحدة، فيصبح العجين ناعمًا ولامعًا.",
     "ضعوا كويرات صغيرة بحجم الجوزة على صفيحة مغطّاة بورق الفرن مع ترك مسافات.",
     "رشّوا السكر واطهوها 20 إلى 25 دقيقة دون فتح الفرن حتى تتحمّر جيدًا."
@@ -6057,7 +6053,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -6077,7 +6073,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -6178,7 +6174,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6207,7 +6203,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 5,
      "unite": "pièce",
      "placard": false,
@@ -6270,7 +6266,7 @@
     "Allumez le four à 180 °C. Dorez à l'œuf battu et faites cuire 25 à 30 minutes."
    ],
    "etapes_ar": [
-    "ذوّبوا الخميرة في الحليب الفاتر. في وعاء كبير، اخلطوا الفارينة والسكر والملح.",
+    "ذوّبوا الخميرة في الحليب الفاتر. في وعاء كبير، اخلطوا الدقيق والسكر والملح.",
     "أضيفوا الحليب و4 بيضات (وماء الزهر) واعجنوا 10 دقائق؛ العجين لزج وهذا عادي.",
     "أضيفوا الزبدة الليّنة قطعًا تدريجيًا واعجنوا 10 دقائق أخرى حتى ينفصل العجين عن جوانب الوعاء.",
     "غطّوه واتركوه يتخمّر ساعتين في مكان دافئ (أو طوال الليل في الثلاجة، وهذا أفضل).",
@@ -6309,7 +6305,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6358,7 +6354,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -6390,7 +6386,7 @@
     "Allumez le four à 190 °C. Dorez à l'œuf battu et faites cuire 15 à 18 minutes, jusqu'à ce qu'ils soient bien dorés."
    ],
    "etapes_ar": [
-    "في الليلة السابقة: اخلطوا الفارينة والسكر والملح والخميرة والحليب البارد و0,1 لتر ماء و0,03 كغ زبدة. اعجنوا 5 دقائق، افردوه مستطيلًا، غلّفوه وضعوه في الثلاجة طوال الليل.",
+    "في الليلة السابقة: اخلطوا الدقيق والسكر والملح والخميرة والحليب البارد و0,1 لتر ماء و0,03 كغ زبدة. اعجنوا 5 دقائق، افردوه مستطيلًا، غلّفوه وضعوه في الثلاجة طوال الليل.",
     "في اليوم نفسه: اضربوا الزبدة الباردة (0,25 كغ) بين ورقتين لتصبح مربعًا بسمك 1 سم. يجب أن تبقى باردة لكن ليّنة.",
     "افردوا العجين مستطيلًا ضعف حجم الزبدة. ضعوا الزبدة في الوسط وأغلقوا العجين عليها كالظرف.",
     "افردوه مستطيلًا طويلًا واطووه ثلاث طيّات كالرسالة. ضعوه 30 دقيقة في الثلاجة. كرّروا ذلك مرتين أخريين (3 طيّات في المجموع) مع 30 دقيقة برد بين كل مرة.",
@@ -6431,13 +6427,13 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
      "optionnel": false,
      "note_fr": "dont 0,1 kg de farine complète si possible",
-     "note_ar": "منها 0,1 كغ فارينة كاملة إن أمكن"
+     "note_ar": "منها 0,1 كغ دقيق كامل إن أمكن"
     },
     {
      "ingredient_id": 113,
@@ -6470,15 +6466,15 @@
     "Faites cuire 15 minutes à 240 °C puis 25 minutes à 210 °C. Le pain est cuit quand il sonne creux quand on tape dessous. Laissez refroidir sur une grille."
    ],
    "etapes_ar": [
-    "في وعاء، اخلطوا الفارينة والخميرة والملح. أضيفوا 0,35 لتر ماء فاتر.",
+    "في وعاء، اخلطوا الدقيق والخميرة والملح. أضيفوا 0,35 لتر ماء فاتر.",
     "اعجنوا 10 دقائق حتى تحصلوا على عجين ليّن ولزج قليلًا.",
     "غطّوه واتركوه يتخمّر ساعتين حتى يتضاعف حجمه.",
-    "أفرغوا الهواء، شكّلوا كرة مشدودة جيدًا وضعوها على صفيحة مرشوشة بالفارينة. اتركوها تتخمّر ساعة أخرى تحت منشفة.",
-    "سخّنوا الفرن على 240 درجة مع صحن فارغ في الأسفل. رشّوا الخبز بالفارينة، اصنعوا 3 شقوق بالسكين، أدخلوه واسكبوا كوب ماء في الصحن الساخن (البخار يصنع القشرة).",
+    "أفرغوا الهواء، شكّلوا كرة مشدودة جيدًا وضعوها على صفيحة مرشوشة بالدقيق. اتركوها تتخمّر ساعة أخرى تحت منشفة.",
+    "سخّنوا الفرن على 240 درجة مع صحن فارغ في الأسفل. رشّوا الخبز بالدقيق، اصنعوا 3 شقوق بالسكين، أدخلوه واسكبوا كوب ماء في الصحن الساخن (البخار يصنع القشرة).",
     "اطهوه 15 دقيقة على 240 ثم 25 دقيقة على 210. يكون جاهزًا عندما يرنّ أجوف عند النقر تحته. اتركوه يبرد على شبكة."
    ],
    "astuce_fr": "La farine complète (« faraina kamla ») se trouve facilement en Tunisie et donne le goût « campagne ». Pour un pain plus parfumé, laissez la pâte lever une nuit au réfrigérateur.",
-   "astuce_ar": "الفارينة الكاملة متوفّرة بسهولة في تونس وتعطي الطعم الريفي. لخبز أكثر نكهة، اتركوا العجين يتخمّر ليلة في الثلاجة.",
+   "astuce_ar": "الدقيق الكامل متوفّر بسهولة في تونس ويعطي الطعم الريفي. لخبز أكثر نكهة، اتركوا العجين يتخمّر ليلة في الثلاجة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_pain-de-campagne-rapide_36054.aspx",
     "https://www.750g.com/pain-de-campagne-maison-r97521.htm"
@@ -6510,7 +6506,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.15,
      "unite": "kg",
      "placard": true,
@@ -6528,7 +6524,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 8,
      "unite": "pièce",
      "placard": false,
@@ -6613,7 +6609,7 @@
     "Glaçage : faites fondre le reste du chocolat avec la crème fraîche, trempez le dessus des éclairs dedans et laissez prendre au frais."
    ],
    "etapes_ar": [
-    "عجين الشو: في قدر صغير، اغلوا 0,25 لتر من الماء مع الزبدة والملح. خارج النار، أضيفوا الفارينة دفعة واحدة واخلطوا بسرعة.",
+    "عجين الشو: في قدر صغير، اغلوا 0,25 لتر من الماء مع الزبدة والملح. خارج النار، أضيفوا الدقيق دفعة واحدة واخلطوا بسرعة.",
     "أعيدوا القدر على نار هادئة دقيقة مع التحريك لتجفيف العجين حتى يصير كرة. اتركوه يفتر 5 دقائق.",
     "أضيفوا البيضات الأربع واحدة تلو الأخرى مع الخلط جيدًا بعد كل واحدة: يجب أن يكون العجين ناعمًا ولامعًا.",
     "سخّنوا الفرن على 180 درجة. بكيس حلواني (أو كيس تجميد مقصوص الطرف)، شكّلوا 16 أصبعًا طول كل منها 12 سم على صفيحة مغطاة بورق الطهي.",
@@ -6766,7 +6762,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -6795,7 +6791,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -6842,7 +6838,7 @@
     {
      "ingredient_id": 126,
      "nom_fr": "Confiture",
-     "nom_ar": "معجون",
+     "nom_ar": "مربّى",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -6882,7 +6878,7 @@
     "Faites tiédir la confiture avec une cuillère d'eau et badigeonnez les fraises. Gardez au frais jusqu'au service."
    ],
    "etapes_ar": [
-    "العجين الهشّ: افركوا بأطراف الأصابع الفارينة والزبدة الباردة المقطّعة و0,08 كغ من السكر والملح. أضيفوا البيضة وكوّنوا كرة دون عجن طويل، واتركوها 30 دقيقة في الثلاجة.",
+    "العجين الهشّ: افركوا بأطراف الأصابع الدقيق والزبدة الباردة المقطّعة و0,08 كغ من السكر والملح. أضيفوا البيضة وكوّنوا كرة دون عجن طويل، واتركوها 30 دقيقة في الثلاجة.",
     "سخّنوا الفرن على 180 درجة. افردوا العجين في قالب 26 سم، اثقبوه، غطّوه بورق الطهي وفاصولياء جافة واطهوه 20 دقيقة. انزعوا الفاصولياء وأكملوا 10 دقائق. اتركوه يبرد.",
     "كريمة الحلويات: سخّنوا الحليب مع سكر الفانيليا. اخفقوا 3 صفار مع بقية السكر والنشاء، صبّوا عليها الحليب الساخن ثم أعيدوها إلى القدر دقيقتين مع التحريك حتى تتكثّف.",
     "غطّوا الكريمة بغلاف بلاستيكي ملامس واتركوها تبرد تمامًا.",
@@ -6891,7 +6887,7 @@
     "سخّنوا المربّى قليلًا مع ملعقة ماء وادهنوا بها الفراولة. احفظوا التارت في الثلاجة حتى التقديم."
    ],
    "astuce_fr": "Les fraises tunisiennes sont au marché de mars à mai ; le reste de l'année, faites la même tarte avec des kiwis, des pêches ou des figues. Garnissez au dernier moment pour que la pâte reste croustillante.",
-   "astuce_ar": "الفراولة التونسية موجودة في السوق من مارس إلى ماي؛ بقية السنة، حضّروا التارت نفسها بالكيوي أو الخوخ أو الكرموس. ضعوا الكريمة والفواكه في آخر لحظة ليبقى العجين مقرمشًا.",
+   "astuce_ar": "الفراولة التونسية موجودة في السوق من مارس إلى ماي؛ بقية السنة، حضّروا التارت نفسها بالكيوي أو الخوخ أو التين. ضعوا الكريمة والفواكه في آخر لحظة ليبقى العجين مقرمشًا.",
    "sources": [
     "https://sweetlycakes.com/tarte-aux-fraises",
     "https://www.demotivateur.fr/food/recette-tarte-aux-fraises-simple-6061",
@@ -6923,7 +6919,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.18,
      "unite": "kg",
      "placard": true,
@@ -6952,7 +6948,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -6999,7 +6995,7 @@
    ],
    "etapes_ar": [
     "اخفقوا الصفار الثلاثة مع السكر حتى يصير الخليط فاتح اللون.",
-    "أضيفوا الفارينة والخميرة الكيميائية والملح، ثم الزبدة الليّنة قطعًا. اخلطوا فقط حتى يتجانس العجين.",
+    "أضيفوا الدقيق والخميرة الكيميائية والملح، ثم الزبدة الليّنة قطعًا. اخلطوا فقط حتى يتجانس العجين.",
     "افردوا العجين بسمك 0,5 سم بين ورقتي طهي وضعوه 30 دقيقة في الثلاجة.",
     "سخّنوا الفرن على 170 درجة. اقطعوا دوائر بكأس وضعوها على صفيحة مغطاة بورق الطهي.",
     "ادهنوا الوجه بقليل من الصفار أو الحليب وارسموا خطوطًا متقاطعة بالشوكة.",
@@ -7037,7 +7033,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -7055,7 +7051,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -7139,9 +7135,9 @@
     "Faites cuire 40 à 45 minutes : une lame plantée au centre doit ressortir sèche. Démoulez tiède."
    ],
    "etapes_ar": [
-    "سخّنوا الفرن على 170 درجة. ادهنوا قالب كيك بالزبدة ورشّوه بالفارينة.",
+    "سخّنوا الفرن على 170 درجة. ادهنوا قالب كيك بالزبدة ورشّوه بالدقيق.",
     "اخفقوا البيض مع السكر وسكر الفانيليا حتى يصير الخليط فاتح اللون.",
-    "أضيفوا الزبدة المذوّبة الفاترة والحليب، ثم الفارينة المخلوطة بالخميرة الكيميائية والملح.",
+    "أضيفوا الزبدة المذوّبة الفاترة والحليب، ثم الدقيق المخلوط بالخميرة الكيميائية والملح.",
     "اقسموا العجين نصفين. أضيفوا الكاكاو إلى أحد النصفين واخلطوا جيدًا.",
     "اسكبوا في القالب طبقة من عجين الفانيليا ثم طبقة من عجين الشوكولاتة، وهكذا. مرّروا شوكة بشكل متعرّج لرسم المرمر.",
     "اطهوها 40 إلى 45 دقيقة: يجب أن يخرج السكين المغروز في الوسط جافًا. أخرجوها من القالب وهي فاترة."
@@ -7184,7 +7180,7 @@
      "placard": false,
      "optionnel": false,
      "note_fr": "mixées très fin (ou poudre d'amandes)",
-     "note_ar": "مرحية ناعمًا جدًا (أو لوز مطحون)"
+     "note_ar": "مطحون ناعمًا جدًا (أو لوز مطحون)"
     },
     {
      "ingredient_id": 181,
@@ -7198,7 +7194,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.05,
      "unite": "kg",
      "placard": true,
@@ -7207,7 +7203,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -7249,7 +7245,7 @@
    "etapes_ar": [
     "ذوّبوا الزبدة في قدر صغير واتركوها تسخن حتى تصير ذهبية ولها رائحة البندق. اتركوها تفتر.",
     "سخّنوا الفرن على 200 درجة. ادهنوا قوالب الفينانسييه أو المافن بالزبدة.",
-    "اخلطوا اللوز المرحي والسكر الناعم والفارينة والملح.",
+    "اخلطوا اللوز المطحون والسكر الناعم والدقيق والملح.",
     "أضيفوا البياضات الأربعة (دون خفقها) واخلطوا، ثم صبّوا الزبدة الفاترة تدريجيًا.",
     "املؤوا القوالب إلى ثلاثة أرباعها واطهوها 12 إلى 15 دقيقة حتى تتحمّر الأطراف. أخرجوها من القوالب وهي فاترة."
    ],
@@ -7286,7 +7282,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -7313,7 +7309,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -7377,7 +7373,7 @@
     "Laissez refroidir, puis mettez au frais au moins 4 heures avant de couper."
    ],
    "etapes_ar": [
-    "حضّروا عجين تارت بالفارينة والزبدة الباردة والملح و4 ملاعق كبيرة من الماء. اتركوه 30 دقيقة ثم افردوه في قالب عالٍ قطره 24 سم.",
+    "حضّروا عجين تارت بالدقيق والزبدة الباردة والملح و4 ملاعق كبيرة من الماء. اتركوه 30 دقيقة ثم افردوه في قالب عالٍ قطره 24 سم.",
     "سخّنوا الفرن على 180 درجة. سخّنوا 0,8 لتر من الحليب مع نصف السكر وسكر الفانيليا.",
     "في وعاء، اخفقوا البيض مع بقية السكر والنشاء وبقية الحليب البارد.",
     "صبّوا الحليب الساخن على هذا الخليط مع الخفق، أعيدوه إلى القدر واتركوه يتكثّف على نار متوسطة 2 إلى 3 دقائق دون التوقف عن الخفق.",
@@ -7417,7 +7413,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -7448,7 +7444,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -7463,7 +7459,7 @@
      "placard": false,
      "optionnel": false,
      "note_fr": "0,1 kg mixées fin + quelques amandes effilées",
-     "note_ar": "0,1 كغ مرحية ناعمًا + قليل من اللوز المقطّع شرائح"
+     "note_ar": "0,1 كغ مطحون ناعمًا + قليل من اللوز المقطّع شرائح"
     },
     {
      "ingredient_id": 45,
@@ -7479,7 +7475,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7522,9 +7518,9 @@
     "Faites cuire 35 à 40 minutes, jusqu'à ce que la crème soit gonflée et dorée. Servez tiède ou froid."
    ],
    "etapes_ar": [
-    "العجين: افركوا الفارينة مع 0,1 كغ من الزبدة الباردة و0,05 كغ من السكر والملح، أضيفوا بيضة، كوّنوا كرة واتركوها 30 دقيقة في الثلاجة.",
-    "الشراب: اغلوا لترًا من الماء مع 0,15 كغ من السكر وعصير القارص. قشّروا الإجاص، قطّعوه نصفين، انزعوا القلب واسلقوه 15 دقيقة على نار هادئة. صفّوه واتركوه يبرد.",
-    "كريمة اللوز: اخلطوا 0,1 كغ من الزبدة الليّنة مع بقية السكر، أضيفوا بيضتين واحدة تلو الأخرى، ثم اللوز المرحي وماء الزهر.",
+    "العجين: افركوا الدقيق مع 0,1 كغ من الزبدة الباردة و0,05 كغ من السكر والملح، أضيفوا بيضة، كوّنوا كرة واتركوها 30 دقيقة في الثلاجة.",
+    "الشراب: اغلوا لترًا من الماء مع 0,15 كغ من السكر وعصير الليمون. قشّروا الإجاص، قطّعوه نصفين، انزعوا القلب واسلقوه 15 دقيقة على نار هادئة. صفّوه واتركوه يبرد.",
+    "كريمة اللوز: اخلطوا 0,1 كغ من الزبدة الليّنة مع بقية السكر، أضيفوا بيضتين واحدة تلو الأخرى، ثم اللوز المطحون وماء الزهر.",
     "سخّنوا الفرن على 180 درجة. افردوا العجين في قالب 26 سم وافردوا عليه كريمة اللوز.",
     "قطّعوا كل نصف إجاصة شرائح رقيقة دون فصلها، ضعوها على شكل نجمة فوق الكريمة مع الضغط قليلًا، ورشّوا اللوز المقطّع شرائح.",
     "اطهوها 35 إلى 40 دقيقة حتى تنتفخ الكريمة وتتحمّر. قدّموها دافئة أو باردة."
@@ -7579,7 +7575,7 @@
      "placard": false,
      "optionnel": false,
      "note_fr": "mixées fin (ou poudre d'amandes)",
-     "note_ar": "مرحية ناعمًا (أو لوز مطحون)"
+     "note_ar": "مطحون ناعمًا (أو لوز مطحون)"
     },
     {
      "ingredient_id": 80,
@@ -7604,7 +7600,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -7654,21 +7650,21 @@
    "etapes_fr": [
     "Frangipane : mélangez le beurre mou et le sucre, ajoutez 2 œufs un par un, puis les amandes mixées, la maïzena, le sel et la fleur d'oranger.",
     "Déroulez un rouleau de pâte feuilletée sur une plaque avec son papier. Étalez la crème au centre en laissant 3 cm de bord libre.",
-    "Cachez une « fève » dans la crème, près du bord (une amande entière ou un petit sujet en porcelaine).",
+    "Cachez une « fève » dans la crème, près du bord (une amande entière ou une petite figurine).",
     "Mouillez le bord avec un peu d'eau, posez le second rouleau par-dessus et appuyez bien tout autour pour souder.",
     "Dorez au jaune d'œuf, dessinez des arcs avec la pointe d'un couteau sans percer la pâte, et faites un petit trou au centre. Mettez 30 minutes au frais.",
     "Allumez le four à 190 °C et faites cuire 30 à 35 minutes, jusqu'à ce que la galette soit bien gonflée et dorée. Servez tiède."
    ],
    "etapes_ar": [
-    "كريمة اللوز: اخلطوا الزبدة الليّنة مع السكر، أضيفوا بيضتين واحدة تلو الأخرى، ثم اللوز المرحي والنشاء والملح وماء الزهر.",
+    "كريمة اللوز: اخلطوا الزبدة الليّنة مع السكر، أضيفوا بيضتين واحدة تلو الأخرى، ثم اللوز المطحون والنشاء والملح وماء الزهر.",
     "افردوا لفّة من العجين المورّق على صفيحة مع ورقها. افردوا الكريمة في الوسط مع ترك 3 سم فارغة على الحافة.",
     "خبّئوا «الفول» في الكريمة قرب الحافة (لوزة كاملة أو تمثالًا صغيرًا من الخزف).",
     "بلّلوا الحافة بقليل من الماء، ضعوا اللفّة الثانية فوقها واضغطوا جيدًا على كامل الدائرة لإلصاقها.",
     "ادهنوا الوجه بصفار البيض، ارسموا أقواسًا برأس السكين دون ثقب العجين، واثقبوا ثقبًا صغيرًا في الوسط. ضعوها 30 دقيقة في الثلاجة.",
     "سخّنوا الفرن على 190 درجة واطهوها 30 إلى 35 دقيقة حتى تنتفخ وتتحمّر جيدًا. قدّموها دافئة."
    ],
-   "astuce_fr": "Version halal : beaucoup de recettes parfument la frangipane au rhum ; ici la fleur d'oranger le remplace. La tradition : le plus jeune, sous la table, désigne la part de chacun, et celui qui trouve la fève porte la couronne.",
-   "astuce_ar": "نسخة حلال: كثير من الوصفات تعطّر كريمة اللوز بالروم؛ هنا يعوّضه ماء الزهر. التقليد: يحدّد أصغر الحاضرين نصيب كل واحد، ومن يجد «الفول» يلبس التاج.",
+   "astuce_fr": "La fleur d'oranger parfume la frangipane. La tradition : le plus jeune, sous la table, désigne la part de chacun, et celui qui trouve la fève porte la couronne.",
+   "astuce_ar": "ماء الزهر يعطّر كريمة اللوز. التقليد: يحدّد أصغر الحاضرين نصيب كل واحد، ومن يجد «الفول» يلبس التاج.",
    "sources": [
     "https://sweetlycakes.com/galette-des-rois-a-la-frangipane",
     "https://www.zwilling.com/fr/magazine/recettes/galette-des-rois.html"
@@ -7677,8 +7673,8 @@
   {
    "id": "crepes-suzette",
    "statut": "brouillon",
-   "nom_fr": "Crêpes Suzette au beurre d'orange (sans alcool)",
-   "nom_ar": "كريب سوزيت بزبدة البرتقال (دون كحول)",
+   "nom_fr": "Crêpes Suzette au beurre d'orange",
+   "nom_ar": "كريب سوزيت بزبدة البرتقال",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -7699,7 +7695,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -7708,7 +7704,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -7757,7 +7753,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7789,15 +7785,15 @@
     "Posez les crêpes pliées dans la sauce, retournez-les pour bien les napper et servez aussitôt."
    ],
    "etapes_ar": [
-    "العجين: اخلطوا الفارينة والملح وملعقة كبيرة من السكر. أضيفوا البيض ثم الحليب تدريجيًا مع الخفق، و0,03 كغ من الزبدة المذوّبة. ابشروا فيه قشرة برتقالة. اتركوه 30 دقيقة.",
+    "العجين: اخلطوا الدقيق والملح وملعقة كبيرة من السكر. أضيفوا البيض ثم الحليب تدريجيًا مع الخفق، و0,03 كغ من الزبدة المذوّبة. ابشروا فيه قشرة برتقالة. اتركوه 30 دقيقة.",
     "اطهوا كريبًا رقيقًا في مقلاة مدهونة قليلًا بالزبدة. اطووا كل كريب إلى أربعة.",
-    "اعصروا البرتقال (والقارص). ابشروا قشرة برتقالة ثانية.",
+    "اعصروا البرتقال (والليمون). ابشروا قشرة برتقالة ثانية.",
     "في مقلاة كبيرة، ذوّبوا بقية السكر دون ماء حتى يصير ذهبيًا، أضيفوا بقية الزبدة ثم العصير والقشرة (احذروا من الرذاذ).",
     "اتركوا الصلصة تتكثّف 5 دقائق على نار متوسطة حتى تصير كالشراب.",
     "ضعوا الكريب المطوي في الصلصة، اقلبوه ليتغطّى جيدًا وقدّموه فورًا."
    ],
-   "astuce_fr": "La recette d'origine est flambée à la liqueur d'orange : ici, rien que du jus et du zeste, la sauce est aussi parfumée. Prenez des oranges maltaises en hiver, les plus sucrées.",
-   "astuce_ar": "الوصفة الأصلية تُلهب بمشروب كحولي بالبرتقال؛ هنا عصير وقشرة فقط، والصلصة معطّرة بالقدر نفسه. اختاروا البرتقال المالطي في الشتاء فهو الأحلى.",
+   "astuce_fr": "Rien que du jus et du zeste : la sauce est très parfumée. Prenez des oranges maltaises en hiver, les plus sucrées.",
+   "astuce_ar": "عصير وقشرة فقط، والصلصة معطّرة جدًا. اختاروا البرتقال المالطي في الشتاء فهو الأحلى.",
    "sources": [
     "https://www.amourdecuisine.fr/en/article-alcohol-free-crepes-suzette-orange-sauce.html",
     "https://sweetlycakes.com/crepes-suzette",
@@ -7840,7 +7836,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7888,7 +7884,7 @@
    ],
    "etapes_ar": [
     "قشّروا التفاح، انزعوا القلب وقطّعوه قطعًا.",
-    "ضعوه في قدر مع نصف كوب ماء (وعصير القارص أو القرفة أو سكر الفانيليا إن رغبتم).",
+    "ضعوه في قدر مع نصف كوب ماء (وعصير الليمون أو القرفة أو سكر الفانيليا إن رغبتم).",
     "غطّوا القدر واطهوه 15 إلى 20 دقيقة على نار هادئة مع التحريك من حين لآخر حتى يُهرس التفاح.",
     "تذوّقوا: أضيفوا السكر فقط عند الحاجة.",
     "اهرسوه بالشوكة لكومبوت بقطع، أو اخلطوه بالخلاط لكومبوت ناعم. قدّموه فاترًا أو باردًا."
@@ -8034,7 +8030,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -8107,7 +8103,7 @@
    ],
    "etapes_ar": [
     "اخلطوا الخميرة والسكر في الحليب الفاتر. انتظروا 10 دقائق حتى تتكوّن رغوة.",
-    "في وعاء، اخلطوا الفارينة والملح. صبّوا الحليب مع الخميرة واعجنوا 5 دقائق.",
+    "في وعاء، اخلطوا الدقيق والملح. صبّوا الحليب مع الخميرة واعجنوا 5 دقائق.",
     "أضيفوا الزبدة الليّنة واعجنوا 10 دقائق أخرى حتى يصير العجين ناعمًا وليّنًا.",
     "غطّوه بقطعة قماش واتركوه ساعة في مكان دافئ حتى يتضاعف حجمه.",
     "أخرجوا الهواء من العجين، شكّلوه أسطوانة وضعوه في قالب كيك مدهون بالزبدة. اتركوه ساعة أخرى حتى يتجاوز حافة القالب.",
@@ -8146,7 +8142,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -8166,7 +8162,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -8228,7 +8224,7 @@
    ],
    "etapes_ar": [
     "اخلطوا الخميرة في الحليب الفاتر مع ملعقة سكر. انتظروا 10 دقائق.",
-    "اخلطوا الفارينة وبقية السكر والملح. أضيفوا الحليب مع الخميرة وبيضة، ثم اعجنوا 10 دقائق.",
+    "اخلطوا الدقيق وبقية السكر والملح. أضيفوا الحليب مع الخميرة وبيضة، ثم اعجنوا 10 دقائق.",
     "أضيفوا الزبدة الليّنة واعجنوا 5 دقائق أخرى: يجب أن يكون العجين ليّنًا ولا يلتصق.",
     "غطّوه واتركوه ساعة ونصفًا في مكان دافئ.",
     "اقسموا العجين إلى 12 كرة، طوّلوها قليلًا وضعوها على صفيحة مغطاة بورق الطهي. اتركوها 30 دقيقة.",
@@ -8266,7 +8262,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -8335,14 +8331,14 @@
    ],
    "etapes_ar": [
     "اخلطوا الخميرة في 0,3 لتر من الماء الفاتر.",
-    "اخلطوا الفارينة والملح، أضيفوا الماء مع الخميرة و3 ملاعق كبيرة من زيت الزيتون. اعجنوا 10 دقائق.",
+    "اخلطوا الدقيق والملح، أضيفوا الماء مع الخميرة و3 ملاعق كبيرة من زيت الزيتون. اعجنوا 10 دقائق.",
     "قطّعوا الزيتون دوائر وأدخلوه في العجين مع أعشاب بروفانس.",
     "غطّوه واتركوه ساعة في مكان دافئ.",
     "اقسموا العجين نصفين وافردوا كل قطعة على شكل ورقة شجر فوق صفيحة مدهونة بالزيت. اشطبوا 5 أو 6 شقوق مائلة بالسكين وباعدوها بالأصابع. اتركوها 30 دقيقة.",
     "سخّنوا الفرن على 220 درجة. ادهنوها ببقية زيت الزيتون واطهوها 18 إلى 20 دقيقة حتى تتحمّر."
    ],
-   "astuce_fr": "Version halal : certaines fougasses du commerce sont aux lardons, celle-ci est uniquement aux olives. Sans herbes de Provence, mettez du thym ou du romarin. Les olives noires de Tunisie (zitoun khal) conviennent très bien.",
-   "astuce_ar": "نسخة حلال: بعض الفوغاس التجاري يحتوي على لحم خنزير، أما هذه فبالزيتون فقط. دون أعشاب بروفانس، ضعوا الزعتر أو إكليل الجبل. الزيتون الأسود التونسي يصلح جيدًا.",
+   "astuce_fr": "Sans herbes de Provence, mettez du thym ou du romarin. Les olives noires de Tunisie (zitoun khal) conviennent très bien.",
+   "astuce_ar": "دون أعشاب بروفانس، ضعوا الزعتر أو إكليل الجبل. الزيتون الأسود التونسي يصلح جيدًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_fougasse-aux-olives-super-facile_53346.aspx",
     "https://www.750g.com/fougasse-aux-olives-r43893.htm"
@@ -8372,7 +8368,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.15,
      "unite": "kg",
      "placard": true,
@@ -8390,7 +8386,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 5,
      "unite": "pièce",
      "placard": false,
@@ -8401,7 +8397,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -8430,7 +8426,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8455,14 +8451,14 @@
    ],
    "etapes_ar": [
     "سخّنوا الفرن على 200 درجة. غطّوا صفيحة بورق الطهي.",
-    "في قدر، اغلوا 0,25 لتر من الماء مع الزبدة والملح والفلفل الأكحل وجوزة الطيب. خارج النار، أضيفوا الفارينة دفعة واحدة واخلطوا بسرعة.",
+    "في قدر، اغلوا 0,25 لتر من الماء مع الزبدة والملح والفلفل الأسود وجوزة الطيب. خارج النار، أضيفوا الدقيق دفعة واحدة واخلطوا بسرعة.",
     "أعيدوا القدر دقيقة على نار هادئة مع التحريك لتجفيف العجين، ثم اتركوه يفتر 5 دقائق.",
     "أضيفوا 4 بيضات واحدة تلو الأخرى مع الخلط جيدًا بعد كل واحدة، ثم 0,12 كغ من الجبن المبشور.",
     "بملعقتين، شكّلوا حوالي ثلاثين كومة صغيرة متباعدة على الصفيحة. ادهنوها بالبيض المخفوق ورشّوا عليها بقية الجبن.",
     "اطهوها 20 إلى 25 دقيقة دون فتح الفرن حتى تنتفخ وتتحمّر جيدًا. قدّموها دافئة."
    ],
    "astuce_fr": "En Bourgogne on utilise du comté, introuvable ici : le gruyère râpé de Carrefour convient. Les gougères crues se congèlent sur la plaque et se cuisent sans décongeler (5 minutes de plus).",
-   "astuce_ar": "في بورغونيا يُستعمل جبن الكونتيه، وهو غير متوفّر هنا: جبن القرويار المبشور يصلح. يمكن تجميد الغوجير نيئًا على الصفيحة وطهيه دون إذابة (5 دقائق إضافية).",
+   "astuce_ar": "في بورغونيا يُستعمل جبن الكونتيه، وهو غير متوفّر هنا: جبن الغرويير المبشور يصلح. يمكن تجميد الغوجير نيئًا على الصفيحة وطهيه دون إذابة (5 دقائق إضافية).",
    "sources": [
     "https://www.marmiton.org/recettes/recette_gougeres-au-fromage_20095.aspx",
     "https://www.750g.com/gougeres-faciles-r204360.htm"

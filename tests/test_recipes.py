@@ -193,6 +193,25 @@ def test_cost_is_a_range_names_the_unpriced_and_hides_the_total_under_70_percent
 # --- import -------------------------------------------------------------------------------------------
 
 
+def test_search_folds_the_oe_ligature_and_knows_the_usual_spellings():
+    from app.services import recipes
+
+    assert recipes.fold("Bœuf aux carottes, Œufs") == recipes.fold("boeuf aux carottes oeufs")
+    assert set(recipes.search_words("kosksi")) >= {"couscous", "kousksi", "كسكسي"}
+    assert set(recipes.search_words("ma9dnous")) >= {"persil", "بقدونس"}
+    assert recipes.search_words(recipes.fold("بطاطس")) == ["بطاطس", "batata", "بطاطا"]
+    assert recipes.search_words("ojja") == ["ojja"]  # no synonym, no fuzzy search
+
+
+def test_arabic_servings_agree_with_the_number():
+    from app.services.recipes import servings_text
+
+    pieces = [servings_text(n, "pieces", "ar") for n in (1, 2, 3, 30)]
+    assert pieces == ["1 قطعة", "قطعتان", "3 قطع", "30 قطعة"]
+    assert servings_text(12, "portions", "ar") == "12 حصة" and servings_text(12, "people", "ar") == "12 شخصاً"
+    assert servings_text(4, "people", "ar") == "4 أشخاص" and servings_text(4, "people", "fr") == "4 pers."
+
+
 def test_a_pastry_counts_pieces_and_a_spice_mix_portions():
     unit = recipes_import._servings_unit
     assert (
@@ -508,6 +527,10 @@ async def test_files_schema_lines_without_reference_are_kept_unpriced_and_the_li
     assert [x["slug"] for x in (await ok(client, qa, "listRecipes", {"q": "ZITOUN"}))["recipes"]] == [
         "tajine-zitoun"
     ]
+    for q in ("tagine", "طجين", "taji"):  # QA 22/10: the usual spellings of the same word
+        assert [x["slug"] for x in (await ok(client, qa, "listRecipes", {"q": q}))["recipes"]] == [
+            "tajine-zitoun"
+        ], q
     assert [x["slug"] for x in (await ok(client, qa, "listRecipes", {"max_time": 20}))["recipes"]] == [
         "salade-tomate"
     ]

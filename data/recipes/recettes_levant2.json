@@ -82,7 +82,7 @@
     {
      "ingredient_id": 23,
      "nom_fr": "Concombre",
-     "nom_ar": "فقوس / خيار",
+     "nom_ar": "خيار",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -126,7 +126,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -146,7 +146,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -271,7 +271,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -364,7 +364,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -393,7 +393,7 @@
     {
      "ingredient_id": 142,
      "nom_fr": "Coriandre moulue",
-     "nom_ar": "تابل",
+     "nom_ar": "كزبرة مطحونة",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -422,7 +422,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -505,7 +505,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -545,7 +545,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -554,7 +554,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -688,7 +688,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -790,7 +790,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -834,7 +834,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -852,7 +852,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -946,7 +946,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -966,7 +966,7 @@
     {
      "ingredient_id": 14,
      "nom_fr": "Chou-fleur",
-     "nom_ar": "قرنبيط / نوار",
+     "nom_ar": "قرنبيط",
      "quantite": 0.5,
      "unite": "pièce",
      "placard": false,
@@ -1037,7 +1037,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -1070,7 +1070,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -1151,7 +1151,7 @@
     {
      "ingredient_id": 55,
      "nom_fr": "Épaule d'agneau",
-     "nom_ar": "كتف علوش",
+     "nom_ar": "كتف خروف",
      "quantite": 1.5,
      "unite": "kg",
      "placard": false,
@@ -1173,7 +1173,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 10,
      "unite": "pièce",
      "placard": false,
@@ -1202,7 +1202,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -1231,7 +1231,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -1280,7 +1280,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -1289,7 +1289,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1430,7 +1430,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1463,7 +1463,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -1557,7 +1557,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1588,7 +1588,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -1619,7 +1619,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -1765,7 +1765,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -1794,7 +1794,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -1873,7 +1873,7 @@
     {
      "ingredient_id": 72,
      "nom_fr": "Crevettes",
-     "nom_ar": "قمبري",
+     "nom_ar": "جمبري",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -1948,7 +1948,7 @@
     {
      "ingredient_id": 141,
      "nom_fr": "Carvi",
-     "nom_ar": "كروية",
+     "nom_ar": "كراوية",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -1957,7 +1957,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -1968,7 +1968,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -2008,12 +2008,12 @@
    "etapes_ar": [
     "دقّوا الثوم والفلفل الحار ونصف الشبت مع رشّة ملح.",
     "في زبدية فخار (أو مقلاة) قلّبوا البصل المفروم 5 دقائق في الزيت، وأضيفوا الخليط المدقوق دقيقة واحدة.",
-    "أضيفوا الطماطم مكعبات والكمون والكروية. اتركوها 10 دقائق مع هرس الطماطم حتى تصبح صلصة كثيفة.",
-    "أضيفوا القمبري واطهوه 4 إلى 5 دقائق فقط حتى يحمرّ لونه.",
+    "أضيفوا الطماطم مكعبات والكمون والكراوية. اتركوها 10 دقائق مع هرس الطماطم حتى تصبح صلصة كثيفة.",
+    "أضيفوا الجمبري واطهوه 4 إلى 5 دقائق فقط حتى يحمرّ لونه.",
     "رشّوا السمسم والصنوبر وضعوه 5 دقائق تحت شوّاية الفرن. أضيفوا باقي الشبت وقدّموه مع الخبز."
    ],
    "astuce_fr": "Plat traditionnellement cuit dans un bol en terre (« zibdiya ») : un plat tunisien en terre cuite fait parfaitement l'affaire. Ne prolongez pas la cuisson des crevettes, elles durcissent.",
-   "astuce_ar": "يُطهى تقليديًا في زبدية فخار: الطاجين الفخاري التونسي مناسب تمامًا. لا تطيلوا طهي القمبري فيقسو.",
+   "astuce_ar": "يُطهى تقليديًا في زبدية فخار: الطاجين الفخاري التونسي مناسب تمامًا. لا تطيلوا طهي الجمبري فيقسو.",
    "sources": [
     "https://tastecooking.com/?p=106637",
     "https://adaptedfrom.substack.com/p/zibdiyit-gambari-and-the-duty-of",
@@ -2048,7 +2048,7 @@
     {
      "ingredient_id": 55,
      "nom_fr": "Épaule d'agneau",
-     "nom_ar": "كتف علوش",
+     "nom_ar": "كتف خروف",
      "quantite": 1.2,
      "unite": "kg",
      "placard": false,
@@ -2059,7 +2059,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -2126,7 +2126,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -2265,7 +2265,7 @@
     {
      "ingredient_id": 11,
      "nom_fr": "Potiron",
-     "nom_ar": "قرع أحمر",
+     "nom_ar": "يقطين",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -2276,7 +2276,7 @@
     {
      "ingredient_id": 141,
      "nom_fr": "Carvi",
-     "nom_ar": "كروية",
+     "nom_ar": "كراوية",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -2346,7 +2346,7 @@
     "حمّروا الدجاج في ملعقتي زيت مع بصلة مفرومة والبهارات السبعة والكركم والقرفة.",
     "غطّوه بلترين من الماء، وملّحوا واتركوه 30 دقيقة.",
     "أضيفوا باقي البصل (صغيرًا كاملًا أو أرباعًا) واليقطين قطعًا والحمص. اتركوه 20 دقيقة أخرى.",
-    "في الأثناء قلّبوا المحمصة 5 دقائق في باقي الزيت مع الكروية مع التحريك.",
+    "في الأثناء قلّبوا المحمصة 5 دقائق في باقي الزيت مع الكراوية مع التحريك.",
     "اسكبوا 0,8 ل من المرق الساخن على المحمصة، وغطّوا واطهوها 15 دقيقة على نار هادئة حتى تلين (أضيفوا مرقًا إن لزم).",
     "قدّموا المحمصة في طبق كبير والدجاج والخضر فوقها، وباقي المرق في وعاء."
    ],
@@ -2427,7 +2427,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2436,7 +2436,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -2559,7 +2559,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -2590,7 +2590,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -2617,7 +2617,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2710,7 +2710,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -2748,7 +2748,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -2768,7 +2768,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -2779,7 +2779,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2877,7 +2877,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -2888,7 +2888,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -2968,7 +2968,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -3117,7 +3117,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -3139,7 +3139,7 @@
     {
      "ingredient_id": 142,
      "nom_fr": "Coriandre moulue",
-     "nom_ar": "تابل",
+     "nom_ar": "كزبرة مطحونة",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -3148,7 +3148,7 @@
     {
      "ingredient_id": 141,
      "nom_fr": "Carvi",
-     "nom_ar": "كروية",
+     "nom_ar": "كراوية",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -3157,7 +3157,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -3206,9 +3206,9 @@
    "etapes_ar": [
     "انقعوا السماق 20 دقيقة في كوب كبير من الماء الفاتر، ثم صفّوه: احتفظوا بالعصير الأحمر وتخلّصوا من الرواسب.",
     "في قدر، قلّبوا البصل المفروم 8 دقائق في ملعقتين من الزيت. أضيفوا اللحم وحمّروه من كل الجهات.",
-    "أضيفوا الكزبرة المطحونة والكروية ومعجون الطماطم وحرّكوا دقيقة. غطّوا بالماء وملّحوا واتركوه يطهى ساعة وربعًا مغطّى حتى ينضج اللحم.",
+    "أضيفوا الكزبرة المطحونة والكراوية ومعجون الطماطم وحرّكوا دقيقة. غطّوا بالماء وملّحوا واتركوه يطهى ساعة وربعًا مغطّى حتى ينضج اللحم.",
     "اغسلوا السلق وقطّعوه شرائح (مع العروق مفرومة ناعمًا) وأضيفوه مع الحمص. اتركوه يطهى 15 دقيقة.",
-    "في وعاء، اخلطوا عصير السماق والطحينة والفارينة حتى تحصلوا على كريمة ناعمة. صبّوها في القدر مع التحريك واتركوها تتكثّف 5 دقائق على نار هادئة.",
+    "في وعاء، اخلطوا عصير السماق والطحينة والدقيق حتى تحصلوا على كريمة ناعمة. صبّوها في القدر مع التحريك واتركوها تتكثّف 5 دقائق على نار هادئة.",
     "اهرسوا الثوم والفلفل الحار والشبت مع رشة ملح، وقلّبوها دقيقة في باقي الزيت ثم أضيفوها إلى القدر.",
     "قدّموها فاترة أو بحرارة الغرفة، مع رشة زيت زيتون والخبز."
    ],
@@ -3289,7 +3289,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -3300,7 +3300,7 @@
     {
      "ingredient_id": 142,
      "nom_fr": "Coriandre moulue",
-     "nom_ar": "تابل",
+     "nom_ar": "كزبرة مطحونة",
      "quantite": 2,
      "unite": "c. à café",
      "placard": true,
@@ -3320,7 +3320,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -3331,7 +3331,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -3371,7 +3371,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -3398,7 +3398,7 @@
     "Servez la mloukhia dans des bols, avec le poulet, du riz blanc et du citron à presser."
    ],
    "etapes_ar": [
-    "ضعوا الدجاج في 1,5 لتر من الماء مع البصلة مقسومة نصفين والهيل وورق الرند وملعقة ملح. اطهوه 35 دقيقة مع إزالة الرغوة.",
+    "ضعوا الدجاج في 1,5 لتر من الماء مع البصلة مقسومة نصفين والهيل وورق الغار وملعقة ملح. اطهوه 35 دقيقة مع إزالة الرغوة.",
     "أخرجوا الدجاج وصفّوا المرق. حمّروا القطع 15 دقيقة في الفرن على 220 درجة (اختياري لكنه ألذّ).",
     "اغلوا لترًا من المرق وأضيفوا الملوخية وهي مجمّدة وحرّكوا حتى تتفكّك. اتركوها تغلي بهدوء 10 دقائق دون غطاء (مع الغطاء تهبط إلى القاع).",
     "اهرسوا الثوم مع الكزبرة الخضراء والكزبرة المطحونة والفلفل الحار ورشة ملح.",
@@ -3442,7 +3442,7 @@
     {
      "ingredient_id": 55,
      "nom_fr": "Épaule d'agneau",
-     "nom_ar": "كتف علوش",
+     "nom_ar": "كتف خروف",
      "quantite": 1,
      "unite": "kg",
      "placard": false,
@@ -3473,7 +3473,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -3495,7 +3495,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -3517,7 +3517,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -3528,7 +3528,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -3557,7 +3557,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -3595,7 +3595,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -3623,16 +3623,16 @@
     "Servez dans le plat, avec du riz blanc, une salade et du yaourt."
    ],
    "etapes_ar": [
-    "اخلطوا الياغورت وعصير الليمون والثوم المهروس والبهارات السبعة والكركم والفلفل الأحمر الحلو والهيل و4 ملاعق من الزيت والملح.",
-    "غطّوا لحم العلوش والدجاج بهذه التتبيلة واتركوها في الثلاجة ساعتين على الأقل (ليلة كاملة أفضل).",
-    "قشّروا البطاطا والجزر والبصل والقرع الأخضر وقطّعوها قطعًا كبيرة. اخلطوها مع باقي الزيت ورشة ملح.",
+    "اخلطوا الزبادي وعصير الليمون والثوم المهروس والبهارات السبعة والكركم والفلفل الأحمر الحلو والهيل و4 ملاعق من الزيت والملح.",
+    "غطّوا لحم الخروف والدجاج بهذه التتبيلة واتركوها في الثلاجة ساعتين على الأقل (ليلة كاملة أفضل).",
+    "قشّروا البطاطا والجزر والبصل والكوسة وقطّعوها قطعًا كبيرة. اخلطوها مع باقي الزيت ورشة ملح.",
     "في قدر كبير يدخل الفرن (أو صينية عميقة جدًا)، ضعوا الخضر في القاع ثم اللحم فوقها ثم الدجاج. أضيفوا كوب ماء.",
     "أغلقوا بإحكام بطبقتين من ورق الألمنيوم والغطاء. اطهوه ساعتين في الفرن على 170 درجة دون فتح.",
     "انزعوا الغطاء والألمنيوم، وارفعوا الفرن إلى 220 درجة واتركوه يتحمّر 20 دقيقة.",
-    "قدّموه في الصينية مع الأرز الأبيض والسلطة والياغورت."
+    "قدّموه في الصينية مع الأرز الأبيض والسلطة والزبادي."
    ],
    "astuce_fr": "Le vrai zarb cuit sous le sable dans un four creusé (taboun) : cette version maison garde l'idée d'une longue cuisson à l'étouffée. L'épaule d'agneau peut être remplacée entièrement par du poulet pour un plat moins cher.",
-   "astuce_ar": "يُطهى الزرب الأصلي تحت الرمل في حفرة (طابون)؛ هذه النسخة المنزلية تحافظ على فكرة الطهي الطويل المغلق. يمكن تعويض كتف العلوش كليًا بالدجاج لطبق أقل كلفة.",
+   "astuce_ar": "يُطهى الزرب الأصلي تحت الرمل في حفرة (طابون)؛ هذه النسخة المنزلية تحافظ على فكرة الطهي الطويل المغلق. يمكن تعويض كتف الخروف كليًا بالدجاج لطبق أقل كلفة.",
    "sources": [
     "https://en.wikipedia.org/wiki/Jordanian_cuisine",
     "https://fr.wikipedia.org/wiki/Cuisine_jordanienne"
@@ -3665,7 +3665,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 1.2,
      "unite": "kg",
      "placard": false,
@@ -3676,7 +3676,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -3705,7 +3705,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 8,
      "unite": "pièce",
      "placard": false,
@@ -3725,7 +3725,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -3747,7 +3747,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 2,
      "unite": "c. à café",
      "placard": true,
@@ -3790,7 +3790,7 @@
     "اغسلوا الأرز وصفّوه واخلطوه مع اللحم المفروم والبهارات السبعة وملعقة ملح و3 ملاعق ماء.",
     "اقطعوا رأس الكوسا وافرغوها بالمحفرة أو بملعقة صغيرة مع ترك نصف سنتيمتر من اللبّ.",
     "احشوها إلى ثلاثة أرباعها (الأرز ينتفخ). رتّبوها في قدر وغطّوها بماء مملّح واطهوها 25 دقيقة على نار متوسطة.",
-    "اخفقوا الياغورت مع النشاء وبياض البيضة. سخّنوه في قدر على نار متوسطة مع التحريك دائمًا في الاتجاه نفسه حتى يغلي.",
+    "اخفقوا الزبادي مع النشاء وبياض البيضة. سخّنوه في قدر على نار متوسطة مع التحريك دائمًا في الاتجاه نفسه حتى يغلي.",
     "انقلوا الكوسا بلطف إلى اللبن مع مغرفة من مرقها. اتركوها تغلي بهدوء 15 دقيقة.",
     "اهرسوا الثوم مع رشة ملح وقلّبوه 30 ثانية في الزبدة مع النعناع اليابس وصبّوه على الطبق. قدّموه ساخنًا."
    ],
@@ -3838,7 +3838,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -3849,7 +3849,7 @@
     {
      "ingredient_id": 24,
      "nom_fr": "Petits pois",
-     "nom_ar": "جلبانة",
+     "nom_ar": "بازلاء",
      "quantite": 0.25,
      "unite": "kg",
      "placard": false,
@@ -3860,7 +3860,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -3882,7 +3882,7 @@
     {
      "ingredient_id": 108,
      "nom_fr": "Feuilles de brick",
-     "nom_ar": "ملسوقة",
+     "nom_ar": "أوراق البريك",
      "quantite": 12,
      "unite": "pièce",
      "placard": false,
@@ -3929,7 +3929,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -3972,14 +3972,14 @@
    ],
    "etapes_ar": [
     "قلّبوا البصل المفروم 4 دقائق في قليل من الزبدة، ثم أضيفوا اللحم واطهوه 8 دقائق مع تفتيته، مع البهارات السبعة والكركم والهيل والملح.",
-    "أضيفوا الأرز المغسول والجلبانة والجزر وحرّكوا دقيقتين، ثم صبّوا نصف لتر من الماء الساخن. غطّوا واطهوه 15 دقيقة على نار هادئة: يجب أن يبقى الأرز متماسكًا قليلًا. اتركوه يفتر.",
+    "أضيفوا الأرز المغسول والبازلاء والجزر وحرّكوا دقيقتين، ثم صبّوا نصف لتر من الماء الساخن. غطّوا واطهوه 15 دقيقة على نار هادئة: يجب أن يبقى الأرز متماسكًا قليلًا. اتركوه يفتر.",
     "حمّروا اللوز والصنوبر في قليل من الزبدة واخلطوهما مع الأرز.",
-    "ادهنوا وعاء صغيرًا بالزبدة. ضعوا فيه ورقتي ملسوقة متقاطعتين، وضعوا مغرفتين كبيرتين من الأرز، ثم اثنوا الأوراق لغلقها على شكل كرة.",
+    "ادهنوا وعاء صغيرًا بالزبدة. ضعوا فيه ورقتي بريك متقاطعتين، وضعوا مغرفتين كبيرتين من الأرز، ثم اثنوا الأوراق لغلقها على شكل كرة.",
     "اقلبوا كل كرة على صينية بحيث تكون جهة الغلق في الأسفل. ادهنوها بالزبدة المذابة.",
-    "اخبزوها 20 إلى 25 دقيقة في الفرن على 200 درجة حتى تتحمّر جيدًا. قدّموها مع الياغورت أو السلطة."
+    "اخبزوها 20 إلى 25 دقيقة في الفرن على 200 درجة حتى تتحمّر جيدًا. قدّموها مع الزبادي أو السلطة."
    ],
    "astuce_fr": "On utilise en Jordanie de la pâte filo ; nos feuilles de brick tunisiennes marchent très bien et sont plus faciles à trouver. Couvrez les feuilles d'un torchon humide pendant le montage pour qu'elles ne sèchent pas.",
-   "astuce_ar": "في الأردن تُستعمل عجينة الفيلو، لكن الملسوقة التونسية تعطي نتيجة ممتازة ويسهل إيجادها. غطّوا الأوراق بمنشفة مبلّلة أثناء التحضير حتى لا تجفّ.",
+   "astuce_ar": "في الأردن تُستعمل عجينة الفيلو، لكن أوراق البريك التونسية تعطي نتيجة ممتازة ويسهل إيجادها. غطّوا الأوراق بمنشفة مبلّلة أثناء التحضير حتى لا تجفّ.",
    "sources": [
     "https://falasteenifoodie.com/beef-ouzi-pockets-spiced-rice-pockets/",
     "https://thematbakh.com/ouzi-spiced-rice-with-lamb/",
@@ -4023,7 +4023,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -4083,7 +4083,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -4094,7 +4094,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -4135,8 +4135,8 @@
     "Servez dans des assiettes creuses, couvert du reste des oignons, avec du persil, du sumac et du citron."
    ],
    "etapes_ar": [
-    "اخلطوا الفارينة ورشة ملح وحوالي 0,1 لتر من الماء للحصول على عجين متماسك. اتركوه يرتاح 15 دقيقة تحت منشفة.",
-    "افردوا العجين رقيقًا بالشوبك، ورشّوه بالفارينة وقطّعوه شرائط بعرض 1 سم وطول 4 سم. اتركوها تجفّ على صينية مرشوشة بالفارينة.",
+    "اخلطوا الدقيق ورشة ملح وحوالي 0,1 لتر من الماء للحصول على عجين متماسك. اتركوه يرتاح 15 دقيقة تحت منشفة.",
+    "افردوا العجين رقيقًا بالشوبك، ورشّوه بالدقيق وقطّعوه شرائط بعرض 1 سم وطول 4 سم. اتركوها تجفّ على صينية مرشوشة بالدقيق.",
     "اغسلوا العدس واطهوه في 1,5 لتر من الماء مع الكمون والكركم 20 دقيقة حتى يذوب.",
     "في الأثناء، اقطعوا البصل شرائح رقيقة وحمّروه 20 دقيقة في الزيت. أضيفوا الثوم المهروس في الآخر.",
     "أضيفوا العجين ونصف البصل بزيته إلى العدس، وملّحوا واتركوه يطهى 8 إلى 10 دقائق مع التحريك (أضيفوا ماءً ساخنًا إن كان كثيفًا جدًا).",
@@ -4185,12 +4185,12 @@
      "placard": false,
      "optionnel": false,
      "note_fr": "en cubes, ou épaule d'agneau",
-     "note_ar": "مكعبات، أو كتف علوش"
+     "note_ar": "مكعبات، أو كتف خروف"
     },
     {
      "ingredient_id": 14,
      "nom_fr": "Chou-fleur",
-     "nom_ar": "قرنبيط / نوار",
+     "nom_ar": "قرنبيط",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -4201,7 +4201,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -4281,7 +4281,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -4343,13 +4343,13 @@
     "Décorez d'amandes dorées et servez avec du yaourt ou la salade arabe."
    ],
    "etapes_ar": [
-    "اغسلوا الأرز وانقعوه 30 دقيقة. اطهوا اللحم ساعة في 1,5 لتر من الماء مع البصلة مقسومة أربعًا والهيل وورق الرند وملعقة ملح، مع إزالة الرغوة. احتفظوا بالمرق.",
+    "اغسلوا الأرز وانقعوه 30 دقيقة. اطهوا اللحم ساعة في 1,5 لتر من الماء مع البصلة مقسومة أربعًا والهيل وورق الغار وملعقة ملح، مع إزالة الرغوة. احتفظوا بالمرق.",
     "فصّصوا القرنبيط زهرات واقلوها في الزيت حتى تتحمّر جيدًا ثم صفّوها. افعلوا الشيء نفسه مع البطاطا.",
     "ادهنوا قاع قدر كبير بالزيت، ورتّبوا دوائر الطماطم، ثم اللحم المصفّى، ثم القرنبيط والبطاطا مع شرائح الثوم.",
     "اخلطوا الأرز المصفّى مع الكركم والبهارات السبعة وباقي الملح، وافردوه فوقها مع الضغط قليلًا.",
     "صبّوا المرق الساخن بهدوء حتى يعلو الأرز بسنتيمترين. ضعوا صحنًا فوقه وغطّوا، واطهوه 10 دقائق على نار متوسطة ثم 35 دقيقة على نار هادئة جدًا.",
     "اتركوه يرتاح 15 دقيقة بعيدًا عن النار. ضعوا صحنًا كبيرًا فوق القدر واقلبوه دفعة واحدة وانتظروا دقيقتين قبل رفع القدر.",
-    "زيّنوه باللوز المحمّر وقدّموه مع الياغورت أو السلطة العربية."
+    "زيّنوه باللوز المحمّر وقدّموه مع الزبادي أو السلطة العربية."
    ],
    "astuce_fr": "Pour moins de friture, faites rôtir le chou-fleur au four à 220 °C, arrosé d'huile, 25 minutes. Le chou-fleur tunisien d'hiver, bien ferme, est parfait pour ce plat.",
    "astuce_ar": "لتقليل القلي، احمّصوا القرنبيط في الفرن على 220 درجة مع رشة زيت لمدة 25 دقيقة. القرنبيط التونسي الشتوي المتماسك مثالي لهذا الطبق.",
@@ -4444,7 +4444,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -4453,7 +4453,7 @@
     {
      "ingredient_id": 110,
      "nom_fr": "Chapelure",
-     "nom_ar": "فرينة الخبز",
+     "nom_ar": "فتات الخبز",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -4475,7 +4475,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -4515,9 +4515,9 @@
    ],
    "etapes_ar": [
     "قشّروا البطاطا وقطّعوها واطهوها 20 دقيقة في ماء مملّح حتى تُهرس بسهولة.",
-    "في الأثناء، حمّروا البصل المفروم في الزيت وأضيفوا اللحم ونصف البهارات السبعة والفلفل الأكحل والملح. اطهوه 12 دقيقة مع التفتيت.",
+    "في الأثناء، حمّروا البصل المفروم في الزيت وأضيفوا اللحم ونصف البهارات السبعة والفلفل الأسود والملح. اطهوه 12 دقيقة مع التفتيت.",
     "صفّوا البطاطا واهرسوها مع الزبدة والحليب الساخن وباقي البهارات والملح حتى تحصلوا على هريسة متماسكة.",
-    "ادهنوا صينية فرن بالزبدة ورشّوا فيها فرينة الخبز. افردوا نصف البطاطا، ثم اللحم، ثم باقي البطاطا مع التمليس.",
+    "ادهنوا صينية فرن بالزبدة ورشّوا فيها فتات الخبز. افردوا نصف البطاطا، ثم اللحم، ثم باقي البطاطا مع التمليس.",
     "ارسموا معيّنات بالسكين على الوجه، وأضيفوا الموزاريلا المبشورة إن أردتم وقليلًا من الزبدة.",
     "اخبزوها 25 دقيقة في الفرن على 200 درجة حتى يتحمّر الوجه. زيّنوها بالصنوبر المحمّر وقدّموها مع السلطة."
    ],
@@ -4557,7 +4557,7 @@
     {
      "ingredient_id": 52,
      "nom_fr": "Escalope de poulet",
-     "nom_ar": "إسكالوب دجاج",
+     "nom_ar": "شرائح صدر الدجاج",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -4604,7 +4604,7 @@
     {
      "ingredient_id": 108,
      "nom_fr": "Feuilles de brick",
-     "nom_ar": "ملسوقة",
+     "nom_ar": "أوراق البريك",
      "quantite": 12,
      "unite": "pièce",
      "placard": false,
@@ -4615,7 +4615,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -4624,7 +4624,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -4660,9 +4660,9 @@
     "قطّعوا الدجاج مكعبات صغيرة. اقطعوا البصل شرائح رقيقة.",
     "قلّبوا البصل 15 دقيقة على نار هادئة في 5 ملاعق من الزيت مع رشة ملح دون أن يحترق.",
     "أضيفوا الدجاج والبهارات السبعة والملح واطهوه 8 دقائق. بعيدًا عن النار، أضيفوا السماق وعصير الليمون والصنوبر المحمّر. اتركوه يفتر.",
-    "ضعوا ورقة ملسوقة، وضعوا ملعقتين من الحشوة في الأسفل، واثنوا الجانبين ولفّوها كالسيجار بإحكام.",
+    "ضعوا ورقة بريك، وضعوا ملعقتين من الحشوة في الأسفل، واثنوا الجانبين ولفّوها كالسيجار بإحكام.",
     "رتّبوا اللفائف في صينية وادهنوها بباقي الزيت ورشّوا عليها قليلًا من السماق.",
-    "اخبزوها 15 إلى 20 دقيقة في الفرن على 200 درجة حتى تتحمّر. قدّموها مع الياغورت."
+    "اخبزوها 15 إلى 20 دقيقة في الفرن على 200 درجة حتى تتحمّر. قدّموها مع الزبادي."
    ],
    "astuce_fr": "Version moderne du musakhan, très demandée pendant le Ramadan. Les rouleaux crus se congèlent bien : faites-les cuire directement sans décongeler (5 minutes de plus).",
    "astuce_ar": "نسخة عصرية من المسخّن، مطلوبة جدًا في رمضان. يمكن تجميد اللفائف نيئة ثم خبزها مباشرة دون إذابة (5 دقائق إضافية).",
@@ -4765,7 +4765,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -4812,7 +4812,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -4889,7 +4889,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -4922,7 +4922,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -4932,17 +4932,15 @@
      "ingredient_id": 19,
      "nom_fr": "Menthe fraîche",
      "nom_ar": "نعناع",
-     "quantite": 1,
+     "quantite": 0.5,
      "unite": "botte",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "½ botte",
-     "note_ar": "نصف باقة"
+     "optionnel": false
     },
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -5024,7 +5022,7 @@
     "قطّعوا الأوراق الكبيرة نصفين. ضعوا ملعقة من الحشوة على كل قطعة، واثنوا الجانبين ولفّوها بإحكام.",
     "افرشوا قاع القدر بالعروق ودوائر البطاطا. رتّبوا اللفائف متلاصقة فوقها مع دسّ فصوص الثوم بينها.",
     "ضعوا صحنًا فوقها، وصبّوا ماءً ساخنًا حتى الصحن، وباقي الزيت وعصير الليمونة الثانية. اطهوها 45 دقيقة على نار هادئة.",
-    "اتركوها تفتر في القدر قبل التقديم مع الياغورت."
+    "اتركوها تفتر في القدر قبل التقديم مع الزبادي."
    ],
    "astuce_fr": "Plus faciles à trouver que les feuilles de vigne en Tunisie, les blettes du marché (« selq ») donnent un plat très tendre. Choisissez des feuilles larges et sans trous.",
    "astuce_ar": "السلق أسهل إيجادًا من ورق العنب في تونس، ويعطي طبقًا طريًا جدًا. اختاروا أوراقًا عريضة بلا ثقوب.",
@@ -5073,7 +5071,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 6,
      "unite": "pièce",
      "placard": false,
@@ -5111,7 +5109,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5129,7 +5127,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5150,7 +5148,7 @@
     "قشّروا البطاطا وقطّعوها مكعبات صغيرة بحجم 1 سم. اقطعوا البصل شرائح.",
     "سخّنوا الزيت في مقلاة كبيرة، وأضيفوا البطاطا وحمّروها 12 دقيقة على نار متوسطة مع التحريك.",
     "أضيفوا البصل وغطّوا واتركوها 5 دقائق حتى تطرى البطاطا.",
-    "اخفقوا البيض مع الملح والفلفل الأكحل والكمون. صبّوه على البطاطا.",
+    "اخفقوا البيض مع الملح والفلفل الأسود والكمون. صبّوه على البطاطا.",
     "حرّكوا بلطف دقيقتين أو ثلاثًا حتى يتماسك البيض ويبقى طريًا. رشّوا البقدونس وقدّموها مع الخبز والزيتون."
    ],
    "astuce_fr": "Le petit-déjeuner des jours de froid. Pour le relever, ajoutez une cuillère de shatta (piment palestinien) ou d'harissa au moment de servir.",
@@ -5188,7 +5186,7 @@
     {
      "ingredient_id": 14,
      "nom_fr": "Chou-fleur",
-     "nom_ar": "قرنبيط / نوار",
+     "nom_ar": "قرنبيط",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -5199,7 +5197,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 3,
      "unite": "pièce",
      "placard": false,
@@ -5208,7 +5206,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 4,
      "unite": "c. à soupe",
      "placard": true,
@@ -5228,7 +5226,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5266,7 +5264,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -5311,9 +5309,9 @@
    "etapes_ar": [
     "فصّصوا القرنبيط زهرات واطهوها 15 دقيقة في ماء مغلي مملّح حتى تطرى جيدًا. صفّوها واتركوها تبرد.",
     "اهرسوها بالشوكة هرسًا خشنًا (يجب أن تبقى قطع).",
-    "أضيفوا البصل الأخضر والبقدونس المفرومين والبيض والفارينة والبهارات السبعة والكمون والقرفة والفلفل الأكحل والملح. اخلطوا جيدًا.",
+    "أضيفوا البصل الأخضر والبقدونس المفرومين والبيض والدقيق والبهارات السبعة والكمون والقرفة والفلفل الأسود والملح. اخلطوا جيدًا.",
     "سخّنوا سنتيمترًا من الزيت في مقلاة. ضعوا ملاعق من الخليط وافردوها قليلًا.",
-    "حمّروها 3 دقائق من كل جهة وصفّوها على ورق. قدّموها ساخنة أو باردة مع الياغورت أو السلطة."
+    "حمّروها 3 دقائق من كل جهة وصفّوها على ورق. قدّموها ساخنة أو باردة مع الزبادي أو السلطة."
    ],
    "astuce_fr": "Très proche de nos « maakouda » : une bonne façon de finir un chou-fleur. Bien égoutté, le chou-fleur donne des beignets qui n'absorbent pas trop d'huile.",
    "astuce_ar": "قريبة جدًا من المعقودة التونسية، وطريقة جيدة لاستعمال القرنبيط المتبقّي. كلما صُفّي القرنبيط جيدًا قلّ امتصاص الزيت.",
@@ -5372,7 +5370,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -5469,7 +5467,7 @@
     {
      "ingredient_id": 23,
      "nom_fr": "Concombre",
-     "nom_ar": "فقوس / خيار",
+     "nom_ar": "خيار",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -5491,7 +5489,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5513,7 +5511,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -5629,7 +5627,7 @@
     {
      "ingredient_id": 23,
      "nom_fr": "Concombre",
-     "nom_ar": "فقوس / خيار",
+     "nom_ar": "خيار",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -5673,7 +5671,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5693,7 +5691,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -5804,7 +5802,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -5824,7 +5822,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5886,7 +5884,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -5955,7 +5953,7 @@
    ],
    "etapes_ar": [
     "ذوّبوا الخميرة والسكر في 0,1 لتر من الماء الفاتر وانتظروا 10 دقائق حتى تتخمّر.",
-    "اخلطوا الفارينة والملح، وأضيفوا الخميرة والزيت وحوالي 0,22 لتر من الماء الفاتر. اعجنوا 8 إلى 10 دقائق حتى يصبح العجين لينًا ولزجًا قليلًا.",
+    "اخلطوا الدقيق والملح، وأضيفوا الخميرة والزيت وحوالي 0,22 لتر من الماء الفاتر. اعجنوا 8 إلى 10 دقائق حتى يصبح العجين لينًا ولزجًا قليلًا.",
     "غطّوه واتركوه يتخمّر ساعة إلى ساعة ونصف حتى يتضاعف حجمه.",
     "سخّنوا الفرن على 250 درجة مع صينية مقلوبة أو حجر بيتزا بداخله (أو سخّنوا مقلاة من الحديد الزهر).",
     "قسّموا العجين 6 كرات، وافردوها باليد أقراصًا بسمك 1 سم، واصنعوا حفرًا صغيرة بأطراف الأصابع. رشّوا السماق إن أحببتم.",
@@ -5997,7 +5995,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6051,7 +6049,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -6060,7 +6058,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -6083,15 +6081,15 @@
     "Faites cuire 12 à 15 minutes au four à 230 °C, jusqu'à ce qu'ils soient bien dorés. Servez avec un œuf dur, du zaatar ou du fromage."
    ],
    "etapes_ar": [
-    "ذوّبوا الخميرة والسكر في الحليب الفاتر. اخلطوها مع الفارينة والملح والزيت وحوالي 0,15 لتر من الماء الفاتر. اعجنوا 10 دقائق حتى يصبح العجين ناعمًا.",
+    "ذوّبوا الخميرة والسكر في الحليب الفاتر. اخلطوها مع الدقيق والملح والزيت وحوالي 0,15 لتر من الماء الفاتر. اعجنوا 10 دقائق حتى يصبح العجين ناعمًا.",
     "غطّوه واتركوه يتخمّر ساعة.",
     "قسّموه 6 كرات. لفّوا كل كرة على شكل حبل بطول 40 سم، والصقوا الطرفين لتشكيل حلقة كبيرة بيضاوية.",
-    "اغمسوا كل حلقة في وعاء ماء محلّى (ملعقتان من السكر لـ 0,2 لتر)، ثم لفّوها في الجلجلان حتى تتغطى جيدًا.",
+    "اغمسوا كل حلقة في وعاء ماء محلّى (ملعقتان من السكر لـ 0,2 لتر)، ثم لفّوها في السمسم حتى تتغطى جيدًا.",
     "ضعوها في صينية، ومدّوها قليلًا على شكل بيضاوي واتركوها تتخمّر 30 دقيقة.",
     "اخبزوها 12 إلى 15 دقيقة في الفرن على 230 درجة حتى تتحمّر جيدًا. قدّموها مع بيضة مسلوقة أو الزعتر أو الجبن."
    ],
    "astuce_fr": "À Jérusalem, on le vend dans la rue avec un œuf dur et un cornet de zaatar. Le sésame se trouve en vrac chez les grainetiers de Sousse, bien moins cher qu'en sachet.",
-   "astuce_ar": "في القدس يُباع في الشارع مع بيضة مسلوقة وقرطاس زعتر. يوجد الجلجلان سائبًا عند بائعي الحبوب في سوسة بسعر أقل من الأكياس.",
+   "astuce_ar": "في القدس يُباع في الشارع مع بيضة مسلوقة وقرطاس زعتر. يوجد السمسم سائبًا عند بائعي الحبوب في سوسة بسعر أقل من الأكياس.",
    "sources": [
     "https://falasteenifoodie.com/kaak-al-quds-sesame-bread/",
     "https://palestineinadish.com/recipes/kaek-al-quds-a-crusty-and-simple-jerusalem-sesame-bread/"
@@ -6125,7 +6123,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6172,14 +6170,14 @@
     "Posez-la sur le dôme chaud : elle cuit en 1 minute. Retournez 20 secondes, puis empilez sous un torchon pour qu'elle reste souple."
    ],
    "etapes_ar": [
-    "اخلطوا الفارينة والملح والخميرة والسكر. أضيفوا تدريجيًا حوالي 0,32 لتر من الماء الفاتر واعجنوا 10 دقائق حتى يصبح العجين لينًا جدًا.",
+    "اخلطوا الدقيق والملح والخميرة والسكر. أضيفوا تدريجيًا حوالي 0,32 لتر من الماء الفاتر واعجنوا 10 دقائق حتى يصبح العجين لينًا جدًا.",
     "قسّموه 8 كرات وادهنوها بقليل من الزيت، وغطّوها واتركوها ترتاح ساعة.",
     "سخّنوا على نار قوية مقلاة ووك مقلوبة (الجهة المحدّبة إلى الأعلى) أو مقلاة كبيرة.",
     "افردوا كرة ثم مدّوها على ظهر اليدين مع تدويرها حتى تصبح شبه شفافة (حوالي 40 سم).",
     "ضعوها على القبّة الساخنة: تنضج في دقيقة. اقلبوها 20 ثانية ثم رصّوها تحت منشفة لتبقى طرية."
    ],
    "astuce_fr": "C'est le pain qui sert de base au mansaf. Le geste demande un peu d'entraînement : les premières galettes peuvent être plus épaisses, elles seront tout aussi bonnes. Une grande malsouka n'est pas un bon remplacement (trop fine et cassante).",
-   "astuce_ar": "هو الخبز الذي يوضع أساسًا للمنسف. تحتاج الحركة قليلًا من التمرين: قد تكون الأرغفة الأولى أسمك لكنها ستكون لذيذة أيضًا. الملسوقة الكبيرة ليست بديلًا جيدًا (رقيقة وهشّة جدًا).",
+   "astuce_ar": "هو الخبز الذي يوضع أساسًا للمنسف. تحتاج الحركة قليلًا من التمرين: قد تكون الأرغفة الأولى أسمك لكنها ستكون لذيذة أيضًا. أوراق البريك الكبيرة ليست بديلًا جيدًا (رقيقة وهشّة جدًا).",
    "sources": [
     "https://en.wikipedia.org/wiki/Shrak",
     "https://www.alphafoodie.com/markouk-saj-bread/",
@@ -6215,7 +6213,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -6224,7 +6222,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -6291,7 +6289,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -6350,7 +6348,7 @@
     "Faites cuire 18 à 20 minutes au four à 180 °C : elles doivent rester claires dessus et dorées dessous. Laissez refroidir avant de les ranger en boîte."
    ],
    "etapes_ar": [
-    "اخلطوا السميد والفارينة واليانسون وحبة البركة والجلجلان. صبّوا الزبدة المذابة وافركوا الخليط بين اليدين دقيقتين حتى تتشرّبها.",
+    "اخلطوا السميد والدقيق واليانسون وحبة البركة والسمسم. صبّوا الزبدة المذابة وافركوا الخليط بين اليدين دقيقتين حتى تتشرّبها.",
     "ذوّبوا الخميرة والسكر في الحليب الفاتر وأضيفوها مع ماء الزهر. اعجنوا بالقدر الكافي فقط للحصول على عجين لين. غطّوه واتركوه 30 دقيقة.",
     "اعجنوا عجينة التمر مع القرفة وقطعة صغيرة من الزبدة، ولفّوها أصابع رفيعة (1 سم).",
     "خذوا كرة من العجين بحجم الجوزة وافردوها مستطيلًا، وضعوا إصبع تمر ولفّوها عليه. أغلقوها على شكل حلقة.",
@@ -6445,7 +6443,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -6478,7 +6476,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6551,7 +6549,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -6560,7 +6558,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.05,
      "unite": "kg",
      "placard": true,
@@ -6660,7 +6658,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -6692,7 +6690,7 @@
    "etapes_ar": [
     "القشطة: ذوّبوا النشاء في 0,5 لتر من الحليب البارد وأضيفوا الكريمة وملعقتين من السكر. كثّفوها على نار متوسطة مع التحريك المستمر، ثم أضيفوا ملعقة من ماء الزهر (وماء الورد). غطّوها ملامسةً للسطح وضعوها في الثلاجة ساعتين.",
     "القطر: اغلوا 0,2 كغ من السكر مع 0,15 لتر من الماء 8 دقائق، ثم أضيفوا عصير الليمون وباقي ماء الزهر. اتركوه يبرد.",
-    "العجين: اخلطوا في الخلاط الفارينة والسميد والخميرة ومسحوق الخبز وملعقة سكر و0,2 لتر من الحليب الفاتر و0,15 لتر من الماء الفاتر حتى يصبح العجين ناعمًا وسائلًا نوعًا ما. اتركوه 30 دقيقة حتى تظهر فقاعات.",
+    "العجين: اخلطوا في الخلاط الدقيق والسميد والخميرة ومسحوق الخبز وملعقة سكر و0,2 لتر من الحليب الفاتر و0,15 لتر من الماء الفاتر حتى يصبح العجين ناعمًا وسائلًا نوعًا ما. اتركوه 30 دقيقة حتى تظهر فقاعات.",
     "سخّنوا مقلاة غير لاصقة على نار متوسطة دون دهن. صبّوا ملاعق صغيرة (أقراص بقطر 7 إلى 8 سم) واطهوها من جهة واحدة حتى يمتلئ الوجه بالثقوب ويجفّ (دقيقة إلى دقيقتين). لا تقلبوها.",
     "ضعوها على منشفة وغطّوها لتبقى طرية. عندما تفتر، اضغطوا حواف كل قرص على نصف محيطه لتشكيل قمع مفتوح.",
     "احشوها بالقشطة بكيس الحلواني أو بملعقة، واغمسوا جهة القشطة في الفستق، وقدّموها باردة مع القطر على حدة."
@@ -6733,7 +6731,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -6742,7 +6740,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.05,
      "unite": "kg",
      "placard": true,
@@ -6818,7 +6816,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -6860,7 +6858,7 @@
    ],
    "etapes_ar": [
     "القطر: اغلوا 0,25 كغ من السكر مع 0,2 لتر من الماء 8 دقائق، ثم أضيفوا عصير الليمون وماء الزهر. اتركوه يبرد تمامًا.",
-    "العجين: اخلطوا في الخلاط الفارينة والسميد ونوعي الخميرة وملعقة سكر والحليب الفاتر و0,15 لتر من الماء الفاتر. اتركوه 30 دقيقة.",
+    "العجين: اخلطوا في الخلاط الدقيق والسميد ونوعي الخميرة وملعقة سكر والحليب الفاتر و0,15 لتر من الماء الفاتر. اتركوه 30 دقيقة.",
     "اطهوا أقراصًا بقطر 10 سم من جهة واحدة في مقلاة غير لاصقة دون دهن، حتى يجفّ الوجه ويمتلئ بالثقوب. غطّوها بمنشفة.",
     "اجرشوا الجوز واخلطوه مع ملعقتين من السكر والقرفة.",
     "ضعوا ملعقة من الحشوة على كل قرص، واطووه على شكل نصف هلال واضغطوا الحواف بقوة لتلتصق جيدًا.",
@@ -6903,7 +6901,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -6950,7 +6948,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -6983,7 +6981,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -7009,12 +7007,12 @@
     "Égouttez-les et plongez-les aussitôt 1 minute dans le sirop froid. Parsemez de sésame et servez."
    ],
    "etapes_ar": [
-    "اخلطوا الفارينة والنشاء والخميرة وملعقة سكر والملح. أضيفوا حوالي 0,3 لتر من الماء الفاتر مع الخفق حتى تحصلوا على عجين كثيف ولزج وناعم (مثل عجين الفطائر).",
+    "اخلطوا الدقيق والنشاء والخميرة وملعقة سكر والملح. أضيفوا حوالي 0,3 لتر من الماء الفاتر مع الخفق حتى تحصلوا على عجين كثيف ولزج وناعم (مثل عجين الفطائر).",
     "غطّوه واتركوه يتخمّر ساعة: يجب أن يتضاعف وتظهر فيه فقاعات.",
     "حضّروا القطر: اغلوا باقي السكر مع 0,2 لتر من الماء 10 دقائق، وأضيفوا عصير الليمون وماء الزهر. اتركوه يبرد تمامًا.",
     "سخّنوا الزيت على نار متوسطة. بملعقة مغموسة في الزيت (أو بعصر العجين في قبضة اليد)، أسقطوا كرات بحجم البندقة.",
     "اقلوها 6 إلى 8 دقائق مع التحريك حتى تتحمّر جيدًا وتصبح صلبة. قلي أوّل على نار هادئة ثم نار أقوى يجعلها أكثر قرمشة.",
-    "صفّوها واغمسوها فورًا دقيقة في القطر البارد. رشّوا الجلجلان وقدّموها."
+    "صفّوها واغمسوها فورًا دقيقة في القطر البارد. رشّوا السمسم وقدّموها."
    ],
    "astuce_fr": "Cousines de nos « zlabia » et « bambalouni » : même pâte levée, mais en petites billes trempées dans le sirop. À manger le jour même, elles ramollissent ensuite.",
    "astuce_ar": "قريبة من الزلابية والبمبالوني عندنا: العجين المختمر نفسه لكن على شكل كرات صغيرة مغموسة في القطر. تؤكل في اليوم نفسه لأنها تلين بعد ذلك.",
@@ -7052,7 +7050,7 @@
     {
      "ingredient_id": 213,
      "nom_fr": "Blé dur en grains entiers",
-     "nom_ar": "قمح حب",
+     "nom_ar": "حبوب القمح",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -7090,7 +7088,7 @@
     {
      "ingredient_id": 215,
      "nom_fr": "Fenouil en graines",
-     "nom_ar": "شمرة (حبوب)",
+     "nom_ar": "بذور الشمر",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -7128,7 +7126,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -7191,7 +7189,7 @@
     "زيّنوه بباقي الزبيب واللوز والجوز والصنوبر وجوز الهند وحبوب الرمان. قدّموه ساخنًا أو فاترًا."
    ],
    "astuce_fr": "Plat de la fête de Sainte-Barbe, très proche des desserts de blé de l'Achoura. Le blé en grains se trouve chez les grainetiers ; ne prenez pas le frik (blé vert concassé), qui ne donne pas la même texture.",
-   "astuce_ar": "طبق عيد البربارة، قريب جدًا من حلويات القمح في عاشوراء. يوجد القمح حبًّا عند بائعي الحبوب؛ لا تستعملوا الفريك (القمح الأخضر المجروش) لأنه لا يعطي القوام نفسه.",
+   "astuce_ar": "طبق عيد البربارة، قريب جدًا من حلويات القمح في عاشوراء. يوجد الحبوب القمحًّا عند بائعي الحبوب؛ لا تستعملوا الفريك (القمح الأخضر المجروش) لأنه لا يعطي القوام نفسه.",
    "sources": [
     "https://palestineinadish.com/recipes/burbara-or-barbara-%d8%a8%d8%b1%d8%a8%d8%a7%d8%b1%d8%a9/",
     "https://littlesunnykitchen.com/wheat-berry-burbara/",
@@ -7236,7 +7234,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -7245,7 +7243,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.1,
      "unite": "kg",
      "placard": true,
@@ -7294,7 +7292,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -7334,7 +7332,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7378,7 +7376,7 @@
    "etapes_ar": [
     "اغلوا بذور الحلبة 3 دقائق في 0,5 لتر من الماء وتخلّصوا من الماء. كرّروا ذلك مرتين (لإزالة المرارة). احتفظوا بماء الغلية الأخيرة وصفّوا البذور.",
     "القطر: اغلوا 0,4 كغ من السكر مع 0,3 لتر من الماء 10 دقائق، ثم أضيفوا عصير الليمون وماء الزهر. اتركوه يبرد.",
-    "ذوّبوا الخميرة وملعقة سكر في الحليب الفاتر. في وعاء كبير، اخلطوا السميد والفارينة والجلجلان وحبة البركة واليانسون وبذور الحلبة.",
+    "ذوّبوا الخميرة وملعقة سكر في الحليب الفاتر. في وعاء كبير، اخلطوا السميد والدقيق والسمسم وحبة البركة واليانسون وبذور الحلبة.",
     "أضيفوا زيت الزيتون وافركوا باليدين، ثم الحليب وحوالي 0,1 لتر من ماء الحلبة. اخلطوا حتى يصبح العجين طريًا.",
     "ادهنوا صينية بقطر 30 سم بالزيت، وافردوا العجين بالضغط باليد، وارسموا معيّنات وضعوا لوزة في وسط كل منها. اتركوه 30 دقيقة.",
     "اخبزوه 35 إلى 40 دقيقة في الفرن على 180 درجة حتى يتحمّر الوجه جيدًا. اسقوه فورًا بالقطر البارد واتركوه يتشرّبه قبل التقطيع."
@@ -7421,7 +7419,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -7488,7 +7486,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -7508,7 +7506,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -7532,7 +7530,7 @@
     "Rangez sur une plaque huilée, badigeonnez d'huile et faites cuire 15 à 20 minutes au four à 220 °C, jusqu'à ce qu'ils soient dorés."
    ],
    "etapes_ar": [
-    "ذوّبوا الخميرة والسكر في قليل من الماء الفاتر. اخلطوها مع الفارينة وملعقة ملح و3 ملاعق زيت وحوالي 0,28 لتر من الماء الفاتر. اعجنوا 8 دقائق وغطّوا العجين واتركوه يتخمّر ساعة.",
+    "ذوّبوا الخميرة والسكر في قليل من الماء الفاتر. اخلطوها مع الدقيق وملعقة ملح و3 ملاعق زيت وحوالي 0,28 لتر من الماء الفاتر. اعجنوا 8 دقائق وغطّوا العجين واتركوه يتخمّر ساعة.",
     "افرموا السبانخ وملّحوها بباقي الملح واتركوها 10 دقائق. اعصروها بقوة باليد لإخراج كل الماء.",
     "اخلطوا السبانخ مع البصل المفروم ناعمًا جدًا وعصير الليمون والسماق و4 ملاعق زيت والصنوبر.",
     "افردوا العجين بسمك 3 مم واقطعوا أقراصًا بقطر 10 سم. ضعوا ملعقة من الحشوة في الوسط.",
@@ -7791,7 +7789,7 @@
     {
      "ingredient_id": 130,
      "nom_fr": "Café moulu",
-     "nom_ar": "قهوة مرحية",
+     "nom_ar": "قهوة مطحونة",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -7877,7 +7875,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,

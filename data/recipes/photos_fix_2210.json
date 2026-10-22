@@ -1,0 +1,17 @@
+{
+ "djaj-mhammer": null,
+ "moules-marinieres": null,
+ "brioche": {
+  "source_page": "https://commons.wikimedia.org/wiki/File:Brioche.jpg",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Brioche.jpg",
+  "author": "Rainer Zenz",
+  "license": "CC BY-SA 3.0",
+  "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "title": "File:Brioche.jpg",
+  "score": 5,
+  "note": "auteur retrouvé sur Commons : « Brioche, by Rainer Zenz » (de.wikipedia), licence GFDL → CC BY-SA 3.0",
+  "photo": "public/recipes/brioche.webp",
+  "thumb": "public/recipes/brioche-thumb.webp",
+  "source": "photo"
+ }
+}

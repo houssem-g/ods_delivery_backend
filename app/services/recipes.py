@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import ApiError
@@ -77,6 +77,26 @@ TEXTS = {
         "unpriced_note": "بدون سعر معروف (الحريف يقبل سعر الوصل): {names}.",
     },
 }
+
+
+# Arabic number + noun agreed (QA 22/10: « 30 قطع », « 12 حصص »): one, two (alone), 3–10, 11 and more
+AR_SERVINGS = {
+    "people": ("شخص", "شخصان", "أشخاص", "شخصاً"),
+    "pieces": ("قطعة", "قطعتان", "قطع", "قطعة"),
+    "portions": ("حصة", "حصتان", "حصص", "حصة"),
+}
+
+
+def servings_text(n: int, unit: str, lang: str) -> str:
+    """« 4 pers. », « 30 pièces » / « 4 أشخاص », « قطعتان », « 30 قطعة », « 12 شخصاً »."""
+    if lang != "ar":
+        return f"{n} {TEXTS['fr'].get(unit, TEXTS['fr']['people'])}"
+    one, two, few, many = AR_SERVINGS.get(unit, AR_SERVINGS["people"])
+    if n == 2:
+        return two
+    if 3 <= n <= 10:
+        return f"{n} {few}"
+    return f"{n} {many if n >= 11 else one}"
 
 
 def _lang(value: Any) -> str:
@@ -420,9 +440,42 @@ PAGE_SIZE_MAX = 40
 _AR_FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ة": "ه", "ى": "ي", "ؤ": "و", "ئ": "ي"})
 
 
+_LIGATURES = str.maketrans({"œ": "oe", "Œ": "oe", "æ": "ae", "Æ": "ae"})
+
+
 def fold(*values: Any) -> str:
-    """Titles / a query folded the same way: no case, no accent, Arabic letters unified."""
-    return text_norm.normalize_text(*values).translate(_AR_FOLD)
+    """Titles / a query folded the same way: no case, no accent, Arabic letters unified, « œ » = « oe »
+    (QA 22/10: « boeuf », « oeufs » found nothing — NFD does not split the ligature; the phone keyboards have
+    no « œ »). Done here and not in text_norm: the places' stored search_norm would no longer match."""
+    return text_norm.normalize_text(*(str(v).translate(_LIGATURES) for v in values)).translate(_AR_FOLD)
+
+
+# Usual spellings of the same word (QA 22/10, owner n° 17): a query word equal to one of them — or the start
+# of one, from 4 letters — also looks for the others. Folded forms (fold above). Synonyms only, no fuzzy
+# search.
+SEARCH_SYNONYMS: tuple[tuple[str, ...], ...] = (
+    ("tagine", "tajine", "tajin", "طاجين", "طجين"),
+    ("couscous", "kousksi", "kosksi", "kouskous", "kesksou", "كسكسي", "كسكس"),
+    ("mloukhia", "mlokhia", "molokhia", "mloukhiya", "molokheya", "mouloukhia", "ملوخيه"),
+    ("chakchouka", "shakshuka", "shakshouka", "chakchuka", "شكشوكه"),
+    ("harissa", "hrissa", "هريسه"),
+    ("dajaj", "djej", "djaj", "poulet", "دجاج"),
+    ("maadnous", "ma9dnous", "ma3dnous", "persil", "بقدونس", "معدنوس"),
+    ("batata", "بطاطا", "بطاطس"),
+    ("merguez", "mirgaz", "mergaz", "مرقاز"),
+)
+_SYNONYM_OF: dict[str, tuple[str, ...]] = {w: group for group in SEARCH_SYNONYMS for w in group}
+
+
+def search_words(token: str) -> list[str]:
+    """The folded query word and its usual spellings (« tajine » → tajine, tagine, طاجين…)."""
+    words = [token]
+    groups = {_SYNONYM_OF[token]} if token in _SYNONYM_OF else set()
+    if len(token) >= 4:
+        groups |= {g for w, g in _SYNONYM_OF.items() if w.startswith(token)}
+    for group in groups:
+        words += [w for w in group if w not in words]
+    return words
 
 
 def _filters(payload: dict[str, Any]) -> list[Any]:
@@ -465,8 +518,11 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
     if max_time > 0:
         where.append(Recipe.time_min <= max_time)
     for token in fold(str(payload.get("q") or "")[:80]).split()[:6]:
-        escaped = token.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        where.append(Recipe.search_norm.like(f"%{escaped}%"))
+        likes = []
+        for word in search_words(token):
+            escaped = word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            likes.append(Recipe.search_norm.like(f"%{escaped}%"))
+        where.append(or_(*likes) if len(likes) > 1 else likes[0])
     return where
 
 
@@ -903,9 +959,8 @@ def items_text(
     test: bool,
     others: list[str] | None = None,
 ) -> str:
-    t = TEXTS[lang]
     titles = " · ".join(
-        f"{r.title_ar if lang == 'ar' else r.title_fr} ({n} {t[r.servings_unit]})"
+        f"{r.title_ar if lang == 'ar' else r.title_fr} ({servings_text(n, r.servings_unit, lang)})"
         for r, n in ((data.by_id[rid], n) for rid, n in items)
     )
     head = f"{TEST_PREFIX if test else ''}{LABEL} {titles}"

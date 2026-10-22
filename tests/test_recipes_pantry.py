@@ -103,3 +103,6 @@ def test_dictionary_resolves_plurals_and_counts_a_family_as_one():
     assert d.resolve("poulet") == 50  # synonym of the referential file
     assert d.resolve("felfel akhdher morabba") == 5 and d.resolve("فلفل أخضر") == 5
     assert d.widen({50}) == {50, 51}
+    # QA 22/10: the plural of each word of a name of several words
+    assert d.resolve("cuisse de poulet") == 51 and d.resolve("Poivrons verts") == 5
+    assert rp.singular("pommes de terre") == "pomme de terre" and rp.singular("riz") == "riz"
