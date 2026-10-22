@@ -897,7 +897,33 @@ async def test_a_recipe_order_is_capped_at_80_dt_and_its_ceiling_holds_at_the_ti
         and above.json()["error"] == "above_recipe_ceiling"
         and above.json()["max"] == 33
     )
-    assert (await step({"status": "purchased", "purchase_amount": 31.5})).status_code == 200
+
+    # QA 22/10 N1: an accepted substitute moves the maximum by its price difference, never lifts it
+    async def substitute(missing, missing_price, price, quantity=1):
+        check = await ok(
+            client,
+            courier,
+            "reportUnavailableItems",
+            {
+                "order_id": order_id,
+                "missing_text": missing,
+                "missing_price": missing_price,
+                "substitute_text": f"{missing} (autre marque)",
+                "substitute_price": price,
+                "quantity": quantity,
+            },
+        )
+        body = {"order_id": order_id, "stock_check_id": check["stock_check"]["id"], "decision": "accept"}
+        await ok(client, qa, "answerStockCheck", body)
+
+    await substitute("Merguez : 0,6 kg", 10, 6)  # cheaper: 33 − 4 = 29
+    for amount in (150, 31.5):
+        cheaper = await step({"status": "purchased", "purchase_amount": amount})
+        assert cheaper.status_code == 409 and cheaper.json()["max"] == 29
+    await substitute("Harissa", 2, 5, quantity=2)  # dearer: 29 + 6 = 35, recomputed at each substitute
+    dearer = await step({"status": "purchased", "purchase_amount": 35.5})
+    assert dearer.status_code == 409 and dearer.json()["max"] == 35
+    assert (await step({"status": "purchased", "purchase_amount": 34})).status_code == 200
 
 
 def test_the_head_line_of_a_recipe_order_is_never_an_article_in_a_notice():

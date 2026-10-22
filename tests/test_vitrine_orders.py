@@ -3,6 +3,7 @@ QA path, the signed events to the linked ODS restaurant (§7) and its « plat ma
 
 import uuid
 from datetime import UTC, datetime
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -286,6 +287,33 @@ async def test_an_accepted_offer_sends_the_order_to_ods_then_every_step(client, 
     )
     assert r.status_code == 409 and r.json()["error"] == "above_vitrine_total" and r.json()["max"] == 6.5
     assert (await reload(Order, uuid.UUID(order_id))).status == "at_shop"
+    # QA 22/10 N1: a cheaper substitute the customer accepted LOWERS the total kept (6.5 − 1), never lifts it
+    async with SessionLocal() as s:
+        s.add(
+            OrderStockCheck(
+                order_id=uuid.UUID(order_id),
+                missing_text="Thé à la menthe",
+                missing_price=Decimal("1.5"),
+                substitute_text="Thé vert",
+                substitute_price=Decimal("0.5"),
+                quantity=1,
+                status="substitute_accepted",
+                decided_by="customer",
+                deadline_at=datetime.now(UTC),
+            )
+        )
+        await s.commit()
+    for amount in (150, 6.5):
+        r = await client.patch(
+            f"/api/entities/Order/{order_id}",
+            json={"status": "purchased", "purchase_amount": amount},
+            headers=auth(qa_courier),
+        )
+        assert r.status_code == 409 and r.json()["max"] == 5.5
+    async with SessionLocal() as s:
+        drop = text("DELETE FROM order_stock_checks WHERE order_id = :o")
+        await s.execute(drop, {"o": uuid.UUID(order_id)})
+        await s.commit()
     await step(client, qa_courier, order_id, {"status": "purchased", "purchase_amount": 6.5})
     await step(client, qa_courier, order_id, {"status": "on_the_way"})
     await step(client, qa_courier, order_id, {"status": "delivered"})

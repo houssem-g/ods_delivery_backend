@@ -167,6 +167,25 @@ async def substitute_accepted(session: AsyncSession, order_id: uuid.UUID) -> boo
     ).scalar_one() > 0
 
 
+async def accepted_delta(session: AsyncSession, order_id: uuid.UUID) -> Decimal:
+    """QA 22/10 N1: what the substitutes the customer accepted add to the ticket's maximum (recipe ceiling,
+    Vitrine total) — (substitute − missing) × quantity each, NEGATIVE when the substitute is cheaper. The
+    missing price counts 0 when unknown; a substitute accepted without a price adds nothing (above the
+    maximum, the courier asks again with its price). Same rule as the app's `acceptedSubstituteDelta`."""
+    c = OrderStockCheck
+    rows = (
+        await session.execute(
+            select(c.substitute_price, c.missing_price, c.quantity).where(
+                c.order_id == order_id, c.status == DECISIONS["accept"], c.substitute_price.is_not(None)
+            )
+        )
+    ).all()
+    return sum(
+        ((sub - (missing or Decimal(0))) * max(1, quantity or 1) for sub, missing, quantity in rows),
+        Decimal(0),
+    )
+
+
 _LEADING_QUANTITY = re.compile(r"\d{1,3}x?|x\d{1,3}")
 _TRAILING_QUANTITY = re.compile(r"x\d{1,3}|\d{1,3}x")
 

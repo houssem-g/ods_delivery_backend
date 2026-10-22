@@ -202,36 +202,44 @@ async def _vitrine_total_kept(session: AsyncSession, order: Order) -> None:
     own yes, i.e. a substitute he accepted in « Article indisponible »."""
     if order.source != "vitrine" or order.budget_max is None or order.purchase_amount is None:
         return
-    if order.purchase_amount <= order.budget_max:
-        return
-    if await stock_checks.substitute_accepted(session, order.id):
+    kept = await _kept_maximum(session, order)
+    if order.purchase_amount <= kept:
         return
     raise ApiError(
         409,
         "above_vitrine_total",
         "The ticket is above the Vitrine order's total: the customer did not agree to pay more",
-        max=float(order.budget_max),
+        max=float(kept),
     )
+
+
+async def _kept_maximum(session: AsyncSession, order: Order) -> Decimal:
+    """QA 22/10 N1: the ticket's maximum moved by the substitutes the customer accepted — + or − their price
+    difference, recomputed at each one — never lifted altogether by a yes (a cheaper substitute used to let
+    a 150 DT ticket through). Above it, the customer's yes again (« Article indisponible »)."""
+    budget = order.budget_max or Decimal(0)
+    return max(Decimal(0), budget + await stock_checks.accepted_delta(session, order.id))
 
 
 async def _recipe_ceiling_kept(session: AsyncSession, order: Order) -> None:
     """QA 22/10 #5: a recipe order's ceiling (the estimate's high end + 15 %, shown to the customer and the
-    courier) holds like the Vitrine total — above it only with the customer's yes (a substitute he accepted
-    in « Article indisponible »)."""
+    courier) holds like the Vitrine total — moved only by the substitutes the customer accepted in « Article
+    indisponible » (their price difference, `_kept_maximum`)."""
     if order.source == "vitrine" or order.budget_max is None or order.purchase_amount is None:
-        return
-    if order.purchase_amount <= order.budget_max:
         return
     recipe = (
         await session.execute(select(RecipeOrder.order_id).where(RecipeOrder.order_id == order.id))
     ).scalar_one_or_none()
-    if recipe is None or await stock_checks.substitute_accepted(session, order.id):
+    if recipe is None:
+        return
+    kept = await _kept_maximum(session, order)
+    if order.purchase_amount <= kept:
         return
     raise ApiError(
         409,
         "above_recipe_ceiling",
         "The ticket is above the recipe order's ceiling: the customer did not agree to pay more",
-        max=float(order.budget_max),
+        max=float(kept),
     )
 
 
