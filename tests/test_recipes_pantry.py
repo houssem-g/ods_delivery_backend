@@ -44,7 +44,8 @@ async def test_an_optional_line_never_counts_as_missing(client, qa, ods_prices):
     ojja["ingredients"][3]["optional"] = True  # persil « optionnel »
     await seed(ojja)
     a = await ok(client, qa, MATCH, {"have": [41, 1, 77]})
-    assert groups(a) == {0: ["ojja-merguez"]} and 17 in card(a, "ojja-merguez")["at_home"]
+    # QA 22/10 r3-B1: never sent as « j'ai déjà » either — it would hide the persil another recipe must buy
+    assert groups(a) == {0: ["ojja-merguez"]} and 17 not in card(a, "ojja-merguez")["at_home"]
 
 
 async def test_the_placard_is_there_unless_taken_out_and_alone_it_is_not_enough(client, qa, ods_prices):  # noqa: F811

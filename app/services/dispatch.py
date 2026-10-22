@@ -170,7 +170,8 @@ async def dispatch_order(
 
     stop = await first_stop(session, order.id)
     shop = await stop_coordinates(session, stop)
-    items = (order.items_text or "")[:60]
+    # the articles in words (QA 22/10: never « QA TEST [Recettes] Ojja… · Couscous au » cut mid-word)
+    items = order_texts.notice_items(order.items_text)
     # what every courier's lock screen shows of the order (distance aside): built once
     card = await push_design.load_card(session, order.id)
     dispatched = 0

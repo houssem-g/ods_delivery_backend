@@ -58,6 +58,8 @@ _EMOJI = re.compile("[\U0001f000-\U0001faff☀-➿⌀-⏿⬀-⯿─-◿️‍⃣
 _TEST_WORDS = re.compile(r"\bQA TEST\b:?\s*|(?<![\w-])PW-[A-Za-z0-9_-]*\s*", re.IGNORECASE)
 _TEST_ORDER = re.compile(r"QA TEST|\bPW-", re.IGNORECASE)  # same as orders.TEST_ORDER_RE
 _VITRINE_LABEL = re.compile(r"\[Vitrine\]\s*", re.IGNORECASE)
+# « [Recettes] Ojja (7 pers.) · Couscous (2 pers.) »: a recipe order's head line, not an article (QA 22/10)
+_RECIPES_LABEL = re.compile(r"\[Recettes\]", re.IGNORECASE)
 _TOTAL_LINE = re.compile(r"^\s*Total articles\b", re.IGNORECASE)
 _PRICE_TAIL = re.compile(r"\s+—\s+\d+(?:[.,]\d+)?\s*DT\b")
 
@@ -254,8 +256,8 @@ def _cart_lines(cart: dict[str, Any] | None) -> tuple[list[str], list[str]]:
 def _text_lines(items_text: str | None) -> list[str]:
     rows = []
     for raw in str(items_text or "").split("\n"):
-        if _VITRINE_LABEL.search(raw):
-            continue  # « [Vitrine] <shop> »: the shop is said elsewhere
+        if _VITRINE_LABEL.search(raw) or _RECIPES_LABEL.search(raw):
+            continue  # « [Vitrine] <shop> » / « [Recettes] <titles> »: a head line, never an article
         row = _PRICE_TAIL.sub("", strip_test(raw)).strip(" ·-")
         if row and not _TOTAL_LINE.match(row):
             rows.append(truncate(row, 60))

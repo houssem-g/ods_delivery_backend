@@ -17,6 +17,7 @@ dispatch rule); any other admin is refused (`recipes_order_disabled`).
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections import defaultdict
 from dataclasses import replace
@@ -252,21 +253,80 @@ def line_need(data: Loaded, line: RecipeLine, qty: Decimal) -> tuple[ru.Ing, Dec
     return loose, ru.to_buy_unit(qty, line.unit, loose) or qty
 
 
-def needs(data: Loaded, items: list[tuple[uuid.UUID, int]]) -> list[tuple[ru.Ing, Decimal]]:
-    """What the recipes × people need, in buying units, summed by ingredient (not rounded yet)."""
+OptionalTicks = dict[uuid.UUID, set[int | str]] | set[int | str] | None
+
+
+def _opted(with_optional: OptionalTicks, recipe_id: uuid.UUID) -> set[int | str]:
+    """The optional articles the customer ticked for this recipe (a set = the same for every recipe)."""
+    if with_optional is None:
+        return set()
+    if isinstance(with_optional, dict):
+        return with_optional.get(recipe_id) or set()
+    return with_optional
+
+
+def needs(
+    data: Loaded, items: list[tuple[uuid.UUID, int]], with_optional: OptionalTicks = None
+) -> list[tuple[ru.Ing, Decimal]]:
+    """What the recipes × people need, in buying units, summed by ingredient (not rounded yet).
+
+    QA 22/10 (owner: « facultatif = décoché par défaut, ni acheté ni compté »): a line the recipe marks
+    optional is bought only when the customer ticked it (`with_optional`, per recipe)."""
     out: list[tuple[ru.Ing, Decimal]] = []
     for recipe_id, servings in items:
         recipe = data.by_id[recipe_id]
+        opted = _opted(with_optional, recipe_id)
         for line in data.lines.get(recipe_id, []):
             ing, q = line_need(data, line, ru.scale(line.qty, servings, recipe.base_servings))
+            if line.optional and ing.id not in opted:
+                continue
             if q > 0:
                 out.append((ing, q))
     return ru.merge(out)
 
 
-def shopping(data: Loaded, items: list[tuple[uuid.UUID, int]], at_home: set[int]) -> dict[str, Any]:
-    """The list to buy (rounded, by aisle), what is at home, the weight."""
-    merged = needs(data, items)
+def optional_left(
+    data: Loaded, items: list[tuple[uuid.UUID, int]], with_optional: OptionalTicks, bought: set[int | str]
+) -> list[dict[str, Any]]:
+    """The optional articles NOT bought (« facultatif », to tick): one per ingredient, with its recipes."""
+    out: dict[int | str, dict[str, Any]] = {}
+    for recipe_id, servings in items:
+        recipe = data.by_id[recipe_id]
+        opted = _opted(with_optional, recipe_id)
+        for line in data.lines.get(recipe_id, []):
+            if not line.optional:
+                continue
+            ing, q = line_need(data, line, ru.scale(line.qty, servings, recipe.base_servings))
+            if ing.id in opted or ing.id in bought or q <= 0:
+                continue
+            doc = out.setdefault(
+                ing.id,
+                {
+                    "ingredient_id": ing.id,
+                    "name_fr": ing.name_fr,
+                    "name_ar": ing.name_ar,
+                    "aisle": ing.aisle,
+                    "unit": ing.unit,
+                    "qty": 0.0,
+                    "recipe_ids": [],
+                },
+            )
+            doc["qty"] = float(Decimal(str(doc["qty"])) + q)
+            if str(recipe_id) not in doc["recipe_ids"]:
+                doc["recipe_ids"].append(str(recipe_id))
+    for doc in out.values():
+        q = ru.round_buy(Decimal(str(doc["qty"])), doc["unit"])
+        doc["qty"] = float(q)
+        doc["text_fr"] = ru.fmt_qty(q, doc["unit"], "fr")
+        doc["text_ar"] = ru.fmt_qty(q, doc["unit"], "ar")
+    return list(out.values())
+
+
+def shopping(
+    data: Loaded, items: list[tuple[uuid.UUID, int]], at_home: set[int], with_optional: OptionalTicks = None
+) -> dict[str, Any]:
+    """The list to buy (rounded, by aisle), what is at home, the weight (optional lines only if ticked)."""
+    merged = needs(data, items, with_optional)
     buy: list[tuple[ru.Ing, Decimal]] = []
     home: list[ru.Ing] = []
     for ing, q in merged:
@@ -575,14 +635,16 @@ def _at_home(value: Any, default: set[int | str]) -> set[int | str]:
 async def get_recipe(
     session: AsyncSession, viewer: CurrentUser | None, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """{id | slug, servings?, at_home?} → the recipe: exact quantities to cook for `servings`, the list to buy
-    (rounded) without what is at home (pantry pre-ticked unless `at_home` is sent), its honest cost."""
+    """{id | slug, servings?, at_home?, with_optional?} → the recipe: exact quantities to cook for `servings`,
+    the list to buy (rounded) without what is at home (pantry pre-ticked unless `at_home` is sent), its honest
+    cost. An optional line (« facultatif ») is bought only when its id is in `with_optional` (QA 22/10)."""
     recipe = await _visible_recipe(session, viewer, payload)
     data = await load(session, ids=[recipe.id], published_only=False)
     servings = _servings(payload.get("servings"), recipe.base_servings)
     pantry = _pantry_defaults(data, [recipe.id])
     at_home = _at_home(payload.get("at_home"), pantry)
-    lst = shopping(data, [(recipe.id, servings)], at_home)
+    opted = _at_home(payload.get("with_optional"), set())
+    lst = shopping(data, [(recipe.id, servings)], at_home, opted)
     prices = await recipe_prices.prices(session)
     c = recipe_prices.cost(lst["buy"], prices)
     buy = {ing.id: q for ing, q in lst["buy"]}
@@ -600,6 +662,7 @@ async def get_recipe(
                 "referenced": not isinstance(ing.id, str),
                 "at_home": ing.id in at_home,
                 "optional": line.optional,
+                "wanted": (not line.optional) or ing.id in opted,
                 "note_fr": line.note_fr,
                 "note_ar": line.note_ar,
                 "qty": float(exact),
@@ -681,17 +744,91 @@ def _others(raw: Any, extras: Any = None) -> list[str]:
     return out[:MAX_OTHERS]
 
 
+def _item_optional(raw: Any) -> dict[uuid.UUID, set[int | str]]:
+    """Per recipe of the list, the optional articles the customer ticked (`items[].with_optional`), plus a
+    list-wide `with_optional` for every recipe (QA 22/10: « facultatif » = not bought unless ticked)."""
+    out: dict[uuid.UUID, set[int | str]] = defaultdict(set)
+    for item in (raw if isinstance(raw, list) else [])[: MAX_RECIPES * 2]:
+        rid = _uuid(item.get("recipe_id") if isinstance(item, dict) else None)
+        if rid is not None:
+            out[rid] |= _at_home(item.get("with_optional"), set())
+    return out
+
+
+def _with_optional(r: dict[str, Any]) -> dict[uuid.UUID, set[int | str]]:
+    per_item = _item_optional(r.get("items"))
+    everywhere = _at_home(r.get("with_optional"), set())
+    if everywhere:
+        for rid in list(per_item):
+            per_item[rid] |= everywhere
+    return per_item
+
+
+# « + Ajouter autre chose »: the weight of a typed article (QA 22/10 #4, the couffin and the parcel size),
+# read from its words — the usual pack of the article; anything else counts a prudent flat weight.
+OTHER_WEIGHTS: tuple[tuple[tuple[str, ...], Decimal], ...] = (
+    (("pack d eau", "pack eau", "pack"), Decimal("9")),  # 6 × 1,5 L
+    (("eau", "maa", "ماء", "مياه"), Decimal("1.5")),
+    (("lait", "halib", "حليب"), Decimal("1.05")),
+    (("jus", "soda", "boisson", "coca", "عصير", "مشروب", "gazouz", "قازوز"), Decimal("1.5")),
+    (("huile", "zit", "زيت"), Decimal("1")),
+    (
+        ("sucre", "farine", "semoule", "riz", "pates", "سكر", "فارينة", "دقيق", "سميد", "أرز", "مقرونة"),
+        Decimal("1"),
+    ),
+    (("yaourt", "yogourt", "ياغورت", "زبادي", "ياوورت"), Decimal("0.12")),
+    (("baguette", "pain", "khobz", "خبز", "باقات"), Decimal("0.25")),
+    (("oeuf", "oeufs", "بيض", "عظم"), Decimal("0.06")),
+    (("beurre", "fromage", "زبدة", "جبن", "فرماج"), Decimal("0.25")),
+)
+OTHER_FLAT_KG = Decimal("1")  # an article whose weight is not known: 1 kg each, never 0
+
+
+def _other_weight(text_: str) -> Decimal:
+    """« Lait × 2 » → 2.1 kg, « eau 1,5 L x6 » → 9 kg, « Lessive » → 1 kg (the flat weight)."""
+    raw = str(text_ or "")
+    count = 1
+    m = re.search(r"[×x]\s*(\d{1,2})\s*$", raw) or re.match(r"^\s*(\d{1,2})\s*[×x]?\s+\D", raw)
+    if m:
+        count = max(1, int(m.group(1)))
+    words = f" {fold(raw)} "
+    litres = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:l|litres?|لتر)(?![a-z])", raw.lower())
+    for keys, kg in OTHER_WEIGHTS:
+        if any(f" {fold(k)} " in words for k in keys):
+            each = kg
+            if litres and 1 <= kg < 5:  # « eau 5 L », « lait 0,5 L »; a pack keeps its 9 kg
+                each = Decimal(litres.group(1).replace(",", "."))
+            return each * count
+    if litres:
+        return Decimal(litres.group(1).replace(",", ".")) * count
+    return OTHER_FLAT_KG * count
+
+
+def others_weight(others: list[str]) -> Decimal:
+    return sum((_other_weight(o) for o in others), Decimal(0))
+
+
 async def preview_list(
     session: AsyncSession, viewer: CurrentUser | None, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """{items: [{recipe_id, servings}], at_home?: [ingredient ids], others?: [text]} → the merged list by
-    aisle, what is at home, the couffin's weight, the honest cost (and the order's ceiling when a total is
-    shown); `others` (« + Ajouter autre chose ») come back cleaned, always without a price."""
+    """{items: [{recipe_id, servings, with_optional?}], at_home?: [ingredient ids], others? / extras?} → the
+    merged list by aisle, what is at home, the optional articles not bought (« facultatif », to tick), the
+    couffin's weight (the typed articles included), the honest cost, the order's ceiling and the 80 DT cap;
+    `others` (« + Ajouter autre chose ») come back cleaned, always without a price."""
     data, items = await _items(session, viewer, payload.get("items"))
     at_home = _at_home(payload.get("at_home"), _pantry_defaults(data, [rid for rid, _ in items]))
-    lst = shopping(data, items, at_home)
+    opted = _with_optional(payload)
+    lst = shopping(data, items, at_home, opted)
     c = recipe_prices.cost(lst["buy"], await recipe_prices.prices(session))
     per_line = c.get("lines", {})
+    others = _others(payload.get("others"), payload.get("extras"))
+    bought = {ing.id for ing, _ in lst["buy"]} | {i.id for i in lst["home"]}
+    optional = optional_left(data, items, opted, bought)
+    opt_cost = recipe_prices.cost(
+        [(_opt_ing(data, o), Decimal(str(o["qty"]))) for o in optional], await recipe_prices.prices(session)
+    ).get("lines", {})
+    for o in optional:
+        o["price"] = opt_cost.get(o["ingredient_id"])
     return {
         "success": True,
         "recipes": [
@@ -705,10 +842,42 @@ async def preview_list(
         ],
         "lines": [_line_doc(ing, q, per_line.get(ing.id)) for ing, q in lst["buy"]],
         "at_home": [{"ingredient_id": i.id, "name_fr": i.name_fr, "name_ar": i.name_ar} for i in lst["home"]],
-        "weight_kg": float(lst["weight_kg"]),
+        "optional": optional,
+        "weight_kg": float(lst["weight_kg"] + others_weight(others)),
         "cost": _cost_doc(c),
-        "others": _others(payload.get("others"), payload.get("extras")),
+        **ceiling(c),
+        "others": others,
     }
+
+
+def _opt_ing(data: Loaded, doc: dict[str, Any]) -> ru.Ing:
+    """The dictionary ingredient of an optional article (for its price line)."""
+    ing = data.ings.get(doc["ingredient_id"]) if isinstance(doc["ingredient_id"], int) else None
+    return ing or ru.Ing(
+        id=doc["ingredient_id"], key=str(doc["ingredient_id"]),
+        name_fr=doc["name_fr"], name_ar=doc["name_ar"],
+        unit=doc["unit"], aisle=doc["aisle"], pantry=False, piece_kg=None,
+    )  # fmt: skip
+
+
+# QA 22/10 #5 (decision 6 of the study, « plafond 80 DT au départ »): one recipe order buys at most 80 DT
+# of goods (the high end of the estimate); the courier's ceiling = that high end + 15 % (shown to the
+# customer and the courier); a ticket above it needs the customer's yes, like the Vitrine.
+MAX_RECIPE_BASKET = Decimal("80")
+
+
+def ceiling(c: dict[str, Any]) -> dict[str, Any]:
+    """{cap, over_cap, budget_max}: the 80 DT cap and the order's ceiling (None when no price at all).
+
+    The high end of the KNOWN lines decides (a total refused under 70 % priced still has its known part);
+    without a shown total the ceiling is the cap itself (the articles without a price are paid at the
+    ticket, within that)."""
+    known_high = c.get("known_high") if c.get("available") else None
+    over = known_high is not None and Decimal(str(known_high)) > MAX_RECIPE_BASKET
+    budget = c.get("budget_max") if c.get("show_total") else None
+    if budget is None and c.get("available"):
+        budget = int(MAX_RECIPE_BASKET)
+    return {"cap": float(MAX_RECIPE_BASKET), "over_cap": over, "budget_max": budget}
 
 
 # --- the order (placeOrder `order.recipes`) ------------------------------------------------------------
@@ -766,6 +935,24 @@ async def nearest_shop(session: AsyncSession, lat: float, lng: float) -> dict[st
     }
 
 
+_SHOP_WORDS = {
+    "sprt": "Supérette", "spr": "Supérette", "superette": "Supérette", "sup": "Supérette",
+    "mg": "Magasin Général", "mag": "Magasin", "mgsn": "Magasin", "epic": "Épicerie", "epi": "Épicerie",
+}  # fmt: skip
+
+
+def shop_label(name: str | None) -> str:
+    """The places index's raw name, readable (QA 22/10): « Sprt 12 magasin Béchir 12946 » → « Supérette
+    magasin Béchir » — known abbreviations spelled out, bare numbers (index ids, branch numbers) dropped."""
+    words = []
+    for w in str(name or "").split():
+        if re.fullmatch(r"[#n°]*\d+", w, flags=re.IGNORECASE):
+            continue
+        words.append(_SHOP_WORDS.get(w.lower().strip(".")) or w)
+    out = " ".join(words).strip(" -·,")
+    return (out[:1].upper() + out[1:]) if out else str(name or "")
+
+
 def _package(weight: Decimal) -> str:
     return "petit" if weight < 3 else "moyen" if weight < 8 else "grand"
 
@@ -784,7 +971,8 @@ async def prepare_order(
         raise OrderRefused(403, "recipes_order_disabled")
     data, items = await _items(session, viewer, r.get("items"))
     at_home = _at_home(r.get("at_home"), _pantry_defaults(data, [rid for rid, _ in items]))
-    lst = shopping(data, items, at_home)
+    opted = _with_optional(r)
+    lst = shopping(data, items, at_home, opted)
     others = _others(r.get("others"), r.get("extras"))
     if not lst["buy"] and not others:
         raise OrderRefused(400, "recipes_nothing_to_buy")
@@ -815,7 +1003,11 @@ async def prepare_order(
     if unpriced:
         names = ", ".join(u["ar"] if lang == "ar" else u["fr"] for u in unpriced)
         notes.append(t["unpriced_note"].format(names=names))
-    budget = c.get("budget_max") if c.get("show_total") else None
+    cap = ceiling(c)
+    if cap["over_cap"]:
+        # QA 22/10 #5: Ma liste says it first (« Plus de 80 DT : retirez une recette… »); the server holds it
+        raise OrderRefused(400, "recipes_over_cap", max=cap["cap"], high=float(c["known_high"]))
+    budget = cap["budget_max"]
     if budget is not None and Decimal(budget) > MAX_BUDGET:
         raise OrderRefused(400, "invalid_budget", max=float(MAX_BUDGET))
     policy = r.get("unavailable_policy") if r.get("unavailable_policy") in POLICIES else "substitute"
@@ -834,8 +1026,8 @@ async def prepare_order(
             "unavailable_policy": policy,
             "estimated_price": c.get("known_high") if c.get("show_total") else None,
             "budget_max": budget,
-            "package_size": _package(lst["weight_kg"]),
-            "shop_name": shop["name"] if shop else t["nearest"],
+            "package_size": _package(lst["weight_kg"] + others_weight(others)),
+            "shop_name": shop_label(shop["name"]) if shop else t["nearest"],
             "shop_address": (shop or {}).get("address") or "",
             "shop_city": (shop or {}).get("city"),
             "shop_governorate": (shop or {}).get("governorate"),
@@ -845,9 +1037,15 @@ async def prepare_order(
     )
     extras = {
         "recipes": [
-            {"id": str(rid), "servings": n, "title_fr": data.by_id[rid].title_fr} for rid, n in items
+            {
+                "id": str(rid),
+                "servings": n,
+                "title_fr": data.by_id[rid].title_fr,
+                **({"with_optional": sorted(opted[rid], key=str)} if opted.get(rid) else {}),
+            }
+            for rid, n in items
         ],
-        "at_home": sorted(at_home),
+        "at_home": sorted(at_home, key=str),
         "lines": [
             *({"ingredient_id": i.id, "qty": float(q), "unit": i.unit} for i, q in lst["buy"]),
             *({"other": o} for o in others),
@@ -872,6 +1070,60 @@ async def record_order(
             test=extras["test"],
         )
     )
+
+
+_COUNT_TAIL = re.compile(r"^(.*\S)\s*×\s*(\d{1,2})$")
+
+
+async def order_again(
+    session: AsyncSession, viewer: CurrentUser | None, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """getRecipeOrder {order_id} → what « Ma liste » needs to make a recipe order again (QA 22/10 #5:
+    « Commander à nouveau » goes back through the recipes — list rebuilt, ceiling and head line kept —
+    never a free order without a ceiling): {recipes: [card + servings + with_optional], at_home, extras}.
+    The order's own customer only (or an admin); recipes no longer browsable are left out (`dropped`)."""
+    await _require_see(session, viewer)
+    oid = _uuid(payload.get("order_id"))
+    row = await session.get(RecipeOrder, oid) if oid is not None else None
+    if row is None or (viewer is None or (row.customer_id != viewer.id and not viewer.is_admin)):
+        raise ApiError(404, "not_found", "Recipe order not found")
+    ids = [u for u in (_uuid(r.get("id")) for r in row.recipes or [] if isinstance(r, dict)) if u is not None]
+    data = await load(session, ids=ids, published_only=False)
+    out, dropped = [], []
+    for r in row.recipes or []:
+        rid = _uuid(r.get("id")) if isinstance(r, dict) else None
+        recipe = data.by_id.get(rid) if rid is not None else None
+        if recipe is None or recipe.status not in BROWSABLE:
+            dropped.append(str(r.get("title_fr") or "") if isinstance(r, dict) else "")
+            continue
+        out.append(
+            {
+                "id": str(recipe.id),
+                "slug": recipe.slug,
+                "title_fr": recipe.title_fr,
+                "title_ar": recipe.title_ar,
+                "cuisine": recipe.cuisine,
+                "category": recipe.category,
+                "servings_unit": recipe.servings_unit,
+                "servings": _servings(r.get("servings"), recipe.base_servings),
+                "with_optional": list(r.get("with_optional") or []),
+                **recipe_photos.fields(recipe),
+            }
+        )
+    extras = []
+    for line in row.lines or []:
+        if isinstance(line, dict) and isinstance(line.get("other"), str):
+            m = _COUNT_TAIL.match(line["other"])
+            extras.append(
+                {"name": m.group(1), "count": int(m.group(2))} if m else {"name": line["other"], "count": 1}
+            )
+    return {
+        "success": True,
+        "recipes": out,
+        "at_home": list(row.at_home or []),
+        "extras": extras,
+        "dropped": dropped,
+    }
 
 
 # --- admin ---------------------------------------------------------------------------------------------

@@ -21,7 +21,8 @@ Rules (one place, tested in tests/test_recipes_pantry.py):
 Each card is the listRecipes card (cost for the recipe's own people, photo…) plus `have_n`, `missing`
 [{id, name_fr, name_ar}], `missing_cost` (the honest cost of the missing articles only, same rules: no total
 under 70 % priced) and `at_home` (the ids to send as « j'ai déjà » to « Ma liste », so that « Me faire
-livrer ce qui manque » buys the missing articles only — optional and placard lines included in it).
+livrer ce qui manque » buys the missing articles only — his own and the placard ones; an optional line he does
+not have is in neither list: not bought unless ticked, QA 22/10).
 
 Visibility: like every recipe route, ADMINS ONLY for now (recipes._require_see).
 """
@@ -184,10 +185,14 @@ def match(
             ing, _ = recipes.line_need(data, line, ru.scale(line.qty, 1, recipe.base_servings))
             iid = line.ingredient_id if line.ingredient_id is not None else ing.id
             is_placard = bool(line.pantry or ing.pantry)
+            if line.optional and iid not in have:
+                # never missing, never bought unless ticked — and never sent as « j'ai déjà » either (QA 22/10
+                # r3-B1: an optional of one recipe used to hide the same article another recipe must buy)
+                continue
             if iid in have and not is_placard:
                 mine.add(iid)
                 present.add(ing.id)
-            elif iid in have or line.optional or (is_placard and use_pantry and iid not in pantry_off):
+            elif iid in have or (is_placard and use_pantry and iid not in pantry_off):
                 present.add(ing.id)
             else:
                 missing.setdefault(iid, ing)
