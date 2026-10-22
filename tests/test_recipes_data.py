@@ -89,7 +89,7 @@ def _strings(node, key=""):
 
 
 def test_no_pork_alcohol_nor_halal_shown_anywhere():
-    files = [*sorted(DATA.glob("recettes*.json")), DATA / "ingredients_tn.json"]
+    files = [*sorted(DATA.glob("recettes*.json")), DATA / "ingredients_tn.json", DATA / "videos.json"]
     files.append(Path(recipes_import.__file__).with_name("recipes_pantry_words.json"))
     bad = [
         (path.name, text)
