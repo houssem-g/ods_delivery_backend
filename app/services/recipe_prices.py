@@ -39,6 +39,9 @@ RETRY_AFTER = timedelta(minutes=2)
 DEFAULT_RULES = {"min_priced_share": 0.7, "stale_days": 14, "rounding_tnd": 0.5}
 BUDGET_MARGIN = Decimal("1.15")  # « plafond = haut de la fourchette des lignes avec prix + 15 % »
 PRICE_UNIT = {"kg": "kg", "l": "l", "piece": "piece", "botte": "botte"}
+# a dictionary key renamed here (23/10: « jambon de dinde » → « dinde fumée en tranches », never « jambon »
+# shown) still finds a price ODS may keep under the old key
+FORMER_KEYS = {"dinde fumee en tranches": "jambon de dinde"}
 
 _transport: httpx.AsyncBaseTransport | None = None  # tests replace the network
 
@@ -158,7 +161,7 @@ def cost(
         w = weight_kg(qty, ing.unit, ing)
         if w is not None:
             w_total += float(w)
-        price = index.get(ing.key)
+        price = index.get(ing.key) or index.get(FORMER_KEYS.get(ing.key, ""))
         lo_u, hi_u = (_num(price.get("min")), _num(price.get("max"))) if price else (None, None)
         if price is None or lo_u is None or PRICE_UNIT.get(ing.unit) != price.get("unit"):
             unpriced.append({"id": ing.id, "fr": ing.name_fr, "ar": ing.name_ar})

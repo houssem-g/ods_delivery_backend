@@ -33,11 +33,13 @@
     "source_url": "https://www.youtube.com/watch?v=kcFtO0X1qh8"
    },
    "triggers_fr": [
-    "graine*|couscous|semoule doigts|mains|egrene*|egraine*|roule*|frotte*|frottant",
+    "graine*|couscous doigts|mains|egrene*|egraine*|roule*|frotte*|frottant",
+    "semoule doigts|mains|egrene*|egraine*|roule*|frotte*|frottant !boule*|galette*|sucre|farine|smen|beurre|levure|sel",
     "egrene*|egraine* graine*|couscous|semoule"
    ],
    "triggers_ar": [
-    "*كسكس*|*سميد* *اصابع*|*فرك*|*يدي*"
+    "*كسكس* *اصابع*|*فرك*|*يدي*",
+    "*سميد* *اصابع*|*فرك*|*يدي* !*كرات*|*سكر*|*دقيق*|*فرين*|*سمن*|*زبد*|*خميره*|ملح|والملح"
    ]
   },
   {
@@ -113,12 +115,12 @@
    "triggers_fr": [
     "panez|paner|panure|pane|panes|panee|panees",
     "chapelure passe*|roule*|enrobe*|trempe*",
-    "farine passe*|roule*|enrobe*|trempe*",
+    "farine passe*|roule*|enrobe*|trempe* !petriss*|petrir|nouille*|pate",
     "farinez|fariner filet*|escalope*|morceau*|poisson*|viande*|poulet*|tranche*|boulette*|calamar*|sardine*"
    ],
    "triggers_ar": [
     "*بقسماط* *مرر*|*غلفو*",
-    "*فرين*|*دقيق* *مرر*"
+    "*فرين*|*دقيق* *مرر* !*عجن*"
    ]
   },
   {
@@ -152,12 +154,12 @@
     "source_url": "https://www.youtube.com/watch?v=yaSCcrmomqA"
    },
    "triggers_fr": [
-    "pile*|pilon|mortier",
+    "pile*|pilon|mortier ail|gousse*",
     "ail ecrase*|ecrasez"
    ],
    "triggers_ar": [
     "*ثوم* *هرس*|*مهروس*|دقوا|*مدقوق*",
-    "*مهراس*"
+    "*مهراس* *ثوم*"
    ]
   },
   {
@@ -191,11 +193,12 @@
     "source_url": "https://mixkit.co/free-stock-video/cooking-french-fries-in-oil-9278/"
    },
    "triggers_fr": [
-    "frire|friture|frits|frites|frite",
+    "frire|friture|frits|frites|frite !servez|jaune|plat",
     "huile chaude|bouillante glisse*|plonge*"
    ],
    "triggers_ar": [
-    "*اقلو*|القلي|قلي|*مقلي*"
+    "*اقلو* !*بيض*",
+    "القلي|قلي|*مقلي* *زيت* !*بيض*"
    ]
   }
  ],
@@ -220,16 +223,16 @@
    {
     "step": 4,
     "youtube_id": "XCBGcZzI1Vk",
-    "start": "1:49",
-    "end": "2:24",
+    "start": "1:51",
+    "end": "1:57",
     "title": "Ce plat tunisien est incroyable 🤤",
     "channel": "La méthode Cuisinier"
    },
    {
     "step": 5,
     "youtube_id": "XCBGcZzI1Vk",
-    "start": "2:30",
-    "end": "2:42",
+    "start": "1:57",
+    "end": "2:01",
     "title": "Ce plat tunisien est incroyable 🤤",
     "channel": "La méthode Cuisinier"
    },
@@ -252,8 +255,8 @@
    {
     "step": 8,
     "youtube_id": "XCBGcZzI1Vk",
-    "start": "3:06",
-    "end": "3:16",
+    "start": "3:09",
+    "end": "3:22",
     "title": "Ce plat tunisien est incroyable 🤤",
     "channel": "La méthode Cuisinier"
    }
@@ -270,8 +273,8 @@
    {
     "step": 2,
     "youtube_id": "s8gCNG7X3Jg",
-    "start": "2:14",
-    "end": "2:43",
+    "start": "2:16",
+    "end": "2:41",
     "title": "LABLABI TUNISIEN — FOOD IS LOVE",
     "channel": "Food is Love"
    },
@@ -302,7 +305,7 @@
    {
     "step": 7,
     "youtube_id": "s8gCNG7X3Jg",
-    "start": "5:42",
+    "start": "5:43",
     "end": "5:55",
     "title": "LABLABI TUNISIEN — FOOD IS LOVE",
     "channel": "Food is Love"
@@ -326,22 +329,6 @@
     "channel": "Food is Love"
    },
    {
-    "step": 2,
-    "youtube_id": "kcFtO0X1qh8",
-    "start": "5:03",
-    "end": "5:31",
-    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
-    "channel": "Food is Love"
-   },
-   {
-    "step": 3,
-    "youtube_id": "kcFtO0X1qh8",
-    "start": "6:02",
-    "end": "6:52",
-    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
-    "channel": "Food is Love"
-   },
-   {
     "step": 4,
     "youtube_id": "kcFtO0X1qh8",
     "start": "5:37",
@@ -361,7 +348,7 @@
     "step": 6,
     "youtube_id": "kcFtO0X1qh8",
     "start": "7:08",
-    "end": "7:50",
+    "end": "7:49",
     "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
     "channel": "Food is Love"
    },
@@ -369,7 +356,7 @@
     "step": 8,
     "youtube_id": "kcFtO0X1qh8",
     "start": "7:55",
-    "end": "8:46",
+    "end": "8:45",
     "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
     "channel": "Food is Love"
    },
@@ -435,7 +422,7 @@
     "step": 7,
     "youtube_id": "3sR48SWJR_g",
     "start": "6:08",
-    "end": "6:18",
+    "end": "6:15",
     "title": "BRICK AU THON — FOOD IS LOVE",
     "channel": "Food is Love"
    }
@@ -476,8 +463,8 @@
    {
     "step": 6,
     "youtube_id": "yaSCcrmomqA",
-    "start": "13:36",
-    "end": "13:48",
+    "start": "13:38",
+    "end": "13:42",
     "title": "ملوخية العيد التونسية الأصيلة",
     "channel": "Savoureux TV"
    }

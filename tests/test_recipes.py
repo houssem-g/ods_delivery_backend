@@ -1114,3 +1114,143 @@ async def test_import_script_uploads_the_clip_files_then_records_and_skips_a_ges
         ("public/recipes/gestures/monter-blancs.webp", "image/webp"),
     ]
     assert report["missing_file"] == ["petrir-pate"] and report["gestures"]["created"] == 2
+
+
+# --- QA 23/10 (v3: screens, data, videos) -------------------------------------------------------------
+
+
+def test_search_matches_at_the_start_of_a_word_oeuf_is_not_boeuf():
+    from app.services import recipes
+
+    beef = recipes.fold("Bœuf aux carottes", "لحم بقر بالجزر")
+    eggs = recipes.fold("Ojja aux œufs", "عجة بالبيض")
+    for q in ("oeuf", "œuf", "Œufs", "OEUF"):
+        assert recipes.matches_query(eggs, q) and not recipes.matches_query(beef, q), q
+    for q in ("boeuf", "bœuf", "BOEUF"):
+        assert recipes.matches_query(beef, q) and not recipes.matches_query(eggs, q), q
+    # Arabic: after the article / a preposition glued to the word, never inside it
+    assert recipes.matches_query(eggs, "بيض") and recipes.matches_query(beef, "جزر")
+    assert recipes.matches_query(recipes.fold("كسكسي بالدجاج"), "دجاج")
+    assert not recipes.matches_query(recipes.fold("Couscous au poulet"), "oulet")
+    assert recipes.word_start_pattern("oeuf") == "(^| )oeuf"
+
+
+async def test_list_search_oeuf_finds_the_eggs_never_the_beef(client, qa):
+    beef = {**SALADE, "slug": "boeuf-carottes", "title_fr": "Bœuf aux carottes", "title_ar": "لحم بقر بالجزر"}
+    eggs = {**OJJA, "title_fr": "Ojja aux œufs", "title_ar": "عجة بالبيض"}
+    await seed(beef, eggs)
+    for q in ("oeuf", "œuf", "Œufs", "بيض"):
+        assert [x["slug"] for x in (await ok(client, qa, "listRecipes", {"q": q}))["recipes"]] == [
+            "ojja-merguez"
+        ], q
+    for q in ("boeuf", "bœuf", "بقر"):
+        assert [x["slug"] for x in (await ok(client, qa, "listRecipes", {"q": q}))["recipes"]] == [
+            "boeuf-carottes"
+        ], q
+
+
+def _data_ids() -> set[str]:
+    from pathlib import Path
+
+    ids: set[str] = set()
+    for f in Path("data/recipes").glob("recettes*.json"):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        ids |= {r["id"] for r in (doc["recettes"] if isinstance(doc, dict) else doc)}
+    return ids
+
+
+async def test_renamed_addresses_open_the_same_recipe_and_a_reimport_makes_no_twin(client, qa):
+    """Owner 23/10: no « halal » / « jambon » in an address. The migration renames the row (same id); the old
+    address still opens it (getRecipe answers with the new slug); the data files carry the new slug."""
+    import importlib
+
+    from app.services import recipes
+
+    mig = importlib.import_module("app.migrations.versions.recslug_20261023_f4c2a9e7d1b3_recipe_slug_renames")
+    assert dict(mig.RENAMES) == recipes.RENAMED_SLUGS
+    await seed({**SALADE, "slug": "cassoulet-halal", "title_fr": "Cassoulet au poulet et aux merguez"})
+    rid = await recipe_id("cassoulet-halal")
+    async with transaction() as session:
+        for old, new in mig.RENAMES:
+            await session.execute(mig.SQL, {"old": old, "new": new})
+    assert await recipe_id("cassoulet-poulet-merguez") == rid  # same row
+    for slug in ("cassoulet-halal", "cassoulet-poulet-merguez"):
+        r = (await ok(client, qa, "getRecipe", {"slug": slug}))["recipe"]
+        assert (r["id"], r["slug"]) == (rid, "cassoulet-poulet-merguez"), slug
+    fav = await ok(client, qa, "listRecipes", {"slugs": ["cassoulet-halal"]})  # a favourite kept on a phone
+    assert [x["slug"] for x in fav["recipes"]] == ["cassoulet-poulet-merguez"]
+    again = await seed(
+        {**SALADE, "slug": "cassoulet-poulet-merguez", "title_fr": "Cassoulet au poulet et aux merguez"}
+    )
+    assert again["created"] == 0
+    async with SessionLocal() as s:
+        assert (
+            await s.execute(text("SELECT count(*) FROM recipes WHERE slug LIKE 'cassoulet%'"))
+        ).scalar_one() == 1
+    ids = _data_ids()
+    assert set(recipes.RENAMED_SLUGS.values()) <= ids and not ids & set(recipes.RENAMED_SLUGS)
+
+
+def test_data_words_owner_23_10_no_jambon_no_aperitif_standard_arabic():
+    """« Jambon de dinde » → « Dinde fumée en tranches » (dictionary + 5 recipes, FR and AR), « Apéritif » →
+    « Amuse-bouche », the last darija of the notes (« مرحيًا » → « مطحونًا »)."""
+    from pathlib import Path
+
+    dico = {
+        e["id"]: e for e in json.loads(Path("data/recipes/ingredients_tn.json").read_text(encoding="utf-8"))
+    }
+    assert (dico[156]["fr"], dico[156]["ar"]) == ("Dinde fumée en tranches", "شرائح ديك رومي مدخّن")
+    assert "jambon" not in json.dumps(dico[156], ensure_ascii=False).lower()
+    using = 0
+    for f in Path("data/recipes").glob("recettes*.json"):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        for r in doc["recettes"] if isinstance(doc, dict) else doc:
+            shown = {k: v for k, v in r.items() if k not in ("sources", "prix_manquants_21_10")}
+            blob = json.dumps(shown, ensure_ascii=False)
+            assert "jambon" not in blob.lower() and "Apéritif" not in blob and "مرحي" not in blob, r["id"]
+            using += any(i.get("ingredient_id") == 156 for i in r.get("ingredients") or [])
+            if r["id"] == "assida-zgougou":
+                assert r["ingredients"][0]["note_ar"].startswith("اشتروه مطحونًا")
+    assert using == 5
+
+
+def test_gestures_no_false_links_qa_23_10():
+    """QA 23/10 v3 n° 8: the trigger words of data/recipes/videos.json no longer link a gesture to a step that
+    does not show it; « !… » = a word that must not be there. The good links stay."""
+    from pathlib import Path
+
+    from app.models import RecipeGesture
+    from app.services import recipe_videos as rv
+
+    assert rv.matches("frire !oeuf*", "Faites frire les beignets.")
+    assert not rv.matches("frire !oeuf*", "Faites frire les œufs.")
+    assert not rv.matches("!oeuf*", "Faites frire.")  # a trigger needs a word that must be there
+    data = json.loads(Path("data/recipes/videos.json").read_text(encoding="utf-8"))
+    rows = [RecipeGesture(**rv.parse_gesture(g, i)[0]) for i, g in enumerate(data["gestures"])]
+    recs = {}
+    for f in Path("data/recipes").glob("recettes*.json"):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        recs |= {r["id"]: r for r in (doc["recettes"] if isinstance(doc, dict) else doc)}
+
+    def keys(slug, step):
+        r = recs[slug]
+        return {g.key for g in rv.link(r["etapes_fr"], r["etapes_ar"], rows)[step - 1]}
+
+    wrong = [("falafel", 4, "frire-sans-bruler"), ("bagila-bil-dihin", 4, "frire-sans-bruler"),
+             ("rishta-libyenne", 1, "fariner-paner"), ("kubba-halab", 2, "piler-ail-mortier"),
+             ("baharat-golfe", 2, "piler-ail-mortier"), ("hararat-maison", 3, "piler-ail-mortier"),
+             ("zibdiyeh-crevettes", 2, "piler-ail-mortier"), ("harcha", 4, "rouler-couscous"),
+             ("kesra", 1, "rouler-couscous"), ("maamoul-dattes", 1, "rouler-couscous"),
+             ("kafteji", 4, "frire-sans-bruler"), ("tastira", 6, "frire-sans-bruler"),
+             ("chich-taouk", 6, "frire-sans-bruler")]  # fmt: skip
+    for slug, step, key in wrong:
+        assert key not in keys(slug, step), (slug, step, key)
+    right = [("lablabi", 4, "piler-ail-mortier"), ("zibdiyeh-crevettes", 1, "piler-ail-mortier"),
+             ("couscous-poulet", 3, "piler-ail-mortier"), ("couscous-poulet", 5, "rouler-couscous"),
+             ("couscous-poulet", 8, "rouler-couscous"), ("couscous-poulpe", 4, "vapeur-couscoussier"),
+             ("brik-oeuf-thon", 6, "frire-sans-bruler"), ("falafel", 6, "frire-sans-bruler"),
+             ("couscous-poulet", 2, "faire-revenir-oignon"), ("brik-oeuf-thon", 2, "ciseler-persil"),
+             ("sardines-farcies-sauce", 4, "frire-sans-bruler"),
+             ("ftayer", 4, "frire-sans-bruler")]  # fmt: skip
+    for slug, step, key in right:
+        assert key in keys(slug, step), (slug, step, key)

@@ -979,8 +979,8 @@
     },
     {
      "ingredient_id": 156,
-     "nom_fr": "Jambon de dinde (tranches)",
-     "nom_ar": "شرائح لحم ديك رومي",
+     "nom_fr": "Dinde fumée en tranches",
+     "nom_ar": "شرائح ديك رومي مدخّن",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1031,7 +1031,7 @@
     "Faites cuire les macaronis dans l'eau bouillante salée 2 minutes de moins qu'indiqué sur le paquet. Égouttez.",
     "Préparez une béchamel : beurre fondu, farine, puis le lait versé petit à petit en fouettant. Laissez épaissir 5 minutes.",
     "Ajoutez à la sauce les deux tiers du fromage, la muscade, le sel et le poivre.",
-    "Allumez le four à 200 °C. Mélangez les pâtes, la sauce et le jambon de dinde, et versez dans un plat beurré.",
+    "Allumez le four à 200 °C. Mélangez les pâtes, la sauce et la dinde fumée, et versez dans un plat beurré.",
     "Parsemez du reste du fromage et faites gratiner 20 minutes."
    ],
    "etapes_ar": [
@@ -2079,8 +2079,8 @@
     },
     {
      "ingredient_id": 156,
-     "nom_fr": "Jambon de dinde (tranches)",
-     "nom_ar": "شرائح لحم ديك رومي",
+     "nom_fr": "Dinde fumée en tranches",
+     "nom_ar": "شرائح ديك رومي مدخّن",
      "quantite": 0.24,
      "unite": "kg",
      "placard": false,
@@ -2130,7 +2130,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Farine de sarrasin (blé noir)",
-     "Jambon de dinde (tranches)"
+     "Dinde fumée en tranches"
     ],
     "douteux": [
      "Gruyère"
@@ -2140,7 +2140,7 @@
     "Mélangez la farine de sarrasin, le sel et 1 œuf. Ajoutez petit à petit 0,55 L d'eau froide en fouettant jusqu'à obtenir une pâte lisse et assez liquide. Laissez reposer 1 heure (ou une nuit au frais).",
     "Chauffez une grande poêle et graissez-la avec un peu de beurre. Versez une louche de pâte et étalez-la vite en tournant la poêle.",
     "Quand les bords se décollent (2 minutes), retournez la galette.",
-    "Parsemez de fromage, posez une tranche de jambon de dinde et cassez un œuf au centre. Salez, poivrez.",
+    "Parsemez de fromage, posez une tranche de dinde fumée et cassez un œuf au centre. Salez, poivrez.",
     "Rabattez les 4 bords vers le centre pour former un carré, en laissant le jaune visible. Couvrez 2 minutes, jusqu'à ce que le blanc soit cuit. Servez aussitôt."
    ],
    "etapes_ar": [
@@ -3760,7 +3760,7 @@
    ]
   },
   {
-   "id": "tartiflette-halal",
+   "id": "tartiflette-dinde",
    "statut": "brouillon",
    "nom_fr": "Tartiflette à la dinde fumée",
    "nom_ar": "تارتيفلات بالبطاطا والجبن والديك الرومي المدخّن",
@@ -8249,7 +8249,7 @@
    "region": "Provence",
    "saison": "Toute l'année",
    "occasion": [
-    "Apéritif",
+    "Amuse-bouche",
     "Pique-nique"
    ],
    "portions": 6,
@@ -8356,7 +8356,7 @@
    "region": "Bourgogne",
    "saison": "Toute l'année",
    "occasion": [
-    "Apéritif",
+    "Amuse-bouche",
     "Invités"
    ],
    "portions": 6,

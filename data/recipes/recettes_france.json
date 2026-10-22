@@ -878,8 +878,8 @@
     },
     {
      "ingredient_id": 156,
-     "nom_fr": "Jambon de dinde (tranches)",
-     "nom_ar": "شرائح لحم ديك رومي",
+     "nom_fr": "Dinde fumée en tranches",
+     "nom_ar": "شرائح ديك رومي مدخّن",
      "quantite": 0.12,
      "unite": "kg",
      "placard": false,
@@ -931,7 +931,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Pain de mie",
-     "Jambon de dinde (tranches)"
+     "Dinde fumée en tranches"
     ],
     "douteux": [
      "Gruyère"
@@ -1950,8 +1950,8 @@
     },
     {
      "ingredient_id": 156,
-     "nom_fr": "Jambon de dinde (tranches)",
-     "nom_ar": "شرائح لحم ديك رومي",
+     "nom_fr": "Dinde fumée en tranches",
+     "nom_ar": "شرائح ديك رومي مدخّن",
      "quantite": 0.12,
      "unite": "kg",
      "placard": false,
@@ -2027,7 +2027,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Jambon de dinde (tranches)"
+     "Dinde fumée en tranches"
     ],
     "douteux": [
      "Gruyère"
@@ -2035,7 +2035,7 @@
    },
    "etapes_fr": [
     "Ouvrez chaque escalope en deux dans l'épaisseur, sans aller jusqu'au bout, comme un livre. Aplatissez-la entre deux feuilles de papier.",
-    "Salez, poivrez. Posez une tranche de fromage et une tranche de jambon de dinde sur une moitié, puis refermez en appuyant bien sur les bords.",
+    "Salez, poivrez. Posez une tranche de fromage et une tranche de dinde fumée sur une moitié, puis refermez en appuyant bien sur les bords.",
     "Préparez trois assiettes : la farine, les œufs battus, la chapelure.",
     "Passez chaque cordon bleu dans la farine, puis l'œuf, puis la chapelure. Recommencez œuf et chapelure pour bien fermer.",
     "Faites-les cuire dans l'huile à feu moyen, 6 à 7 minutes de chaque côté, jusqu'à ce qu'ils soient bien dorés et cuits à cœur."
@@ -2359,9 +2359,9 @@
    ]
   },
   {
-   "id": "coquillettes-jambon-fromage",
+   "id": "coquillettes-dinde-fromage",
    "statut": "brouillon",
-   "nom_fr": "Coquillettes au jambon de dinde et au fromage",
+   "nom_fr": "Coquillettes à la dinde fumée et au fromage",
    "nom_ar": "معكرونة صغيرة بالديك الرومي والجبن",
    "nom_local": null,
    "cuisine": "française",
@@ -2390,8 +2390,8 @@
     },
     {
      "ingredient_id": 156,
-     "nom_fr": "Jambon de dinde (tranches)",
-     "nom_ar": "شرائح لحم ديك رومي",
+     "nom_fr": "Dinde fumée en tranches",
+     "nom_ar": "شرائح ديك رومي مدخّن",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -2445,14 +2445,14 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Jambon de dinde (tranches)"
+     "Dinde fumée en tranches"
     ]
    },
    "etapes_fr": [
     "Faites cuire les coquillettes dans une grande casserole d'eau bouillante salée, selon le temps du paquet.",
-    "Pendant ce temps, coupez le jambon de dinde en petits carrés.",
+    "Pendant ce temps, coupez la dinde fumée en petits carrés.",
     "Égouttez les pâtes en gardant un demi-verre d'eau de cuisson.",
-    "Remettez-les dans la casserole avec le beurre, le jambon de dinde, la crème si vous en mettez et le fromage. Mélangez à feu doux, en ajoutant un peu d'eau de cuisson si c'est trop sec.",
+    "Remettez-les dans la casserole avec le beurre, la dinde fumée, la crème si vous en mettez et le fromage. Mélangez à feu doux, en ajoutant un peu d'eau de cuisson si c'est trop sec.",
     "Poivrez et servez aussitôt."
    ],
    "etapes_ar": [
@@ -5672,7 +5672,7 @@
    ]
   },
   {
-   "id": "cassoulet-halal",
+   "id": "cassoulet-poulet-merguez",
    "statut": "brouillon",
    "nom_fr": "Cassoulet au poulet et aux merguez",
    "nom_ar": "كاسوليه بالفاصولياء والدجاج والمرقاز",

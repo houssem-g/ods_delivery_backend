@@ -433,6 +433,19 @@ def _card(recipe: Recipe, c: dict[str, Any], lines_n: int, servings: int | None 
     }
 
 
+# Addresses renamed (owner 23/10: never « halal » — nor « jambon » — in an address; same recipe, photos,
+# videos, favourites — migration f4c2a9e7d1b3 renames the row): an old link, a kept favourite still opens it.
+RENAMED_SLUGS = {
+    "cassoulet-halal": "cassoulet-poulet-merguez",
+    "tartiflette-halal": "tartiflette-dinde",
+    "coquillettes-jambon-fromage": "coquillettes-dinde-fromage",
+}
+
+
+def current_slug(slug: str) -> str:
+    return RENAMED_SLUGS.get(slug, slug)
+
+
 PAGE_SIZE = 20
 # while Recettes is admins-only; back to ("published",) before any opening
 BROWSABLE = ("published", "draft")
@@ -478,6 +491,28 @@ def search_words(token: str) -> list[str]:
     return words
 
 
+# An Arabic word carries its article / prepositions glued to it (« بالدجاج », « والبيض »).
+AR_LEADS = ("وبال", "بال", "وال", "فال", "كال", "لل", "ال", "ب", "و", "ف", "ل", "ك")
+_ARABIC = re.compile(r"[\u0600-\u06ff]")
+
+
+def word_start_pattern(word: str) -> str:
+    """The PostgreSQL regex « `word` at the START of a word of search_norm » (QA 23/10 v3 n° 3: since « œ »
+    folds to « oe », « oeuf » was found INSIDE « boeuf »). search_norm is folded words joined by one space; an
+    Arabic word may start after its article / preposition (AR_LEADS)."""
+    escaped = re.sub(r"([^\w\s])", r"\\\1", word)
+    lead = f"(?:{'|'.join(AR_LEADS)})?" if _ARABIC.search(word) else ""
+    return f"(^| ){lead}{escaped}"
+
+
+def matches_query(search_norm: str, query: str) -> bool:
+    """The same test in Python (tests, scripts): every query word (or one of its spellings) starts a word."""
+    tokens = fold(query).split()[:6]
+    return bool(tokens) and all(
+        any(re.search(word_start_pattern(w), search_norm) for w in search_words(t)) for t in tokens
+    )
+
+
 def _filters(payload: dict[str, Any]) -> list[Any]:
     # Admins only for now (owner 21/10): they browse the drafts too, to read the recipes before review.
     where: list[Any] = [Recipe.status.in_(BROWSABLE)]
@@ -510,7 +545,7 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
         where.append(Recipe.seasons.contains([season[:20]]))
     slugs = payload.get("slugs")
     if isinstance(slugs, list):  # « Vos recettes »: the favourites / last opened kept on the phone
-        where.append(Recipe.slug.in_([str(x)[:120] for x in slugs[:40]]))
+        where.append(Recipe.slug.in_([current_slug(str(x)[:120]) for x in slugs[:40]]))
     try:
         max_time = int(payload.get("max_time") or 0)
     except (TypeError, ValueError):
@@ -518,10 +553,7 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
     if max_time > 0:
         where.append(Recipe.time_min <= max_time)
     for token in fold(str(payload.get("q") or "")[:80]).split()[:6]:
-        likes = []
-        for word in search_words(token):
-            escaped = word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-            likes.append(Recipe.search_norm.like(f"%{escaped}%"))
+        likes = [Recipe.search_norm.op("~")(word_start_pattern(word)) for word in search_words(token)]
         where.append(or_(*likes) if len(likes) > 1 else likes[0])
     return where
 
@@ -664,7 +696,7 @@ async def _visible_recipe(
 ) -> Recipe:
     await _require_see(session, viewer)
     rid = _uuid(payload.get("id"))
-    slug = str(payload.get("slug") or "").strip()
+    slug = current_slug(str(payload.get("slug") or "").strip())
     stmt = (
         select(Recipe).where(Recipe.id == rid)
         if rid is not None

@@ -13,8 +13,10 @@ trigger words fr / ar and is linked AUTOMATICALLY to every step whose text says 
 recipe: a new recipe gets its gestures for free.
 
 A trigger is space-separated tokens, ALL of which must be in the step (any order); a token is alternatives
-separated by « | »; « x* » = a word starting with x, « *x* » = a word containing x, « x » = the word x. Words
-are folded like the recipe search (no case, no accent, Arabic letters unified, harakat removed).
+separated by « | »; « x* » = a word starting with x, « *x* » = a word containing x, « x » = the word x; a
+token starting with « ! » must NOT be in the step (23/10, QA v3 n° 8: « !pate*|petri* » keeps « fariner et
+paner » off a noodle dough). Words are folded like the recipe search (no case, no accent, Arabic letters
+unified, harakat removed).
 
 The file (data/recipes/videos.json) is read by scripts/import_recipe_videos.py or the admin function
 importRecipeVideos: `{gestures: [...], passages: {slug: [{step, youtube_id, start, end, title, channel}]}}`.
@@ -50,9 +52,12 @@ TEXT_MAX = 160
 _AR_FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ة": "ه", "ى": "ي", "ؤ": "و", "ئ": "ي"})
 
 
+_LIGATURES = str.maketrans({"œ": "oe", "Œ": "oe", "æ": "ae", "Æ": "ae"})
+
+
 def fold_words(text: Any) -> list[str]:
-    """A step's words, folded like the recipe search (recipes.fold)."""
-    return [w.translate(_AR_FOLD) for w in text_norm.tokenize(text)]
+    """A step's words, folded like the recipe search (recipes.fold): « œufs » = « oeufs »."""
+    return [w.translate(_AR_FOLD) for w in text_norm.tokenize(str(text or "").translate(_LIGATURES))]
 
 
 def _token_ok(token: str, words: list[str]) -> bool:
@@ -76,10 +81,17 @@ def _token_ok(token: str, words: list[str]) -> bool:
 
 
 def matches(trigger: str, text: Any) -> bool:
-    """Every token of the trigger is in the text (see the module doc)."""
+    """Every token of the trigger is in the text, and none of its « !… » tokens (see the module doc)."""
     words = fold_words(text)
-    tokens = [t for t in str(trigger).split() if t.strip("|")]
-    return bool(tokens) and bool(words) and all(_token_ok(t, words) for t in tokens)
+    tokens = [t for t in str(trigger).split() if t.strip("|!")]
+    wanted = [t for t in tokens if not t.startswith("!")]
+    banned = [t[1:] for t in tokens if t.startswith("!")]
+    return (
+        bool(wanted)
+        and bool(words)
+        and all(_token_ok(t, words) for t in wanted)
+        and not any(_token_ok(t, words) for t in banned)
+    )
 
 
 def _clean(value: Any, n: int = TEXT_MAX) -> str | None:

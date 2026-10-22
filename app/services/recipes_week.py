@@ -95,7 +95,7 @@ QUICK_TAGS = _folded("Rapide", "Quotidien")
 # side dish (riz aux vermicelles), a drink filed as a soup (hummus el sham), a mezzé, a sauce…
 NOT_DINNER_TAGS = _folded(
     "Petit-déjeuner", "Accompagnement", "Boisson", "Goûter", "Dessert", "Sauce", "Thé", "Thé ou café",
-    "Kemia", "Mezzé", "Apéritif", "Base", "Avec le poisson", "Après le repas",
+    "Kemia", "Mezzé", "Amuse-bouche", "Apéritif", "Base", "Avec le poisson", "Après le repas",
 )  # fmt: skip
 # A starter / a sandwich is an evening only in Ramadan (chorba + brik + a starter), or when the file also
 # calls it a meal (« Famille », « Quotidien », « Fête »…).
@@ -237,7 +237,9 @@ def proteins_in(lines: list[tuple[str, float]] | list[tuple[str, float, str]]) -
         k = str(key)
         if "bouillon" in k:  # a stock cube is not the evening's meat
             continue
-        if "jambon" in k or "cachir" in k:  # a cold cut (turkey ham): a protein, not the evening's poultry
+        if (
+            "jambon" in k or "cachir" in k or "en tranche" in k
+        ):  # a cold cut (sliced smoked turkey): a protein, not the evening's poultry
             plant = True
             continue
         if rest and rest[0] == "poissonnerie":
