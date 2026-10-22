@@ -64,14 +64,18 @@ def test_an_article_already_bought_another_evening_wins_less_waste():
         cand("same-price-no-share", "marocaine", "légumineuses", "veg", high=10, buys=frozenset({99})),
         cand("shares-parsley", "libanaise", "légumineuses", "veg", high=10, fresh=p_, buys=p_),
     ]
-    p = rw.plan_week(pool, opts(3, seed=1), fixed={0: pool[0]})
-    assert p.days[1].id == "shares-parsley"
+    # a real draw since 22/10 (the seed weighs): the shared parsley wins most weeks, not every week
+    wins = sum(
+        rw.plan_week(pool, opts(3, seed=s), fixed={0: pool[0]}).days[1].id == "shares-parsley"
+        for s in range(60)
+    )
+    assert 36 <= wins < 60
 
 
 def test_quick_from_monday_to_thursday_longer_dishes_on_friday_and_the_weekend():
     cats = ["plat en sauce", "ojja", "riz", "pâtes", "légumineuses", "gratin"]
     pool = [cand(f"q{i}", f"c{i}", cats[i], rw.PROTEINS[i % 5], time=25) for i in range(6)]
-    pool += [cand("slow", "tunisienne", "couscous", "poultry", time=120, tags=frozenset({"week-end"}))]
+    pool += [cand("slow", "tunisienne", "couscous", "poultry", time=120, tags=rw._folded("Week-end"))]
     pool += [cand("long-weekday", "x", "tajine", "red", time=90)]
     p = rw.plan_week(pool, rw.Options(nights=7, season="automne"))
     assert p.ok
@@ -298,3 +302,105 @@ async def test_admins_only_and_a_wrong_budget_is_refused(client, factory, qa, we
     libre = await ok(client, qa, PLAN, {"people": 4, "nights": 9, "budget": None, "today": AUTUMN})
     assert libre["nights"] == 7 and libre["budget"] is None  # 9 evenings → 7 (and 6 dinners: too few)
     assert libre["ok"] is False and libre["reason"] == "few"
+
+
+# --- QA 22/10 (r4 « Ma semaine », owner's list 8–12) -------------------------------------------------------
+
+
+def test_semoule_is_not_fish_and_proteins_are_read_from_every_ingredient():
+    """#8: « moule » is not in « semoule »; #12: minced meat in an « eggs » dish is red meat, chicken in an
+    ojja is poultry; legumes / cheese make a meatless evening a meal."""
+    assert rw.protein_of([("semoule fine semoule fine", 0.5), ("carotte", 0.3)]) == ("veg", False, False)
+    assert rw.protein_of([("moules", 1.0, "epicerie")]) == ("fish", False, True)
+    assert rw.protein_of([("cornichon", 0.1)])[2] is False  # « thon » only at the start of a word
+    makhlama = rw.proteins_in([("oeufs", 0.48), ("viande hachee", 0.25), ("tomate", 0.4)])
+    assert makhlama["main"] == "eggs" and makhlama["meats"] == {"red"}
+    ojja = rw.proteins_in([("oeufs", 0.36), ("escalope de poulet escalope", 0.3)])
+    assert "poultry" in ojja["meats"]
+    assert rw.proteins_in([("bouillon de boeuf", 0.01), ("pois chiches", 0.4)]) == {
+        "main": "veg", "meats": frozenset(), "plant": True,
+    }  # fmt: skip
+
+
+def test_no_breakfast_side_dish_drink_or_starter_as_a_dinner():
+    """#9: excluded by the tags and the name, not only the category."""
+    o = opts(3)
+    bad = [
+        cand("galayet", "jordanienne", "légumes", "veg", tags=rw._folded("Petit-déjeuner", "Rapide")),
+        cand("riz-vermicelles", "libanaise", "riz", "veg", tags=rw._folded("Quotidien", "Accompagnement")),
+        rw.Cand(id="hummus", slug="hummus", title="Hummus el sham (boisson chaude de pois chiches)",
+                cuisine="égyptienne", category="soupe", time_min=100, protein="veg", high=3, low=2),
+        rw.Cand(id="pilaf", slug="riz-pilaf", title="Riz pilaf", cuisine="française", category="riz",
+                time_min=25, protein="veg", high=3, low=2),
+        cand("mbatan", "tunisienne", "légumes farcis", "red", tags=rw._folded("Ramadan", "Entrée")),
+    ]  # fmt: skip
+    assert not [c.id for c in bad if rw.evening_ok(c, o)]
+    assert rw.evening_ok(bad[-1], rw.Options(nights=3, season="hiver", occasion="ramadan"))
+    assert rw.evening_ok(cand("tajine", tags=rw._folded("Ramadan", "Fête", "Entrée")), o)
+
+
+def test_every_evening_has_a_protein_and_red_meat_poultry_are_counted_hidden():
+    """#10/#12: a vegetable soup only when nothing else fits; minced meat in eggs counts for the one red meat;
+    two evenings side by side never share a meat (ojja au poulet then poulet rôti)."""
+    pool = [
+        cand("makhlama", "irakienne", "œufs", "eggs", meats=frozenset({"red"}), time=30),
+        cand("ojja-merguez", "tunisienne", "ojja", "red", meats=frozenset({"red"}), time=30),
+        cand("ojja-poulet", "libyenne", "plat en sauce", "eggs", meats=frozenset({"poultry"}), time=30),
+        cand("poulet-roti", "française", "volaille", "poultry", meats=frozenset({"poultry"}), time=30),
+        cand("veloute", "française", "soupe", "veg", has_protein=False, time=30, high=2),
+        cand("lentilles", "marocaine", "légumineuses", "veg", time=30),
+        cand("sardines", "algérienne", "poisson", "fish", meats=frozenset({"fish"}), time=30),
+    ]
+    for k in range(20):
+        p = rw.plan_week(pool, opts(3, seed=k))
+        ids = [c.id for c in p.days]
+        assert p.ok and "veloute" not in ids
+        assert not {"makhlama", "ojja-merguez"} <= set(ids)
+        assert all(not (x.meats & y.meats) for x, y in zip(p.days, p.days[1:], strict=False))
+
+
+def test_change_keeps_45_min_on_a_weekday_even_when_the_wishes_are_loosened():
+    """#12 (bug 4): « Changer » on Wednesday with only Tunisian dishes left: a quick one, never the 60 min."""
+    kept = {
+        0: cand("mon", "tunisienne", "ojja", "eggs", time=30),
+        2: cand("wed", "tunisienne", "pâtes", "fish", time=30),
+    }
+    pool = [*kept.values(), cand("marqa", "tunisienne", "plat en sauce", "veg", time=60, high=3),
+            cand("quick", "tunisienne", "volaille", "poultry", time=30, high=12),
+            cand("old", "tunisienne", "riz", "red", time=25)]  # fmt: skip
+    for k in range(10):
+        p = rw.plan_week(pool, opts(3, seed=k), fixed=kept, avoid={"old"})
+        assert p.ok and p.days[1].id == "quick"
+
+
+def test_couscous_on_friday_for_a_tunisian_family_and_the_dear_fish_avoided_on_a_tight_budget():
+    """#10: the couscous waits for Friday; a 34 DT merlan in an 80 DT week is not proposed."""
+    cats = ["plat en sauce", "ojja", "riz", "pâtes", "légumineuses", "gratin", "tajine"]
+    pool = [cand(f"q{i}", f"c{i}", cats[i], rw.PROTEINS[i % 5], time=30, high=10) for i in range(7)]
+    pool += [cand("couscous", "tunisienne", "couscous", "poultry", time=105, high=15)]
+    pool += [cand("merlan", "française", "poisson", "fish", time=20, high=34)]
+    for k in range(15):
+        p = rw.plan_week(pool, opts(5, budget=80, seed=k, couscous_friday=True))
+        assert p.ok and p.days[4].id == "couscous" and "merlan" not in [c.id for c in p.days]
+
+
+def test_the_seed_and_the_dishes_already_seen_give_another_week():
+    """#10/#11: two seeds, two weeks; « Une autre semaine » with the dishes seen never comes back."""
+    cats = ["plat en sauce", "ojja", "riz", "pâtes", "légumineuses", "gratin", "tajine", "volaille", "soupe"]
+    pool = [
+        cand(f"d{i}{j}", f"c{i}{j}", cats[i], rw.PROTEINS[(i + j) % 5], time=30)
+        for i in range(9)
+        for j in range(3)
+    ]
+    weeks = {tuple(c.id for c in rw.plan_week(pool, opts(4, seed=s)).days) for s in range(10)}
+    assert len(weeks) >= 8
+    seen: set[str] = set()
+    shown = []
+    prev: set[str] = set()
+    for k in range(5):
+        p = rw.plan_week(pool, opts(4, seed=k, seen=frozenset(seen)), avoid=prev)
+        week = tuple(c.id for c in p.days)
+        assert p.ok and week not in shown and not set(week) & seen
+        shown.append(week)
+        prev = set(week)
+        seen |= prev
