@@ -121,13 +121,13 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
      "optionnel": false,
      "note_fr": "1 citron",
-     "note_ar": "حبة قارص"
+     "note_ar": "حبة ليمون"
     },
     {
      "ingredient_id": 163,
@@ -141,7 +141,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -170,7 +170,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -197,8 +197,8 @@
    "etapes_ar": [
     "أخرجوا الدجاجة من الثلاجة قبل 30 دقيقة. سخّنوا الفرن على 200 درجة.",
     "قشّروا البطاطا وقطّعوها قطعًا كبيرة. قطّعوا البصلة أرباعًا.",
-    "ضعوا نصفي القارص و3 فصوص ثوم والزعتر وورق الرند داخل الدجاجة.",
-    "ادهنوا الدجاجة بالزبدة الليّنة والملح والفلفل الأكحل، وضعوها في صينية كبيرة.",
+    "ضعوا نصفي الليمون و3 فصوص ثوم والزعتر وورق الغار داخل الدجاجة.",
+    "ادهنوا الدجاجة بالزبدة الليّنة والملح والفلفل الأسود، وضعوها في صينية كبيرة.",
     "رتّبوا حولها البطاطا والبصل وبقية فصوص الثوم. رشّوا الخضر بزيت الزيتون والملح وأضيفوا نصف كوب ماء.",
     "اطهوها ساعة و15 إلى 20 دقيقة. كل 20 دقيقة، اسقوا الدجاجة بمرق الصينية.",
     "تكون الدجاجة مطهوّة عندما يخرج من الفخذ سائل صافٍ. اتركوها 10 دقائق قبل تقطيعها."
@@ -245,7 +245,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -272,7 +272,7 @@
     {
      "ingredient_id": 16,
      "nom_fr": "Céleri",
-     "nom_ar": "كرافس",
+     "nom_ar": "كرفس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -294,7 +294,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -323,7 +323,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -341,7 +341,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -352,7 +352,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -363,7 +363,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -383,7 +383,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -414,11 +414,11 @@
    ],
    "etapes_ar": [
     "ضعوا اللحم في قدر، غطّوه بماء بارد واتركوه يغلي. انزعوا الرغوة الرمادية بمصفاة.",
-    "أضيفوا الجزر المقطّع دوائر والبصلة المغروز فيها القرنفل والكرفس والزعتر والرند والملح. غطّوا القدر واطهوه ساعة ونصف على نار هادئة.",
+    "أضيفوا الجزر المقطّع دوائر والبصلة المغروز فيها القرنفل والكرفس والزعتر والغار والملح. غطّوا القدر واطهوه ساعة ونصف على نار هادئة.",
     "في الأثناء، اطهوا الأرز. قلّبوا الفطر المقطّع في قليل من الزبدة.",
     "أخرجوا اللحم والجزر. صفّوا المرق واحتفظوا بـ 0,7 لتر منه.",
-    "ذوّبوا الزبدة في القدر، أضيفوا الفارينة وحرّكوا دقيقة. أضيفوا المرق تدريجيًا مع الخفق حتى تتكثّف الصلصة.",
-    "اخلطوا الكريمة مع صفار البيض وعصير القارص. خارج النار، أضيفوا الخليط إلى الصلصة مع التحريك.",
+    "ذوّبوا الزبدة في القدر، أضيفوا الدقيق وحرّكوا دقيقة. أضيفوا المرق تدريجيًا مع الخفق حتى تتكثّف الصلصة.",
+    "اخلطوا الكريمة مع صفار البيض وعصير الليمون. خارج النار، أضيفوا الخليط إلى الصلصة مع التحريك.",
     "أعيدوا اللحم والجزر والفطر. سخّنوا دون غليان وقدّموا مع الأرز."
    ],
    "astuce_fr": "Le veau se trouve chez le boucher (demandez « عجل ») ; sinon prenez du bœuf tendre ou des cuisses de poulet (cuisson 45 minutes). Ne faites jamais bouillir la sauce après le jaune d'œuf : elle tournerait.",
@@ -431,8 +431,8 @@
   {
    "id": "boeuf-bourguignon",
    "statut": "brouillon",
-   "nom_fr": "Bœuf bourguignon (sans vin)",
-   "nom_ar": "لحم بقر على طريقة بورغونيا (دون خمر)",
+   "nom_fr": "Bœuf bourguignon",
+   "nom_ar": "لحم بقر على طريقة بورغونيا",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -463,13 +463,11 @@
     {
      "ingredient_id": 172,
      "nom_fr": "Jus de raisin rouge (100 % pur jus)",
-     "nom_ar": "عصير عنب أحمر",
+     "nom_ar": "عصير عنب",
      "quantite": 0.5,
      "unite": "L",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "à la place du vin rouge",
-     "note_ar": "بدل الخمر"
+     "optionnel": false
     },
     {
      "ingredient_id": 168,
@@ -493,19 +491,17 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
-     "optionnel": true,
-     "note_fr": "à la place des lardons",
-     "note_ar": "بدل اللحم المقدّد"
+     "optionnel": true
     },
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -543,7 +539,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -552,7 +548,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -570,7 +566,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -606,7 +602,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -639,14 +635,14 @@
    "etapes_ar": [
     "جفّفوا اللحم بورق ماص. سخّنوا الزيت في قدر وحمّروا اللحم على 2 أو 3 دفعات، ثم أخرجوه.",
     "قلّبوا الديك الرومي المدخّن (إن استعملتموه)، ثم البصل المقطّع والجزر دوائر، 5 دقائق.",
-    "أعيدوا اللحم، رشّوا الفارينة وحرّكوا دقيقتين. أضيفوا الثوم المهروس والطماطم المعجونة.",
-    "أضيفوا عصير العنب والخل والمرق حتى يُغطّى اللحم تقريبًا، ثم الزعتر والرند والملح والفلفل.",
+    "أعيدوا اللحم، رشّوا الدقيق وحرّكوا دقيقتين. أضيفوا الثوم المهروس والطماطم المعجونة.",
+    "أضيفوا عصير العنب والخل والمرق حتى يُغطّى اللحم تقريبًا، ثم الزعتر والغار والملح والفلفل.",
     "غطّوا القدر واتركوه ساعتين ونصفًا على نار هادئة جدًا مع التحريك من حين لآخر.",
     "قبل 15 دقيقة من النهاية، حمّروا الفطر في الزبدة وأضيفوه إلى القدر.",
     "قدّموه مع بطاطا مسلوقة بالبخار أو بطاطا مهروسة أو معكرونة."
    ],
-   "astuce_fr": "Version halal : le vin rouge est remplacé par du jus de raisin rouge pur jus et un peu de vinaigre (pour l'acidité), les lardons par de la dinde fumée. C'est encore meilleur réchauffé le lendemain.",
-   "astuce_ar": "نسخة حلال: عُوّض الخمر الأحمر بعصير العنب الأحمر الطبيعي وقليل من الخل، واللحم المقدّد بالديك الرومي المدخّن. يكون ألذّ عند تسخينه في اليوم التالي.",
+   "astuce_fr": "Le jus de raisin rouge et un peu de vinaigre donnent à la sauce sa couleur et son acidité ; la dinde fumée apporte le goût fumé. C'est encore meilleur réchauffé le lendemain.",
+   "astuce_ar": "عصير العنب الأحمر مع قليل من الخل يعطيان الصلصة لونها وحموضتها، والديك الرومي المدخّن يضيف نكهة مدخّنة. يكون ألذّ عند تسخينه في اليوم التالي.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_boeuf-bourguignon_18889.aspx",
     "https://www.750g.com/boeuf-bourguignon-aux-carottes-r81087.htm"
@@ -687,7 +683,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -732,7 +728,7 @@
     {
      "ingredient_id": 16,
      "nom_fr": "Céleri",
-     "nom_ar": "كرافس",
+     "nom_ar": "كرفس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -754,7 +750,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -772,7 +768,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -792,7 +788,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -835,7 +831,7 @@
    ],
    "etapes_ar": [
     "ضعوا اللحم في قدر كبير، غطّوه جيدًا بماء بارد واتركوه يغلي. انزعوا الرغوة.",
-    "أضيفوا البصلة المغروز فيها القرنفل والزعتر والرند والفلفل والملح. اتركوه على نار هادئة ساعتين مع غطاء نصف مفتوح.",
+    "أضيفوا البصلة المغروز فيها القرنفل والزعتر والغار والفلفل والملح. اتركوه على نار هادئة ساعتين مع غطاء نصف مفتوح.",
     "قشّروا الجزر واللفت والبطاطا. اغسلوا الكرّاث جيدًا وقطّعوه قطعًا.",
     "أضيفوا الجزر واللفت والكرّاث والكرفس واتركوه 45 دقيقة أخرى.",
     "اطهوا البطاطا على حدة في قليل من المرق 25 دقيقة.",
@@ -888,13 +884,13 @@
      "unite": "kg",
      "placard": false,
      "optionnel": false,
-     "note_fr": "4 tranches, à la place du jambon",
-     "note_ar": "4 شرائح بدل لحم الخنزير"
+     "note_fr": "4 tranches",
+     "note_ar": "4 شرائح"
     },
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.12,
      "unite": "kg",
      "placard": false,
@@ -925,7 +921,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -955,8 +951,8 @@
     "ادهنوا الوجه بقليل من الكريمة إن أردتم، وأضيفوا بقية الجبن والفلفل.",
     "اطهوها 8 إلى 10 دقائق حتى يذوب الجبن ويتحمّر. قدّموها مع سلطة خضراء."
    ],
-   "astuce_fr": "Version halal : jambon de dinde à la place du jambon de porc. Avec un œuf au plat posé dessus, cela devient un croque-madame.",
-   "astuce_ar": "نسخة حلال: شرائح الديك الرومي بدل لحم الخنزير. مع بيضة مقلية فوقه يصبح «كروك مدام».",
+   "astuce_fr": "Avec un œuf au plat posé dessus, cela devient un croque-madame.",
+   "astuce_ar": "مع بيضة مقلية فوقه يصبح «كروك مدام».",
    "sources": [
     "https://www.marmiton.org/recettes/recette_croque-monsieur_19208.aspx",
     "https://www.750g.com/croque-monsieur-parisien-r4242.htm"
@@ -986,7 +982,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 8,
      "unite": "pièce",
      "placard": false,
@@ -1012,19 +1008,19 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
      "optionnel": true,
-     "note_fr": "en dés, à la place des lardons",
-     "note_ar": "مكعّبات بدل اللحم المقدّد"
+     "note_fr": "en dés",
+     "note_ar": "مكعّبات"
     },
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1051,7 +1047,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1077,8 +1073,8 @@
     "اسكبوا البيض على الخضر، اخفضوا النار، غطّوا المقلاة واتركوها 6 إلى 8 دقائق.",
     "اقلبوا العجّة بمساعدة صحن واطهوها دقيقتين أخريين. قدّموها ساخنة أو دافئة."
    ],
-   "astuce_fr": "Version halal : dinde fumée à la place des lardons, ou rien du tout pour une omelette végétarienne. Ajoutez un reste de champignons ou de poivron si vous en avez.",
-   "astuce_ar": "نسخة حلال: الديك الرومي المدخّن بدل اللحم المقدّد، أو دونه لعجّة نباتية. أضيفوا بقايا فطر أو فلفل إن وُجدت.",
+   "astuce_fr": "Sans dinde fumée, elle devient une omelette végétarienne. Ajoutez un reste de champignons ou de poivron si vous en avez.",
+   "astuce_ar": "دون الديك الرومي المدخّن تصبح عجّة نباتية. أضيفوا بقايا فطر أو فلفل إن وُجدت.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_omelette-paysanne_68864.aspx",
     "https://www.750g.com/omelette-paysanne-r8075.htm"
@@ -1145,7 +1141,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1165,7 +1161,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1183,7 +1179,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1192,7 +1188,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1228,7 +1224,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1259,12 +1255,12 @@
    "etapes_ar": [
     "ملّحوا الأفخاذ وفلفلوها. حمّروها في الزيت داخل قدر 5 دقائق على كل جهة، ثم أخرجوها.",
     "في القدر نفسه، قلّبوا الشالوط المقطّع 3 دقائق، ثم الفطر المقطّع مع الزبدة 5 دقائق.",
-    "رشّوا الفارينة وحرّكوا. أضيفوا الطماطم المقطّعة والطماطم المعجونة.",
-    "أضيفوا المرق والزعتر والرند، ثم أعيدوا الدجاج.",
+    "رشّوا الدقيق وحرّكوا. أضيفوا الطماطم المقطّعة والطماطم المعجونة.",
+    "أضيفوا المرق والزعتر والغار، ثم أعيدوا الدجاج.",
     "غطّوا القدر واتركوه 35 دقيقة على نار هادئة. رشّوا البقدونس المفروم وقدّموه مع المعكرونة أو البطاطا المهروسة."
    ],
-   "astuce_fr": "La recette classique contient du vin blanc ; ici, un bouillon et un filet de jus de citron à la fin donnent la même fraîcheur. L'échalote peut être remplacée par un petit oignon rouge.",
-   "astuce_ar": "الوصفة الأصلية فيها خمر أبيض؛ هنا يعوّضه المرق مع قليل من عصير القارص في الآخر. يمكن تعويض الشالوط ببصلة حمراء صغيرة.",
+   "astuce_fr": "Un bouillon et un filet de jus de citron à la fin donnent de la fraîcheur à la sauce. L'échalote peut être remplacée par un petit oignon rouge.",
+   "astuce_ar": "المرق مع قليل من عصير الليمون في الآخر يعطيان الصلصة انتعاشًا. يمكن تعويض الشالوط ببصلة حمراء صغيرة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_poulet-saute-sauce-chasseur_10907.aspx",
     "https://www.750g.com/poulet-chasseur-r5398.htm"
@@ -1305,7 +1301,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 1,
      "unite": "kg",
      "placard": false,
@@ -1334,7 +1330,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1363,7 +1359,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -1372,7 +1368,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1399,7 +1395,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1427,8 +1423,8 @@
    ],
    "etapes_ar": [
     "حمّروا اللحم في الزيت على دفعتين داخل قدر، ثم أخرجوه.",
-    "قلّبوا البصل المقطّع 5 دقائق. أعيدوا اللحم، رشّوا الفارينة وحرّكوا دقيقة.",
-    "أضيفوا المرق والثوم والزعتر والرند والملح والفلفل. غطّوا القدر واتركوه ساعة على نار هادئة.",
+    "قلّبوا البصل المقطّع 5 دقائق. أعيدوا اللحم، رشّوا الدقيق وحرّكوا دقيقة.",
+    "أضيفوا المرق والثوم والزعتر والغار والملح والفلفل. غطّوا القدر واتركوه ساعة على نار هادئة.",
     "أضيفوا الجزر المقشّر والمقطّع دوائر سميكة واتركوه ساعة و15 دقيقة أخرى حتى يصبح اللحم طريًّا جدًا.",
     "رشّوا البقدونس وقدّموه مع بطاطا مسلوقة بالبخار."
    ],
@@ -1463,7 +1459,7 @@
     {
      "ingredient_id": 55,
      "nom_fr": "Épaule d'agneau",
-     "nom_ar": "كتف علوش",
+     "nom_ar": "كتف خروف",
      "quantite": 1.2,
      "unite": "kg",
      "placard": false,
@@ -1474,7 +1470,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -1501,7 +1497,7 @@
     {
      "ingredient_id": 24,
      "nom_fr": "Petits pois",
-     "nom_ar": "جلبانة",
+     "nom_ar": "بازلاء",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -1512,7 +1508,7 @@
     {
      "ingredient_id": 26,
      "nom_fr": "Haricots verts",
-     "nom_ar": "لوبيا خضراء",
+     "nom_ar": "فاصوليا خضراء",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -1539,7 +1535,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1548,7 +1544,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1577,7 +1573,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -1604,7 +1600,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1632,13 +1628,13 @@
    ],
    "etapes_ar": [
     "حمّروا لحم الخروف في الزيت داخل قدر على دفعتين. أضيفوا البصل المقطّع حتى يذبل.",
-    "رشّوا الفارينة، حرّكوا، ثم أضيفوا الطماطم المعجونة والثوم المهروس.",
-    "أضيفوا المرق والزعتر والرند والملح والفلفل. غطّوا القدر واطهوه ساعة على نار هادئة.",
+    "رشّوا الدقيق، حرّكوا، ثم أضيفوا الطماطم المعجونة والثوم المهروس.",
+    "أضيفوا المرق والزعتر والغار والملح والفلفل. غطّوا القدر واطهوه ساعة على نار هادئة.",
     "أضيفوا الجزر واللفت والبطاطا مقطّعة واطهوه 30 دقيقة.",
-    "أضيفوا الجلبانة واللوبيا الخضراء المقطوعة نصفين، واتركوه 15 دقيقة أخرى ثم قدّموه."
+    "أضيفوا البازلاء واللوبيا الخضراء المقطوعة نصفين، واتركوه 15 دقيقة أخرى ثم قدّموه."
    ],
    "astuce_fr": "Plat de printemps : prenez les premiers petits pois et des carottes nouvelles. Hors saison, des petits pois surgelés conviennent très bien.",
-   "astuce_ar": "طبق ربيعي: استعملوا الجلبانة الأولى والجزر الجديد. خارج الموسم، تصلح الجلبانة المجمّدة جيدًا.",
+   "astuce_ar": "طبق ربيعي: استعملوا البازلاء الأولى والجزر الجديد. خارج الموسم، تصلح البازلاء المجمّدة جيدًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_navarin-d-agneau_48254.aspx",
     "https://www.750g.com/navarin-dagneau-leger-r92072.htm"
@@ -1670,7 +1666,7 @@
     {
      "ingredient_id": 56,
      "nom_fr": "Gigot d'agneau",
-     "nom_ar": "فخذ علوش",
+     "nom_ar": "فخذ خروف",
      "quantite": 2,
      "unite": "kg",
      "placard": false,
@@ -1755,7 +1751,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -1795,7 +1791,7 @@
    "id": "poulet-creme-champignons",
    "statut": "brouillon",
    "nom_fr": "Escalopes de poulet à la crème et aux champignons",
-   "nom_ar": "إسكالوب دجاج بالكريمة والفطر",
+   "nom_ar": "شرائح صدر الدجاج بالكريمة والفطر",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -1815,7 +1811,7 @@
     {
      "ingredient_id": 52,
      "nom_fr": "Escalope de poulet",
-     "nom_ar": "إسكالوب دجاج",
+     "nom_ar": "شرائح صدر الدجاج",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -1860,7 +1856,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1887,7 +1883,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1907,7 +1903,7 @@
     "Parsemez de persil et servez avec du riz ou des pâtes."
    ],
    "etapes_ar": [
-    "قطّعوا الإسكالوب شرائح. ملّحوها وفلفلوها.",
+    "قطّعوا شرائح الدجاج شرائح. ملّحوها وفلفلوها.",
     "حمّروها في الزيت على نار قوية 5 دقائق ثم أخرجوها.",
     "في المقلاة نفسها، قلّبوا البصل المقطّع مع الزبدة، ثم الفطر شرائح، 5 دقائق.",
     "أعيدوا الدجاج، أضيفوا الكريمة واتركوها 5 دقائق على نار هادئة حتى تتكثّف الصلصة.",
@@ -1944,7 +1940,7 @@
     {
      "ingredient_id": 52,
      "nom_fr": "Escalope de poulet",
-     "nom_ar": "إسكالوب دجاج",
+     "nom_ar": "شرائح صدر الدجاج",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -1966,7 +1962,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.12,
      "unite": "kg",
      "placard": false,
@@ -1977,7 +1973,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -1986,7 +1982,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 4,
      "unite": "c. à soupe",
      "placard": true,
@@ -1995,7 +1991,7 @@
     {
      "ingredient_id": 110,
      "nom_fr": "Chapelure",
-     "nom_ar": "فرينة الخبز",
+     "nom_ar": "فتات الخبز",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -2022,7 +2018,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2047,12 +2043,12 @@
    "etapes_ar": [
     "افتحوا كل قطعة دجاج في السمك على شكل كتاب دون فصلها. رقّقوها بين ورقتين.",
     "ملّحوها وفلفلوها. ضعوا شريحة جبن وشريحة ديك رومي على نصفها، ثم أغلقوها مع الضغط على الأطراف.",
-    "حضّروا ثلاثة صحون: الفارينة، البيض المخفوق، الخبز المرحي.",
-    "مرّروا كل قطعة في الفارينة ثم البيض ثم الخبز المرحي، وأعيدوا البيض والخبز المرحي لإحكام الغلق.",
+    "حضّروا ثلاثة صحون: الدقيق، البيض المخفوق، الخبز المطحون.",
+    "مرّروا كل قطعة في الدقيق ثم البيض ثم الخبز المطحون، وأعيدوا البيض والخبز المطحون لإحكام الغلق.",
     "اقلوها في الزيت على نار متوسطة 6 إلى 7 دقائق على كل جهة حتى تتحمّر جيدًا وتنضج من الداخل."
    ],
-   "astuce_fr": "Version halal avec jambon de dinde. Pour moins de gras, faites-les cuire 25 minutes au four à 200 °C, arrosés d'un filet d'huile.",
-   "astuce_ar": "نسخة حلال بشرائح الديك الرومي. لدهون أقل، اطهوها 25 دقيقة في الفرن على 200 درجة مع رشّة زيت.",
+   "astuce_fr": "Pour moins de gras, faites-les cuire 25 minutes au four à 200 °C, arrosés d'un filet d'huile.",
+   "astuce_ar": "لدهون أقل، اطهوها 25 دقيقة في الفرن على 200 درجة مع رشّة زيت.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_cordon-bleu-tout-maison_339916.aspx",
     "https://www.750g.com/cordons-bleus-maison-r100237.htm"
@@ -2093,7 +2089,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.08,
      "unite": "kg",
      "placard": false,
@@ -2160,7 +2156,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2229,19 +2225,19 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
      "optionnel": false,
-     "note_fr": "en gros morceaux, à la place du porc salé",
-     "note_ar": "قطع كبيرة بدل لحم الخنزير المملّح"
+     "note_fr": "en gros morceaux",
+     "note_ar": "قطع كبيرة"
     },
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -2288,7 +2284,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -2315,7 +2311,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2324,7 +2320,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2333,7 +2329,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Dinde fumée (lardons ou tranches)",
+     "Dinde fumée (en dés ou en tranches)",
      "Clous de girofle",
      "Thym séché"
     ],
@@ -2351,12 +2347,12 @@
    "etapes_ar": [
     "اشطفوا العدس. قشّروا الجزر وقطّعوه دوائر.",
     "في قدر، قلّبوا الديك الرومي المدخّن في الزيت 3 دقائق.",
-    "أضيفوا العدس والجزر والبصلة المغروز فيها القرنفل والثوم والزعتر والرند. غطّوا بماء بارد (نحو 1,2 لتر).",
+    "أضيفوا العدس والجزر والبصلة المغروز فيها القرنفل والثوم والزعتر والغار. غطّوا بماء بارد (نحو 1,2 لتر).",
     "اتركوه يغلي ثم اطهوه 35 إلى 40 دقيقة على نار هادئة مع غطاء نصف مفتوح. أضيفوا الماء عند الحاجة.",
     "أضيفوا الملح في آخر الطهي فقط (اللحم المدخّن مالح). رشّوا البقدونس وقدّموه ساخنًا."
    ],
-   "astuce_fr": "Version halal du « petit salé aux lentilles » : la poitrine de porc est remplacée par de la dinde fumée ou du bœuf fumé. Ne salez pas l'eau de cuisson : les lentilles resteraient dures.",
-   "astuce_ar": "نسخة حلال من «العدس باللحم المملّح»: عُوّض لحم الخنزير بالديك الرومي أو البقر المدخّن. لا تملّحوا ماء الطهي حتى لا يبقى العدس قاسيًا.",
+   "astuce_fr": "La dinde fumée (ou du bœuf fumé) parfume les lentilles. Ne salez pas l'eau de cuisson : les lentilles resteraient dures.",
+   "astuce_ar": "الديك الرومي المدخّن (أو لحم البقر المدخّن) يعطّر العدس. لا تملّحوا ماء الطهي حتى لا يبقى العدس قاسيًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_petit-sale-aux-lentilles_19044.aspx",
     "https://www.750g.com/petit-sale-aux-lentilles-et-saucisses-r82720.htm"
@@ -2386,7 +2382,7 @@
     {
      "ingredient_id": 98,
      "nom_fr": "Coquillettes",
-     "nom_ar": "مقرونة صغيرة",
+     "nom_ar": "معكرونة صغيرة",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -2440,7 +2436,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2466,8 +2462,8 @@
     "أعيدوها إلى القدر مع الزبدة والديك الرومي والكريمة إن استعملتموها والجبن. حرّكوا على نار هادئة وأضيفوا قليلًا من ماء الطهي إن جفّت.",
     "رشّوا الفلفل وقدّموها فورًا."
    ],
-   "astuce_fr": "Le plat préféré des enfants français. Version halal : jambon de dinde à la place du jambon de porc.",
-   "astuce_ar": "الطبق المفضّل للأطفال في فرنسا. نسخة حلال: الديك الرومي بدل لحم الخنزير.",
+   "astuce_fr": "Le plat préféré des enfants français.",
+   "astuce_ar": "الطبق المفضّل للأطفال في فرنسا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_gratin-de-coquillettes-au-jambon_20986.aspx",
     "https://www.750g.com/pates-a-la-creme-fraiche-et-au-jambon-r63759.htm"
@@ -2498,7 +2494,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -2538,7 +2534,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2573,7 +2569,7 @@
     "اشطفوا الأرز حتى يصبح الماء صافيًا، ثم صفّوه.",
     "في قدر، ذوّبوا الزبدة وقلّبوا البصل المفروم 3 دقائق دون أن يتلوّن.",
     "أضيفوا الأرز وحرّكوا دقيقتين حتى تصبح الحبات شفافة.",
-    "أضيفوا المرق الساخن وورق الرند. غطّوا القدر واتركوه 15 دقيقة على نار هادئة جدًا دون تحريك.",
+    "أضيفوا المرق الساخن وورق الغار. غطّوا القدر واتركوه 15 دقيقة على نار هادئة جدًا دون تحريك.",
     "أطفئوا النار واتركوه 5 دقائق مغطّى. فكّكوا الأرز بالشوكة قبل التقديم."
    ],
    "astuce_fr": "Règle simple : 1,5 volume de bouillon pour 1 volume de riz. Ne soulevez pas le couvercle pendant la cuisson.",
@@ -2655,7 +2651,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2712,7 +2708,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 6,
      "unite": "pièce",
      "placard": false,
@@ -2732,7 +2728,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -2741,7 +2737,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2750,7 +2746,7 @@
     {
      "ingredient_id": 22,
      "nom_fr": "Laitue",
-     "nom_ar": "سلاطة / خس",
+     "nom_ar": "خس",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -2770,7 +2766,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2793,7 +2789,7 @@
     "فتّتوا الصفار المحتفظ به فوق البيض، ورشّوا البقدونس المفروم، وقدّموه باردًا على أوراق الخس."
    ],
    "astuce_fr": "Ajoutez un peu de thon émietté à la farce pour une entrée plus copieuse.",
-   "astuce_ar": "أضيفوا قليلًا من التن المفتّت إلى الحشوة لمقبّلات أكثر إشباعًا.",
+   "astuce_ar": "أضيفوا قليلًا من التونة المفتّتة إلى الحشوة لمقبّلات أكثر إشباعًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_oeufs-mimosa_28602.aspx",
     "https://www.750g.com/oeufs-mimosa-creme-au-thon-r57671.htm"
@@ -2841,7 +2837,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -2870,7 +2866,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2879,7 +2875,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -2890,7 +2886,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -2910,7 +2906,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2943,13 +2939,13 @@
    "etapes_ar": [
     "قطّعوا البصل شرائح رقيقة.",
     "ذوّبوه في الزبدة على نار هادئة 25 إلى 30 دقيقة مع التحريك كثيرًا، حتى يصبح ذهبيًّا داكنًا.",
-    "رشّوا الفارينة، حرّكوا دقيقة، ثم أضيفوا المرق الساخن والزعتر والرند.",
+    "رشّوا الدقيق، حرّكوا دقيقة، ثم أضيفوا المرق الساخن والزعتر والغار.",
     "اتركوها تطهى 20 دقيقة. ملّحوا وفلفلوا.",
     "حمّصوا شرائح الخبز. اسكبوا الشوربة في أوعية تتحمّل الفرن، ضعوا عليها الخبز وغطّوه بالجبن.",
     "ضعوها تحت شوّاية الفرن 5 إلى 8 دقائق حتى يتحمّر الجبن."
    ],
-   "astuce_fr": "La recette parisienne contient souvent du vin blanc ; ici un bouillon seul suffit. Tout le goût vient des oignons bien dorés : ne pressez pas cette étape.",
-   "astuce_ar": "الوصفة الباريسية فيها غالبًا خمر أبيض؛ هنا يكفي المرق وحده. كل الطعم يأتي من البصل المحمّر جيدًا، فلا تستعجلوا هذه المرحلة.",
+   "astuce_fr": "Un bouillon seul suffit : tout le goût vient des oignons bien dorés, ne pressez pas cette étape.",
+   "astuce_ar": "يكفي المرق وحده: كل الطعم يأتي من البصل المحمّر جيدًا، فلا تستعجلوا هذه المرحلة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_soupe-a-l-oignon-gratinee_20864.aspx",
     "https://www.750g.com/soupe-a-loignon-gratinee-r79897.htm"
@@ -2959,7 +2955,7 @@
    "id": "veloute-potiron",
    "statut": "brouillon",
    "nom_fr": "Velouté de potiron",
-   "nom_ar": "شوربة القرع الأحمر المخملية",
+   "nom_ar": "شوربة اليقطين المخملية",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -2979,7 +2975,7 @@
     {
      "ingredient_id": 11,
      "nom_fr": "Potiron",
-     "nom_ar": "قرع أحمر",
+     "nom_ar": "يقطين",
      "quantite": 1.2,
      "unite": "kg",
      "placard": false,
@@ -3055,7 +3051,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3171,7 +3167,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3228,7 +3224,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.8,
      "unite": "kg",
      "placard": false,
@@ -3302,7 +3298,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3311,7 +3307,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -3369,7 +3365,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -3405,7 +3401,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -3423,7 +3419,7 @@
     {
      "ingredient_id": 16,
      "nom_fr": "Céleri",
-     "nom_ar": "كرافس",
+     "nom_ar": "كرفس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -3463,7 +3459,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3499,7 +3495,7 @@
    "id": "veloute-courgettes-fromage-fondu",
    "statut": "brouillon",
    "nom_fr": "Velouté de courgettes au fromage fondu",
-   "nom_ar": "شوربة القرع الأخضر بالجبن المذاب",
+   "nom_ar": "شوربة الكوسة بالجبن المذاب",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -3520,7 +3516,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 1,
      "unite": "kg",
      "placard": false,
@@ -3578,7 +3574,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3645,7 +3641,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -3710,7 +3706,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3746,7 +3742,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3778,7 +3774,7 @@
     "اغسلوا كل الخضر. قطّعوا الباذنجان والقرع والفلفل مكعّبات 2 سم. قطّعوا البصل شرائح واهرسوا الثوم وقطّعوا الطماطم.",
     "في مقلاة، حمّروا الباذنجان في ملعقتين من الزيت 8 دقائق ثم أخرجوه. افعلوا الشيء نفسه مع القرع ثم الفلفل.",
     "في قدر، قلّبوا البصل في بقية الزيت 5 دقائق. أضيفوا الثوم والطماطم واتركوها تتسبّك 10 دقائق.",
-    "أضيفوا كل الخضر المحمّرة والأعشاب والرند، والملح والفلفل.",
+    "أضيفوا كل الخضر المحمّرة والأعشاب والغار، والملح والفلفل.",
     "غطّوا القدر واتركوه 30 دقيقة على نار هادئة. أضيفوا الريحان المقطّع عند التقديم، ساخنًا أو باردًا."
    ],
    "astuce_fr": "Cuire chaque légume à part prend plus de temps mais garde leur goût : c'est le secret niçois. Elle est encore meilleure le lendemain.",
@@ -3791,8 +3787,8 @@
   {
    "id": "daube-provencale",
    "statut": "brouillon",
-   "nom_fr": "Daube provençale (sans vin)",
-   "nom_ar": "دوب بروفنسية بلحم البقر (دون خمر)",
+   "nom_fr": "Daube provençale",
+   "nom_ar": "دوب بروفنسية بلحم البقر",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -3824,13 +3820,11 @@
     {
      "ingredient_id": 172,
      "nom_fr": "Jus de raisin rouge (100 % pur jus)",
-     "nom_ar": "عصير عنب أحمر",
+     "nom_ar": "عصير عنب",
      "quantite": 0.5,
      "unite": "L",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "à la place du vin rouge",
-     "note_ar": "بدل الخمر"
+     "optionnel": false
     },
     {
      "ingredient_id": 121,
@@ -3844,7 +3838,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -3909,7 +3903,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -3945,7 +3939,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -3973,14 +3967,14 @@
     "Ajoutez les olives noires 15 minutes avant la fin. Servez avec des pâtes ou des pommes de terre."
    ],
    "etapes_ar": [
-    "في الليلة السابقة إن أمكن: ضعوا اللحم في وعاء مع عصير العنب والخل والبصل المقطّع والثوم والأعشاب والرند والقرنفل وقشر البرتقال. اتركوه في الثلاجة طوال الليل.",
+    "في الليلة السابقة إن أمكن: ضعوا اللحم في وعاء مع عصير العنب والخل والبصل المقطّع والثوم والأعشاب والغار والقرنفل وقشر البرتقال. اتركوه في الثلاجة طوال الليل.",
     "صفّوا اللحم واحتفظوا بالنقيع. جفّفوه وحمّروه في الزيت داخل قدر على دفعتين.",
     "أضيفوا الجزر دوائر والطماطم قطعًا، ثم اسكبوا النقيع.",
     "ملّحوا وفلفلوا، غطّوا القدر واتركوه 3 ساعات على نار هادئة جدًا.",
     "أضيفوا الزيتون الأسود قبل 15 دقيقة من النهاية. قدّموه مع المعكرونة أو البطاطا."
    ],
-   "astuce_fr": "Version halal : le vin rouge de la marinade est remplacé par du jus de raisin rouge et un peu de vinaigre. Le zeste d'orange est la touche provençale : prenez une orange non traitée.",
-   "astuce_ar": "نسخة حلال: عُوّض الخمر الأحمر في النقيع بعصير العنب الأحمر وقليل من الخل. قشر البرتقال هو اللمسة البروفنسية، فاختاروا برتقالة غير معالجة.",
+   "astuce_fr": "La marinade au jus de raisin rouge et au vinaigre attendrit la viande. Le zeste d'orange est la touche provençale : prenez une orange non traitée.",
+   "astuce_ar": "نقيع عصير العنب الأحمر والخل يليّن اللحم. قشر البرتقال هو اللمسة البروفنسية، فاختاروا برتقالة غير معالجة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_daube-provencale_11978.aspx",
     "https://www.750g.com/daube-de-boeuf-a-la-provencale-r208021.htm"
@@ -3990,7 +3984,7 @@
    "id": "pan-bagnat",
    "statut": "brouillon",
    "nom_fr": "Pan bagnat",
-   "nom_ar": "بان بانيا (سندويتش نيس بالتن)",
+   "nom_ar": "بان بانيا (سندويتش نيس بالتونة)",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -4011,7 +4005,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -4022,7 +4016,7 @@
     {
      "ingredient_id": 76,
      "nom_fr": "Thon à l'huile",
-     "nom_ar": "تن بالزيت",
+     "nom_ar": "تونة بالزيت",
      "quantite": 0.32,
      "unite": "kg",
      "placard": false,
@@ -4060,7 +4054,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -4078,7 +4072,7 @@
     {
      "ingredient_id": 175,
      "nom_fr": "Filets d'anchois à l'huile",
-     "nom_ar": "فيليه أنشوفة بالزيت",
+     "nom_ar": "أنشوفة بالزيت",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -4123,7 +4117,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -4149,7 +4143,7 @@
     "اسلقوا البيض 10 دقائق، برّدوه وقطّعوه دوائر.",
     "قطّعوا الطماطم دوائر، والفلفل والبصل الأخضر شرائح رقيقة.",
     "افتحوا الخبز نصفين. رشّوا الوجهين بزيت الزيتون وقطرات من الخل وقليل من الملح.",
-    "احشوه بالطماطم والفلفل والبصل والتن المفتّت والبيض والزيتون والأنشوفة والريحان، ثم الفلفل الأكحل.",
+    "احشوه بالطماطم والفلفل والبصل والتونة المفتّتة والبيض والزيتون والأنشوفة والريحان، ثم الفلفل الأسود.",
     "أغلقوه، لفّوا كل خبزة في غلاف بلاستيكي وضعوا فوقها شيئًا ثقيلًا ساعة في الثلاجة، فيتشرّب الخبز الزيت."
    ],
    "astuce_fr": "Cousin niçois du fricassé et du casse-croûte tunisien : les mêmes ingrédients, mais un pain rond bien imbibé d'huile.",
@@ -4212,7 +4206,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -4236,7 +4230,7 @@
     "أضيفوا 3 ملاعق من زيت الزيتون واتركوه يرتاح ساعة.",
     "سخّنوا الفرن إلى أقصى درجة (250، مع الشوّاية إن أمكن). ضعوا صفيحة كبيرة أو قالب تارت معدنيًا مع بقية الزيت في الفرن 5 دقائق.",
     "اسكبوا العجين طبقة رقيقة (3 إلى 4 مم) في الصفيحة الساخنة جدًا.",
-    "اطهوها 10 إلى 15 دقيقة حتى يتحمّر الوجه مع بقع بنية. قطّعوها، رشّوا الكثير من الفلفل الأكحل وكلوها ساخنة."
+    "اطهوها 10 إلى 15 دقيقة حتى يتحمّر الوجه مع بقع بنية. قطّعوها، رشّوا الكثير من الفلفل الأسود وكلوها ساخنة."
    ],
    "astuce_fr": "C'est une cousine de la karantika tunisienne, mais plus fine et sans œuf : la même farine de pois chiches convient.",
    "astuce_ar": "هي قريبة من الكرنتيكة التونسية لكنها أرقّ ودون بيض، ويصلح لها نفس دقيق الحمص.",
@@ -4280,7 +4274,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -4322,7 +4316,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -4342,7 +4336,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -4369,7 +4363,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -4405,7 +4399,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -4471,7 +4465,7 @@
     {
      "ingredient_id": 106,
      "nom_fr": "Haricots blancs",
-     "nom_ar": "لوبيا بيضاء",
+     "nom_ar": "فاصوليا بيضاء",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -4482,7 +4476,7 @@
     {
      "ingredient_id": 26,
      "nom_fr": "Haricots verts",
-     "nom_ar": "لوبيا خضراء",
+     "nom_ar": "فاصوليا خضراء",
      "quantite": 0.25,
      "unite": "kg",
      "placard": false,
@@ -4491,7 +4485,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -4500,7 +4494,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -4536,7 +4530,7 @@
     {
      "ingredient_id": 97,
      "nom_fr": "Macaroni",
-     "nom_ar": "مقرونة",
+     "nom_ar": "معكرونة",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -4592,7 +4586,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -4667,7 +4661,7 @@
     {
      "ingredient_id": 118,
      "nom_fr": "Câpres",
-     "nom_ar": "كبار",
+     "nom_ar": "قبّار",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -4676,7 +4670,7 @@
     {
      "ingredient_id": 175,
      "nom_fr": "Filets d'anchois à l'huile",
-     "nom_ar": "فيليه أنشوفة بالزيت",
+     "nom_ar": "أنشوفة بالزيت",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -4696,7 +4690,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -4725,7 +4719,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -4744,13 +4738,13 @@
     "Servez sur du pain grillé ou avec des bâtonnets de légumes. Se garde 1 semaine au réfrigérateur, couverte d'un filet d'huile."
    ],
    "etapes_ar": [
-    "صفّوا الزيتون والكبار (والأنشوفة).",
-    "ضعوها في الخلّاط مع الثوم وعصير القارص والزعتر والفلفل.",
+    "صفّوا الزيتون والقبّار (والأنشوفة).",
+    "ضعوها في الخلّاط مع الثوم وعصير الليمون والزعتر والفلفل.",
     "اخلطوا بضغطات قصيرة مع إضافة زيت الزيتون تدريجيًا حتى تحصلوا على عجينة خشنة قليلًا.",
     "قدّموها على خبز محمّص أو مع أصابع الخضر. تُحفظ أسبوعًا في الثلاجة مغطّاة بقليل من الزيت."
    ],
    "astuce_fr": "Inutile de saler : olives, câpres et anchois le sont déjà. Version verte : avec des olives vertes et des amandes.",
-   "astuce_ar": "لا داعي للملح، فالزيتون والكبار والأنشوفة مالحة. نسخة خضراء: بالزيتون الأخضر واللوز.",
+   "astuce_ar": "لا داعي للملح، فالزيتون والقبّار والأنشوفة مالحة. نسخة خضراء: بالزيتون الأخضر واللوز.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_tapenade-noire_21786.aspx",
     "https://www.750g.com/tapenade-provencale-aux-olives-noires-r94268.htm"
@@ -4790,7 +4784,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -4810,7 +4804,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -4840,7 +4834,7 @@
     "قشّروا الثوم، انزعوا البرعم الأخضر واهرسوه عجينة مع الملح (في المهراس أو بالعصّارة).",
     "أضيفوا صفار البيض واخلطوا.",
     "أضيفوا الزيت قطرة قطرة مع الخفق دون توقّف، ثم خيطًا رفيعًا عندما تبدأ الصلصة في التكثّف.",
-    "عندما يُدمج كل الزيت، تكون الصلصة متماسكة. أضيفوا قطرات من القارص.",
+    "عندما يُدمج كل الزيت، تكون الصلصة متماسكة. أضيفوا قطرات من الليمون.",
     "قدّموها مع خضر مسلوقة (بطاطا، جزر، لوبيا خضراء) وبيض مسلوق وسمك مطهو في الماء."
    ],
    "astuce_fr": "Si la sauce « tranche » (devient liquide), recommencez avec un nouveau jaune et ajoutez-y la sauce ratée cuillère par cuillère. Œuf cru : à consommer le jour même.",
@@ -4874,13 +4868,13 @@
     {
      "ingredient_id": 66,
      "nom_fr": "Daurade",
-     "nom_ar": "وراطة",
+     "nom_ar": "دنيس",
      "quantite": 1.2,
      "unite": "kg",
      "placard": false,
      "optionnel": false,
      "note_fr": "2 daurades vidées et écaillées (ou loup)",
-     "note_ar": "حبّتا وراطة منظّفتان (أو قاروص)"
+     "note_ar": "حبّتا دنيس منظّفتان (أو قاروص)"
     },
     {
      "ingredient_id": 1,
@@ -4930,7 +4924,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -4957,7 +4951,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -4975,7 +4969,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -4997,7 +4991,7 @@
    "etapes_ar": [
     "سخّنوا الفرن على 200 درجة. قطّعوا البطاطا دوائر رقيقة والبصل شرائح والطماطم أرباعًا.",
     "ضعوا البطاطا والبصل في صينية، رشّوا ملعقتين من الزيت والملح واطهوها 15 دقيقة.",
-    "اصنعوا 3 شقوق على كل جهة من السمك. ملّحوه وفلفلوه وضعوا دوائر القارص والثوم في بطنه.",
+    "اصنعوا 3 شقوق على كل جهة من السمك. ملّحوه وفلفلوه وضعوا دوائر الليمون والثوم في بطنه.",
     "ضعوا السمك فوق البطاطا، أضيفوا الطماطم والزيتون، رشّوا الأعشاب وبقية الزيت.",
     "اطهوه 20 إلى 25 دقيقة حتى ينفصل اللحم بسهولة عن الشوك. رشّوا البقدونس."
    ],
@@ -5012,7 +5006,7 @@
    "id": "calamars-provencale",
    "statut": "brouillon",
    "nom_fr": "Calamars à la provençale",
-   "nom_ar": "كلمار على الطريقة البروفنسية",
+   "nom_ar": "حبار على الطريقة البروفنسية",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -5032,7 +5026,7 @@
     {
      "ingredient_id": 73,
      "nom_fr": "Calamar",
-     "nom_ar": "كلمار",
+     "nom_ar": "حبار",
      "quantite": 1,
      "unite": "kg",
      "placard": false,
@@ -5070,7 +5064,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -5088,7 +5082,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5097,7 +5091,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5124,7 +5118,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5133,7 +5127,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5157,14 +5151,14 @@
     "Parsemez de persil haché et servez avec du riz pilaf."
    ],
    "etapes_ar": [
-    "جفّفوا حلقات الكلمار بمنشفة.",
+    "جفّفوا حلقات الحبار بمنشفة.",
     "قلّبوها 3 دقائق على نار قوية في ملعقتين من الزيت، ثم أخرجوها مع عصيرها.",
-    "في القدر نفسه، قلّبوا البصل والثوم في بقية الزيت. أضيفوا الطماطم المقطّعة والطماطم المعجونة والأعشاب والرند.",
-    "أعيدوا الكلمار، ملّحوا وفلفلوا، غطّوا القدر واتركوه 40 دقيقة على نار هادئة حتى يلين.",
+    "في القدر نفسه، قلّبوا البصل والثوم في بقية الزيت. أضيفوا الطماطم المقطّعة والطماطم المعجونة والأعشاب والغار.",
+    "أعيدوا الحبار، ملّحوا وفلفلوا، غطّوا القدر واتركوه 40 دقيقة على نار هادئة حتى يلين.",
     "رشّوا البقدونس المفروم وقدّموه مع أرز البيلاف."
    ],
    "astuce_fr": "Le calamar se cuit soit très vite (2 minutes), soit longtemps (40 minutes) : entre les deux, il devient caoutchouteux.",
-   "astuce_ar": "الكلمار يُطهى إما بسرعة كبيرة (دقيقتان) أو مدة طويلة (40 دقيقة)، وبينهما يصبح مطاطيًّا.",
+   "astuce_ar": "الحبار يُطهى إما بسرعة كبيرة (دقيقتان) أو مدة طويلة (40 دقيقة)، وبينهما يصبح مطاطيًّا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_calmars-sautes-a-la-provencale_15581.aspx",
     "https://www.750g.com/calamars-a-la-provencale-r49263.htm"
@@ -5249,7 +5243,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -5258,7 +5252,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5278,7 +5272,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5328,12 +5322,12 @@
    "etapes_ar": [
     "حمّروا الأفخاذ في ملعقتين من الزيت داخل قدر 10 دقائق، ثم أخرجوها.",
     "قلّبوا البصل المقطّع والفلفل شرائح في بقية الزيت 10 دقائق.",
-    "أضيفوا الثوم والطماطم قطعًا والفلفل الأحمر الحلو والفلفل الحار والزعتر والرند والملح.",
+    "أضيفوا الثوم والطماطم قطعًا والفلفل الأحمر الحلو والفلفل الحار والزعتر والغار والملح.",
     "أعيدوا الدجاج، غطّوا القدر واتركوه 35 دقيقة على نار هادئة.",
     "قدّموه مع الأرز الأبيض."
    ],
-   "astuce_fr": "Le piment d'Espelette est introuvable à Sousse : une pincée de piment rouge moulu et du paprika le remplacent. La recette basque contient souvent du jambon de Bayonne : on s'en passe très bien.",
-   "astuce_ar": "فلفل إسبيليت غير متوفّر في سوسة: رشة فلفل أحمر حار مطحون مع الفلفل الحلو تعوّضه. الوصفة الباسكية فيها غالبًا لحم خنزير، ونستغني عنه بسهولة.",
+   "astuce_fr": "Le piment d'Espelette est introuvable à Sousse : une pincée de piment rouge moulu et du paprika le remplacent.",
+   "astuce_ar": "فلفل إسبيليت غير متوفّر في سوسة: رشة فلفل أحمر حار مطحون مع الفلفل الحلو تعوّضه.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_poulet-basquaise_16969.aspx",
     "https://www.750g.com/poulet-basquaise-au-monsieur-cuisine-r208945.htm"
@@ -5408,7 +5402,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 6,
      "unite": "pièce",
      "placard": false,
@@ -5417,7 +5411,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5452,14 +5446,14 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.12,
      "unite": "kg",
      "placard": false,
      "optionnel": true,
-     "note_fr": "en tranches, à la place du jambon de Bayonne",
-     "note_ar": "شرائح بدل لحم الخنزير"
+     "note_fr": "en tranches",
+     "note_ar": "شرائح"
     }
    ],
    "prix_manquants_21_10": {
@@ -5488,8 +5482,8 @@
     "اخفقوا البيض واسكبوه على الخضر. حرّكوا بلطف 2 إلى 3 دقائق كالبيض المخفوق.",
     "قدّموها فورًا مع شرائح الديك الرومي المدخّن المحمّرة في المقلاة إن أردتم."
    ],
-   "astuce_fr": "Cousine basque de la chakchouka : la différence, c'est que les œufs sont brouillés dans les légumes. Le jambon de Bayonne traditionnel est remplacé par de la dinde fumée.",
-   "astuce_ar": "قريبة من الشكشوكة: الفرق أن البيض يُخلط مع الخضر. عُوّض لحم الخنزير التقليدي بالديك الرومي المدخّن.",
+   "astuce_fr": "Cousine basque de la chakchouka : la différence, c'est que les œufs sont brouillés dans les légumes. Quelques tranches de dinde fumée l'accompagnent.",
+   "astuce_ar": "قريبة من الشكشوكة: الفرق أن البيض يُخلط مع الخضر. ترافقها بعض شرائح الديك الرومي المدخّن.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_piperade-basque_27699.aspx",
     "https://www.750g.com/piperade-basque-r90880.htm"
@@ -5565,7 +5559,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -5574,7 +5568,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5603,7 +5597,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5667,7 +5661,7 @@
     "قطّعوا اللحم بالسكين مكعّبات 1 سم (أو اطلبوا ذلك من الجزار). قطّعوا الفلفل والبصل مكعّبات صغيرة.",
     "قلّبوا البصل في الزيت 3 دقائق، ثم أضيفوا اللحم وحمّروه 5 دقائق.",
     "أضيفوا الفلفل والثوم والفلفل الأحمر الحلو والحار، وحرّكوا دقيقتين.",
-    "أضيفوا المرق والزعتر والرند والملح. غطّوا القدر واتركوه 35 دقيقة على نار هادئة.",
+    "أضيفوا المرق والزعتر والغار والملح. غطّوا القدر واتركوه 35 دقيقة على نار هادئة.",
     "قدّموه مع بطاطا مسلوقة."
    ],
    "astuce_fr": "Ne prenez pas de viande hachée : les petits dés coupés au couteau donnent la texture. Le veau peut être remplacé par du bœuf tendre.",
@@ -5702,7 +5696,7 @@
     {
      "ingredient_id": 106,
      "nom_fr": "Haricots blancs",
-     "nom_ar": "لوبيا بيضاء",
+     "nom_ar": "فاصوليا بيضاء",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -5726,9 +5720,7 @@
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "à la place des saucisses de porc",
-     "note_ar": "بدل نقانق الخنزير"
+     "optionnel": false
     },
     {
      "ingredient_id": 3,
@@ -5742,7 +5734,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -5769,7 +5761,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -5787,7 +5779,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -5805,7 +5797,7 @@
     {
      "ingredient_id": 110,
      "nom_fr": "Chapelure",
-     "nom_ar": "فرينة الخبز",
+     "nom_ar": "فتات الخبز",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -5832,7 +5824,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -5858,14 +5850,14 @@
    ],
    "etapes_ar": [
     "في الليلة السابقة، انقعوا الفاصولياء في كثير من الماء البارد.",
-    "صفّوها وضعوها في قدر مع البصلة المغروز فيها القرنفل والجزرة وفصّين من الثوم والزعتر والرند. غطّوها بالماء واسلقوها ساعة دون ملح.",
+    "صفّوها وضعوها في قدر مع البصلة المغروز فيها القرنفل والجزرة وفصّين من الثوم والزعتر والغار. غطّوها بالماء واسلقوها ساعة دون ملح.",
     "في الأثناء، حمّروا أفخاذ الدجاج في الزيت، ثم المرقاز 5 دقائق.",
     "في المقلاة نفسها، قلّبوا بقية الثوم والطماطم المقطّعة والطماطم المعجونة 5 دقائق.",
     "سخّنوا الفرن على 160 درجة. في صحن فخّار كبير، رتّبوا بالتناوب الفاصولياء المصفّاة وصلصة الطماطم والدجاج والمرقاز. غطّوها بمرق الفاصولياء، وملّحوا وفلفلوا.",
-    "اطهوه ساعة ونصفًا. عندما تتكوّن قشرة، اضغطوها بملعقة (2 أو 3 مرات). رشّوا الخبز المرحي في آخر 20 دقيقة."
+    "اطهوه ساعة ونصفًا. عندما تتكوّن قشرة، اضغطوها بملعقة (2 أو 3 مرات). رشّوا الخبز المطحون في آخر 20 دقيقة."
    ],
-   "astuce_fr": "Version halal et simplifiée : le cassoulet classique contient du porc et du confit de canard (introuvable à Sousse) ; ici, cuisses de poulet et merguez. Ce n'est pas la recette d'origine, mais l'esprit est là.",
-   "astuce_ar": "نسخة حلال مبسّطة: الكاسوليه الأصلي فيه لحم خنزير وبطّ مطهو في دهنه (غير متوفّر في سوسة)؛ هنا أفخاذ دجاج ومرقاز. ليست الوصفة الأصلية لكن روحها حاضرة.",
+   "astuce_fr": "Version simple avec des cuisses de poulet et des merguez ; le confit de canard est introuvable à Sousse. Ce n'est pas la recette d'origine, mais l'esprit est là.",
+   "astuce_ar": "نسخة مبسّطة بأفخاذ الدجاج والمرقاز؛ البطّ المطهو في دهنه غير متوفّر في سوسة. ليست الوصفة الأصلية لكن روحها حاضرة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_cassoulet-a-ma-facon_16749.aspx",
     "https://www.750g.com/cassoulet-toulousain-gratine-r202221.htm"
@@ -5915,7 +5907,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5953,7 +5945,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6010,7 +6002,7 @@
     {
      "ingredient_id": 28,
      "nom_fr": "Artichaut",
-     "nom_ar": "قرنون",
+     "nom_ar": "خرشوف",
      "quantite": 1.2,
      "unite": "kg",
      "placard": false,
@@ -6021,7 +6013,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -6030,7 +6022,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -6077,7 +6069,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -6095,7 +6087,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -6113,7 +6105,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6140,14 +6132,14 @@
     "Couvrez et laissez cuire 30 minutes à feu doux, jusqu'à ce que les artichauts soient tendres. Servez tiède avec du persil."
    ],
    "etapes_ar": [
-    "حضّروا وعاء ماء مع عصير نصف قارصة. انزعوا الأوراق الكبيرة للقنارية، اقطعوا الأعلى وقشّروا الساق، قطّعوها أرباعًا، انزعوا الزغب وضعوها في ماء القارص.",
+    "حضّروا وعاء ماء مع عصير نصف ليمونة. انزعوا الأوراق الكبيرة للقنارية، اقطعوا الأعلى وقشّروا الساق، قطّعوها أرباعًا، انزعوا الزغب وضعوها في ماء الليمون.",
     "قلّبوا البصل المقطّع والجزر دوائر في الزيت 5 دقائق.",
     "أضيفوا القنارية المصفّاة والثوم وحرّكوا 3 دقائق.",
-    "أضيفوا المرق وبقية عصير القارص والزعتر والرند، والملح والفلفل.",
+    "أضيفوا المرق وبقية عصير الليمون والزعتر والغار، والملح والفلفل.",
     "غطّوا القدر واطهوه 30 دقيقة على نار هادئة حتى تلين القنارية. قدّموها دافئة مع البقدونس."
    ],
-   "astuce_fr": "La version provençale contient du vin blanc et parfois du lard : ici, bouillon et citron, sans viande. Les artichauts sont abondants et bon marché au printemps en Tunisie.",
-   "astuce_ar": "النسخة البروفنسية فيها خمر أبيض وأحيانًا شحم خنزير؛ هنا مرق وقارص دون لحم. القنارية وفيرة ورخيصة في الربيع في تونس.",
+   "astuce_fr": "Ici, bouillon et citron, sans viande. Les artichauts sont abondants et bon marché au printemps en Tunisie.",
+   "astuce_ar": "هنا مرق وليمون دون لحم. الخرشوف وفير ورخيص في الربيع في تونس.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_artichauts-a-la-barigoule-de-tatie-fifi_86648.aspx",
     "https://www.750g.com/artichauts-a-la-barigoule-r77640.htm"
@@ -6177,7 +6169,7 @@
     {
      "ingredient_id": 70,
      "nom_fr": "Merlan",
-     "nom_ar": "نازلي",
+     "nom_ar": "سمك الميرلان",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -6188,7 +6180,7 @@
     {
      "ingredient_id": 71,
      "nom_fr": "Maquereau",
-     "nom_ar": "سقمري",
+     "nom_ar": "إسقمري",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -6253,7 +6245,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -6273,7 +6265,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -6291,7 +6283,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -6311,7 +6303,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6338,13 +6330,13 @@
    ],
    "etapes_ar": [
     "ذوّبوا البصل والكرّاث المقطّعين في الزبدة داخل قدر 5 دقائق.",
-    "أضيفوا البطاطا قطعًا كبيرة والثوم والزعتر والرند، وغطّوا بالماء (نحو 1,5 لتر). ملّحوا واتركوها 15 دقيقة.",
-    "أضيفوا أولًا السمك الأكثر تماسكًا (الإسقمري)، ثم بعد 3 دقائق النازلي. اتركوه 8 دقائق على نار هادئة دون غليان قوي.",
+    "أضيفوا البطاطا قطعًا كبيرة والثوم والزعتر والغار، وغطّوا بالماء (نحو 1,5 لتر). ملّحوا واتركوها 15 دقيقة.",
+    "أضيفوا أولًا السمك الأكثر تماسكًا (الإسقمري)، ثم بعد 3 دقائق الميرلان. اتركوه 8 دقائق على نار هادئة دون غليان قوي.",
     "حضّروا الصلصة: خل، مستردة، زيت، ملح، فلفل.",
     "قدّموا المرق الساخن على الخبز المحمّص، ثم السمك والبطاطا مع الصلصة."
    ],
    "astuce_fr": "Recette de pêcheurs : prenez les poissons du jour les moins chers. Le maquereau et le merlan de Sousse conviennent parfaitement.",
-   "astuce_ar": "وصفة الصيّادين: اختاروا أرخص أسماك اليوم. الإسقمري والنازلي في سوسة يصلحان تمامًا.",
+   "astuce_ar": "وصفة الصيّادين: اختاروا أرخص أسماك اليوم. الإسقمري والميرلان في سوسة يصلحان تمامًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_cotriade-bretonne_21299.aspx",
     "https://www.marmiton.org/recettes/recette_cotriade_13746.aspx"
@@ -6353,7 +6345,7 @@
   {
    "id": "baeckeoffe",
    "statut": "brouillon",
-   "nom_fr": "Baeckeoffe (sans vin ni porc)",
+   "nom_fr": "Baeckeoffe",
    "nom_ar": "بيكوف الألزاسي: لحم وبطاطا في قدر الفرن",
    "nom_local": null,
    "cuisine": "française",
@@ -6386,24 +6378,22 @@
     {
      "ingredient_id": 55,
      "nom_fr": "Épaule d'agneau",
-     "nom_ar": "كتف علوش",
+     "nom_ar": "كتف خروف",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
      "optionnel": false,
-     "note_fr": "épaule en cubes (à la place du porc)",
-     "note_ar": "مكعّبات (بدل الخنزير)"
+     "note_fr": "en cubes",
+     "note_ar": "مكعّبات"
     },
     {
      "ingredient_id": 172,
-     "nom_fr": "Jus de raisin rouge (100 % pur jus)",
-     "nom_ar": "عصير عنب أحمر",
+     "nom_fr": "Jus de raisin blanc",
+     "nom_ar": "عصير عنب أبيض",
      "quantite": 0.25,
      "unite": "L",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "blanc de préférence, à la place du vin blanc",
-     "note_ar": "أبيض إن أمكن، بدل الخمر"
+     "optionnel": false
     },
     {
      "ingredient_id": 168,
@@ -6446,7 +6436,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -6482,7 +6472,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -6500,7 +6490,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -6520,7 +6510,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6551,15 +6541,15 @@
     "Faites cuire 3 h 30 sans ouvrir. Cassez la croûte de pâte à table."
    ],
    "etapes_ar": [
-    "في الليلة السابقة: ضعوا اللحم في وعاء مع نصف البصل المقطّع والثوم والزعتر والرند والقرنفل وعصير العنب والخل. اتركوه طوال الليل في الثلاجة.",
+    "في الليلة السابقة: ضعوا اللحم في وعاء مع نصف البصل المقطّع والثوم والزعتر والغار والقرنفل وعصير العنب والخل. اتركوه طوال الليل في الثلاجة.",
     "سخّنوا الفرن على 170 درجة. قشّروا البطاطا وقطّعوها دوائر 5 مم. قطّعوا الجزر والكرّاث دوائر.",
     "في قدر كبير (من الفخّار إن أمكن)، ضعوا طبقة بطاطا ثم بصلًا ثم لحمًا. كرّروا وانتهوا بالبطاطا. ملّحوا وفلفلوا كل طبقة.",
     "اسكبوا النقيع والمرق حتى يصل السائل إلى الثلثين.",
-    "اخلطوا الفارينة مع قليل من الماء لصنع حبل من العجين، وألصقوه حول الغطاء لإغلاق القدر بإحكام.",
+    "اخلطوا الدقيق مع قليل من الماء لصنع حبل من العجين، وألصقوه حول الغطاء لإغلاق القدر بإحكام.",
     "اطهوه 3 ساعات ونصفًا دون فتح. اكسروا قشرة العجين على المائدة."
    ],
-   "astuce_fr": "Version halal : le baeckeoffe classique mélange bœuf, porc et agneau marinés au vin blanc ; ici bœuf et agneau, jus de raisin blanc et un peu de vinaigre. Une cocotte en fonte avec couvercle lourd convient aussi.",
-   "astuce_ar": "نسخة حلال: البيكوف الأصلي يخلط البقر والخنزير والخروف في خمر أبيض؛ هنا بقر وخروف مع عصير عنب أبيض وقليل من الخل. يصلح أيضًا قدر من الحديد الزهر بغطاء ثقيل.",
+   "astuce_fr": "Bœuf et agneau marinés une nuit au jus de raisin blanc avec un peu de vinaigre. Une cocotte en fonte avec couvercle lourd convient aussi.",
+   "astuce_ar": "لحم بقر وخروف منقوعان ليلة في عصير العنب الأبيض مع قليل من الخل. يصلح أيضًا قدر من الحديد الزهر بغطاء ثقيل.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_baeckeoffe_11231.aspx",
     "https://www.750g.com/baeckeoffe-r23977.htm"
@@ -6589,7 +6579,7 @@
     {
      "ingredient_id": 22,
      "nom_fr": "Laitue",
-     "nom_ar": "سلاطة / خس",
+     "nom_ar": "خس",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -6599,19 +6589,17 @@
     },
     {
      "ingredient_id": 155,
-     "nom_fr": "Dinde fumée (lardons ou tranches)",
+     "nom_fr": "Dinde fumée (en dés ou en tranches)",
      "nom_ar": "لحم ديك رومي مدخّن",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
-     "optionnel": false,
-     "note_fr": "à la place des lardons",
-     "note_ar": "بدل اللحم المقدّد"
+     "optionnel": false
     },
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -6620,7 +6608,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -6640,7 +6628,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -6676,7 +6664,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6685,7 +6673,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Dinde fumée (lardons ou tranches)"
+     "Dinde fumée (en dés ou en tranches)"
     ],
     "sans prix": [
      "Baguette"
@@ -6705,8 +6693,8 @@
     "اخلطوا الخس مع الصلصة ووزّعوه في الصحون مع الخبز المحمّص والديك الرومي الساخن.",
     "ضعوا بيضة على كل صحن، فالصفار السائل يصبح صلصة."
    ],
-   "astuce_fr": "Version halal : dinde fumée à la place des lardons. Si les œufs pochés vous font peur, faites des œufs mollets (6 minutes dans l'eau bouillante).",
-   "astuce_ar": "نسخة حلال: الديك الرومي المدخّن بدل لحم الخنزير. إن صعب عليكم البيض دون قشر، اسلقوا البيض 6 دقائق فقط.",
+   "astuce_fr": "Si les œufs pochés vous font peur, faites des œufs mollets (6 minutes dans l'eau bouillante).",
+   "astuce_ar": "إن صعب عليكم البيض دون قشر، اسلقوا البيض 6 دقائق فقط.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_salade-lyonnaise_21573.aspx",
     "https://www.750g.com/salade-aux-lardons-et-oeuf-poche-r52859.htm"
@@ -6751,7 +6739,7 @@
      "unite": "L",
      "placard": true,
      "optionnel": false,
-     "note_fr": "vinaigre de vin de préférence",
+     "note_fr": "vinaigre de cidre ou de raisin de préférence",
      "note_ar": "خل عنب إن أمكن"
     },
     {
@@ -6766,7 +6754,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -6820,7 +6808,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -6838,7 +6826,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -6864,7 +6852,7 @@
     "أضيفوا الطماطم المقطّعة والطماطم المعجونة. غطّوا القدر واتركوه 30 دقيقة على نار هادئة.",
     "أخرجوا الدجاج، أضيفوا الكريمة إلى الصلصة واتركوها تتكثّف 5 دقائق. اسكبوها على الدجاج ورشّوا البقدونس."
    ],
-   "astuce_fr": "Le vinaigre perd son piquant à la cuisson : la sauce devient douce et parfumée. Prenez un vinaigre de vin ou de cidre plutôt que le vinaigre blanc d'alcool.",
+   "astuce_fr": "Le vinaigre perd son piquant à la cuisson : la sauce devient douce et parfumée. Prenez un vinaigre de cidre ou de raisin plutôt que le vinaigre blanc.",
    "astuce_ar": "يفقد الخل حدّته عند الطهي فتصبح الصلصة لطيفة وعطرة. استعملوا خل العنب أو التفاح بدل الخل الأبيض.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_poulet-au-vinaigre_11298.aspx",
@@ -6946,7 +6934,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -6982,7 +6970,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7012,8 +7000,8 @@
     "أضيفوا الأعشاب والشالوط والثوم، والكثير من الملح والفلفل.",
     "اتركوها ساعة في الثلاجة. قدّموها مع خبز محمّص أو بطاطا مسلوقة بقشرها."
    ],
-   "astuce_fr": "La recette lyonnaise contient un trait de vin blanc, remplacé ici par le vinaigre. Le fromage blanc peut être remplacé par du yaourt égoutté (labneh maison).",
-   "astuce_ar": "الوصفة الليونية فيها قليل من الخمر الأبيض، عوّضناه بالخل. يمكن تعويض الجبن الأبيض بياغورت مصفّى (لبنة منزلية).",
+   "astuce_fr": "Le fromage blanc peut être remplacé par du yaourt égoutté (labneh maison).",
+   "astuce_ar": "يمكن تعويض الجبن الأبيض بزبادي مصفّى (لبنة منزلية).",
    "sources": [
     "https://www.marmiton.org/recettes/recette_cervelle-de-canut-faisselle-aux-herbes_30856.aspx",
     "https://www.marmiton.org/recettes/recette_cervelle-de-canut-lyonnaise_335611.aspx"
@@ -7022,7 +7010,7 @@
   {
    "id": "poulet-vallee-auge",
    "statut": "brouillon",
-   "nom_fr": "Poulet vallée d'Auge (sans alcool)",
+   "nom_fr": "Poulet vallée d'Auge",
    "nom_ar": "دجاج نورماندي بالتفاح والكريمة",
    "nom_local": null,
    "cuisine": "française",
@@ -7059,7 +7047,6 @@
      "unite": "L",
      "placard": false,
      "optionnel": false,
-     "note_fr": "à la place du cidre et du calvados",
      "note_ar": "بدل الخمور"
     },
     {
@@ -7139,7 +7126,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7170,8 +7157,8 @@
     "أخرجوا الدجاج. أضيفوا الكريمة إلى القدر واتركوها 5 دقائق حتى تتكثّف الصلصة.",
     "أعيدوا الدجاج والفطر، سخّنوا وقدّموه مع التفاح المحمّر."
    ],
-   "astuce_fr": "Version halal : le cidre et le calvados de la recette normande sont remplacés par du jus de pomme pur jus et une cuillère de vinaigre (pour l'acidité).",
-   "astuce_ar": "نسخة حلال: عُوّض مشروب التفاح المخمّر والكحول في الوصفة النورماندية بعصير تفاح طبيعي وملعقة خل للحموضة.",
+   "astuce_fr": "Le jus de pomme pur jus et une cuillère de vinaigre (pour l'acidité) font toute la sauce, avec la crème.",
+   "astuce_ar": "عصير التفاح الطبيعي مع ملعقة خل للحموضة يصنعان الصلصة مع الكريمة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_cuisses-de-poulet-vallee-d-auge_15338.aspx",
     "https://www.marmiton.org/recettes/recette_poulet-vallee-d-auge_67052.aspx"
@@ -7201,7 +7188,7 @@
     {
      "ingredient_id": 70,
      "nom_fr": "Merlan",
-     "nom_ar": "نازلي",
+     "nom_ar": "سمك الميرلان",
      "quantite": 0.8,
      "unite": "kg",
      "placard": false,
@@ -7248,7 +7235,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7268,7 +7255,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -7286,7 +7273,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7311,13 +7298,13 @@
    ],
    "etapes_ar": [
     "سخّنوا الفرن على 180 درجة. ادهنوا صينية بالزبدة ورشّوا في قاعها الشالوط المفروم.",
-    "ضعوا فيليه السمك، ملّحوا وفلفلوا، واسكبوا المرق وعصير نصف القارصة.",
+    "ضعوا فيليه السمك، ملّحوا وفلفلوا، واسكبوا المرق وعصير نصف الليمونة.",
     "غطّوا بورق ألومنيوم واطهوه 12 إلى 15 دقيقة.",
     "في الأثناء، حمّروا الفطر شرائح في الزبدة.",
     "اسكبوا عصير طهي السمك في المقلاة مع الكريمة واتركوها 5 دقائق. اسكبوها على السمك وأضيفوا الفطر والبقدونس."
    ],
-   "astuce_fr": "La sole normande se fait au vin blanc et aux moules ; cette version simple utilise le merlan de Tunisie, un bouillon et du citron.",
-   "astuce_ar": "سمك موسى النورماندي يُحضّر بالخمر الأبيض وبلح البحر؛ هذه النسخة البسيطة تستعمل النازلي التونسي والمرق والقارص.",
+   "astuce_fr": "Cette version simple utilise le merlan de Tunisie, un bouillon et du citron.",
+   "astuce_ar": "هذه النسخة البسيطة تستعمل الميرلان التونسي والمرق والليمون.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_sole-normande_16972.aspx",
     "https://www.marmiton.org/recettes/recette_sole-aux-langoustines-sauce-normande_221875.aspx"
@@ -7326,7 +7313,7 @@
   {
    "id": "carbonade-flamande",
    "statut": "brouillon",
-   "nom_fr": "Carbonade flamande (sans bière)",
+   "nom_fr": "Carbonade flamande",
    "nom_ar": "كاربوناد فلاماندية: لحم بقر بالبصل",
    "nom_local": null,
    "cuisine": "française",
@@ -7372,8 +7359,8 @@
      "unite": "pièce",
      "placard": true,
      "optionnel": false,
-     "note_fr": "dans 0,6 L d'eau, à la place de la bière",
-     "note_ar": "في 0,6 لتر ماء بدل الجعة"
+     "note_fr": "dans 0,6 L d'eau",
+     "note_ar": "في 0,6 لتر ماء"
     },
     {
      "ingredient_id": 169,
@@ -7396,7 +7383,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.04,
      "unite": "kg",
      "placard": false,
@@ -7405,7 +7392,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -7416,7 +7403,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -7434,7 +7421,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -7470,7 +7457,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7501,12 +7488,12 @@
    "etapes_ar": [
     "حمّروا اللحم في الزيت داخل قدر على دفعتين، ثم أخرجوه.",
     "ذوّبوا البصل المقطّع في الزبدة 15 دقيقة حتى يتحمّر جيدًا.",
-    "رشّوا الفارينة والسكر الأسمر وحرّكوا. أعيدوا اللحم، اسكبوا المرق والخل، وأضيفوا الزعتر والرند.",
+    "رشّوا الدقيق والسكر الأسمر وحرّكوا. أعيدوا اللحم، اسكبوا المرق والخل، وأضيفوا الزعتر والغار.",
     "ادهنوا شرائح الخبز بالمستردة وضعوها على اللحم والمستردة إلى الأسفل.",
     "غطّوا القدر واتركوه ساعتين على نار هادئة جدًا، فيذوب الخبز ويكثّف الصلصة. قدّموه مع البطاطا المقلية أو المسلوقة بالبخار."
    ],
-   "astuce_fr": "Version halal : la bière brune est remplacée par un bouillon de bœuf, un peu de sucre roux et de vinaigre, qui redonnent le goût sucré-acidulé. Dans le Nord, on met du pain d'épices : un pain ordinaire marche aussi.",
-   "astuce_ar": "نسخة حلال: عُوّضت الجعة بمرق البقر مع قليل من السكر الأسمر والخل لإعادة الطعم الحلو الحامض. في الشمال يضعون خبز التوابل، والخبز العادي يصلح أيضًا.",
+   "astuce_fr": "Le bouillon de bœuf, un peu de sucre roux et de vinaigre donnent le goût sucré-acidulé. Dans le Nord, on met du pain d'épices : un pain ordinaire marche aussi.",
+   "astuce_ar": "مرق البقر مع قليل من السكر الأسمر والخل يعطي الطعم الحلو الحامض. في الشمال يضعون خبز التوابل، والخبز العادي يصلح أيضًا.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_carbonade-flamande-belgique_13458.aspx",
     "https://www.750g.com/carbonade-flamande-r3506.htm"
@@ -7515,7 +7502,7 @@
   {
    "id": "moules-marinieres",
    "statut": "brouillon",
-   "nom_fr": "Moules marinières (sans vin)",
+   "nom_fr": "Moules marinières",
    "nom_ar": "بلح البحر على طريقة البحّارة",
    "nom_local": null,
    "cuisine": "française",
@@ -7577,13 +7564,13 @@
      "unite": "pièce",
      "placard": true,
      "optionnel": false,
-     "note_fr": "dans 0,2 L d'eau, à la place du vin blanc",
-     "note_ar": "في 0,2 لتر ماء بدل الخمر"
+     "note_fr": "dans 0,2 L d'eau",
+     "note_ar": "في 0,2 لتر ماء"
     },
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -7601,7 +7588,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7610,7 +7597,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -7628,7 +7615,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7657,12 +7644,12 @@
    "etapes_ar": [
     "اغسلوا بلح البحر بماء بارد، احكّوه وانزعوا الخيوط الصغيرة. ارموا المكسور منه أو الذي يبقى مفتوحًا عند النقر عليه.",
     "في قدر كبير، ذوّبوا الشالوط والثوم المفرومين في الزبدة 3 دقائق.",
-    "اسكبوا المرق وعصير القارص، أضيفوا الزعتر والرند والفلفل، واتركوه يغلي.",
+    "اسكبوا المرق وعصير الليمون، أضيفوا الزعتر والغار والفلفل، واتركوه يغلي.",
     "أضيفوا بلح البحر، غطّوا القدر واطهوه 5 إلى 6 دقائق على نار قوية مع رجّ القدر مرتين.",
     "عندما تنفتح الأصداف، أضيفوا البقدونس المفروم (والكريمة). ارموا ما بقي مغلقًا. قدّموه مع البطاطا المقلية أو الخبز."
    ],
-   "astuce_fr": "Version halal : le vin blanc est remplacé par un bouillon et du citron. Les moules fraîches se trouvent chez certains poissonniers (Bizerte, lagune) ; les surgelées dépannent. Comptez 0,5 kg par personne.",
-   "astuce_ar": "نسخة حلال: عُوّض الخمر الأبيض بالمرق والقارص. يوجد بلح البحر الطازج عند بعض باعة السمك، والمجمّد يفي بالغرض. احسبوا 0,5 كغ لكل شخص.",
+   "astuce_fr": "Le bouillon et le citron parfument les moules. Les moules fraîches se trouvent chez certains poissonniers (Bizerte, lagune) ; les surgelées dépannent. Comptez 0,5 kg par personne.",
+   "astuce_ar": "المرق والليمون يعطّران بلح البحر. يوجد بلح البحر الطازج عند بعض باعة السمك، والمجمّد يفي بالغرض. احسبوا 0,5 كغ لكل شخص.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_moules-marinieres-persillees_32408.aspx",
     "https://www.750g.com/moules-a-la-mariniere-r95820.htm"
@@ -7738,7 +7725,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7756,7 +7743,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -7774,7 +7761,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7799,13 +7786,13 @@
    ],
    "etapes_ar": [
     "في اليوم السابق: انزعوا الملح من سمك القد بنقعه في وعاء كبير من الماء البارد 24 ساعة مع تغيير الماء 3 أو 4 مرات.",
-    "ضعوا السمك في قدر مع الحليب والزعتر والرند. سخّنوه 8 دقائق دون غليان. صفّوه وفتّتوه مع نزع الجلد والشوك.",
+    "ضعوا السمك في قدر مع الحليب والزعتر والغار. سخّنوه 8 دقائق دون غليان. صفّوه وفتّتوه مع نزع الجلد والشوك.",
     "اسلقوا البطاطا المقشّرة 20 دقيقة في الماء، ثم اهرسوها.",
     "اخلطوا السمك والبطاطا والثوم المهروس وزيت الزيتون، مع إضافة قليل من حليب الطهي للحصول على قوام طري. أضيفوا الفلفل (دون ملح).",
     "سخّنوا الفرن على 200 درجة. اسكبوه في صينية، رشّوا الجبن إن أردتم، وحمّروه 15 دقيقة. قدّموه مع البقدونس."
    ],
    "astuce_fr": "La morue salée est difficile à trouver à Sousse : avec 0,6 kg de merlan frais, salé 1 heure au gros sel puis rincé, on obtient une brandade très proche, sans dessalage.",
-   "astuce_ar": "سمك القد المملّح صعب الإيجاد في سوسة: مع 0,6 كغ من النازلي الطازج المملّح ساعة بالملح الخشن ثم المشطوف، تحصلون على نتيجة قريبة جدًا دون نقع.",
+   "astuce_ar": "سمك القد المملّح صعب الإيجاد في سوسة: مع 0,6 كغ من الميرلان الطازج المملّح ساعة بالملح الخشن ثم المشطوف، تحصلون على نتيجة قريبة جدًا دون نقع.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_brandade-de-morue_12736.aspx",
     "https://www.750g.com/brandade-de-morue-r80831.htm"
@@ -7841,12 +7828,12 @@
      "placard": false,
      "optionnel": false,
      "note_fr": "4 filets (loup, daurade ou merlan)",
-     "note_ar": "4 فيليه (قاروص أو وراطة أو نازلي)"
+     "note_ar": "4 فيليه (قاروص أو دنيس أو ميرلان)"
     },
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -7855,7 +7842,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -7873,7 +7860,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -7909,7 +7896,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -7927,7 +7914,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -7949,7 +7936,7 @@
    "etapes_ar": [
     "سخّنوا الفرن على 200 درجة. قطّعوا القرع والجزر أصابع رقيقة والطماطم مكعّبات.",
     "قصّوا 4 أوراق كبيرة من ورق الفرن. ضعوا في وسط كل واحدة طبقة من الخضر.",
-    "ضعوا فوقها قطعة سمك، ثم دائرة قارص وقليلًا من الثوم المفروم والزعتر والملح والفلفل ورشة زيت.",
+    "ضعوا فوقها قطعة سمك، ثم دائرة ليمون وقليلًا من الثوم المفروم والزعتر والملح والفلفل ورشة زيت.",
     "أغلقوا الأكياس بطيّ الأطراف عدة مرات حتى تُحكم جيدًا.",
     "اطهوها 15 إلى 20 دقيقة. قدّموها في أكياسها مع البقدونس."
    ],
@@ -7984,7 +7971,7 @@
     {
      "ingredient_id": 68,
      "nom_fr": "Rouget",
-     "nom_ar": "تريلية",
+     "nom_ar": "سلطان إبراهيم",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -7995,7 +7982,7 @@
     {
      "ingredient_id": 70,
      "nom_fr": "Merlan",
-     "nom_ar": "نازلي",
+     "nom_ar": "سمك الميرلان",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -8006,7 +7993,7 @@
     {
      "ingredient_id": 72,
      "nom_fr": "Crevettes",
-     "nom_ar": "قمبري",
+     "nom_ar": "جمبري",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -8042,7 +8029,7 @@
     {
      "ingredient_id": 15,
      "nom_fr": "Fenouil",
-     "nom_ar": "بسباس",
+     "nom_ar": "شمر",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -8060,7 +8047,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -8109,7 +8096,7 @@
     {
      "ingredient_id": 109,
      "nom_fr": "Baguette",
-     "nom_ar": "خبز باقات",
+     "nom_ar": "خبز الباغيت",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -8129,7 +8116,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8152,10 +8139,10 @@
     "Servez le bouillon dans des assiettes creuses sur le pain grillé frotté d'ail, puis les poissons et les pommes de terre à part."
    ],
    "etapes_ar": [
-    "قلّبوا البصل والبسباس المقطّع والثوم في زيت الزيتون داخل قدر كبير 8 دقائق.",
+    "قلّبوا البصل والشمر المقطّع والثوم في زيت الزيتون داخل قدر كبير 8 دقائق.",
     "أضيفوا الطماطم قطعًا والطماطم المعجونة والأعشاب والكركم وقشر البرتقال، وحرّكوا دقيقتين.",
     "أضيفوا البطاطا دوائر سميكة و1,5 لتر ماء ساخن. ملّحوا وفلفلوا واتركوها تغلي 15 دقيقة.",
-    "أضيفوا السمك الأكثر تماسكًا، ثم بعد 5 دقائق الأطرى (والقمبري). اتركوه 8 إلى 10 دقائق على نار هادئة.",
+    "أضيفوا السمك الأكثر تماسكًا، ثم بعد 5 دقائق الأطرى (والجمبري). اتركوه 8 إلى 10 دقائق على نار هادئة.",
     "قدّموا المرق في صحون عميقة على الخبز المحمّص المدهون بالثوم، ثم السمك والبطاطا على حدة."
    ],
    "astuce_fr": "Version de tous les jours : la vraie bouillabaisse marseillaise demande des poissons de roche précis et du safran, très cher. Le curcuma donne la couleur ; quelques pistils de safran si vous en avez.",
@@ -8169,7 +8156,7 @@
    "id": "merlan-meuniere",
    "statut": "brouillon",
    "nom_fr": "Filets de merlan meunière",
-   "nom_ar": "فيليه نازلي بالزبدة والقارص (مونيير)",
+   "nom_ar": "فيليه ميرلان بالزبدة والليمون (مونيير)",
    "nom_local": null,
    "cuisine": "française",
    "pays": "France",
@@ -8189,7 +8176,7 @@
     {
      "ingredient_id": 70,
      "nom_fr": "Merlan",
-     "nom_ar": "نازلي",
+     "nom_ar": "سمك الميرلان",
      "quantite": 0.8,
      "unite": "kg",
      "placard": false,
@@ -8200,7 +8187,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 4,
      "unite": "c. à soupe",
      "placard": true,
@@ -8227,7 +8214,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -8236,7 +8223,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -8254,7 +8241,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8274,14 +8261,14 @@
     "Versez ce beurre chaud sur le poisson et servez avec des pommes de terre vapeur."
    ],
    "etapes_ar": [
-    "جفّفوا الفيليه بالورق. ملّحوها وفلفلوها ومرّروها في الفارينة مع نفض الزائد.",
+    "جفّفوا الفيليه بالورق. ملّحوها وفلفلوها ومرّروها في الدقيق مع نفض الزائد.",
     "سخّنوا الزيت ونصف الزبدة في مقلاة كبيرة على نار متوسطة إلى قوية.",
     "اطهوا الفيليه 2 إلى 3 دقائق على كل جهة حتى تتحمّر، ثم ضعوها في الصحون.",
-    "في المقلاة، ذوّبوا بقية الزبدة حتى ترغي وتفوح رائحة البندق. أضيفوا عصير القارص والبقدونس المفروم.",
+    "في المقلاة، ذوّبوا بقية الزبدة حتى ترغي وتفوح رائحة البندق. أضيفوا عصير الليمون والبقدونس المفروم.",
     "اسكبوا هذه الزبدة الساخنة على السمك وقدّموه مع بطاطا مسلوقة بالبخار."
    ],
    "astuce_fr": "La sole meunière est la version chic ; le merlan, la daurade ou le pageot de Tunisie sont aussi bons et moins chers.",
-   "astuce_ar": "سمك موسى هو النسخة الفاخرة؛ النازلي والوراطة والباجو في تونس لذيذة أيضًا وأرخص.",
+   "astuce_ar": "سمك موسى هو النسخة الفاخرة؛ الميرلان والدنيس والباجو في تونس لذيذة أيضًا وأرخص.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_sole-meuniere_165182.aspx",
     "https://www.750g.com/sole-meuniere-r98057.htm"
@@ -8331,7 +8318,7 @@
     {
      "ingredient_id": 82,
      "nom_fr": "Gruyère",
-     "nom_ar": "جبن قرويار",
+     "nom_ar": "جبن غرويير",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -8378,7 +8365,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8444,7 +8431,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 4,
      "unite": "pièce",
      "placard": false,
@@ -8453,7 +8440,7 @@
     {
      "ingredient_id": 76,
      "nom_fr": "Thon à l'huile",
-     "nom_ar": "تن بالزيت",
+     "nom_ar": "تونة بالزيت",
      "quantite": 0.32,
      "unite": "kg",
      "placard": false,
@@ -8473,7 +8460,7 @@
     {
      "ingredient_id": 23,
      "nom_fr": "Concombre",
-     "nom_ar": "فقوس / خيار",
+     "nom_ar": "خيار",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -8500,7 +8487,7 @@
     {
      "ingredient_id": 175,
      "nom_fr": "Filets d'anchois à l'huile",
-     "nom_ar": "فيليه أنشوفة بالزيت",
+     "nom_ar": "أنشوفة بالزيت",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -8509,7 +8496,7 @@
     {
      "ingredient_id": 22,
      "nom_fr": "Laitue",
-     "nom_ar": "سلاطة / خس",
+     "nom_ar": "خس",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -8563,7 +8550,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8586,11 +8573,11 @@
     "اسلقوا البيض 9 دقائق، برّدوه وقطّعوه أرباعًا.",
     "قطّعوا الطماطم أرباعًا وملّحوها قليلًا. قطّعوا الفلفل والبصل الأخضر شرائح رقيقة والخيار دوائر.",
     "افركوا سلطانية كبيرة بفصّ الثوم. ضعوا الخس ثم الطماطم والفلفل والخيار والبصل.",
-    "أضيفوا التن المفتّت والبيض والزيتون وفيليه الأنشوفة.",
-    "رشّوا زيت الزيتون وقطرات من الخل والفلفل الأكحل والريحان."
+    "أضيفوا التونة المفتّتة والبيض والزيتون وفيليه الأنشوفة.",
+    "رشّوا زيت الزيتون وقطرات من الخل والفلفل الأسود والريحان."
    ],
    "astuce_fr": "À Nice, la vraie niçoise ne contient ni pommes de terre ni haricots verts cuits, seulement des crudités. Elle ressemble beaucoup à la salade tunisienne au thon.",
-   "astuce_ar": "في نيس، السلطة الأصلية لا تحتوي على بطاطا ولا لوبيا مطهوة، بل خضر نيئة فقط. وهي تشبه كثيرًا السلطة التونسية بالتن.",
+   "astuce_ar": "في نيس، السلطة الأصلية لا تحتوي على بطاطا ولا لوبيا مطهوة، بل خضر نيئة فقط. وهي تشبه كثيرًا السلطة التونسية بالتونة.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_salade-nicoise-l-authentique-nicoise_30330.aspx",
     "https://www.750g.com/salade-nicoise-r10927.htm"
@@ -8632,7 +8619,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -8652,7 +8639,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -8661,7 +8648,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -8688,7 +8675,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8706,7 +8693,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -8726,7 +8713,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8751,7 +8738,7 @@
     "Servez tiède ou froid, avec des œufs durs si vous voulez."
    ],
    "etapes_ar": [
-    "اشطفوا العدس. ضعوه في قدر مع الجزر مكعّبات صغيرة والزعتر والرند. غطّوه جيدًا بماء بارد.",
+    "اشطفوا العدس. ضعوه في قدر مع الجزر مكعّبات صغيرة والزعتر والغار. غطّوه جيدًا بماء بارد.",
     "اطهوه 20 إلى 25 دقيقة على نار هادئة حتى ينضج ويبقى كاملًا. ملّحوا في الآخر وصفّوه.",
     "حضّروا الصلصة: مستردة، خل، ملح، فلفل، ثم الزيت مع الخفق.",
     "اسكبوا الصلصة على العدس وهو دافئ (يمتصّها أفضل). أضيفوا الشالوط والبقدونس المفرومين.",
@@ -8818,7 +8805,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -8827,7 +8814,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -8863,7 +8850,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -8881,7 +8868,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -8949,7 +8936,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -8987,7 +8974,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -9007,12 +8994,12 @@
    ],
    "etapes_ar": [
     "في قدر، ذوّبوا الزبدة على نار هادئة.",
-    "أضيفوا الفارينة دفعة واحدة وحرّكوا دقيقة إلى دقيقتين بالخفّاقة دون أن تتلوّن.",
+    "أضيفوا الدقيق دفعة واحدة وحرّكوا دقيقة إلى دقيقتين بالخفّاقة دون أن تتلوّن.",
     "أضيفوا الحليب البارد تدريجيًا مع الخفق دون توقّف لتفادي الكتل.",
     "اتركوها تتكثّف 5 إلى 8 دقائق على نار هادئة مع التحريك. أضيفوا جوزة الطيب والملح والفلفل."
    ],
    "astuce_fr": "Quantité pour un gratin de 4 personnes. Règle à retenir : autant de beurre que de farine, et 0,5 L de lait. Pour une sauce plus épaisse (soufflé, croquettes), mettez moins de lait.",
-   "astuce_ar": "الكمية تكفي غراتان لأربعة أشخاص. القاعدة: نفس الكمية من الزبدة والفارينة، و0,5 لتر من الحليب. لصلصة أكثف (سوفليه، كروكات)، قلّلوا الحليب.",
+   "astuce_ar": "الكمية تكفي غراتان لأربعة أشخاص. القاعدة: نفس الكمية من الزبدة والدقيق، و0,5 لتر من الحليب. لصلصة أكثف (سوفليه، كروكات)، قلّلوا الحليب.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_sauce-bechamel-legere-de-nanou_167422.aspx",
     "https://www.750g.com/sauce-bechamel-r100094.htm"
@@ -9042,7 +9029,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -9089,7 +9076,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -9137,7 +9124,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -9148,7 +9135,7 @@
     {
      "ingredient_id": 120,
      "nom_fr": "Moutarde",
-     "nom_ar": "موتارد / خردل",
+     "nom_ar": "خردل",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -9184,7 +9171,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,

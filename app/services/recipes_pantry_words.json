@@ -18,6 +18,9 @@
 "syn": [
 "filets d'anchois",
 "Filets d'anchois à l'huile"
+],
+"darija": [
+"فيليه أنشوفة بالزيت"
 ]
 },
 "aneth": {
@@ -36,7 +39,8 @@
 },
 "artichaut": {
 "darija": [
-"guernoun"
+"guernoun",
+"قرنون"
 ]
 },
 "aubergine": {
@@ -47,7 +51,8 @@
 "baguette": {
 "darija": [
 "baguette",
-"khobz"
+"khobz",
+"خبز باقات"
 ],
 "syn": [
 "pain"
@@ -68,7 +73,8 @@
 },
 "betterave": {
 "darija": [
-"bangar"
+"bangar",
+"بنجر"
 ]
 },
 "beurre": {
@@ -95,7 +101,8 @@
 },
 "ble dur en grains": {
 "darija": [
-"qamh"
+"qamh",
+"قمح حب"
 ],
 "syn": [
 "Blé dur en grains entiers",
@@ -148,7 +155,8 @@
 },
 "cacahuetes decortiquees": {
 "darija": [
-"kakawia"
+"kakawia",
+"كاكاوية"
 ],
 "syn": [
 "arachides",
@@ -165,7 +173,8 @@
 },
 "cafe moulu": {
 "darija": [
-"kahwa"
+"kahwa",
+"قهوة مرحية"
 ]
 },
 "caille": {
@@ -179,7 +188,8 @@
 },
 "calamar": {
 "darija": [
-"calamar"
+"calamar",
+"كلمار"
 ]
 },
 "cannelle": {
@@ -189,7 +199,8 @@
 },
 "capres": {
 "darija": [
-"kabar"
+"kabar",
+"كبار"
 ]
 },
 "cardamome": {
@@ -203,7 +214,8 @@
 },
 "carotte": {
 "darija": [
-"sfennarya"
+"sfennarya",
+"سفنارية"
 ],
 "syn": [
 "carottes"
@@ -211,17 +223,20 @@
 },
 "carvi": {
 "darija": [
-"karwiya"
+"karwiya",
+"كروية"
 ]
 },
 "celeri": {
 "darija": [
-"krafes"
+"krafes",
+"كرافس"
 ]
 },
 "cerises": {
 "darija": [
-"hab el mlouk"
+"hab el mlouk",
+"حب الملوك"
 ]
 },
 "champignons de paris": {
@@ -231,7 +246,8 @@
 },
 "chapelure": {
 "darija": [
-"chapelure"
+"chapelure",
+"فرينة الخبز"
 ]
 },
 "chocolat noir": {
@@ -248,13 +264,16 @@
 "chou fleur": {
 "darija": [
 "chou-fleur",
-"nouwar"
+"nouwar",
+"نوار"
 ]
 },
 "citron": {
 "darija": [
 "lim",
-"gares"
+"gares",
+"ليم",
+"قارص"
 ],
 "syn": [
 "citrons"
@@ -262,12 +281,17 @@
 },
 "citron confit": {
 "darija": [
-"lim mrakad"
+"lim mrakad",
+"مرقّد"
 ]
 },
 "citron noir seche": {
 "syn": [
 "loomi"
+],
+"darija": [
+"لومي",
+"ليمون أسود"
 ]
 },
 "clementine": {
@@ -295,7 +319,8 @@
 "concombre": {
 "darija": [
 "fakous",
-"khiar"
+"khiar",
+"فقوس"
 ],
 "syn": [
 "concombres"
@@ -303,17 +328,20 @@
 },
 "confiture": {
 "darija": [
-"maajoun"
+"maajoun",
+"معجون"
 ]
 },
 "coquillettes": {
 "darija": [
-"makrouna sghira"
+"makrouna sghira",
+"مقرونة صغيرة"
 ]
 },
 "coriandre fraiche": {
 "darija": [
-"kosbor"
+"kosbor",
+"قصبر"
 ],
 "syn": [
 "coriandre verte"
@@ -321,7 +349,8 @@
 },
 "coriandre moulue": {
 "darija": [
-"tabel"
+"tabel",
+"تابل"
 ]
 },
 "cornichons": {
@@ -334,17 +363,22 @@
 },
 "courgette": {
 "darija": [
-"garaa"
+"garaa",
+"قرع أخضر"
 ]
 },
 "couscous fin": {
 "darija": [
-"kosksi rqiq"
+"kosksi rqiq",
+"كسكسي رقيق"
 ]
 },
 "couscous moyen": {
 "darija": [
-"kosksi"
+"kosksi",
+"kousksi",
+"kosksou",
+"couscous"
 ],
 "syn": [
 "couscous",
@@ -358,7 +392,8 @@
 },
 "crevettes": {
 "darija": [
-"gambri"
+"gambri",
+"قمبري"
 ],
 "syn": [
 "crevette"
@@ -377,7 +412,8 @@
 "cur et rognons d agneau": {
 "darija": [
 "galb w klawi",
-"galb w kliwat allouch"
+"galb w kliwat allouch",
+"قلب وكلاوي الخروف"
 ]
 },
 "curcuma": {
@@ -400,7 +436,8 @@
 },
 "daurade": {
 "darija": [
-"wrata"
+"wrata",
+"وراطة"
 ],
 "syn": [
 "dorade"
@@ -428,7 +465,8 @@
 },
 "epaule d agneau": {
 "darija": [
-"ktef allouch"
+"ktef allouch",
+"كتف علوش"
 ]
 },
 "epinards": {
@@ -438,12 +476,14 @@
 },
 "escalope de dinde": {
 "darija": [
-"escalope dinde"
+"escalope dinde",
+"إسكالوب ديك رومي"
 ]
 },
 "escalope de poulet": {
 "darija": [
-"escalope djej"
+"escalope djej",
+"إسكالوب دجاج"
 ],
 "syn": [
 "blanc de poulet",
@@ -452,7 +492,8 @@
 },
 "farine": {
 "darija": [
-"farina"
+"farina",
+"فارينة"
 ]
 },
 "farine complete": {
@@ -504,7 +545,8 @@
 },
 "fenouil": {
 "darija": [
-"besbes"
+"besbes",
+"بسباس"
 ]
 },
 "fenugrec": {
@@ -520,7 +562,8 @@
 },
 "feuilles de brick": {
 "darija": [
-"malsouka"
+"malsouka",
+"ملسوقة"
 ],
 "syn": [
 "feuilles de malsouka",
@@ -529,7 +572,8 @@
 },
 "feuilles de laurier": {
 "darija": [
-"rand"
+"rand",
+"ورق رند"
 ]
 },
 "feuilles de vigne": {
@@ -549,12 +593,14 @@
 },
 "feves seches": {
 "darija": [
-"foul"
+"foul",
+"فول يابس"
 ]
 },
 "figues": {
 "darija": [
-"karmous"
+"karmous",
+"كرموس"
 ]
 },
 "figues seches": {
@@ -575,12 +621,14 @@
 },
 "foie d agneau": {
 "darija": [
-"kebda allouch"
+"kebda allouch",
+"كبدة علوش"
 ]
 },
 "foie de volaille": {
 "darija": [
-"kebda djej"
+"kebda djej",
+"كبدة دجاج"
 ]
 },
 "fraise": {
@@ -625,7 +673,8 @@
 },
 "gigot d agneau": {
 "darija": [
-"fakhdh allouch"
+"fakhdh allouch",
+"فخذ علوش"
 ]
 },
 "gingembre frais": {
@@ -645,7 +694,8 @@
 },
 "gombo": {
 "darija": [
-"gnawia"
+"gnawia",
+"قناوية"
 ]
 },
 "graines de fenouil": {
@@ -653,7 +703,8 @@
 "besbes (zriaa)",
 "zriaat besbes",
 "zrara besbes",
-"habbet besbes"
+"habbet besbes",
+"شمرة"
 ],
 "syn": [
 "fenouil en graines",
@@ -667,7 +718,8 @@
 },
 "gruyere": {
 "darija": [
-"gruyère"
+"gruyère",
+"جبن قرويار"
 ],
 "syn": [
 "fromage gruyère"
@@ -675,7 +727,8 @@
 },
 "halwa chamia": {
 "darija": [
-"halwa"
+"halwa",
+"حلوى شامية"
 ]
 },
 "hararat": {
@@ -688,17 +741,20 @@
 },
 "haricots blancs": {
 "darija": [
-"loubia"
+"loubia",
+"لوبيا بيضاء"
 ]
 },
 "haricots verts": {
 "darija": [
-"loubia khadhra"
+"loubia khadhra",
+"لوبيا خضراء"
 ]
 },
 "harissa": {
 "darija": [
-"harissa"
+"harissa",
+"hrissa"
 ],
 "syn": [
 "harissa arbi"
@@ -711,7 +767,8 @@
 },
 "huile d argan": {
 "darija": [
-"zit argan"
+"zit argan",
+"زيت الأرڨان"
 ],
 "syn": [
 "huile d'argan alimentaire",
@@ -749,6 +806,9 @@
 "syn": [
 "Jus de raisin rouge",
 "jus de raisin rouge"
+],
+"darija": [
+"عصير عنب أحمر"
 ]
 },
 "kaddid": {
@@ -778,7 +838,8 @@
 },
 "laitue": {
 "darija": [
-"salata"
+"salata",
+"سلاطة"
 ]
 },
 "langues d oiseau": {
@@ -831,7 +892,8 @@
 },
 "macaroni": {
 "darija": [
-"makrouna"
+"makrouna",
+"مقرونة"
 ],
 "syn": [
 "pâtes"
@@ -858,12 +920,14 @@
 },
 "mandarine": {
 "darija": [
-"mandarine"
+"mandarine",
+"مندرين"
 ]
 },
 "maquereau": {
 "darija": [
-"sgoumri"
+"sgoumri",
+"سقمري"
 ]
 },
 "mayonnaise": {
@@ -891,7 +955,8 @@
 },
 "menthe sechee": {
 "darija": [
-"naanaa yebes"
+"naanaa yebes",
+"نعناع يابس"
 ]
 },
 "merguez": {
@@ -901,7 +966,8 @@
 },
 "merlan": {
 "darija": [
-"merlan"
+"merlan",
+"نازلي"
 ]
 },
 "mhamsa": {
@@ -925,7 +991,11 @@
 },
 "mloukhia": {
 "darija": [
-"mloukhia"
+"mloukhia",
+"mlokhia",
+"molokhia",
+"mloukhiya",
+"molokheya"
 ],
 "syn": [
 "corète"
@@ -959,7 +1029,8 @@
 },
 "moutarde": {
 "darija": [
-"moutarde"
+"moutarde",
+"موتارد"
 ]
 },
 "mozzarella": {
@@ -969,7 +1040,8 @@
 },
 "msemen": {
 "darija": [
-"mlawi"
+"mlawi",
+"ملاوي"
 ],
 "syn": [
 "galette feuilletée",
@@ -1027,7 +1099,10 @@
 },
 "oeufs": {
 "darija": [
-"adham"
+"adham",
+"عظم",
+"bid",
+"بيضة"
 ],
 "syn": [
 "oeuf",
@@ -1062,7 +1137,8 @@
 "orge concasse": {
 "darija": [
 "chair",
-"malthouth"
+"malthouth",
+"شعير مرمز"
 ]
 },
 "pain libanais": {
@@ -1076,7 +1152,9 @@
 },
 "paprika": {
 "darija": [
-"felfel zina"
+"felfel zina",
+"فلفل أحمر حلو",
+"فلفل زينة"
 ],
 "syn": [
 "felfel zina",
@@ -1085,7 +1163,8 @@
 },
 "pasteque": {
 "darija": [
-"dellaa"
+"dellaa",
+"دلاع"
 ]
 },
 "patate douce": {
@@ -1119,7 +1198,10 @@
 },
 "persil": {
 "darija": [
-"maadnous"
+"maadnous",
+"معدنوس",
+"ma9dnous",
+"ma3dnous"
 ],
 "syn": [
 "persil plat"
@@ -1127,7 +1209,8 @@
 },
 "petits pois": {
 "darija": [
-"jelbena"
+"jelbena",
+"جلبانة"
 ]
 },
 "pieds d agneau": {
@@ -1139,7 +1222,8 @@
 "pignons": {
 "darija": [
 "bouper",
-"snouber"
+"snouber",
+"زقوقو أبيض"
 ],
 "syn": [
 "pignons de pin"
@@ -1158,7 +1242,8 @@
 "piment doux long": {
 "darija": [
 "felfel",
-"felfel hlou"
+"felfel hlou",
+"فلفل حلو"
 ],
 "syn": [
 "felfel baklouti",
@@ -1178,14 +1263,16 @@
 },
 "piment rouge moulu": {
 "darija": [
-"felfel har mrahi"
+"felfel har mrahi",
+"فلفل أحمر حار مرحي"
 ]
 },
 "piment rouge seche": {
 "darija": [
 "felfel yebes",
 "felfel ahmar yabes",
-"felfel chayah"
+"felfel chayah",
+"فلفل أحمر يابس"
 ],
 "syn": [
 "piment rouge séché entier",
@@ -1222,7 +1309,8 @@
 },
 "poivre noir": {
 "darija": [
-"felfel akhal"
+"felfel akhal",
+"فلفل أكحل"
 ],
 "syn": [
 "poivre"
@@ -1248,7 +1336,8 @@
 },
 "pomme de terre": {
 "darija": [
-"batata"
+"batata",
+"بطاطس"
 ],
 "syn": [
 "patate",
@@ -1257,12 +1346,17 @@
 },
 "potiron": {
 "darija": [
-"garaa hamra"
+"garaa hamra",
+"قرع أحمر"
 ]
 },
 "poulet entier": {
 "darija": [
-"djeja kemla"
+"djeja kemla",
+"dajaj",
+"djej",
+"djaj",
+"دجاج"
 ],
 "syn": [
 "poulet"
@@ -1270,7 +1364,8 @@
 },
 "poulpe": {
 "darija": [
-"karnit"
+"karnit",
+"قرنيط"
 ]
 },
 "pruneaux": {
@@ -1299,7 +1394,8 @@
 },
 "rayeb": {
 "darija": [
-"rayeb"
+"rayeb",
+"رايب"
 ]
 },
 "rechta": {
@@ -1314,7 +1410,8 @@
 },
 "riz": {
 "darija": [
-"rouz"
+"rouz",
+"روز"
 ]
 },
 "riz basmati": {
@@ -1332,7 +1429,8 @@
 },
 "rouget": {
 "darija": [
-"trilia"
+"trilia",
+"تريلية"
 ]
 },
 "safran": {
@@ -1360,7 +1458,8 @@
 "seiche": {
 "darija": [
 "chouabi",
-"sobia"
+"sobia",
+"شوابي"
 ],
 "syn": [
 "sépia"
@@ -1373,7 +1472,8 @@
 },
 "semoule fine": {
 "darija": [
-"smid rqiq"
+"smid rqiq",
+"سميد رقيق"
 ],
 "syn": [
 "semoule"
@@ -1393,7 +1493,8 @@
 },
 "sesame": {
 "darija": [
-"jeljlen"
+"jeljlen",
+"جلجلان"
 ]
 },
 "sirop de dattes": {
@@ -1470,12 +1571,14 @@
 },
 "the vert": {
 "darija": [
-"tay akhdher"
+"tay akhdher",
+"تاي أخضر"
 ]
 },
 "thon a l huile": {
 "darija": [
-"ton"
+"ton",
+"تن بالزيت"
 ]
 },
 "thym seche": {
@@ -1494,7 +1597,8 @@
 "tomate concentree": {
 "darija": [
 "salsa",
-"tmatem m'aajna"
+"tmatem m'aajna",
+"طماطم معجونة"
 ],
 "syn": [
 "concentré de tomate",
@@ -1504,7 +1608,8 @@
 },
 "tripes": {
 "darija": [
-"douara"
+"douara",
+"دوارة"
 ]
 },
 "vermicelle": {
@@ -1520,7 +1625,8 @@
 },
 "viande d agneau": {
 "darija": [
-"lham allouch"
+"lham allouch",
+"لحم علوش"
 ],
 "syn": [
 "agneau",
@@ -1559,7 +1665,8 @@
 },
 "yaourt nature": {
 "darija": [
-"yaourt"
+"yaourt",
+"ياغورت"
 ]
 },
 "zaatar": {

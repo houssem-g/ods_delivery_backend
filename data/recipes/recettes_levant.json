@@ -94,7 +94,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -152,7 +152,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -163,7 +163,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -252,7 +252,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -274,7 +274,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -314,7 +314,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -423,7 +423,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -452,7 +452,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -553,7 +553,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 3,
      "unite": "botte",
      "placard": false,
@@ -608,7 +608,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -637,7 +637,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -646,7 +646,7 @@
     {
      "ingredient_id": 22,
      "nom_fr": "Laitue",
-     "nom_ar": "سلاطة / خس",
+     "nom_ar": "خس",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -727,7 +727,7 @@
     {
      "ingredient_id": 22,
      "nom_fr": "Laitue",
-     "nom_ar": "سلاطة / خس",
+     "nom_ar": "خس",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -747,7 +747,7 @@
     {
      "ingredient_id": 23,
      "nom_fr": "Concombre",
-     "nom_ar": "فقوس / خيار",
+     "nom_ar": "خيار",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -791,7 +791,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -829,7 +829,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -965,7 +965,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -974,7 +974,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -992,7 +992,7 @@
     {
      "ingredient_id": 142,
      "nom_fr": "Coriandre moulue",
-     "nom_ar": "تابل",
+     "nom_ar": "كزبرة مطحونة",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -1001,7 +1001,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -1019,7 +1019,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1039,7 +1039,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -1141,7 +1141,7 @@
     {
      "ingredient_id": 110,
      "nom_fr": "Chapelure",
-     "nom_ar": "فرينة الخبز",
+     "nom_ar": "فتات الخبز",
      "quantite": 0.04,
      "unite": "kg",
      "placard": false,
@@ -1172,7 +1172,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -1192,7 +1192,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -1203,7 +1203,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -1293,7 +1293,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 10,
      "unite": "pièce",
      "placard": false,
@@ -1407,7 +1407,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.25,
      "unite": "kg",
      "placard": false,
@@ -1440,7 +1440,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 2,
      "unite": "botte",
      "placard": false,
@@ -1480,7 +1480,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -1511,7 +1511,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -1611,7 +1611,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1620,7 +1620,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1631,7 +1631,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -1642,7 +1642,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -1735,7 +1735,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,
@@ -1757,7 +1757,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -1847,7 +1847,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -1878,7 +1878,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -1972,7 +1972,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -2001,7 +2001,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -2019,7 +2019,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -2094,7 +2094,7 @@
     {
      "ingredient_id": 108,
      "nom_fr": "Feuilles de brick",
-     "nom_ar": "ملسوقة",
+     "nom_ar": "أوراق البريك",
      "quantite": 12,
      "unite": "pièce",
      "placard": false,
@@ -2121,7 +2121,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2132,7 +2132,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -2141,7 +2141,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -2185,13 +2185,13 @@
    ],
    "etapes_ar": [
     "فتّتوا الجبنة البيضاء وابشروا الموزاريلا وافرموا البقدونس. اخلطوها مع النعناع اليابس وحبة البركة.",
-    "اخفقوا البيضة. قطّعوا كل ورقة ملسوقة إلى نصفي دائرة.",
+    "اخفقوا البيضة. قطّعوا كل ورقة بريك إلى نصفي دائرة.",
     "ضعوا شريطًا من الحشوة على الحافة المستديرة، واثنوا الجانبين ولفّوها بإحكام كالسيجار.",
     "ألصقوا الطرف بقليل من البيض المخفوق.",
     "اقلوها في زيت ساخن دقيقتين إلى 3 دقائق حتى تتحمّر. صفّوها على ورق ماصّ وقدّموها ساخنة."
    ],
    "astuce_fr": "Au Liban on utilise le fromage akkawi ; à Sousse, un mélange feta + mozzarella donne le même fondant salé. La malsouka tunisienne remplace la pâte à rouleaux.",
-   "astuce_ar": "في لبنان تُستعمل جبنة العكاوي؛ وفي سوسة يعطي خليط الفيتا والموزاريلا الطعم نفسه. الملسوقة التونسية تعوّض عجينة الرقائق.",
+   "astuce_ar": "في لبنان تُستعمل جبنة العكاوي؛ وفي سوسة يعطي خليط الفيتا والموزاريلا الطعم نفسه. أوراق البريك التونسية تعوّض عجينة الرقائق.",
    "sources": [
     "https://hadiaslebanesecuisine.com/blog/cheese-rolls-rkakat-jibneh/",
     "https://www.cookinwithmima.com/lebanese-cheese-rolls/",
@@ -2226,7 +2226,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.3,
      "unite": "kg",
      "placard": true,
@@ -2273,7 +2273,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -2345,7 +2345,7 @@
     "اقلوها 3 إلى 4 دقائق في الزيت الساخن حتى تتحمّر. صفّوها وقدّموها ساخنة."
    ],
    "astuce_fr": "Pour aller plus vite, utilisez des feuilles de brick pliées en triangles, comme une brik.",
-   "astuce_ar": "للسرعة، استعملوا أوراق الملسوقة مطويّة مثلّثات مثل البريك.",
+   "astuce_ar": "للسرعة، استعملوا أوراق البريك مطويّة مثلّثات مثل البريك.",
    "sources": [
     "https://www.gaultmillau.ch/fr/recettes/cuisinez-de-delicieux-sambousseks-au-boeuf-700081",
     "https://butfirstchai.com/wprm_print/sambousek",
@@ -2438,7 +2438,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -2501,7 +2501,7 @@
     {
      "ingredient_id": 107,
      "nom_fr": "Fèves sèches",
-     "nom_ar": "فول يابس",
+     "nom_ar": "فول مجفف",
      "quantite": 0.25,
      "unite": "kg",
      "placard": false,
@@ -2534,7 +2534,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -2565,7 +2565,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2670,7 +2670,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 5,
      "unite": "pièce",
      "placard": false,
@@ -2703,7 +2703,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -2732,7 +2732,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -2743,7 +2743,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "pincée",
      "placard": true,
@@ -2752,7 +2752,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2842,7 +2842,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.2,
      "unite": "kg",
      "placard": true,
@@ -2860,7 +2860,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -2893,7 +2893,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -2993,7 +2993,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.35,
      "unite": "kg",
      "placard": false,
@@ -3081,7 +3081,7 @@
     {
      "ingredient_id": 54,
      "nom_fr": "Viande d'agneau",
-     "nom_ar": "لحم علوش",
+     "nom_ar": "لحم خروف",
      "quantite": 0.5,
      "unite": "kg",
      "placard": false,
@@ -3092,7 +3092,7 @@
     {
      "ingredient_id": 27,
      "nom_fr": "Gombo",
-     "nom_ar": "قناوية",
+     "nom_ar": "بامية",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -3114,7 +3114,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -3145,7 +3145,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -3163,7 +3163,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -3290,7 +3290,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -3454,7 +3454,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 2,
      "unite": "botte",
      "placard": false,
@@ -3474,7 +3474,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -3485,7 +3485,7 @@
     {
      "ingredient_id": 142,
      "nom_fr": "Coriandre moulue",
-     "nom_ar": "تابل",
+     "nom_ar": "كزبرة مطحونة",
      "quantite": 2,
      "unite": "c. à café",
      "placard": true,
@@ -3503,7 +3503,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -3622,7 +3622,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -3640,7 +3640,7 @@
     {
      "ingredient_id": 146,
      "nom_fr": "Poivre noir",
-     "nom_ar": "فلفل أكحل",
+     "nom_ar": "فلفل أسود",
      "quantite": 0.5,
      "unite": "c. à café",
      "placard": true,
@@ -3744,7 +3744,7 @@
     {
      "ingredient_id": 52,
      "nom_fr": "Escalope de poulet",
-     "nom_ar": "إسكالوب دجاج",
+     "nom_ar": "شرائح صدر الدجاج",
      "quantite": 0.8,
      "unite": "kg",
      "placard": false,
@@ -3753,7 +3753,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -3764,7 +3764,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -3786,7 +3786,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -3795,7 +3795,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -3908,7 +3908,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -3948,7 +3948,7 @@
     {
      "ingredient_id": 143,
      "nom_fr": "Paprika",
-     "nom_ar": "فلفل أحمر حلو (فلفل زينة)",
+     "nom_ar": "فلفل أحمر حلو مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -4078,7 +4078,7 @@
     {
      "ingredient_id": 52,
      "nom_fr": "Escalope de poulet",
-     "nom_ar": "إسكالوب دجاج",
+     "nom_ar": "شرائح صدر الدجاج",
      "quantite": 0.6,
      "unite": "kg",
      "placard": false,
@@ -4089,7 +4089,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.25,
      "unite": "kg",
      "placard": false,
@@ -4107,7 +4107,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 6,
      "unite": "pièce",
      "placard": false,
@@ -4140,7 +4140,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -4180,7 +4180,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -4200,7 +4200,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -4291,7 +4291,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -4338,7 +4338,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -4365,7 +4365,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -4374,7 +4374,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -4470,7 +4470,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -4492,7 +4492,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -4523,7 +4523,7 @@
     {
      "ingredient_id": 144,
      "nom_fr": "Piment rouge moulu",
-     "nom_ar": "فلفل أحمر حار مرحي",
+     "nom_ar": "فلفل أحمر حار مطحون",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -4532,7 +4532,7 @@
     {
      "ingredient_id": 142,
      "nom_fr": "Coriandre moulue",
-     "nom_ar": "تابل",
+     "nom_ar": "كزبرة مطحونة",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -4559,7 +4559,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -4642,7 +4642,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.4,
      "unite": "kg",
      "placard": false,
@@ -4698,7 +4698,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -4727,7 +4727,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -4810,7 +4810,7 @@
     {
      "ingredient_id": 9,
      "nom_fr": "Courgette",
-     "nom_ar": "قرع أخضر / كوسة",
+     "nom_ar": "كوسة",
      "quantite": 1.5,
      "unite": "kg",
      "placard": false,
@@ -4821,7 +4821,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -4852,7 +4852,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -4872,7 +4872,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -4973,7 +4973,7 @@
     {
      "ingredient_id": 95,
      "nom_fr": "Riz",
-     "nom_ar": "روز",
+     "nom_ar": "أرز",
      "quantite": 0.25,
      "unite": "kg",
      "placard": false,
@@ -5004,7 +5004,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.2,
      "unite": "kg",
      "placard": false,
@@ -5015,7 +5015,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 2,
      "unite": "c. à café",
      "placard": true,
@@ -5136,7 +5136,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -5156,7 +5156,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -5257,7 +5257,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.3,
      "unite": "kg",
      "placard": true,
@@ -5286,7 +5286,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -5324,7 +5324,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -5346,7 +5346,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5357,7 +5357,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -5481,7 +5481,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 2,
      "unite": "c. à soupe",
      "placard": true,
@@ -5490,7 +5490,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.03,
      "unite": "kg",
      "placard": false,
@@ -5526,7 +5526,7 @@
     {
      "ingredient_id": 17,
      "nom_fr": "Persil",
-     "nom_ar": "معدنوس",
+     "nom_ar": "بقدونس",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5613,7 +5613,7 @@
     {
      "ingredient_id": 106,
      "nom_fr": "Haricots blancs",
-     "nom_ar": "لوبيا بيضاء",
+     "nom_ar": "فاصوليا بيضاء",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -5646,7 +5646,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 3,
      "unite": "c. à soupe",
      "placard": true,
@@ -5666,7 +5666,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -5759,7 +5759,7 @@
     {
      "ingredient_id": 54,
      "nom_fr": "Viande d'agneau",
-     "nom_ar": "لحم علوش",
+     "nom_ar": "لحم خروف",
      "quantite": 0.8,
      "unite": "kg",
      "placard": false,
@@ -5781,7 +5781,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 10,
      "unite": "pièce",
      "placard": false,
@@ -5801,7 +5801,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -5841,7 +5841,7 @@
     {
      "ingredient_id": 150,
      "nom_fr": "Feuilles de laurier",
-     "nom_ar": "ورق رند",
+     "nom_ar": "ورق الغار",
      "quantite": 2,
      "unite": "pincée",
      "placard": true,
@@ -5852,7 +5852,7 @@
     {
      "ingredient_id": 149,
      "nom_fr": "Menthe séchée",
-     "nom_ar": "نعناع يابس",
+     "nom_ar": "نعناع مجفف",
      "quantite": 1,
      "unite": "c. à café",
      "placard": true,
@@ -5958,7 +5958,7 @@
     {
      "ingredient_id": 8,
      "nom_fr": "Carotte",
-     "nom_ar": "سفنارية / جزر",
+     "nom_ar": "جزر",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -6007,7 +6007,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.1,
      "unite": "kg",
      "placard": false,
@@ -6143,7 +6143,7 @@
     {
      "ingredient_id": 18,
      "nom_fr": "Coriandre fraîche",
-     "nom_ar": "قصبر",
+     "nom_ar": "كزبرة خضراء",
      "quantite": 1,
      "unite": "botte",
      "placard": false,
@@ -6152,7 +6152,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.3,
      "unite": "kg",
      "placard": false,
@@ -6242,7 +6242,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6344,7 +6344,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6482,7 +6482,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.5,
      "unite": "kg",
      "placard": true,
@@ -6558,7 +6558,7 @@
     {
      "ingredient_id": 114,
      "nom_fr": "Tomate concentrée",
-     "nom_ar": "طماطم معجونة",
+     "nom_ar": "معجون الطماطم",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -6585,7 +6585,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -6783,7 +6783,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.1,
      "unite": "kg",
      "placard": true,
@@ -6941,7 +6941,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.12,
      "unite": "kg",
      "placard": true,
@@ -7008,7 +7008,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7109,7 +7109,7 @@
     {
      "ingredient_id": 85,
      "nom_fr": "Yaourt nature",
-     "nom_ar": "ياغورت",
+     "nom_ar": "زبادي",
      "quantite": 2,
      "unite": "pièce",
      "placard": false,
@@ -7171,7 +7171,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7241,7 +7241,7 @@
     {
      "ingredient_id": 90,
      "nom_fr": "Semoule fine",
-     "nom_ar": "سميد رقيق",
+     "nom_ar": "سميد ناعم",
      "quantite": 0.25,
      "unite": "kg",
      "placard": true,
@@ -7250,7 +7250,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.15,
      "unite": "kg",
      "placard": true,
@@ -7315,7 +7315,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.01,
      "unite": "kg",
      "placard": false,
@@ -7326,7 +7326,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -7418,7 +7418,7 @@
     {
      "ingredient_id": 141,
      "nom_fr": "Carvi",
-     "nom_ar": "كروية",
+     "nom_ar": "كراوية",
      "quantite": 1,
      "unite": "c. à soupe",
      "placard": true,
@@ -7463,7 +7463,7 @@
     {
      "ingredient_id": 135,
      "nom_fr": "Pignons",
-     "nom_ar": "زقوقو أبيض / صنوبر",
+     "nom_ar": "صنوبر",
      "quantite": 0.02,
      "unite": "kg",
      "placard": false,
@@ -7498,13 +7498,13 @@
    ],
    "etapes_ar": [
     "ذوّبوا طحين الأرز في 0,3 ل من الماء البارد دون كتل.",
-    "اخلطوه مع 1,2 ل من الماء والسكر والكروية واليانسون والقرفة في قدر.",
+    "اخلطوه مع 1,2 ل من الماء والسكر والكراوية واليانسون والقرفة في قدر.",
     "اطهوه على نار متوسطة مع التحريك المستمر 20 إلى 30 دقيقة حتى تتكاثف الكريمة وتغطّي الملعقة.",
     "صبّوها في أكواب واتركوها تبرد ثم ساعتين في البرّاد.",
     "انقعوا المكسرات ساعة في الماء (لتطرى)، وصفّوها وزيّنوا الأكواب بالجوز واللوز (والصنوبر والفستق)."
    ],
    "astuce_fr": "Au Liban on le sert pour fêter une naissance. Le carvi et l'anis rappellent notre « assida » : sans farine de riz, mixez du riz très finement.",
-   "astuce_ar": "في لبنان يقدّم احتفالًا بالمولود. الكروية واليانسون يذكّران بالعصيدة عندنا: وبدون طحين أرز اطحنوا الأرز ناعمًا جدًا.",
+   "astuce_ar": "في لبنان يقدّم احتفالًا بالمولود. الكراوية واليانسون يذكّران بالعصيدة عندنا: وبدون طحين أرز اطحنوا الأرز ناعمًا جدًا.",
    "sources": [
     "https://www.simplyleb.com/recipe/meghli/",
     "https://thematbakh.com/meghli-caraway-pudding/",
@@ -7540,7 +7540,7 @@
     {
      "ingredient_id": 108,
      "nom_fr": "Feuilles de brick",
-     "nom_ar": "ملسوقة",
+     "nom_ar": "أوراق البريك",
      "quantite": 12,
      "unite": "pièce",
      "placard": false,
@@ -7598,7 +7598,7 @@
     {
      "ingredient_id": 32,
      "nom_fr": "Citron",
-     "nom_ar": "ليم / قارص",
+     "nom_ar": "ليمون",
      "quantite": 0.05,
      "unite": "kg",
      "placard": false,
@@ -7646,13 +7646,13 @@
    "etapes_ar": [
     "القطر: اغلوا السكر (عدا ملعقتين) مع 0,15 ل من الماء 8 دقائق، وأضيفوا الليمون وملعقة ماء زهر. اتركوه يبرد.",
     "القشطة: كثّفوا الحليب مع النشاء وملعقتي سكر مع الخفق، وأضيفوا الكريمة وباقي ماء الزهر. اتركوها تبرد في البرّاد.",
-    "قطّعوا كل ورقة ملسوقة نصفين، وضعوا خطًّا من القشطة الباردة على الحافة، واثنوا الجانبين ولفّوها كالسيجار.",
+    "قطّعوا كل ورقة بريك نصفين، وضعوا خطًّا من القشطة الباردة على الحافة، واثنوا الجانبين ولفّوها كالسيجار.",
     "اقلوها في زيت ساخن دقيقة إلى دقيقتين حتى تتحمّر.",
     "اغمسوها فورًا بضع ثوانٍ في القطر البارد.",
     "اغمسوا طرفيها في الفستق المجروش وقدّموها في اليوم نفسه."
    ],
    "astuce_fr": "La malsouka tunisienne remplace parfaitement la pâte filo libanaise. La crème doit être bien froide et épaisse pour ne pas couler à la friture.",
-   "astuce_ar": "الملسوقة التونسية تعوّض عجينة الفيلو اللبنانية تمامًا. يجب أن تكون القشطة باردة وكثيفة كي لا تسيل أثناء القلي.",
+   "astuce_ar": "أوراق البريك التونسية تعوّض عجينة الفيلو اللبنانية تمامًا. يجب أن تكون القشطة باردة وكثيفة كي لا تسيل أثناء القلي.",
    "sources": [
     "https://www.simplyleb.com/recipe/znoud-el-sit/",
     "https://zaatarandzaytoun.com/znoud-el-sit-lebanese-ladies-fingers/",
@@ -7687,7 +7687,7 @@
     {
      "ingredient_id": 94,
      "nom_fr": "Farine",
-     "nom_ar": "فارينة / دقيق",
+     "nom_ar": "دقيق",
      "quantite": 0.4,
      "unite": "kg",
      "placard": true,
@@ -7725,7 +7725,7 @@
     {
      "ingredient_id": 77,
      "nom_fr": "Oeufs",
-     "nom_ar": "عظم / بيض",
+     "nom_ar": "بيض",
      "quantite": 1,
      "unite": "pièce",
      "placard": false,
@@ -7745,7 +7745,7 @@
     {
      "ingredient_id": 137,
      "nom_fr": "Sésame",
-     "nom_ar": "جلجلان",
+     "nom_ar": "سمسم",
      "quantite": 0.15,
      "unite": "kg",
      "placard": false,

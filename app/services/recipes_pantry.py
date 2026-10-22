@@ -57,6 +57,8 @@ FAMILIES: tuple[tuple[str, ...], ...] = (
     ("lait demi ecreme", "lait entier"),
     ("spaghetti", "macaroni", "coquillettes", "langues d oiseau"),
     ("fromage rape", "gruyere"),
+    # two products with their own price (bell pepper 5, long « felfel » 153), the same use in a Tunisian pan
+    ("poivron vert", "piment doux long"),
 )
 # « Ajout rapide » of the screen, in this order (dictionary keys; missing keys are skipped).
 QUICK = (
@@ -86,6 +88,15 @@ def _key(value: Any) -> str:
     return " ".join(recipes.fold(value).split())
 
 
+def singular(key: str) -> str:
+    """Each word without its plural « s » / « x » (QA 22/10: « pommes de terre », « haricot vert »,
+    « cuisse de poulet » → the dictionary's names). Same rule as the phone (recipesPantry.js `singular`)."""
+    return " ".join(
+        w[:-1] if len(w) > 3 and w[-1] in "sx" and w[-2].isascii() and w[-2].isalpha() else w
+        for w in key.split()
+    )
+
+
 @lru_cache(maxsize=1)
 def words() -> dict[str, dict[str, list[str]]]:
     """{folded dictionary key: {darija: [...], syn: [...]}} from the referential file."""
@@ -111,6 +122,7 @@ class Dictionary:
     ids: dict[int, Ingredient] = field(default_factory=dict)
     by_key: dict[str, int] = field(default_factory=dict)
     by_name: dict[str, int] = field(default_factory=dict)
+    by_singular: dict[str, int] = field(default_factory=dict)
     family: dict[int, frozenset[int]] = field(default_factory=dict)
 
     @classmethod
@@ -125,6 +137,8 @@ class Dictionary:
         for row in sorted(rows, key=lambda r: r.id):
             for name in _names(row):
                 d.by_name.setdefault(name, row.id)
+        for name, iid in d.by_name.items():
+            d.by_singular.setdefault(singular(name), iid)
         for fam in FAMILIES:
             members = frozenset(d.by_key[k] for k in fam if k in d.by_key)
             for m in members:
@@ -145,7 +159,7 @@ class Dictionary:
             return self.by_name[k]
         if k.endswith("s") and k[:-1] in self.by_name:  # « tomates », « oignons »
             return self.by_name[k[:-1]]
-        return None
+        return self.by_singular.get(singular(k))  # « pommes de terre », « haricot vert »
 
     def widen(self, ids: set[int]) -> set[int]:
         out = set(ids)
