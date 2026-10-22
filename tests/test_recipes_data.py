@@ -68,9 +68,9 @@ def test_photo_fix_file_removes_two_photos_and_credits_the_brioche():
     assert cols["photo_credit"]["author"] == "Rainer Zenz" and cols["photo_credit"]["credit_required"] is True
 
 
-# Owner rule 22/10: the app speaks to a Muslim culture — no recipe holds pork or alcohol, and « halal » is never
-# said (everything is). Any text a recipe or an ingredient can show (titles, notes, steps, tips, lines, the
-# dictionary and its search words), in French and Arabic; only URLs and ids (the address) are left out.
+# Owner rule 22/10: the app speaks to a Muslim culture — no recipe holds pork or alcohol, and « halal » is
+# never said (everything is). Any text a recipe or an ingredient can show (titles, notes, steps, tips, lines,
+# the dictionary and its search words), in French and Arabic; only URLs and ids (the address) are left out.
 FORBIDDEN_FR = re.compile(r"porc|lardon|\bvins?\b|bière|alcool|rhum|cidre|\bhalal\b", re.I)
 FORBIDDEN_AR = re.compile(rf"(?<![{LETTER}])(?:ال|ب|و|ل)?(?:خنزير|خمر|نبيذ|كحول|حلال)(?![{LETTER}])")
 NOT_SHOWN = {"id", "slug", "url", "urls", "source", "sources", "lien", "liens"}
