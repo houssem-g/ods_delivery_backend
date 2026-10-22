@@ -36,21 +36,43 @@ def hours_ar(n: int) -> str:
 # --- dispatchOrderToCouriers ----------------------------------------------------------------------
 
 
-def new_order(items: str, shop_name: str | None, distance_km: float | None) -> Text:
-    """distance_km None: a courier whose position is unknown (launch mode, app never opened)."""
+def _fr_ar(items: str | tuple[str, str]) -> tuple[str, str]:
+    return items if isinstance(items, tuple) else (items, items)
+
+
+NOTICE_ITEMS_MAX = 60
+
+
+def notice_items(items_text: str | None) -> tuple[str, str]:
+    """What a « Nouvelle commande » says of the articles (QA 22/10): the cleaned lines (no « QA TEST », no
+    « [Recettes] … » / « [Vitrine] » head, no line break), one line as is, several as « 18 articles » —
+    never the raw text cut in the middle of a word. Short enough (≤ 60 characters), the lines are joined
+    with « · » (« 2x Pain · 1x Lait »)."""
+    from app.services.push_design import _text_lines  # push_design imports this module
+
+    joined = " · ".join(_text_lines(items_text))
+    if joined and len(joined) <= NOTICE_ITEMS_MAX:
+        return joined, joined
+    return _items_summary(items_text)
+
+
+def new_order(items: str | tuple[str, str], shop_name: str | None, distance_km: float | None) -> Text:
+    """distance_km None: a courier whose position is unknown (launch mode, app never opened). `items`: one
+    text, or (French, Arabic) from notice_items."""
     dist_fr = "" if distance_km is None else f" - À {_km(distance_km)} km"
     dist_ar = "" if distance_km is None else f" - {_km(distance_km, 'ar')} كم"
+    fr, ar = _fr_ar(items)
     return {
         "title_ar": "🎯 طلب جديد متاح",
         "title_fr": "🎯 Nouvelle commande disponible",
-        "body_ar": f"{items} من {shop_name}{dist_ar}",
-        "body_fr": f"{items} de {shop_name}{dist_fr}",
+        "body_ar": f"{ar} من {shop_name}{dist_ar}" if ar else f"من {shop_name}{dist_ar}",
+        "body_fr": f"{fr} de {shop_name}{dist_fr}" if fr else f"Chez {shop_name}{dist_fr}",
     }
 
 
 def new_order_preferred(
     client: str,
-    items: str,
+    items: str | tuple[str, str],
     shop_name: str | None,
     distance_km: float | None,
     head_start_s: int | None = None,
@@ -65,8 +87,8 @@ def new_order_preferred(
         "title_fr": f"⭐ Votre client {client} a passé une commande"
         if client
         else "⭐ Votre client a passé une commande",
-        "body_ar": f"{items} من {shop_name or ''}{dist_ar}",
-        "body_fr": f"{items} de {shop_name or ''}{dist_fr}",
+        "body_ar": f"{_fr_ar(items)[1]} من {shop_name or ''}{dist_ar}",
+        "body_fr": f"{_fr_ar(items)[0]} de {shop_name or ''}{dist_fr}",
     }
 
 

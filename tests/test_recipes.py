@@ -360,9 +360,8 @@ async def test_recipe_order_is_a_normal_achats_order_marked_qa_test_with_the_lis
         "Huile d'olive : 0,25\u00a0L",
     ]
     assert order.source == "app" and order.unavailable_policy == "substitute"
-    assert (
-        order.budget_max is None
-    )  # olive oil and persil without a price: 2 of 5 lines → no total, no ceiling
+    # olive oil and persil without a price: 2 of 5 lines → no total, the ceiling is the 80 DT cap (QA 22/10)
+    assert order.budget_max == 80
     assert "Persil" in order.notes and order.package == "petit"
     assert (await reload_stop_name(order.id)) == "Monoprix Sahloul"
     assert rec.test is True and rec.at_home == [118] and rec.recipes[0]["servings"] == 4
@@ -770,3 +769,148 @@ async def test_while_admins_only_ma_liste_and_the_order_take_draft_recipes(clien
     assert p["lines"] and p["recipes"][0]["id"] == rid
     placed = await ok(client, qa, "placeOrder", order_body(rid, accept_unpriced=True))
     assert placed["order"]["id"]
+
+
+# --- QA 22/10 (money) -----------------------------------------------------------------------------------
+
+
+async def test_an_optional_line_is_not_bought_nor_counted_unless_ticked(client, qa, ods_prices):
+    ojja = json.loads(json.dumps(OJJA))
+    ojja["ingredients"][1]["optional"] = True  # tomate « facultatif » (priced: it would change the total)
+    await seed(ojja)
+    rid = await recipe_id("ojja-merguez")
+    r = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
+    tomate = next(i for i in r["ingredients"] if i["ingredient_id"] == 1)
+    assert tomate["optional"] and tomate["wanted"] is False and tomate["buy"] is None
+    ticked = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez", "with_optional": [1]}))["recipe"]
+    assert (
+        next(i for i in ticked["ingredients"] if i["ingredient_id"] == 1)["buy"]["text_fr"] == "0,6\u00a0kg"
+    )
+    assert ticked["cost"]["known_high"] > r["cost"]["known_high"]
+    item = {"recipe_id": rid, "servings": 4}
+    p = await ok(client, qa, "previewRecipeList", {"items": [item]})
+    assert 1 not in {line["ingredient_id"] for line in p["lines"]}
+    assert [(o["ingredient_id"], o["text_fr"], o["recipe_ids"]) for o in p["optional"]] == [
+        (1, "0,6\u00a0kg", [rid])
+    ]
+    assert p["optional"][0]["price"]["priced"] is True
+    p2 = await ok(client, qa, "previewRecipeList", {"items": [{**item, "with_optional": [1]}]})
+    assert 1 in {line["ingredient_id"] for line in p2["lines"]} and p2["optional"] == []
+    placed = await ok(client, qa, "placeOrder", order_body(rid, accept_unpriced=True))
+    async with SessionLocal() as s:
+        order = await s.get(Order, placed["order"]["id"])
+    assert "Tomate" not in order.items_text
+
+
+async def test_typed_articles_weigh_in_the_couffin_and_the_parcel(client, qa, ods_prices):
+    from app.services.recipes import _other_weight, others_weight
+
+    assert _other_weight("Lait × 2") == Decimal("2.10") and _other_weight("ماء × 6") == Decimal("9.0")
+    assert _other_weight("eau 5 L") == Decimal("5") and _other_weight("Pain") == Decimal("0.25")
+    assert _other_weight("Lessive") == Decimal("1") and others_weight([]) == 0
+    await seed({**OJJA, "ingredients": OJJA["ingredients"][:3]})
+    rid = await recipe_id("ojja-merguez")
+    item = [{"recipe_id": rid, "servings": 4}]
+    bare = await ok(client, qa, "previewRecipeList", {"items": item})
+    water = await ok(
+        client, qa, "previewRecipeList", {"items": item, "extras": [{"name": "eau", "count": 6}]}
+    )
+    assert water["weight_kg"] == pytest.approx(bare["weight_kg"] + 9)
+    placed = await ok(
+        client, qa, "placeOrder", order_body(rid, extras=[{"name": "eau", "count": 6}], accept_unpriced=True)
+    )
+    async with SessionLocal() as s:
+        order = await s.get(Order, placed["order"]["id"])
+    assert order.package == "grand"  # 1,46 kg + 9 kg of water: never « petit »
+
+
+async def test_a_recipe_order_is_capped_at_80_dt_and_its_ceiling_holds_at_the_ticket(
+    client, factory, qa, ods_prices
+):
+    from app.models import OrderOffer
+    from tests.factories import auth
+    from tests.order_helpers import OrderWorld
+    from tests.vitrine_helpers import QA_COURIER
+
+    await seed({**OJJA, "ingredients": OJJA["ingredients"][:3]})
+    rid = await recipe_id("ojja-merguez")
+    big = await ok(client, qa, "previewRecipeList", {"items": [{"recipe_id": rid, "servings": 12}]})
+    assert big["over_cap"] is True and big["cap"] == 80
+    refused = await fn(client, qa, "placeOrder", order_body(rid, items=[{"recipe_id": rid, "servings": 12}]))
+    assert refused.status_code == 400 and refused.json()["error"] == "recipes_over_cap"
+    small = await ok(client, qa, "previewRecipeList", {"items": [{"recipe_id": rid, "servings": 4}]})
+    assert small["over_cap"] is False and small["budget_max"] == 33
+    world = await OrderWorld(factory).setup()
+    courier = await factory.user(email=QA_COURIER, full_name="Vovine", profile=False)
+    await world.make_courier(courier, display_name="Vovine Livreur", phone_e164="+21655999888")
+    order_id = (await ok(client, qa, "placeOrder", order_body(rid)))["order"]["id"]
+    await ok(client, courier, "createOrderOffer", {"order_id": order_id, "fee": 4, "eta_minutes": 15})
+    async with SessionLocal() as s:
+        offer_id = (await s.execute(select(OrderOffer.id))).scalar_one()
+    await ok(client, qa, "acceptOrderOffer", {"order_id": order_id, "offer_id": str(offer_id)})
+
+    async def step(body):
+        return await client.patch(f"/api/entities/Order/{order_id}", json=body, headers=auth(courier))
+
+    assert (await step({"status": "at_shop"})).status_code == 200
+    above = await step({"status": "purchased", "purchase_amount": 40})
+    assert (
+        above.status_code == 409
+        and above.json()["error"] == "above_recipe_ceiling"
+        and above.json()["max"] == 33
+    )
+    assert (await step({"status": "purchased", "purchase_amount": 31.5})).status_code == 200
+
+
+def test_the_head_line_of_a_recipe_order_is_never_an_article_in_a_notice():
+    from app.services import order_texts
+    from app.services.push_design import _text_lines
+
+    head = "QA TEST [Recettes] Ojja aux merguez (7 pers.) · Couscous au poulet (2 pers.)"
+    items = f"{head}\nTomate : 1,1 kg\nLait × 2"
+    assert _text_lines(items) == ["Tomate : 1,1 kg", "Lait × 2"]
+    accepted = order_texts.offer_accepted_for_courier("Monoprix", items)
+    assert accepted["body_fr"] == "Monoprix : 2 articles. Allez au magasin."
+    short = order_texts.new_order(order_texts.notice_items(items), "Monoprix", 1.2)
+    assert short["body_fr"] == "Tomate : 1,1 kg · Lait × 2 de Monoprix - À 1,2 km"
+    long_items = items + "\nPersil : 1 botte\nMerguez de boeuf : 0,7 kg\nOignon rouge : 0,5 kg"
+    new = order_texts.new_order(order_texts.notice_items(long_items), "Monoprix", 1.2)
+    assert new["body_fr"] == "5 articles de Monoprix - À 1,2 km"
+    assert new["body_ar"].startswith("5 منتجات من Monoprix")
+    one = order_texts.new_order(
+        order_texts.notice_items("QA TEST [Recettes] لبلابي (5 أشخاص)\nليمون: 0.25 كغ"), "X", None
+    )
+    assert one["body_ar"] == "ليمون: 0.25 كغ من X" and "[Recettes]" not in one["body_fr"]
+
+
+def test_the_places_index_shop_name_is_made_readable():
+    from app.services.recipes import shop_label
+
+    assert shop_label("Sprt 12 magasin Béchir 12946") == "Supérette magasin Béchir"
+    assert (
+        shop_label("Monoprix Sahloul") == "Monoprix Sahloul"
+        and shop_label("MG Khezama") == "Magasin Général Khezama"
+    )
+    assert shop_label("12946") == "12946"
+
+
+async def test_order_again_gives_ma_liste_back_its_recipes_ticks_and_typed_articles(
+    client, factory, qa, ods_prices
+):
+    ojja = json.loads(json.dumps(OJJA))
+    ojja["ingredients"][1]["optional"] = True
+    await seed(ojja)
+    rid = await recipe_id("ojja-merguez")
+    items = [{"recipe_id": rid, "servings": 3, "with_optional": [1]}]
+    body = order_body(
+        rid, items=items, at_home=[116], extras=[{"name": "Lait", "count": 2}], accept_unpriced=True
+    )
+    order_id = (await ok(client, qa, "placeOrder", body))["order"]["id"]
+    again = await ok(client, qa, "getRecipeOrder", {"order_id": order_id})
+    [r] = again["recipes"]
+    assert (r["id"], r["slug"], r["servings"], r["with_optional"]) == (rid, "ojja-merguez", 3, [1])
+    assert again["at_home"] == [116] and again["extras"] == [{"name": "Lait", "count": 2}]
+    other_admin = await factory.user(role="admin")
+    assert (await fn(client, other_admin, "getRecipeOrder", {"order_id": order_id})).status_code == 200
+    customer = await factory.user()
+    assert (await fn(client, customer, "getRecipeOrder", {"order_id": order_id})).status_code == 403

@@ -1,6 +1,7 @@
-"""previewRecipeList — client: { items: [{ recipe_id, servings }], at_home?: [ingredient ids] }
-→ { success, recipes, lines (by aisle: marché, boucherie, poissonnerie, crèmerie, boulangerie, épicerie),
-at_home, weight_kg, cost (+ budget_max when a total is shown) }. Refusals: 404 recipes_unavailable (not
+"""previewRecipeList — client: { items: [{ recipe_id, servings, with_optional? }], at_home?: [ingredient ids],
+extras? } → { success, recipes, lines (by aisle: marché, boucherie, poissonnerie, crèmerie, boulangerie,
+épicerie), at_home, optional (not bought, to tick), weight_kg (typed articles included), cost, cap (80 DT),
+over_cap, budget_max (the order's ceiling) }. Refusals: 404 recipes_unavailable (not
 visible), 400 recipes_empty, too_many_recipes (+ max), 409 recipes_unavailable (+ ids: unpublished)."""
 
 from typing import Any

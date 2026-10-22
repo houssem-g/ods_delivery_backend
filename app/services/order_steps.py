@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.errors import ApiError
-from app.models import File, Order, OrderStop
+from app.models import File, Order, OrderStop, RecipeOrder
 from app.security.deps import CurrentUser
 from app.services import order_transitions as ot
 from app.services import step_notices, stock_checks
@@ -214,6 +214,27 @@ async def _vitrine_total_kept(session: AsyncSession, order: Order) -> None:
     )
 
 
+async def _recipe_ceiling_kept(session: AsyncSession, order: Order) -> None:
+    """QA 22/10 #5: a recipe order's ceiling (the estimate's high end + 15 %, shown to the customer and the
+    courier) holds like the Vitrine total — above it only with the customer's yes (a substitute he accepted
+    in « Article indisponible »)."""
+    if order.source == "vitrine" or order.budget_max is None or order.purchase_amount is None:
+        return
+    if order.purchase_amount <= order.budget_max:
+        return
+    recipe = (
+        await session.execute(select(RecipeOrder.order_id).where(RecipeOrder.order_id == order.id))
+    ).scalar_one_or_none()
+    if recipe is None or await stock_checks.substitute_accepted(session, order.id):
+        return
+    raise ApiError(
+        409,
+        "above_recipe_ceiling",
+        "The ticket is above the recipe order's ceiling: the customer did not agree to pay more",
+        max=float(order.budget_max),
+    )
+
+
 async def courier_step(
     session: AsyncSession, user: CurrentUser, order: Order, data: dict[str, Any], order_fields: set[str]
 ) -> None:
@@ -289,6 +310,7 @@ async def courier_step(
         order.current_stop_seq = _current_seq(stops)
     if to_status == "purchased" and not hot_deal:
         await _vitrine_total_kept(session, order)
+        await _recipe_ceiling_kept(session, order)
     await session.flush()
     if to_status == from_status:
         return
