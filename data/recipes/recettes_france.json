@@ -40,7 +40,7 @@
   "Les cuillères et pincées ne servent qu'aux ingrédients du placard, jamais achetés par la recette.",
   "Aucun prix dans ce fichier.",
   "prix_manquants_21_10 : ingrédients obligatoires (non optionnels) sans bon prix lors de la mesure Carrefour du 21/10, groupés par verdict (voir PRIX-INGREDIENTS.md). « refusé (prix réel) » = prix juste mais refusé par la règle < 1 DT.",
-  "Halal : aucun porc ni alcool ; quand le plat d'origine en contient, la version proposée est expliquée dans astuce_fr.",
+  "Ingrédients : viandes, volailles et poissons courants en Tunisie ; les variantes éventuelles sont expliquées dans astuce_fr.",
   "ingredient_new : ingrédient absent du dictionnaire, décrit dans ingredients_a_ajouter_france.json (ingredient_id = null)."
  ],
  "recettes": [
@@ -471,7 +471,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -616,7 +616,7 @@
     ],
     "pas dans le dictionnaire": [
      "Jus de raisin rouge (100 % pur jus)",
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
@@ -1149,7 +1149,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -1237,7 +1237,7 @@
     ],
     "pas dans le dictionnaire": [
      "Échalote",
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
@@ -1338,7 +1338,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -1407,7 +1407,7 @@
      "Viande de boeuf"
     ],
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
@@ -1552,7 +1552,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -1612,7 +1612,7 @@
      "Épaule d'agneau"
     ],
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
@@ -2117,7 +2117,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -2166,7 +2166,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Échalote",
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ]
    },
@@ -2452,7 +2452,7 @@
     "Faites cuire les coquillettes dans une grande casserole d'eau bouillante salée, selon le temps du paquet.",
     "Pendant ce temps, coupez le jambon de dinde en petits carrés.",
     "Égouttez les pâtes en gardant un demi-verre d'eau de cuisson.",
-    "Remettez-les dans la casserole avec le beurre, le jambon, la crème si vous en mettez et le fromage. Mélangez à feu doux, en ajoutant un peu d'eau de cuisson si c'est trop sec.",
+    "Remettez-les dans la casserole avec le beurre, le jambon de dinde, la crème si vous en mettez et le fromage. Mélangez à feu doux, en ajoutant un peu d'eau de cuisson si c'est trop sec.",
     "Poivrez et servez aussitôt."
    ],
    "etapes_ar": [
@@ -2522,7 +2522,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -2552,7 +2552,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)"
+     "Bouillon cube (volaille ou bœuf)"
     ],
     "refusé (prix réel)": [
      "Feuilles de laurier"
@@ -2845,7 +2845,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 2,
      "unite": "pièce",
@@ -2915,7 +2915,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
@@ -3003,7 +3003,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -3060,7 +3060,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Noix de muscade moulue"
     ]
    },
@@ -3137,7 +3137,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -3177,7 +3177,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Poireau",
-     "Bouillon cube (volaille ou bœuf, halal)"
+     "Bouillon cube (volaille ou bœuf)"
     ]
    },
    "etapes_fr": [
@@ -3250,7 +3250,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -3318,7 +3318,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)"
+     "Bouillon cube (volaille ou bœuf)"
     ]
    },
    "etapes_fr": [
@@ -3429,7 +3429,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -3469,7 +3469,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Poireau",
-     "Bouillon cube (volaille ou bœuf, halal)"
+     "Bouillon cube (volaille ou bœuf)"
     ]
    },
    "etapes_fr": [
@@ -3533,7 +3533,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -3583,7 +3583,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)"
+     "Bouillon cube (volaille ou bœuf)"
     ],
     "refusé (prix réel)": [
      "Fromage fondu en portions"
@@ -5576,7 +5576,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -5636,7 +5636,7 @@
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
      "Viande de veau",
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "douteux": [
@@ -6048,7 +6048,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -6117,7 +6117,7 @@
      "Artichaut"
     ],
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
@@ -6397,7 +6397,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -6524,7 +6524,7 @@
     ],
     "pas dans le dictionnaire": [
      "Jus de raisin rouge (100 % pur jus)",
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché",
      "Clous de girofle"
     ],
@@ -6739,7 +6739,7 @@
      "unite": "L",
      "placard": true,
      "optionnel": false,
-     "note_fr": "vinaigre de cidre ou de raisin de préférence",
+     "note_fr": "vinaigre de pomme ou de raisin de préférence",
      "note_ar": "خل عنب إن أمكن"
     },
     {
@@ -6852,7 +6852,7 @@
     "أضيفوا الطماطم المقطّعة والطماطم المعجونة. غطّوا القدر واتركوه 30 دقيقة على نار هادئة.",
     "أخرجوا الدجاج، أضيفوا الكريمة إلى الصلصة واتركوها تتكثّف 5 دقائق. اسكبوها على الدجاج ورشّوا البقدونس."
    ],
-   "astuce_fr": "Le vinaigre perd son piquant à la cuisson : la sauce devient douce et parfumée. Prenez un vinaigre de cidre ou de raisin plutôt que le vinaigre blanc.",
+   "astuce_fr": "Le vinaigre perd son piquant à la cuisson : la sauce devient douce et parfumée. Prenez un vinaigre de pomme ou de raisin plutôt que le vinaigre blanc.",
    "astuce_ar": "يفقد الخل حدّته عند الطهي فتصبح الصلصة لطيفة وعطرة. استعملوا خل العنب أو التفاح بدل الخل الأبيض.",
    "sources": [
     "https://www.marmiton.org/recettes/recette_poulet-au-vinaigre_11298.aspx",
@@ -7243,7 +7243,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -7286,7 +7286,7 @@
     ],
     "pas dans le dictionnaire": [
      "Échalote",
-     "Bouillon cube (volaille ou bœuf, halal)"
+     "Bouillon cube (volaille ou bœuf)"
     ]
    },
    "etapes_fr": [
@@ -7353,7 +7353,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 2,
      "unite": "pièce",
@@ -7470,7 +7470,7 @@
      "Baguette"
     ],
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Sucre roux (cassonade)",
      "Thym séché"
     ],
@@ -7558,7 +7558,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -7626,7 +7626,7 @@
     "pas dans le dictionnaire": [
      "Moules",
      "Échalote",
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [

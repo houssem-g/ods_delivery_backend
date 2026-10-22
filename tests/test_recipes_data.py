@@ -66,3 +66,35 @@ def test_photo_fix_file_removes_two_photos_and_credits_the_brioche():
     cols, reason = recipe_photos.parse_entry("brioche", fix["brioche"])
     assert reason is None and cols["photo_key"] == "public/recipes/brioche.webp"
     assert cols["photo_credit"]["author"] == "Rainer Zenz" and cols["photo_credit"]["credit_required"] is True
+
+
+# Owner rule 22/10: the app speaks to a Muslim culture — no recipe holds pork or alcohol, and « halal » is never
+# said (everything is). Any text a recipe or an ingredient can show (titles, notes, steps, tips, lines, the
+# dictionary and its search words), in French and Arabic; only URLs and ids (the address) are left out.
+FORBIDDEN_FR = re.compile(r"porc|lardon|\bvins?\b|bière|alcool|rhum|cidre|\bhalal\b", re.I)
+FORBIDDEN_AR = re.compile(rf"(?<![{LETTER}])(?:ال|ب|و|ل)?(?:خنزير|خمر|نبيذ|كحول|حلال)(?![{LETTER}])")
+NOT_SHOWN = {"id", "slug", "url", "urls", "source", "sources", "lien", "liens"}
+
+
+def _strings(node, key=""):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k not in NOT_SHOWN:
+                yield from _strings(v, k)
+    elif isinstance(node, list):
+        for v in node:
+            yield from _strings(v, key)
+    elif isinstance(node, str) and not node.startswith(("http://", "https://")):
+        yield node
+
+
+def test_no_pork_alcohol_nor_halal_shown_anywhere():
+    files = [*sorted(DATA.glob("recettes*.json")), DATA / "ingredients_tn.json"]
+    files.append(Path(recipes_import.__file__).with_name("recipes_pantry_words.json"))
+    bad = [
+        (path.name, text)
+        for path in files
+        for text in _strings(json.loads(path.read_text(encoding="utf-8")))
+        if FORBIDDEN_FR.search(text) or FORBIDDEN_AR.search(text)
+    ]
+    assert bad == []

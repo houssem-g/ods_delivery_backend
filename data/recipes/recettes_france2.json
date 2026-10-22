@@ -40,7 +40,7 @@
   "Les cuillères et pincées ne servent qu'aux ingrédients du placard, jamais achetés par la recette.",
   "Aucun prix dans ce fichier.",
   "Périmètre france2 : desserts et pâtisseries, crêpes et galettes, petit-déjeuner, pains et viennoiseries, tartes salées, quiches, gratins, soufflés.",
-  "Halal : aucun porc ni alcool ; quand la recette d'origine en contient, la version proposée est expliquée dans astuce_fr.",
+  "Ingrédients : viandes, volailles et poissons courants en Tunisie ; les variantes éventuelles sont expliquées dans astuce_fr.",
   "Ingrédient absent du dictionnaire : ingredient_id = null et ingredient_new = clé de ingredients_a_ajouter_france2.json.",
   "prix_manquants_21_10 : même calcul que la vague 1 (verification_manuelle.csv) ; « pas dans le dictionnaire » = nouvel ingrédient obligatoire."
  ],
@@ -1640,7 +1640,7 @@
     },
     {
      "ingredient_id": 168,
-     "nom_fr": "Bouillon cube (volaille ou bœuf, halal)",
+     "nom_fr": "Bouillon cube (volaille ou bœuf)",
      "nom_ar": "مكعّب مرق",
      "quantite": 1,
      "unite": "pièce",
@@ -1697,7 +1697,7 @@
    ],
    "prix_manquants_21_10": {
     "pas dans le dictionnaire": [
-     "Bouillon cube (volaille ou bœuf, halal)",
+     "Bouillon cube (volaille ou bœuf)",
      "Thym séché"
     ],
     "refusé (prix réel)": [
