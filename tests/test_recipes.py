@@ -770,3 +770,139 @@ async def test_while_admins_only_ma_liste_and_the_order_take_draft_recipes(clien
     assert p["lines"] and p["recipes"][0]["id"] == rid
     placed = await ok(client, qa, "placeOrder", order_body(rid, accept_unpriced=True))
     assert placed["order"]["id"]
+
+
+# --- 22/10: videos — a YouTube passage per step + the gestures library linked by their words ---------
+
+
+def test_gesture_triggers_match_words_in_any_order_fr_and_ar_without_the_false_friends():
+    from app.services import recipe_videos as rv
+
+    assert rv.matches("revenir|dorer oignon*", "Faites dorer le poulet et l'oignon 8 minutes.")
+    assert rv.matches("revenir|dorer oignon*", "Faites revenir les OIGNONS émincés")
+    assert not rv.matches("revenir|dorer oignon*", "Coupez l'oignon en dés.")
+    assert rv.matches("حمروا|قلبوا *بصل*", "حمّروا الدجاج والبصل 8 دقائق.")  # harakat and « و » folded away
+    assert rv.matches("*ثوم* *هرس*|دقوا", "اهرسوا الثوم.")
+    assert not rv.matches("*ثوم* *هرس*|دقوا", "أضيفوا الثوم واتركوه 5 دقائق.")  # « دقائق » is not « دقّوا »
+    assert not rv.matches("*اقلو*|القلي|قلي|*مقلي*", "ضعوا قليلًا من الملح.")  # « قليلًا » is « a little »
+    assert rv.matches("*اقلو*|القلي|قلي|*مقلي*", "اقلوها في الزيت الساخن.")
+    assert not rv.matches("", "anything") and not rv.matches("oignon", "")
+
+
+def test_the_pilot_videos_file_is_valid_and_its_gestures_reach_the_five_pilot_recipes():
+    from pathlib import Path
+
+    from app.services import recipe_videos as rv
+
+    data = json.loads(Path("data/recipes/videos.json").read_text(encoding="utf-8"))
+    assert len(data["gestures"]) == 10
+    assert all(rv.parse_gesture(g, i)[1] is None for i, g in enumerate(data["gestures"]))
+    assert all(rv.parse_passage(s, e)[1] is None for s, es in data["passages"].items() for e in es)
+    pilot_slugs = {"ojja-merguez", "couscous-poulet", "lablabi", "brik-oeuf-thon", "mloukhia-boeuf"}
+    assert set(data["passages"]) == pilot_slugs
+    files = json.loads(Path("data/recipes/recettes.json").read_text(encoding="utf-8"))["recettes"]
+    pilot = {r["id"]: r for r in files if r["id"] in data["passages"]}
+    assert len(pilot) == 5  # the slugs exist (« mloukhia » is mloukhia-boeuf)
+    for slug, entries in data["passages"].items():  # a passage never points past the recipe's last step
+        assert max(e["step"] for e in entries) <= len(pilot[slug]["etapes_fr"]), slug
+    report = rv.coverage([{"steps_fr": r["etapes_fr"], "steps_ar": r["etapes_ar"]} for r in pilot.values()],
+                         data["gestures"])  # fmt: skip
+    assert report["recipes_with_a_gesture"] == 5 and report["per_gesture"]["rouler-couscous"]["steps"] >= 2
+
+
+async def test_admin_imports_videos_the_sheet_gets_a_passage_and_gestures_per_step_idempotent(
+    client, factory, qa, ods_prices, tmp_path
+):
+    from app.storage import s3
+    from scripts import import_recipe_videos
+
+    steps_fr = ["Faites dorer l'oignon dans l'huile.", "Cassez les œufs.", "Pilez l'ail."]
+    steps_ar = ["حمّروا البصل في الزيت.", "اكسروا البيض.", "اهرسوا الثوم."]
+    await seed({**OJJA, "steps_fr": steps_fr, "steps_ar": steps_ar})
+    gestures = [
+        {"key": "faire-revenir-oignon", "name_fr": "Faire revenir l'oignon", "name_ar": "تقليب البصل",
+         "credit": {"author": "Mixkit", "license": "Mixkit", "source_url": "javascript:alert(1)"},
+         "triggers_fr": ["revenir|dorer oignon*"], "triggers_ar": ["حمروا *بصل*"]},
+        {"key": "piler-ail", "name_fr": "Piler l'ail", "name_ar": "دق الثوم", "youtube_id": "yaSCcrmomqA",
+         "start": "2:14", "end": "2:45", "triggers_fr": ["pile*"], "triggers_ar": []},
+        {"key": "bad", "name_fr": "x", "name_ar": "y", "clip": "https://evil.test/x.webm"},
+    ]  # fmt: skip
+    body = {"gestures": gestures, "passages": {
+        "ojja-merguez": [{"step": 2, "youtube_id": "XCBGcZzI1Vk", "start": "2:42", "end": "3:06",
+                          "title": "Ce plat tunisien", "channel": "La méthode Cuisinier"},
+                         {"step": 3, "youtube_id": "yaSCcrmomqA", "start": 134, "end": 165},
+                         {"step": 1, "youtube_id": "trop-court", "start": 1, "end": 2}],
+        "inconnue": []}}  # fmt: skip
+    customer = await factory.user()
+    assert (await fn(client, customer, "importRecipeVideos", body)).status_code == 403
+    done = await ok(client, qa, "importRecipeVideos", body)
+    assert done["gestures"]["created"] == 2 and done["passages"]["created"] == 2
+    assert done["unknown_recipes"] == ["inconnue"] and len(done["refused"]) == 2
+    again = await ok(client, qa, "importRecipeVideos", body)
+    assert again["gestures"]["unchanged"] == 2 and again["passages"]["unchanged"] == 2
+    media = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]["step_media"]
+    assert len(media) == 3
+    assert media[0]["video"] is None and [g["key"] for g in media[0]["gestures"]] == ["faire-revenir-oignon"]
+    clip = media[0]["gestures"][0]
+    assert clip["clip"]["webm"] == s3.public_url("public/recipes/gestures/faire-revenir-oignon.webm")
+    assert clip["clip"]["mp4"].endswith("/faire-revenir-oignon.mp4")
+    assert clip["clip"]["poster"].endswith("/faire-revenir-oignon.webp")
+    assert "source_url" not in clip["credit"]  # only https links are kept
+    assert media[1] == {"video": {"id": "XCBGcZzI1Vk", "start": 162, "end": 186, "title": "Ce plat tunisien",
+                                  "channel": "La méthode Cuisinier"}, "gestures": []}  # fmt: skip
+    # step 3: its passage is the same video as the « piler » gesture → the gesture is not repeated
+    assert media[2]["video"]["id"] == "yaSCcrmomqA" and media[2]["gestures"] == []
+    async with transaction() as session:  # the recipe file read again: the videos stay
+        await recipes_import.import_recipes(session, [{**OJJA, "steps_fr": ["Faites dorer l'oignon."],
+                                                       "steps_ar": ["حمّروا البصل."]}])  # fmt: skip
+    sheet = (await ok(client, qa, "getRecipe", {"slug": "ojja-merguez"}))["recipe"]
+    assert sheet["step_media"][0]["gestures"]
+    # the file is the truth for the recipes it names: step 3's passage gone, then the script and its dry run
+    body["passages"]["ojja-merguez"] = body["passages"]["ojja-merguez"][:1]
+    file = tmp_path / "videos.json"
+    file.write_text(json.dumps({**body, "gestures": gestures[:1]}), encoding="utf-8")
+    assert (await import_recipe_videos.run(file, dry_run=True))["refused"] == []
+    report = await import_recipe_videos.run(file, prune=True)
+    assert report["passages"]["removed"] == 1 and report["gestures"]["removed"] == 1
+    async with SessionLocal() as s:
+        sql = text("SELECT count(*) FROM audit_log WHERE action='recipes.videos'")
+        n = (await s.execute(sql)).scalar_one()
+    assert n == 2
+
+
+async def test_import_script_uploads_the_clip_files_then_records_and_skips_a_gesture_without_its_webm(
+    tmp_path, monkeypatch
+):
+    from app.storage import s3
+    from scripts import import_recipe_videos
+
+    put: list[tuple[str, str]] = []
+
+    async def fake_put(key, body, content_type, cache_control=None):
+        put.append((key, content_type))
+
+    monkeypatch.setattr(s3, "put_object", fake_put)
+    for name in ("monter-blancs.webm", "monter-blancs.mp4", "monter-blancs.webp"):
+        (tmp_path / name).write_bytes(b"x")
+    gestures = [
+        {"key": "monter-blancs", "name_fr": "Monter", "name_ar": "خفق", "triggers_fr": ["blancs neige"]},
+        {"key": "petrir-pate", "name_fr": "Pétrir", "name_ar": "عجن", "triggers_fr": ["petri*"]},
+        {
+            "key": "plier-brik",
+            "name_fr": "Plier",
+            "name_ar": "طي",
+            "youtube_id": "3sR48SWJR_g",
+            "start": 300,
+            "end": 344,
+        },
+    ]
+    data = {"gestures": gestures, "passages": {}}
+    file = tmp_path / "videos.json"
+    file.write_text(json.dumps(data), encoding="utf-8")
+    report = await import_recipe_videos.run(file, upload_dir=tmp_path)
+    assert sorted(put) == [
+        ("public/recipes/gestures/monter-blancs.mp4", "video/mp4"),
+        ("public/recipes/gestures/monter-blancs.webm", "video/webm"),
+        ("public/recipes/gestures/monter-blancs.webp", "image/webp"),
+    ]
+    assert report["missing_file"] == ["petrir-pate"] and report["gestures"]["created"] == 2
