@@ -410,18 +410,29 @@ def _filters(payload: dict[str, Any]) -> list[Any]:
     return where
 
 
-async def _facets(session: AsyncSession) -> dict[str, list[dict[str, Any]]]:
-    """The values of cuisine / country / category among the published recipes, with their counts."""
+async def _facets(
+    session: AsyncSession, payload: dict[str, Any] | None = None
+) -> dict[str, list[dict[str, Any]]]:
+    """The values of cuisine / country / category among the browsable recipes, with their counts.
+
+    `payload` (`facets_scope: "selection"`, the Explorer's filters sheet, QA 22/10 r1-11): counted IN the
+    current selection (search, group, tag, time…), each facet without its own filter (so another cuisine can
+    still be chosen) — never a category that gives « Rien pour ce choix »."""
     out: dict[str, list[dict[str, Any]]] = {}
-    for name, column in (
-        ("cuisines", Recipe.cuisine),
-        ("countries", Recipe.country),
-        ("categories", Recipe.category),
+    for name, column, own in (
+        ("cuisines", Recipe.cuisine, ("cuisine", "cuisines")),
+        ("countries", Recipe.country, ("country", "countries")),
+        ("categories", Recipe.category, ("category", "categories")),
     ):
+        where = (
+            [Recipe.status.in_(BROWSABLE)]
+            if payload is None
+            else _filters({k: v for k, v in payload.items() if k not in own})
+        )
         rows = (
             await session.execute(
                 select(column, func.count())
-                .where(Recipe.status.in_(BROWSABLE), column.is_not(None))
+                .where(*where, column.is_not(None))
                 .group_by(column)
                 .order_by(func.count().desc(), column)
             )
@@ -527,7 +538,8 @@ async def list_recipes(
         "has_more": page * size < total,
     }
     if page == 1:
-        answer["facets"] = await _facets(session)
+        scoped = str(payload.get("facets_scope") or "") == "selection"
+        answer["facets"] = await _facets(session, payload if scoped else None)
     return answer
 
 

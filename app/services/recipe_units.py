@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from decimal import ROUND_CEILING, Decimal
+from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 from typing import Any
 
 SPOON = {
@@ -127,8 +127,23 @@ def unit_word(q: Any, unit: str, lang: str) -> str:
     return words[0] if dec(q) <= 1 else words[1]
 
 
+def shown_qty(q: Any, unit: str) -> Decimal:
+    """What a person can measure (QA 22/10 r2-8: « 0,233 pièce », « 11,667 pièces », « 1,167 c. à s. »):
+    pieces, bunches and pinches whole (at least 1), spoons by halves (at least ½); kg and L unchanged. Words
+    only: the computations keep the exact quantity."""
+    d = dec(q)
+    if d <= 0:
+        return d
+    if unit in ("piece", "botte", "pincee"):
+        return max(Decimal(1), d.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    if unit in ("cas", "cac"):
+        return max(Decimal("0.5"), (d * 2).quantize(Decimal(1), rounding=ROUND_HALF_UP) / 2)
+    return d
+
+
 def fmt_qty(q: Any, unit: str, lang: str = "fr") -> str:
     """« 0,35 kg », « 1,5 L », « 4 pièces », « 1 botte » / « 0.35 كغ », « 4 حبات »."""
+    q = shown_qty(q, unit)
     return f"{number(q, lang)}\u00a0{unit_word(q, unit, lang)}"
 
 
