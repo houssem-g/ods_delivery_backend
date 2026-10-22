@@ -41,7 +41,7 @@ from app.models import (
     User,
 )
 from app.security.deps import CurrentUser
-from app.services import recipe_photos, recipe_prices, text_norm
+from app.services import recipe_photos, recipe_prices, recipe_videos, text_norm
 from app.services import recipe_units as ru
 from app.services.orders import MAX_BUDGET, OrderRefused, is_qa_account
 from app.services.places import lat_expr, lng_expr, point
@@ -751,6 +751,8 @@ async def get_recipe(
             "tip_ar": recipe.tip_ar,
             "steps_fr": list(recipe.steps_fr or []),
             "steps_ar": list(recipe.steps_ar or []),
+            # 22/10: per step, its YouTube passage and the gestures it uses (null when none)
+            "step_media": await recipe_videos.step_media(session, recipe),
             "servings": servings,
             "ingredients": ingredients,
             "weight_kg": float(lst["weight_kg"]),

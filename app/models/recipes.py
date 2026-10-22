@@ -208,3 +208,75 @@ class RecipePriceCache(Base):
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     tried_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# --- videos (22/10/2026, owner: « des vidéos liées aux étapes, la préparation n'est pas toujours claire »)
+# Two sources, decided 22/10: (1) a passage of an existing YouTube video per step, played by YouTube's own
+# player (youtube-nocookie embed, start/end) — nothing copied; (2) a library of GESTURES (5–15 s clips of the
+# basic gestures, ours on the public bucket, or a YouTube passage), each linked automatically to every step
+# whose text says it (trigger words fr / ar). Never part of a recipe's content hash: a recipe import never
+# touches them. Imported from data/recipes/videos.json (app/services/recipe_videos.py).
+GESTURE_KINDS = ("clip", "youtube")
+YOUTUBE_ID_RE = "^[A-Za-z0-9_-]{11}$"
+
+
+class RecipeGesture(Base):
+    """One basic gesture (« faire revenir l'oignon », « plier une brik »…) and how it is shown."""
+
+    __tablename__ = "recipe_gestures"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_in(GESTURE_KINDS)})", name="kind"),
+        CheckConstraint(
+            "(kind = 'clip') = (clip_key IS NOT NULL) AND (kind = 'youtube') = (youtube_id IS NOT NULL)",
+            name="source",
+        ),
+        CheckConstraint(f"youtube_id IS NULL OR youtube_id ~ '{YOUTUBE_ID_RE}'", name="youtube_id"),
+        CheckConstraint(
+            "youtube_id IS NULL OR (start_s >= 0 AND end_s > start_s AND end_s - start_s <= 600)",
+            name="passage",
+        ),
+    )
+
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    name_fr: Mapped[str] = mapped_column(Text, nullable=False)
+    name_ar: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    # clip: the WebM key on the public bucket (public/recipes/gestures/<key>.webm); the MP4 (Safari) and the
+    # poster (WebP) sit next to it with the same name
+    clip_key: Mapped[str | None] = mapped_column(Text)
+    youtube_id: Mapped[str | None] = mapped_column(Text)
+    start_s: Mapped[int | None] = mapped_column(Integer)
+    end_s: Mapped[int | None] = mapped_column(Integer)
+    # {title, channel, author, license, license_url, source_url}: shown under the video
+    credit: Mapped[dict | None] = mapped_column(JSONB)
+    # the words that link it to a step: « revenir|dorer oignon* » = every space-separated token in the step
+    # (alternatives with |, « x* » a word starting with x, « *x* » a word containing x), folded like search
+    triggers_fr: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
+    triggers_ar: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
+    position: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()
+
+
+class RecipeStepVideo(Base):
+    """The YouTube passage of one step of a recipe (`step` is 1-based, the order of steps_fr / steps_ar)."""
+
+    __tablename__ = "recipe_step_videos"
+    __table_args__ = (
+        PrimaryKeyConstraint("recipe_id", "step", name="pk_recipe_step_videos"),
+        CheckConstraint("step BETWEEN 1 AND 60", name="step"),
+        CheckConstraint(f"youtube_id ~ '{YOUTUBE_ID_RE}'", name="youtube_id"),
+        CheckConstraint("start_s >= 0 AND end_s > start_s AND end_s - start_s <= 600", name="passage"),
+    )
+
+    recipe_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), nullable=False
+    )
+    step: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    youtube_id: Mapped[str] = mapped_column(Text, nullable=False)
+    start_s: Mapped[int] = mapped_column(Integer, nullable=False)
+    end_s: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[str | None] = mapped_column(Text)
+    channel: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()

@@ -1,0 +1,486 @@
+{
+ "_doc": "Vidéos des Recettes (22/10/2026, pilote : 5 recettes + 10 gestes). passages : un passage YouTube par étape (lecteur officiel youtube-nocookie, début / fin en m:ss, rien copié). gestures : clips libres (Mixkit, sans son) sur public/recipes/gestures/<clé>.webm (+ .mp4, .webp) ou passages YouTube ; triggers = mots qui lient le geste aux étapes (app/services/recipe_videos.py).",
+ "gestures": [
+  {
+   "key": "faire-revenir-oignon",
+   "name_fr": "Faire revenir l’oignon",
+   "name_ar": "تقليب البصل في الزيت",
+   "clip": "public/recipes/gestures/faire-revenir-oignon.webm",
+   "credit": {
+    "author": "Bazava (Mixkit)",
+    "license": "Mixkit Stock Video Free License",
+    "license_url": "https://mixkit.co/license/#videoFree",
+    "source_url": "https://mixkit.co/free-stock-video/mixing-chopped-vegetables-in-a-frying-pan-24618/"
+   },
+   "triggers_fr": [
+    "revenir|dorer|suer|fondre|blondir|rissoler|colorer oignon*|echalote*",
+    "oignon* translucide*"
+   ],
+   "triggers_ar": [
+    "حمروا|*تحمير*|قلبوا|*تقليب*|*شوحو*|*تشويح* *بصل*"
+   ]
+  },
+  {
+   "key": "rouler-couscous",
+   "name_fr": "Rouler la graine à la main",
+   "name_ar": "فرك الكسكسي باليدين",
+   "youtube_id": "kcFtO0X1qh8",
+   "start": "4:28",
+   "end": "4:52",
+   "credit": {
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love",
+    "source_url": "https://www.youtube.com/watch?v=kcFtO0X1qh8"
+   },
+   "triggers_fr": [
+    "graine*|couscous|semoule doigts|mains|egrene*|egraine*|roule*|frotte*|frottant",
+    "egrene*|egraine* graine*|couscous|semoule"
+   ],
+   "triggers_ar": [
+    "*كسكس*|*سميد* *اصابع*|*فرك*|*يدي*"
+   ]
+  },
+  {
+   "key": "vapeur-couscoussier",
+   "name_fr": "Cuire à la vapeur dans le couscoussier",
+   "name_ar": "الطهي على البخار في الكسكاس",
+   "youtube_id": "kcFtO0X1qh8",
+   "start": "7:28",
+   "end": "7:50",
+   "credit": {
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love",
+    "source_url": "https://www.youtube.com/watch?v=kcFtO0X1qh8"
+   },
+   "triggers_fr": [
+    "vapeur couscoussier|graine*|couscous|semoule"
+   ],
+   "triggers_ar": [
+    "*بخار* *كسكاس*|*كسكس*|*سميد*"
+   ]
+  },
+  {
+   "key": "plier-brik",
+   "name_fr": "Plier une brik",
+   "name_ar": "طيّ ورقة البريك",
+   "youtube_id": "3sR48SWJR_g",
+   "start": "5:00",
+   "end": "5:44",
+   "credit": {
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love",
+    "source_url": "https://www.youtube.com/watch?v=3sR48SWJR_g"
+   },
+   "triggers_fr": [
+    "brick*|brik*|malsouka repli*|pli*|plie*|triangle*|lune",
+    "feuille* repli* triangle*|lune|deux"
+   ],
+   "triggers_ar": [
+    "*ملسوق*|*بريك*|*ورق* *اطوو*|*مثلث*"
+   ]
+  },
+  {
+   "key": "monter-blancs",
+   "name_fr": "Monter des blancs en neige",
+   "name_ar": "خفق بياض البيض",
+   "clip": "public/recipes/gestures/monter-blancs.webm",
+   "credit": {
+    "author": "Mixkit",
+    "license": "Mixkit Stock Video Free License",
+    "license_url": "https://mixkit.co/license/#videoFree",
+    "source_url": "https://mixkit.co/free-stock-video/whisking-egg-whites-to-stiff-peaks-101354/"
+   },
+   "triggers_fr": [
+    "blancs neige|ferme*|monte*",
+    "blancs fouette*|battez neige"
+   ],
+   "triggers_ar": [
+    "*بياض* *ثلج*",
+    "*بياض* *اخفق*|*خفق* *متماسك*|*صلب*|*قمم*"
+   ]
+  },
+  {
+   "key": "fariner-paner",
+   "name_fr": "Fariner et paner",
+   "name_ar": "التغليف بالفرينة والبقسماط",
+   "clip": "public/recipes/gestures/fariner-paner.webm",
+   "credit": {
+    "author": "RoStRecords (Mixkit)",
+    "license": "Mixkit Stock Video Free License",
+    "license_url": "https://mixkit.co/license/#videoFree",
+    "source_url": "https://mixkit.co/free-stock-video/meat-breaded-with-flour-32446/"
+   },
+   "triggers_fr": [
+    "panez|paner|panure|pane|panes|panee|panees",
+    "chapelure passe*|roule*|enrobe*|trempe*",
+    "farine passe*|roule*|enrobe*|trempe*",
+    "farinez|fariner filet*|escalope*|morceau*|poisson*|viande*|poulet*|tranche*|boulette*|calamar*|sardine*"
+   ],
+   "triggers_ar": [
+    "*بقسماط* *مرر*|*غلفو*",
+    "*فرين*|*دقيق* *مرر*"
+   ]
+  },
+  {
+   "key": "ciseler-persil",
+   "name_fr": "Ciseler le persil",
+   "name_ar": "فرم البقدونس",
+   "clip": "public/recipes/gestures/ciseler-persil.webm",
+   "credit": {
+    "author": "Dmitro2009 (Mixkit)",
+    "license": "Mixkit Stock Video Free License",
+    "license_url": "https://mixkit.co/license/#videoFree",
+    "source_url": "https://mixkit.co/free-stock-video/person-in-gloves-cutting-parsley-9346/"
+   },
+   "triggers_fr": [
+    "persil|coriandre|menthe|aneth|ciboulette|herbes cisele*|hache*"
+   ],
+   "triggers_ar": [
+    "*معدنوس*|*بقدونس*|*قسبر*|*كزبر*|*نعناع* *فرم*|*مفروم*"
+   ]
+  },
+  {
+   "key": "piler-ail-mortier",
+   "name_fr": "Piler l’ail au mortier",
+   "name_ar": "دقّ الثوم في المهراس",
+   "youtube_id": "yaSCcrmomqA",
+   "start": "2:14",
+   "end": "2:45",
+   "credit": {
+    "title": "ملوخية العيد التونسية الأصيلة",
+    "channel": "Savoureux TV",
+    "source_url": "https://www.youtube.com/watch?v=yaSCcrmomqA"
+   },
+   "triggers_fr": [
+    "pile*|pilon|mortier",
+    "ail ecrase*|ecrasez"
+   ],
+   "triggers_ar": [
+    "*ثوم* *هرس*|*مهروس*|دقوا|*مدقوق*",
+    "*مهراس*"
+   ]
+  },
+  {
+   "key": "petrir-pate",
+   "name_fr": "Pétrir une pâte",
+   "name_ar": "عجن العجين",
+   "clip": "public/recipes/gestures/petrir-pate.webm",
+   "credit": {
+    "author": "Mixkit",
+    "license": "Mixkit Stock Video Free License",
+    "license_url": "https://mixkit.co/license/#videoFree",
+    "source_url": "https://mixkit.co/free-stock-video/experienced-baker-forming-a-dough-42466/"
+   },
+   "triggers_fr": [
+    "petri*",
+    "pate malaxe*|travaillez"
+   ],
+   "triggers_ar": [
+    "*عجن*"
+   ]
+  },
+  {
+   "key": "frire-sans-bruler",
+   "name_fr": "Frire sans brûler",
+   "name_ar": "القلي دون حرق",
+   "clip": "public/recipes/gestures/frire-sans-bruler.webm",
+   "credit": {
+    "author": "Dmitro2009 (Mixkit)",
+    "license": "Mixkit Stock Video Free License",
+    "license_url": "https://mixkit.co/license/#videoFree",
+    "source_url": "https://mixkit.co/free-stock-video/cooking-french-fries-in-oil-9278/"
+   },
+   "triggers_fr": [
+    "frire|friture|frits|frites|frite",
+    "huile chaude|bouillante glisse*|plonge*"
+   ],
+   "triggers_ar": [
+    "*اقلو*|القلي|قلي|*مقلي*"
+   ]
+  }
+ ],
+ "passages": {
+  "ojja-merguez": [
+   {
+    "step": 1,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "0:44",
+    "end": "1:00",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   },
+   {
+    "step": 2,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "1:04",
+    "end": "1:18",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   },
+   {
+    "step": 4,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "1:49",
+    "end": "2:24",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   },
+   {
+    "step": 5,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "2:30",
+    "end": "2:42",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   },
+   {
+    "step": 6,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "2:24",
+    "end": "2:32",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   },
+   {
+    "step": 7,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "2:42",
+    "end": "3:06",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   },
+   {
+    "step": 8,
+    "youtube_id": "XCBGcZzI1Vk",
+    "start": "3:06",
+    "end": "3:16",
+    "title": "Ce plat tunisien est incroyable 🤤",
+    "channel": "La méthode Cuisinier"
+   }
+  ],
+  "lablabi": [
+   {
+    "step": 1,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "0:33",
+    "end": "0:58",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 2,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "2:14",
+    "end": "2:43",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 3,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "4:14",
+    "end": "4:40",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 5,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "3:03",
+    "end": "3:20",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 6,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "4:56",
+    "end": "5:30",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 7,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "5:42",
+    "end": "5:55",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 8,
+    "youtube_id": "s8gCNG7X3Jg",
+    "start": "5:55",
+    "end": "6:30",
+    "title": "LABLABI TUNISIEN — FOOD IS LOVE",
+    "channel": "Food is Love"
+   }
+  ],
+  "couscous-poulet": [
+   {
+    "step": 1,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "1:39",
+    "end": "2:12",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 2,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "5:03",
+    "end": "5:31",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 3,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "6:02",
+    "end": "6:52",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 4,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "5:37",
+    "end": "6:02",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 5,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "4:16",
+    "end": "4:52",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 6,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "7:08",
+    "end": "7:50",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 8,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "7:55",
+    "end": "8:46",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 9,
+    "youtube_id": "kcFtO0X1qh8",
+    "start": "11:03",
+    "end": "11:45",
+    "title": "MON COUSCOUS — BERBOUCHA IS LOVE — FOOD IS LOVE",
+    "channel": "Food is Love"
+   }
+  ],
+  "brik-oeuf-thon": [
+   {
+    "step": 1,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "2:32",
+    "end": "2:47",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 2,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "3:45",
+    "end": "4:22",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 3,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "4:34",
+    "end": "4:47",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 4,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "4:50",
+    "end": "5:16",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 5,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "5:26",
+    "end": "5:44",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 6,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "5:44",
+    "end": "6:08",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   },
+   {
+    "step": 7,
+    "youtube_id": "3sR48SWJR_g",
+    "start": "6:08",
+    "end": "6:18",
+    "title": "BRICK AU THON — FOOD IS LOVE",
+    "channel": "Food is Love"
+   }
+  ],
+  "mloukhia-boeuf": [
+   {
+    "step": 1,
+    "youtube_id": "yaSCcrmomqA",
+    "start": "4:58",
+    "end": "5:50",
+    "title": "ملوخية العيد التونسية الأصيلة",
+    "channel": "Savoureux TV"
+   },
+   {
+    "step": 2,
+    "youtube_id": "yaSCcrmomqA",
+    "start": "7:15",
+    "end": "7:55",
+    "title": "ملوخية العيد التونسية الأصيلة",
+    "channel": "Savoureux TV"
+   },
+   {
+    "step": 3,
+    "youtube_id": "yaSCcrmomqA",
+    "start": "10:18",
+    "end": "10:40",
+    "title": "ملوخية العيد التونسية الأصيلة",
+    "channel": "Savoureux TV"
+   },
+   {
+    "step": 4,
+    "youtube_id": "yaSCcrmomqA",
+    "start": "3:00",
+    "end": "3:50",
+    "title": "ملوخية العيد التونسية الأصيلة",
+    "channel": "Savoureux TV"
+   },
+   {
+    "step": 6,
+    "youtube_id": "yaSCcrmomqA",
+    "start": "13:36",
+    "end": "13:48",
+    "title": "ملوخية العيد التونسية الأصيلة",
+    "channel": "Savoureux TV"
+   }
+  ]
+ }
+}
