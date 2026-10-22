@@ -404,3 +404,156 @@ def test_the_seed_and_the_dishes_already_seen_give_another_week():
         shown.append(week)
         prev = set(week)
         seen |= prev
+
+
+# --- re-check 22/10 (v2-semaine-placard V1–V4) ----------------------------------------------------------
+
+
+QUICK = [
+    ("ojja-escalope", "tunisienne", "ojja", "eggs", {"poultry"}, 12),
+    ("makrouna-thon", "tunisienne", "pâtes", "fish", {"fish"}, 18),
+    ("escalope-panee", "tunisienne", "volaille", "poultry", {"poultry"}, 21),
+    ("ojja-crevettes", "tunisienne", "ojja", "fish", {"fish"}, 27),
+    ("spaghetti-crevettes", "tunisienne", "pâtes", "fish", {"fish"}, 25),
+    ("ojja-merguez", "tunisienne", "ojja", "red", {"red"}, 30),
+    ("brochettes", "marocaine", "grillade", "red", {"red"}, 30),
+    ("chakchouka-oeuf", "tunisienne", "œufs", "eggs", set(), 8),
+    ("lablabi-rapide", "tunisienne", "légumineuses", "veg", set(), 7),
+    ("omelette", "française", "œufs", "eggs", set(), 5),
+    ("coquillettes", "française", "pâtes", "veg", set(), 9),
+    ("flammekueche", "française", "tarte salée", "poultry", {"poultry"}, 14),
+    ("poulet-creme", "française", "volaille", "poultry", {"poultry"}, 20),
+    ("chich-taouk", "libanaise", "grillade", "poultry", {"poultry"}, 22),
+    ("tajine-jben", "tunisienne", "tajine", "eggs", set(), 14),
+    ("kefta-sauce-rapide", "algérienne", "plat en sauce", "red", {"red"}, 24),
+]
+
+
+def _family_pool():
+    """A realistic pool: few quick dishes, several couscous, long stews; French dishes cheaper (omelette)."""
+    pool = [cand(s, cu, cat, p, high=h, time=30, meats=frozenset(m)) for s, cu, cat, p, m, h in QUICK]
+    for i, p in enumerate(["poultry", "fish", "red", "veg", "poultry", "veg"]):
+        cu = "tunisienne" if i < 4 else "marocaine"
+        pool.append(cand(f"couscous-{i}", cu, "couscous", p, high=15 + i, time=100))
+    pool += [cand(f"stew-{i}", "tunisienne", "plat en sauce", "veg", high=10, time=90) for i in range(6)]
+    pool += [cand("gratin-fr", "française", "gratin", "eggs", high=9, time=60)]
+    return pool
+
+
+def _family_week(phone, day, pool):
+    """As the route: the phone's seed + the ISO week, the two weeks before weigh less, never the same week."""
+    o = rw.Options(nights=5, budget=80, season="automne", couscous_friday=True, home_cuisine=True,
+                   seed=rw.week_seed(phone, day))  # fmt: skip
+    recent = rw.recent_weeks(pool, o, phone, day)
+    o.recent = rw._recent_dishes(recent)
+    return rw._draw_week(pool, o, recent)
+
+
+def test_v1_every_family_and_every_week_gets_its_own_week_tunisian_dishes_first():
+    """V1: 15 families (the default settings) → ≥ 12 different weeks; the same phone 10 Mondays in a row →
+    10 different weeks; a Tunisian family: Tunisian / Maghrebi dishes the majority, couscous on Friday."""
+    import random
+    from datetime import timedelta
+
+    pool = _family_pool()
+    phones = [random.Random(2210 + k).randint(1, 999999) for k in range(15)]
+    weeks = [_family_week(p, date(2026, 10, 22), pool) for p in phones]
+    assert all(w.ok for w in weeks)
+    assert len({tuple(c.id for c in w.days) for w in weeks}) >= 12
+    assert len({c.id for w in weeks for c in w.days}) >= 18
+    mondays = [date(2026, 10, 26) + timedelta(weeks=k) for k in range(10)]
+    same = [tuple(c.id for c in _family_week(phones[0], d, pool).days) for d in mondays]
+    assert len(set(same)) == 10
+    days = [c for w in weeks for c in w.days]
+    assert sum(c.cuisine in rw.MAGHREB for c in days) > len(days) / 2
+    assert all(w.days[4].category == "couscous" for w in weeks)
+    # the same phone, the same week: the same proposal (a reload does not change it)
+    again = _family_week(phones[0], date(2026, 10, 22), pool)
+    assert [c.id for c in again.days] == [c.id for c in weeks[0].days]
+
+
+def test_v2_an_optional_meat_is_not_the_evenings_protein():
+    """V2 (the pure part; the route test below reads the optional lines): no line, no protein."""
+    marqa = rw.proteins_in([("pomme de terre", 1.0), ("tomate", 0.3)])
+    assert marqa["main"] == "veg" and not marqa["meats"] and not marqa["plant"]
+
+
+def test_v3_change_on_a_weekday_never_proposes_a_long_dish():
+    """V3: Wednesday, the neighbours eat chicken: a quick chicken dish before a 50-min fish; never the 3 h
+    madfouna; nothing quick left → no plan (the route says « no_other » with quick_day)."""
+    kept = {
+        0: cand("mon", "tunisienne", "ojja", "eggs", time=30),
+        1: cand("tue", "tunisienne", "volaille", "poultry", time=30, meats=frozenset({"poultry"})),
+        3: cand("thu", "française", "tarte salée", "poultry", time=30, meats=frozenset({"poultry"})),
+        4: cand("fri", "tunisienne", "couscous", "fish", time=100),
+    }
+    quick = cand("poulet-rapide", "tunisienne", "grillade", "poultry", time=35, meats=frozenset({"poultry"}))
+    fish50 = cand("ejja", "libyenne", "poisson", "fish", time=50, meats=frozenset({"fish"}))
+    madfouna = cand("madfouna", "tunisienne", "plat en sauce", "red", time=180, meats=frozenset({"red"}))
+    pool = [*kept.values(), quick, fish50, madfouna]
+    for k in range(10):
+        p = rw.plan_week(pool, opts(5, seed=k), fixed=kept, avoid={"old"})
+        assert p.ok and p.days[2].id == "poulet-rapide"
+    p = rw.plan_week(pool, opts(5, seed=1), fixed=kept, avoid={"poulet-rapide"})
+    assert p.ok and p.days[2].id == "ejja"  # 60 min at most, the last resort
+    p = rw.plan_week(pool, opts(5, seed=1), fixed=kept, avoid={"poulet-rapide", "ejja"})
+    assert not p.ok  # never the 3 h madfouna on a Wednesday
+
+
+def test_v4_a_dish_above_one_order_is_never_proposed_even_with_a_free_budget():
+    """V4: couscous au poisson 86.5 DT with « Libre »: one order is at most 80 DT, so never in the week."""
+    cats = ["plat en sauce", "ojja", "riz", "pâtes", "légumineuses", "gratin"]
+    pool = [cand(f"q{i}", f"c{i}", cats[i], rw.PROTEINS[i % 5], time=30, high=20) for i in range(6)]
+    pool += [cand("couscous-poisson", "tunisienne", "couscous", "fish", time=90, high=86.5)]
+    for k in range(10):
+        p = rw.plan_week(pool, opts(5, seed=k, couscous_friday=True))
+        assert p.ok and "couscous-poisson" not in [c.id for c in p.days]
+        assert all(c.high <= rw.BASKET_CAP for c in p.days)
+
+
+def _with_optional(d, *lines):
+    return {**d, "ingredients": [*d["ingredients"], *[{**x, "optional": True} for x in lines]]}
+
+
+OPTIONAL_DISHES = [
+    _with_optional(
+        dish("marqa-batata", "tunisienne", "plat en sauce", 40, [(1, 0.5, "kg"), (3, 0.3, "kg")]),
+        {"ingredient_id": 50, "qty": 1, "unit": "kg"},
+    ),
+    _with_optional(
+        dish("kafteji-test", "tunisienne", "légumes", 40, [(77, 6, "piece"), (1, 0.5, "kg")]),
+        {"ingredient_id": 41, "qty": 0.5, "unit": "kg"},
+    ),
+]
+
+
+async def test_v2_the_optional_chicken_or_merguez_is_not_counted_by_the_route(client, qa, week_prices):  # noqa: F811
+    """V2: marqa batata (optional chicken) is a meatless evening, never proposed while a dish with a protein
+    fits; kafteji (optional merguez) is an eggs evening and stays with « Sans viande rouge »."""
+    from app.db import transaction
+    from app.services import recipes_import
+
+    await seed_week()
+    async with transaction() as session:
+        await recipes_import.import_recipes(session, OPTIONAL_DISHES)
+    listed = await ok(client, qa, "listRecipes", {"page_size": 40})
+    ids = {r["slug"]: r["id"] for r in listed["recipes"]}
+    kept = await ok(client, qa, PLAN, {"people": 4, "nights": 3, "today": AUTUMN, "no_red_meat": True,
+                                       "fixed": [{"day": 0, "recipe_id": ids["kafteji-test"]},
+                                                 {"day": 1, "recipe_id": ids["marqa-batata"]}]})  # fmt: skip
+    assert kept["ok"] and [d["protein"] for d in kept["days"][:2]] == ["eggs", "veg"]
+    assert slugs(kept)[:2] == ["kafteji-test", "marqa-batata"]  # « Sans viande rouge » keeps the kafteji
+    for seed_ in range(4):
+        a = await ok(client, qa, PLAN, {"people": 4, "nights": 3, "today": AUTUMN, "seed": seed_})
+        assert a["ok"] and "marqa-batata" not in slugs(a)
+
+
+async def test_v3_change_says_no_other_quick_dish_on_a_weekday(client, qa, week_prices):  # noqa: F811
+    await seed_week()
+    a = await ok(client, qa, PLAN, {"people": 4, "nights": 3, "today": AUTUMN})
+    listed = await ok(client, qa, "listRecipes", {"page_size": 40})
+    every = [r["id"] for r in listed["recipes"]]
+    fixed = [{"day": d, "recipe_id": a["days"][d]["card"]["id"]} for d in (0, 2)]
+    body = {"people": 4, "nights": 3, "today": AUTUMN, "fixed": fixed, "avoid": every}
+    none = await ok(client, qa, PLAN, body)
+    assert none["ok"] is False and none["reason"] == "no_other" and none["quick_day"] is True
